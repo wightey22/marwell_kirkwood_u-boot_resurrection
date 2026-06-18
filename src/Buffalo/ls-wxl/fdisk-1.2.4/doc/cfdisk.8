@@ -1,0 +1,85 @@
+.TH CFDISK 8 "16 June, 2006" fdisk "GNU cfdisk Manual"
+.SH NAME
+GNU cfdisk - a curses-based partition table manipulation program
+.SH SYNOPSIS
+.B cfdisk
+[options] [device]
+.SH DESCRIPTION
+.B cfdisk
+is a disk partition manipulation program, which allows you to create, destroy, resize, move and copy partitions on a hard drive using a simple menu-driven interface. It is useful for organising the disk space on a new drive, reorganising an old drive, creating space for new operating systems, and copying data to new hard disks. For a list of the supported partition types, see the
+.B --list-partition-types
+option below.
+.SH OPTIONS
+.TP
+.B -h, --help
+displays a help message.
+.TP
+.B -v, --version
+displays the program's version.
+.TP
+.B -a, --arrow-cursor
+use an arrow cursor, instead of reverse video highlighting, in case your terminal doesn't support it.
+.TP
+.B -z, --new-table
+create a new partition table on the disk. This is useful if you want to change the partition table type or want to repartition you entire drive. Note that this does not delete the old table on the disk until you commit the changes.
+.TP
+.B -u, --units=\fIUNIT\fP
+sets the default display units to \fIUNIT\fP. A list of possible units is given below.
+.TP
+.B -t, --list-partition-types
+displays a list of supported partition types and features.
+.SH UNITS
+You can choose in what unit cfdisk should display quantities like partition sizes. You can choose from sectors, percents, bytes, kilobytes, etc. Note that one kilobyte is equal to 1,000 bytes, as this is consistent with the SI prefixes and is used by hard disk manufacturers. If you prefer to see the sizes in units with binary prefixes, you should instead select one kilo binary byte (kibibyte), which is equal to 1,024 bytes. Whatever display unit you have chosen, you can always enter the quantities in the unit of your choice, for example 1000000B or 1000kB.
+.TP
+.B compact
+display each size in the most suitable unit from B, kB, MB, GB and TB.
+.TP
+.B B
+one byte
+.TP
+.B kB 
+one kilobyte (1,000 bytes)
+.TP
+.B MB
+one megabyte (1,000,000 bytes)
+.TP
+.B GB
+one gigabyte (1,000,000,000 bytes)
+.TP
+.B TB
+one terabyte (1,000,000,000,000 bytes)
+.TP
+.B KiB
+one kilo binary byte (1,024 bytes)
+.TP
+.B MiB
+one mega binary byte (1,048,576 bytes)
+.TP
+.B GiB
+one giga binary byte (1,073,741,824 bytes)
+.TP
+.B TiB
+one tera binary byte (1,099,511,627,776 bytes)
+.TP
+.B s
+one sector. It depends on the sector size of the disk. You can use it if you want to see or choose the exact size in sectors.
+.TP
+.B %
+one percent from the size of the disk
+.TP
+.B cyl
+one cylinder. It depends on the cylinder size.
+.TP
+.B chs
+use CHS display units.
+.SH BUGS
+There are no known bugs. We are in early stages for development, so be careful.
+.SH SEE ALSO
+.BR fdisk (8),
+.BR mkfs (8),
+.BR parted (8)
+The \fIcfdisk\fP program is fully documented in the
+.BR info(1)
+format
+.IR "GNU cfdisk User Manual"
+manual.

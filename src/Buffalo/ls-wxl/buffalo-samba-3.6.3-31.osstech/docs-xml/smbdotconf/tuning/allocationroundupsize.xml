@@ -1,0 +1,21 @@
+<samba:parameter name="allocation roundup size"
+                 context="S"
+		 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    このパラメータにより、管理者が Windows 
+    クライアントから見たアロケーションサイズを切り上げることが可能となる。
+    デフォルトのサイズである 1MB にすることで、通常 
+    Windows クライアントのパフォーマンスは向上する。
+    ただし、Visual Studio のように、
+    アロケーションサイズを切り上げることで問題が発生するアプリケーションもある。
+    Visual Studio のコンパイラーが内部エラーでクラッシュしてしまうような場合は、
+    該当の共有でこのパラメータを 0 に設定すること。
+    </para>
+
+    <para>このパラメータには、切り上げるサイズをバイト単位の整数値で指定する。</para>
+</description>
+<value type="default">1048576</value>
+<value type="example">0<comment>(to disable roundups)</comment></value>
+</samba:parameter>

@@ -1,0 +1,116 @@
+.\"     Title: vipw
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23-11-2008
+.\"    Manual: Systemhanteringskommandon
+.\"    Source: Systemhanteringskommandon
+.\"
+.TH "VIPW" "8" "23-11-2008" "Systemhanteringskommandon" "Systemhanteringskommandon"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAMN"
+vipw, vigr \- redigera lösenordet, grupp, skugglösenord eller skuggruppfil
+.SH "SYNOPSIS"
+.HP 5
+\fBvipw\fR [\fIflaggor\fR]
+.HP 5
+\fBvigr\fR [\fIflaggor\fR]
+.SH "BESKRIVNING"
+.PP
+The
+\fBvipw\fR
+and
+\fBvigr\fR
+commands edits the files
+\fI/etc/passwd\fR
+and
+\fI/etc/group\fR, respectively\&. With the
+\fB\-s\fR
+flag, they will edit the shadow versions of those files,
+\fI/etc/shadow\fR
+and
+\fI/etc/gshadow\fR, respectively\&. The programs will set the appropriate locks to prevent file corruption\&. When looking for an editor, the programs will first try the environment variable
+\fB$VISUAL\fR, then the environment variable
+\fB$EDITOR\fR, and finally the default editor,
+\fBvi\fR(1)\&.
+.SH "FLAGGOR"
+.PP
+Flaggorna som gäller för kommandona
+\fBvipw\fR
+och
+\fBvigr\fR
+är:
+.PP
+\fB\-g\fR, \fB\-\-group\fR
+.RS 4
+Redigera gruppdatabasen\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Visa hjälpmeddelande och avsluta\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-passwd\fR
+.RS 4
+Redigera lösenordsdatabasen\&.
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+Tyst läge\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shadow\fR
+.RS 4
+Redigera shadow\- eller gshadow\-databasen\&.
+.RE
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "FILER"
+.PP
+\fI/etc/group\fR
+.RS 4
+Gruppkontoinformation\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Säker gruppkontoinformation\&.
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Användarkontoinformation\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Säker användarkontoinformation\&.
+.RE
+.SH "SE OCKSÅ"
+.PP
+\fBvi\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)\fBpasswd\fR(5),
+\fBshadow\fR(5)\&.

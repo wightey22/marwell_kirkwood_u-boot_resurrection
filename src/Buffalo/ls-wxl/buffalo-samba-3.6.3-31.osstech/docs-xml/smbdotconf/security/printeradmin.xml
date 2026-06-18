@@ -1,0 +1,24 @@
+<samba:parameter name="printer admin"
+                 context="S"
+		 type="list"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータには、
+    MS-RPC(通常Windows NT Workstationによって使用される)による、
+    遠隔からのプリンタ管理インタフェース経由でプリンタに対するすべての操作を行なう権限をもつユーザのリストを設定する。
+    このパラメータは共有単位に指定することも Samba 全体に対して指定することも可能である。
+    root は常にこの権限をもつことに注意。
+    このパラメータを Samba 全体に対して設定した場合、思わぬ副作用を招く可能性があるので、注意すること。
+    </para>
+
+    <para>
+    このパラメータは SePrintOperatorPrivilege ユーザ権利とプリンタのア
+    クセス許可により、廃止予定のパラメータとなっている。
+    将来のリリースでは廃止されるだろう。
+    </para>
+	
+</description>
+<value type="default"></value>
+<value type="example">admin, @staff</value>
+</samba:parameter>

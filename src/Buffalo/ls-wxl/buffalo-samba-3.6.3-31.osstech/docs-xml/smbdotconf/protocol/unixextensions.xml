@@ -1,0 +1,15 @@
+<samba:parameter name="unix extensions"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+    <para>この真偽値パラメータは、Samba が 
+    HP 社によって定義された CIFS の UNIX拡張を利用するかどうかを制御する。
+    これらの拡張は、UNIX クライアントから UNIX サーバに対して接続する際に有用な CIFS を有効にし、
+    シンボリックリンクやハードリンクなどを利用可能にする。
+    これらの拡張により、Samba は UNIX の CIFS クライアントに対して、
+    シンボリックリンクやハードリンクといった機能を提供することが可能となる。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

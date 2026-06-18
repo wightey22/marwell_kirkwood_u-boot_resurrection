@@ -1,0 +1,40 @@
+.\"     Title: logoutd
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "LOGOUTD" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+logoutd \- Imposer les restrictions de connexion dans le temps
+.SH "SYNOPSIS"
+.HP 8
+\fBlogoutd\fR
+.SH "DESCRIPTION"
+.PP
+\fBLogoutd\fR
+impose les restrictions (sur les ports, la date et l\'heure de connexion) spécifiées dans
+\fI/etc/porttime\fR\&.
+\fBLogoutd\fR
+doit être démarré depuis
+\fI/etc/rc\fR\&. Il analyse le fichier
+\fI/var/run/utmp\fR
+régulièrement, et, pour chaque utilisateur, il vérifie que ce nom d\'utilisateur est autorisé à être connecté à ce port à ce moment\&. Toute session en violation avec les restrictions de
+\fI/etc/porttime\fR
+est terminée\&.
+.SH "FICHIERS"
+.PP
+\fI/etc/porttime\fR
+.RS 4
+Fichier contenant le port d\'accès\&.
+.RE
+.PP
+\fI/var/run/utmp\fR
+.RS 4
+Liste des sessions de connexion en cours\&.
+.RE

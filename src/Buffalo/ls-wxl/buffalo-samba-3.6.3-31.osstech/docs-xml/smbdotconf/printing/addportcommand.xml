@@ -1,0 +1,26 @@
+<samba:parameter name="add port command"
+                 context="G"
+				 type="string"
+		 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>Samba 3.0.23 では、Windows の&quot;Add Standard TCP/IP Port
+    ウィザード&quot;によるリモートからのプリンタポートの追加がサポートされた。
+    このオプションは、smbd がシステムに対する新しいポートの追加要求を受信した際に、
+    実行される外部のコマンドを定義する。
+    スクリプトは以下の 2 つのパラメータをとる。
+    </para>
+		
+    <itemizedlist>
+	<listitem><para><parameter moreinfo="none">ポートの名称</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">device URI</parameter></para></listitem>
+    </itemizedlist>
+		
+    <para>deviceURI は socket://&lt;hostname&gt;[:&lt;portnumber&gt;] もしくは
+    lpd://&lt;hostname&gt;/&lt;queuename&gt; のように指定する。</para>
+</description>
+
+<related>enum ports command</related>
+<value type="default"></value>
+<value type="example">/etc/samba/scripts/addport.sh</value>
+</samba:parameter>

@@ -1,0 +1,21 @@
+<samba:parameter name="ldap connection timeout"
+		 context="G"
+		 advanced="1" developer="1"
+			type="integer"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータは、LDAPサーバに対して最初のコネクションを確立する間に保持するための
+	LDAPライブラリ呼び出しの秒単位のタイムアウトを指定する。これは実際、フェールオーバ
+	の手順においてとても便利である。もしも、1つまたはそれ以上のLDAPサーバが接続不能に
+	なった時、TCPのタイムアウトが満了になるのを待つ必要が無くなる。この機能は、LDAP
+	ライブラリによってサポートされなければならない。
+	</para>
+
+	<para>
+	このパラメータは、存在するコネクションを使ってのLDAPサーバ上の操作に影響する
+	<smbconfoption name="ldap timeout"/>とは異なり、最初の接続を確立しない。
+	</para>
+</description>
+<value type="default">2</value>
+</samba:parameter>

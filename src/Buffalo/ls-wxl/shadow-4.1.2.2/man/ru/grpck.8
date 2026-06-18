@@ -1,0 +1,159 @@
+.\"     Title: grpck
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Команды управления системой
+.\"    Source: Команды управления системой
+.\"
+.TH "grpck" "8" "11/23/2008" "Команды управления системой" "Команды управления системой"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "НАЗВАНИЕ"
+grpck \- проверяет корректность файлов групп
+.SH "СИНТАКСИС"
+.HP 6
+\fBgrpck\fR [\-r] [\fIгруппа\fR\ [\ \fIshadow\fR\ ]]
+.HP 6
+\fBgrpck\fR [\-s] [\fIгруппа\fR\ [\ \fIshadow\fR\ ]]
+.SH "ОПИСАНИЕ"
+.PP
+The
+\fBgrpck\fR
+command verifies the integrity of the system authentication information\&. All entries in
+\fI/etc/group\fR
+and \fI/etc/gshadow\fR
+are checked to see that the entry has the proper format and valid data in each field\&. The user is prompted to delete entries that are improperly formatted or which have other uncorrectable errors\&.
+.PP
+Выполняются следующие проверки:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'правильное количество полей
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'уникальность имени группы
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'корректный список членов и администраторов
+.RE
+.PP
+Ошибки в количестве полей и уникальности имён групп невосстановимы\&. Если запись содержит неверное число полей, пользователя попросят подтвердить удаление всей записи\&. Если пользователь ответит отрицательно, дальнейшая проверка выполняться не будет\&. При ошибке повторения имени группы также возникает запрос на удаление, но в случае отказа проверка будет продолжена\&. Обо всех остальных ошибках выводится предупреждение и пользователю предлагается запустить команду
+\fBgroupmod\fR
+чтобы исправить ошибку\&.
+.PP
+Команды, которые работают с файлом
+\fI/etc/group\fR
+не способны изменить повреждённые или дублирующиеся записи\&. Как раз в этом случае и нужно использовать
+\fBgrpck\fR
+для удаления испорченной записи\&.
+.SH "ПАРАМЕТРЫ"
+.PP
+The options which apply to the
+\fBgrpck\fR
+command are:
+.PP
+\fB\-r\fR
+.RS 4
+Execute the
+\fBgrpck\fR
+command in read\-only mode\&. This causes all questions regarding changes to be answered
+\fIno\fR
+without user intervention\&.
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+Sort entries in
+\fI/etc/group\fR
+and \fI/etc/gshadow\fR
+by GID\&.
+.RE
+.PP
+By default,
+\fBgrpck\fR
+operates on
+\fI/etc/group\fRand \fI/etc/gshadow\fR\&. The user may select alternate files with the
+\fIgroup\fR
+and \fIshadow\fR parameters\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "ФАЙЛЫ"
+.PP
+\fI/etc/group\fR
+.RS 4
+содержит информацию о группах
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+содержит защищаемую информацию о группах
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+содержит информацию о пользователях
+.RE
+.SH "СМОТРИТЕ ТАКЖЕ"
+.PP
+
+\fBgroup\fR(5),
+\fBgshadow\fR(5)
+\fBpasswd\fR(5),
+\fBshadow\fR(5),
+\fBgroupmod\fR(8)\&.
+.SH "ВОЗВРАЩАЕМЫЕ ЗНАЧЕНИЯ"
+.PP
+Команда
+\fBgrpck\fR
+завершая работу, возвращает следующие значения:
+.PP
+\fI0\fR
+.RS 4
+успешное выполнение
+.RE
+.PP
+\fI1\fR
+.RS 4
+ошибка в параметрах команды
+.RE
+.PP
+\fI2\fR
+.RS 4
+есть одна или более неправильных записей групп
+.RE
+.PP
+\fI3\fR
+.RS 4
+не удалось открыть файл групп
+.RE
+.PP
+\fI4\fR
+.RS 4
+не удалось заблокировать файл групп
+.RE
+.PP
+\fI5\fR
+.RS 4
+не удалось изменить файл групп
+.RE

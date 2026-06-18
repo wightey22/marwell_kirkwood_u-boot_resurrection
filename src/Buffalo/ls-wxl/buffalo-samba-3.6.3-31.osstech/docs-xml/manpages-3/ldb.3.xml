@@ -1,0 +1,278 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<refentry id="ldb.3">
+
+<refmeta>
+	<refentrytitle>ldb</refentrytitle>
+	<manvolnum>3</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">C ライブラリ関数</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+	<refname>ldb</refname>
+	<refclass>The Samba Project</refclass>
+	<refpurpose>軽量データベースライブラリ</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<synopsis>#include &lt;ldb.h&gt;</synopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>
+ldb は軽量の埋め込み型データベースライブラリーおよび API である。
+LDAP と非常に良く似たプログラミングインタフェースにより、データを
+tdb(3) データベースもしくは実際の LDAP データベースに格納できる。
+	</para>
+
+	<para>
+tdb バックエンドと共に使われる場合、ldb はデータベースデーモンを
+必要としない。その代わり、ldb 関数へのコールは ldb ライブラリにより
+即時に処理され、データベースに対して直接 I/O が行われる。その上、
+オペレーティングシステムのバイト単位のロック機構を使って、複数の
+読み書きを同時に実行できる。これにより API へのオーバーヘッドが
+非常に少なくて済む。時には伝統的な LDAP アーキテクチャを使った
+実行に比べて 10 倍以上の速度が出ることもある。
+	</para>
+
+	<para>
+データベースの分類的には、ldb は（バークレー DB や tdb のような）
+キー／値のペアを扱うデータベースと本格的な LDAP の中間に位置する。
+ldb は LDAP のような構造属性志向の API と良好なインデックス機能
+を備えており、軽量データベースを使った非常に洗練された
+アプリケーションを作れる。その際、重厚な LDAP システムを使うための
+管理上のオーバーヘッドを必要としない。
+	</para>
+
+	<para>
+ldb データベースを操作するために、数多くの有用なコマンドラインツール
+が用意されている。これらのコマンドは、ldap のコマンドラインツール群
+とよく似た形式を持っている。
+	</para>
+
+	<para>
+tdb バックエンドにおけるデフォルトの操作モードでは、ldb は
+「スキーマを持たない LDAP」のようにも見える。デフォルトでは ldb
+はスキーマを必要としない。これにより、データベースを構築するのに伴う
+複雑さが大幅に緩和されている。アプリケーションが成長するのに伴って
+その構成は複雑さを増してゆくが、ldb がオプションで提供するスキーマ
+とよく似た属性を使うことで、優位性を得ることができる。また、既存の
+ldb コードを使いながら、完全な LDAP API を使う方向に移行してゆく
+ことも可能である。
+	</para>
+
+	<para>
+ldb を使うのが初めてなら、まずは ldbsearch(1) とldbedit(1) の
+マニュアルに目を通した上で、ローカルのデータベースを作るところから
+始めることを推奨する。その後、ldb_connect(3) と ldb_search(3) の
+マニュアルを参照されたい。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>ツール</title>
+
+	<itemizedlist>
+		<listitem><para>
+			<application>ldbsearch(1)</application>
+			  - コマンドラインの ldb 検索ユーティリティー
+		</para></listitem>
+
+		<listitem><para>
+			<application>ldbedit(1)</application>
+			 - 自分の好きなエディタで ldb データベースの全部または一部を編集する
+		</para></listitem>
+
+		<listitem><para>
+			<application>ldbadd(1)</application>
+			 - LDIF 形式の入力を使って ldb データベースにレコードを追加する
+		</para></listitem>
+
+		<listitem><para>
+			<application>ldbdel(1)</application>
+			 - ldb データベースからレコードを削除する
+		</para></listitem>
+
+		<listitem><para>
+			<application>ldbmodify(1)</application>
+			 - LDIF 形式の入力を使って ldb データベースのレコードを修正する
+		</para></listitem>
+	</itemizedlist>
+</refsect1>
+
+<refsect1>
+	<title>関数</title>
+
+	<itemizedlist>
+		<listitem><para>
+			<function>ldb_connect(3)</function>
+			 - ldb バックエンドに接続する
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_search(3)</function>
+			 - データベース検索を行う
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_add(3)</function>
+			 - データベースにレコードを追加する
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_delete(3)</function>
+			 - データベースからレコードを削除する
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_modify(3)</function>
+			 - データベース内のレコードを修正する
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_errstring(3)</function>
+			 - 最後の操作で発生した拡張エラー情報を取り出す
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_ldif_write(3)</function>
+			 - LDIF 形式のメッセージを書き込む
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_ldif_write_file(3)</function>
+			 - LDIF 形式のメッセージをファイルに書き出す
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_ldif_read(3)</function>
+			 - LDIF 形式のメッセージを読み込む
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_ldif_read_free(3)</function>
+			 - ldb_ldif_read() の結果を開放する
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_ldif_read_file(3)</function>
+			 - LDIF 形式のメッセージをファイルから読み込む
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_ldif_read_string(3)</function>
+			 - LDIF 形式のメッセージを文字列から読み込む
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_msg_find_element(3)</function>
+			 - ldb_message の中から要素を見つける
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_val_equal_exact(3)</function>
+			 - ２つの ldb_val 構造体を比較する
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_msg_find_val(3)</function>
+			 - 要素を値により検索する
+		</para></listitem>
+
+		<listitem><para>
+			<function>ldb_msg_add_empty(3)</function>
+			 - ldb_message に空のメッセージ要素を追加する
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_msg_add(3)</function>
+			 - ldb_message に空でないメッセージ要素を追加する
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_msg_element_compare(3)</function>
+			 - ２つの ldb_message_element 構造体を比較する
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_msg_find_int(3)</function>
+			 - ldb_message から一個の整数値を返す
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_msg_find_uint(3)</function>
+			 - ldb_message から一個の符号なし整数値を返す
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_msg_find_double(3)</function>
+			 - ldb_message から一個の double 値を返す
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_msg_find_string(3)</function>
+			 - ldb_message から一個の文字列を返す
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_set_alloc(3)</function>
+			 - ldb で使用するメモリ確保関数をセットする
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_set_debug(3)</function>
+			 - ldb で使用するデバッグハンドラー関数をセットする
+		</para></listitem>
+
+
+		<listitem><para>
+			<function>ldb_set_debug_stderr(3)</function>
+			 - stderr 出力を使うデバッグハンドラー関数をセットする
+		</para></listitem>
+	</itemizedlist>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+		ldb は
+		 <ulink url="http://samba.org/~tridge/">Andrew Tridgell</ulink>
+		によって書かれた。
+	</para>
+
+	<para>
+問題を報告したり何らかの提案をしたい場合は、
+<ulink url="http://ldb.samba.org/"/> Web サイトで現在の連絡先と
+メンテナー情報を確認してほしい。
+	</para>
+
+	<para>
+ldb は the GNU Lesser General Public License version 2 およびそれ以降
+の元にリリースされている。ライセンスの詳細は COPYING ファイルを参照のこと。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+		によって行なわれた。</para>
+</refsect1>
+
+</refentry>

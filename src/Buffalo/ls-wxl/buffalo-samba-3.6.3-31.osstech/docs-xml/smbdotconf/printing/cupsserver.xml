@@ -1,0 +1,29 @@
+<samba:parameter name="cups server"
+                 context="G"
+		 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    このパラメータは <smbconfoption name="printing"/> が
+    <constant>cups</constant> に設定されている場合のみ有効である。
+    </para>
+
+    <para>
+    このパラメータが設定されると、CUPS の <filename>client.conf</filename>
+    で設定された ServerName オプションの値が置き換えられる。
+    これは、仮想 Samba サーバ毎に異なる CUPS デーモンに接続する際に必要である。
+   </para>
+
+   <para>
+   なお、サーバ名に引続きコロンの後ろにポート番号を記述することで、ポー
+   ト番号を指定することも可能である。
+    ポートの指定が行なわれ名張った場合、IPP のデフォルトポート (631)
+   が用いられる。
+   </para>
+	  
+</description>
+<value type="default">""</value>
+<value type="example">mycupsserver</value>
+<value type="example">mycupsserver:1631</value>
+</samba:parameter>

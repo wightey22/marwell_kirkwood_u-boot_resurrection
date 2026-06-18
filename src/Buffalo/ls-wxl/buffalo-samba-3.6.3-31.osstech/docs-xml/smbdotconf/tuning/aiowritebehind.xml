@@ -1,0 +1,21 @@
+<samba:parameter name="aio write behind"
+                 context="S"
+		 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>もしも、Sambaが非同期I/Oをサポートするように構築された場合、
+	  このパラメータで示されたファイルに対して、クライアントに対する 結果を返す前に、
+	  Sambaは書き込み要求が完了するまで待たない。その代わり、実際の操作が
+	  成功するか否かに関係なく、Sambaは書き込み要求が正常に終わったと、即座に
+	  結果を返す。これはaioサポートがないクライアントのスピードを向上させるかも
+	  しれないが、データが亡失し、ファイルが壊れるという観点で、これはとても
+	  危険である。
+	</para>
+	<para>
+	  文法は、<smbconfoption name="veto files"/>と同一である。
+	</para>
+</description>
+
+<value type="default"/>
+<value type="example">/*.tmp/</value>
+</samba:parameter>

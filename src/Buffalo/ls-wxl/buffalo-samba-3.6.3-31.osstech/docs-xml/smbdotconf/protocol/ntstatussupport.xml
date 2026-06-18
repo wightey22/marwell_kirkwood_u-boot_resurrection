@@ -1,0 +1,17 @@
+<samba:parameter name="nt status support"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータは、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が、 Windows NT/2000/XP
+    クライアントに対して、 NT 固有のステータスのサポートのネゴシエーションを行なうかどうかを制御する。
+    これは、開発者のデバッグ用オプションであり、設定を変更すべきではない。
+    このオプションが <constant>no</constant> の場合、 Samba は
+    Samba 2.2.3 以前と全く同様に、DOS エラーコードを返却する。</para>
+
+    <para>このオプションを無効にしてはならない。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

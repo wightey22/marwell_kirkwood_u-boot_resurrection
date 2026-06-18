@@ -1,0 +1,18 @@
+<samba:parameter name="fstype"
+	         context="S"
+			 type="string"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、
+	クライアントが共有のファイルシステムを問い合わせた際に、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>
+	が返却する共有のファイルシステム名を指定する。
+	デフォルトは Windows NT 互換の <constant>NTFS</constant> だが、
+	必要に応じて <constant>Samba</constant> や <constant>
+	FAT </constant> といった別の文字列に、変更することができる。
+	</para>
+</description>
+<value type="default">NTFS</value>
+<value type="example">Samba</value>
+</samba:parameter>

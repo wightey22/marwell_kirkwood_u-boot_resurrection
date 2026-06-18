@@ -1,0 +1,26 @@
+largan/lmini/lmini_ccd.lo: largan/lmini/lmini_ccd.c /usr/include/string.h \
+  /usr/include/features.h /usr/include/sys/cdefs.h \
+  /usr/include/bits/wordsize.h /usr/include/gnu/stubs.h \
+  /usr/lib/gcc/arm-softfloat-linux-gnueabi/4.3.2/include/stddef.h \
+  /usr/include/bits/string.h /usr/include/bits/string2.h \
+  /usr/include/stdlib.h largan/lmini/lmini_ccd.h
+
+/usr/include/string.h:
+
+/usr/include/features.h:
+
+/usr/include/sys/cdefs.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/gnu/stubs.h:
+
+/usr/lib/gcc/arm-softfloat-linux-gnueabi/4.3.2/include/stddef.h:
+
+/usr/include/bits/string.h:
+
+/usr/include/bits/string2.h:
+
+/usr/include/stdlib.h:
+
+largan/lmini/lmini_ccd.h:

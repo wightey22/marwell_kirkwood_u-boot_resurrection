@@ -1,0 +1,15 @@
+<samba:parameter name="max xmit"
+                 context="G"
+				 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションにより、
+    Samba がネゴシエーション時に用いるパケットサイズの最大値が設定される。
+    デフォルトは 16644 であり、これは Windows 2000 の挙動に合わせた値である。
+    2048 以下ではおそらく問題が出るだろう。
+    このパラメータの値をデフォルトから変更する必要はないだろう。</para>
+</description>
+<value type="default">16644</value>
+<value type="example">8192</value>
+</samba:parameter>

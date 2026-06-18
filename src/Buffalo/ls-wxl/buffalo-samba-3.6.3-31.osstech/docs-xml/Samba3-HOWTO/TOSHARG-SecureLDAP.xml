@@ -1,0 +1,417 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="ch-ldap-tls">
+<chapterinfo>
+        &author.ghenry;
+        <pubdate>July 8, 2005</pubdate>
+</chapterinfo>
+<title>LDAPとトランスポート層のセキュリティ</title>
+
+<sect1 id="s1-intro-ldap-tls">
+<title>概要</title>
+
+	<para>
+	<indexterm><primary>トランスポート層セキュリティ, TLS</primary><secondary>概要</secondary></indexterm>
+<indexterm><primary>ACL</primary></indexterm>
+	現在に至るまで、ACLのような、いくつかの高度な機能を含む、
+	<trademark>OpenLDAP</trademark>の簡単な設定について議論してきた。
+	しかし、ネットワーク上の通信が引き続き平文であるという現状には対応しない。
+	これが、<firstterm>Transport Layer Security (TLS)</firstterm>が導入された
+	理由である。
+	</para> 
+
+	<para>
+<indexterm><primary>RFC 2830</primary></indexterm>
+	<trademark>OpenLDAP</trademark>クライアントとサーバは、
+	<ulink url="http://rfc.net/rfc2830.html">RFC 2830</ulink>(訳注:現在は
+	<ulink url="http://rfc.net/rfc4513.html">RFC 4513</ulink>が最新)
+	<emphasis>Lightweight Directory Access Protocol (v3):
+        Extension for Transport Layer Security.</emphasis>
+	による、完全性と機密性を提供するため、Transport Layer Security (TLS)を使う
+	能力がある。
+	</para>
+
+	<para>
+<indexterm><primary>X.509 証明書</primary></indexterm>
+	TLSはX.509証明書を使う。すべてのサーバは有効な証明書を持つ必要があるが、
+	クライアント証明書はあってもなくてもよい。ここではサーバ証明書のみを
+	議論の対象とする。
+	</para>
+
+	<tip><para>
+<indexterm><primary>DN</primary></indexterm>
+<indexterm><primary>CN</primary></indexterm>
+<indexterm><primary>FQDN</primary></indexterm>
+	サーバ証明書のDNはサーバの名前を指定するCN属性を使う必要があり、CNは、サーバの、
+	完全に記述されたドメイン名(FQDN)を引き継ぐ必要がある。追加の別名と
+	ワイルドカードは、<option>subjectAltName</option>証明書エクステンションに存在しても
+	よい。サーバ証明書の名前についてのより詳細については、
+	<ulink url="http://rfc.net/rfc2830.html">RFC2830</ulink>にある。
+	</para></tip>
+
+	<para>
+	これについては次の節で詳細に説明する。
+	</para>
+
+	</sect1>
+
+	<sect1 id="s1-config-ldap-tls">
+	<title>設定</title>
+
+	<para>
+	<indexterm><primary>Transport Layer Seccurity, TLS</primary><secondary>設定</secondary></indexterm>
+	これから重要なところを説明する。
+	</para>
+
+	<sect2 id="s1-config-ldap-tls-certs">
+	<title>認証局の作成</title>
+
+	<para>
+<indexterm><primary>認証局</primary><see>CA</see></indexterm>
+	適切な証明書を作成するために、固有の認証局(CA)を立てる必要がある。
+	<footnote><para>しかし、作成したサーバ証明書は、たとえば、
+	<ulink url="http://www.thawte.com/">Thawte</ulink>と
+	<ulink url="http://www.verisign.com/">VeriSign</ulink>のような、有料または
+	<ulink url="http://www.cacert.org/">CAcert</ulink>経由の、無料のものを使って、
+	適切なCAによって署名されるようにできる。</para></footnote>
+	これは必要であり、そうすると、サーバ証明書に署名できる。
+	</para>
+
+	<para>
+<indexterm><primary>OpenSSL</primary></indexterm>
+	これに対しては、ほとんどの<trademark class="registered">Linux</trademark>
+	ディストリビューションに含まれている<ulink url="http://www.openssl.org">OpenSSL</ulink>
+	<footnote><para>固有の認証局(CA)を作ることの不都合な点は、商用のものがそうであるように、
+	証明書がクライアントによって自動的に認識されないということである。</para></footnote>
+	を使うことになる。
+	</para>
+
+	<para>
+	TLSは多くの種類のサーバによって使われるが、その手続きは、
+	<footnote><para>一番確かなところからの情報は、
+	<ulink url="http://www.openssl.org/docs/HOWTO/">http://www.openssl.org/docs/HOWTO/</ulink>
+	のmain OpenSSLサイトを参照のこと。</para></footnote>
+	ここで説明されていて、&OL; に特化している。
+	</para>
+
+	<note><para>
+	以下の例における<emphasis>Common Name (CN)</emphasis>は、使用しているLDAPサーバの
+	完全に記述されたドメイン名(FQDN)で<emphasis>なければならない</emphasis>。
+	</para></note>
+
+	<para>
+	最初に認証局(CA)を生成する必要がある:
+<screen width="90">
+<computeroutput>
+&rootprompt; mkdir myCA
+</computeroutput>
+</screen>
+	そのディレクトリに移動する:
+<screen width="90">
+<computeroutput>
+&rootprompt; cd myCA
+</computeroutput>
+</screen>
+	Now generate the CA:<footnote><para>Your <filename>CA.pl</filename> or <filename>CA.sh</filename> might not be
+	in the same location as mine is, you can find it by using the <command>locate</command> command, i.e.,
+	<command>locate CA.pl</command>.  If the command complains about the database being too old, run
+	<command>updatedb</command> as <emphasis>root</emphasis> to update it.</para></footnote>
+<screen width="90">
+<computeroutput>
+&rootprompt; /usr/share/ssl/misc/CA.pl -newca
+CA certificate filename (or enter to create)
+  
+Making CA certificate ...
+Generating a 1024 bit RSA private key
+.......................++++++
+.............................++++++
+writing new private key to './demoCA/private/cakey.pem'
+Enter PEM pass phrase:
+Verifying - Enter PEM pass phrase:
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:AU
+State or Province Name (full name) [Some-State]:NSW
+Locality Name (eg, city) []:Sydney
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Abmas
+Organizational Unit Name (eg, section) []:IT
+Common Name (eg, YOUR name) []:ldap.abmas.biz
+Email Address []:support@abmas.biz
+</computeroutput>
+</screen>
+	</para>
+
+	<para>
+	注意すべき点がいくつかある。
+	</para>
+
+	<orderedlist>
+		<listitem>
+			<para>
+			サーバの証明書に署名するのに必要なので、
+			パスワードを<emphasis>覚えておく必要がある</emphasis>。
+			</para>
+		</listitem>
+
+		<listitem>
+			<para>
+			<emphasis>Common Name (CN)</emphasis>は使用しているLDAPサーバの
+			完全に記述されたドメイン名(FQDN)で<emphasis>なければならない</emphasis>。
+			</para>
+		</listitem>
+	</orderedlist>
+
+	</sect2>
+
+	<sect2 id="s1-config-ldap-tls-server">
+	<title>サーバ証明書の生成</title>
+
+	<para>
+	次にサーバ証明書を生成する必要がある:
+<screen width="90">
+<computeroutput>
+&rootprompt; openssl req -new -nodes -keyout newreq.pem -out newreq.pem
+Generating a 1024 bit RSA private key
+.............++++++
+........................................................++++++
+writing new private key to 'newreq.pem'
+-----
+You are about to be asked to enter information that will be incorporated
+into your certificate request.
+What you are about to enter is what is called a Distinguished Name or a DN.
+There are quite a few fields but you can leave some blank
+For some fields there will be a default value,
+If you enter '.', the field will be left blank.
+-----
+Country Name (2 letter code) [AU]:AU
+State or Province Name (full name) [Some-State]:NSW
+Locality Name (eg, city) []:Sydney
+Organization Name (eg, company) [Internet Widgits Pty Ltd]:Abmas
+Organizational Unit Name (eg, section) []:IT
+Common Name (eg, YOUR name) []:ldap.abmas.biz
+Email Address []:support@abmas.biz
+  
+Please enter the following 'extra' attributes
+to be sent with your certificate request
+A challenge password []:
+An optional company name []:
+</computeroutput>
+</screen>
+	</para>	
+
+	<para>
+	繰り返すが、ここでもいくつか注意すべき事がある。
+	</para>		
+
+	<orderedlist>
+		<listitem>
+			<para>
+			パスワードを入力<emphasis>すべきではない</emphasis>。
+			</para>
+		</listitem>
+
+		<listitem>
+			<para>
+                        <emphasis>Common Name (CN)</emphasis>は使用しているLDAPサーバの
+                        完全に記述されたドメイン名(FQDN)で<emphasis>なければならない</emphasis>。
+			</para>
+		</listitem>
+	</orderedlist>
+
+	<para>
+	次に新しい認証局(CA)の証明書に署名する:
+<screen width="90">
+<computeroutput>
+&rootprompt; /usr/share/ssl/misc/CA.pl -sign
+Using configuration from /etc/ssl/openssl.cnf
+Enter pass phrase for ./demoCA/private/cakey.pem:
+Check that the request matches the signature
+Signature ok
+Certificate Details:
+Serial Number: 1 (0x1)
+Validity
+	Not Before: Mar  6 18:22:26 2005 EDT
+	Not After : Mar  6 18:22:26 2006 EDT
+Subject:
+	countryName               = AU
+	stateOrProvinceName       = NSW
+	localityName              = Sydney
+	organizationName          = Abmas
+	organizationalUnitName    = IT
+	commonName                = ldap.abmas.biz
+	emailAddress              = support@abmas.biz
+X509v3 extensions:
+	X509v3 Basic Constraints:
+	    CA:FALSE
+	Netscape Comment:
+	    OpenSSL Generated Certificate
+	X509v3 Subject Key Identifier:
+	    F7:84:87:25:C4:E8:46:6D:0F:47:27:91:F0:16:E0:86:6A:EE:A3:CE
+	X509v3 Authority Key Identifier:
+	    keyid:27:44:63:3A:CB:09:DC:B1:FF:32:CC:93:23:A4:F1:B4:D5:F0:7E:CC
+	    DirName:/C=AU/ST=NSW/L=Sydney/O=Abmas/OU=IT/
+						CN=ldap.abmas.biz/emailAddress=support@abmas.biz
+	    serial:00
+
+Certificate is to be certified until Mar  6 18:22:26 2006 EDT (365 days)
+Sign the certificate? [y/n]:y
+
+
+1 out of 1 certificate requests certified, commit? [y/n]y
+Write out database with 1 new entries
+Data Base Updated
+Signed certificate is in newcert.pem
+</computeroutput>
+</screen>
+	</para>
+
+	<para>
+	これでサーバ証明書の生成が完了する。
+	</para>
+
+	</sect2>
+
+	<sect2 id="s1-config-ldap-tls-install">
+	<title>証明書のインストール</title>
+
+	<para>
+	次に、正しい設定ディレクトリ中に証明書をコピーする必要があり、その後同時に改名して
+	(利便性のために)、所有権を変更し、最後にアクセス許可を与える:
+<screen width="90">
+<computeroutput>
+&rootprompt; cp demoCA/cacert.pem /etc/openldap/
+&rootprompt; cp newcert.pem /etc/openldap/servercrt.pem
+&rootprompt; cp newreq.pem /etc/openldap/serverkey.pem
+&rootprompt; chown ldap.ldap /etc/openldap/*.pem
+&rootprompt; chmod 640 /etc/openldap/cacert.pem;
+&rootprompt; chmod 600 /etc/openldap/serverkey.pem
+</computeroutput>
+</screen>
+	</para>
+
+	<para>
+	次に、これらのファイル位置情報を、以下のようにして、<filename>slapd.conf</filename>
+	の、<option>database</option>定義の前のどこかに追加する必要がある:
+<screen width="90">
+<computeroutput>
+TLSCertificateFile /etc/openldap/servercrt.pem
+TLSCertificateKeyFile /etc/openldap/serverkey.pem
+TLSCACertificateFile /etc/openldap/cacert.pem
+</computeroutput>
+</screen>
+	</para>
+
+	<para>
+	以下は、<filename>ldap.conf</filename>での定義である:
+<filename>ldap.conf</filename>
+<screen width="90">
+<computeroutput>
+TLS_CACERT /etc/openldap/cacert.pem
+</computeroutput>
+</screen>
+	</para>
+
+	<para>
+	これですべてである。次に<xref linkend="s1-test-ldap-tls"></xref>を行う。
+	</para>
+
+	</sect2>
+
+</sect1>
+
+<sect1 id="s1-test-ldap-tls">
+<title>評価</title>
+
+<para>
+<indexterm><primary>Transport Layer Security, TLS</primary><secondary>評価</secondary></indexterm>
+ここは簡単な部分である。サーバを再起動する:
+<screen width="90">
+<computeroutput>
+&rootprompt; /etc/init.d/ldap restart
+Stopping slapd:                                            [  OK  ]
+Checking configuration files for slapd: config file testing succeeded
+Starting slapd:                                            [  OK  ]
+</computeroutput>
+</screen>
+	次に、<command>ldapsearch</command>を使い、<option>-ZZ</option>オプションを使って
+	<footnote><para><command>man ldapsearch</command>を参照</para></footnote>
+	匿名検索で評価する:
+<screen width="90">
+<computeroutput>
+&rootprompt; ldapsearch -x -b "dc=ldap,dc=abmas,dc=biz" \
+        -H 'ldap://ldap.abmas.biz:389' -ZZ
+</computeroutput>
+</screen>
+	以下のように、サーバを再起動する前と結果は同じであるべきである:
+<screen width="90">
+<computeroutput>
+&rootprompt; ldapsearch -x -b "dc=ldap,dc=abmas,dc=biz" \
+    -H 'ldap://ldap.abmas.biz:389' -ZZ
+
+# extended LDIF
+#
+# LDAPv3
+# base &lt;&gt; with scope sub
+# filter: (objectclass=*)
+# requesting: ALL
+#
+
+# abmas.biz
+dn: dc=ldap,dc=abmas,dc=biz
+objectClass: dcObject
+objectClass: organization
+o: Abmas
+dc: abmas
+
+# Manager, ldap.abmas.biz
+dn: cn=Manager,dc=ldap,dc=abmas,dc=biz
+objectClass: organizationalRole
+cn: Manager
+
+# ABMAS, abmas.biz
+dn: sambaDomainName=ABMAS,dc=ldap,dc=abmas,dc=biz
+sambaDomainName: ABMAS
+sambaSID: S-1-5-21-238355452-1056757430-1592208922
+sambaAlgorithmicRidBase: 1000
+objectClass: sambaDomain
+sambaNextUserRid: 67109862
+sambaNextGroupRid: 67109863
+</computeroutput>
+</screen>
+	何か問題が起きた場合は、<xref linkend="s1-int-ldap-tls"></xref>を読んでみてほしい。
+</para>
+
+</sect1>
+
+<sect1 id="s1-int-ldap-tls">
+<title>トラブルシューティング</title>
+
+<para>
+<indexterm><primary>Transport Layer Security, TLS</primary><secondary>トラブルシューティング</secondary></indexterm>
+TLSを設定しているときに最もよくあるエラーは、何回も説明したように、
+<xref linkend="s1-config-ldap-tls-server"></xref>で入力した<emphasis>Common Name (CN)</emphasis>が、
+使用しているLDAPサーバの、完全に記述されたドメイン名(FQDN)<emphasis>でない</emphasis>という
+ものである。
+</para>
+
+<para>
+他のエラーとしては、<command>ldapsearch</command>コマンドのどこかでタイプミスしたとか、
+<filename>servercrt.pem</filename>と<filename>cacert.pem</filename>に間違ったアクセス
+許可を設定しているかである。<xref linkend="s1-config-ldap-tls-install"></xref>単位に
+<command>chmod 640</command>で設定すべきである。
+</para>
+
+<para>
+それ以外は、ldapのログファイルを読むか、&OL;メーリングリストに参加するのが最も良い方法
+である。
+</para>
+
+</sect1>
+
+</chapter>

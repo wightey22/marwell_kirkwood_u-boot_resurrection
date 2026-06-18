@@ -1,0 +1,11 @@
+<samba:parameter name="wins proxy"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>この真偽値パラメータにより、 <citerefentry><refentrytitle>nmbd</refentrytitle>                                 
+	<manvolnum>8</manvolnum></citerefentry> が別のホストの代理としてブロードキャストによる名前問い合わせに応答するかどうかが設定される。古いクライアントの為に、このパラメータを <constant>yes</constant> にする必要があるかも知れない。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

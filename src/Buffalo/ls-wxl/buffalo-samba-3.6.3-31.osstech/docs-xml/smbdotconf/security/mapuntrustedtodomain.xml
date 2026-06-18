@@ -1,0 +1,33 @@
+<samba:parameter name="map untrusted to domain"
+                 context="G"
+		 type="boolean"
+		 advanced="1"
+		 developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    クライアントが smbd に接続する際に BOGUS\user のような信頼されない
+    ドメイン名を使っている場合、smbd は BOGUS ドメインを自身の SAM 名に
+    置き換えてからそのユーザを認証する。
+    smbd が PDC として動作している場合、置き換えられた名前は DOMAIN\user となる。
+    smbd がドメインのメンバサーバもしくはスタンドアロンサーバとして動作している場合、置き換えられた名前は WORKSTATION\user となる。
+    </para>
+
+    <para>
+    Samba 3.4.0 より前のバージョンでは、smbd がドメインのメンバサーバとして
+    動作している場合、BOGUS の部分は smbd がメンバとして所属
+    しているプライマリドメイン名に置き換えられていた。この場合、
+    認証処理は DOMAIN\user の認証情報を使って DC に委譲される。
+    </para>
+
+    <para>
+    このパラメータが <constant>yes</constant> にセットされている場合、
+    smbd は信頼されないドメイン名をプライマリドメイン名にマッピングするという
+    従来の動作を行う。smbd がドメインのメンバサーバとして動作していない場合、
+    このパラメータは意味を持たない。
+    </para>
+
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

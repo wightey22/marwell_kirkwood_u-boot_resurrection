@@ -1,0 +1,2774 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="passdb">
+<chapterinfo>
+	&author.jelmer;
+	&author.jht;
+	&author.jerry;
+	&author.jeremy;
+	<author>&person.gd;<contrib>LDAP updates</contrib></author>
+	<author>
+		<firstname>Olivier (lem)</firstname><surname>Lemaire</surname>
+		<affiliation>
+			<orgname>IDEALX</orgname>
+			<address><email>olem@IDEALX.org</email></address>
+		</affiliation>
+	</author>
+
+	<pubdate>May 24, 2003</pubdate>
+</chapterinfo>
+<title>アカウント情報データベース</title>
+
+<para>
+<indexterm><primary>アカウントバックエンド</primary></indexterm>
+<indexterm><primary>パスワードバックエンド</primary></indexterm>
+<indexterm><primary>拡張性</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+以前のSamba3リリースでは複数のアカウント情報バックエンドを同時に動作させることが
+できた。この機能はSamba3.0.23からなくなった。Samba3.0.23からは、passdbバックエンド
+は1つのみ指定できる。
+</para>
+
+<para>
+<indexterm><primary>passdb backend</primary></indexterm>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>tdbsam</primary></indexterm>
+<indexterm><primary>ldapsam</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>単一のリポジトリ</primary></indexterm>
+3つのpassdbバックエンドがSambaチームで完全なメンテナンスが行われており、それは以下である:
+<literal>smbpasswd</literal> (旧式)、<literal>tdbsam</literal>(tdbベースのバイナリファイル
+形式)と<literal>ldapsam</literal>(LDAP)。もちろん、<literal>ldapsam</literal>バックエンド
+のみが、POSIX(UNIX)とSambaのユーザとグループアカウント情報を単一のリポジトリに格納できる。
+<literal>smbpasswd</literal>と<literal>tdbsam</literal>バックエンドはSambaユーザ
+アカウントのみ格納する。
+</para>
+
+<para>
+厳密な意味で、3つのアカウントストレージとアクセスシステムがサポートされている。それらの
+1つは旧式である(smbpasswd)。すべての簡単なシステムには <literal>tdbsam</literal>方式
+を使用することを推奨する。<literal>ldapsam</literal>はもっと大規模か、複雑なネット
+ワークで使用すること。
+</para>
+
+<para>
+<indexterm><primary>passdb backend</primary></indexterm>
+<indexterm><primary>account格納の方式</primary></indexterm>
+<indexterm><primary>account storage system</primary></indexterm>
+<indexterm><primary>ユーザと信頼アカウント</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>コンピュータアカウント</primary></indexterm>
+<indexterm><primary>ドメイン間信頼アカウント</primary></indexterm>
+厳格かつ文字通りの意味で、passdbバックエンドはアカウント格納メカニズム(あるいは方法)
+のみである。技術の選択はミスリードの可能性があるが、言い回しの選択で困っている。
+この章では、ユーザと信頼アカウントにフォーカスをあてたアカウント格納システムの
+本質について記述する。信頼アカウントは2つの形式があり、それはマシン信頼アカウント
+(コンピュータアカウント)とドメイン間信頼アカウントである。それらはユーザのような
+エントリとして扱われる。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+Samba-3 は Samba-2.2.x の以下の機能について完全な下位互換性を提供する:
+<indexterm><primary>SAM backend</primary><secondary>smbpasswd</secondary></indexterm>
+<indexterm><primary>SAM backend</primary><secondary>ldapsam_compat</secondary></indexterm>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+</para>
+
+<sect2>
+	<title>下位互換性のあるバックエンド</title>
+
+<variablelist>
+	<varlistentry><term>平文</term>
+		<listitem>
+			<para>
+<indexterm><primary>平文</primary></indexterm>
+<indexterm><primary>平文認証</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>/etc/shadow</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+		これは全く持ってバックエンドではないが、単純化のためにここに表示する。
+		Sambaは伝統的なUNIX/Linuxの<filename>/etc/passwd</filename>と
+                <filename>/etc/shadow</filename>形式のサブシテムに平文認証要求を渡す
+		ように設定できる。Pluggable Authentication Modules (PAM) サポートが
+		あるシステム上では、 全てのPAMモジュールがサポートされる。動作は、
+		Samba-2.2.x の場合と全く同様で、Microsoft Windowsクライアントにより
+		課されるプロトコルの制約も同様に適用される。平文パスワードの使用に
+		関する制約に関する詳細情報は、
+		<link linkend="passdbtech">技術情報の項</link>を参照のこと。
+			</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term>smbpasswd</term>
+		<listitem>
+			<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>LanManパスワード</primary></indexterm>
+<indexterm><primary>NT方式による暗号化パスワード</primary></indexterm>
+<indexterm><primary>SAM</primary></indexterm>
+		このオプションは、Microsoft Windows LanMan と NT の暗号化パスワード
+		及び一部のアカウント情報を格納するフィールドを含む平文ASCII(テキスト)
+		レイアウトを維持する<filename>smbpasswd</filename>ファイルの継続的
+		使用を可能にする。この種のパスワードバックエンドは、Microsoft 
+		Windows NT4/200xサーバと包括的な相互運用を行うために必要な拡張
+		コントロールを提供するための、Microsoft Windows NT/200x SAM
+		(Security Account Manager)情報を一切格納しない。
+			</para>
+
+			<para>
+		このバックエンドは、Samba のより古いバージョンとの下位互換性のために
+		のみ使用するべきである。将来のリリースでは、切り捨てられていくかもしれない。
+			</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term>ldapsam_compat (Samba-2.2 LDAP互換)</term>
+		<listitem>
+			<para>
+<indexterm><primary>ldapsam_compat</primary></indexterm>
+<indexterm><primary>Samba-2.2.x LDAPスキーマ</primary></indexterm>
+<indexterm><primary>OpenLDAPバックエンド</primary></indexterm>
+		これは、Samba-2.2.x LDAP スキーマ拡張を使用する、既存のOpenLDAP
+		バックエンドとの継続的運用を可能にするパスワードバックエンドの
+		オプションである。このオプションはマイグレーションツールとして
+		提供されているが、この時点で強制的にマイグレーションする意味はない。
+		このツールは最終的には切り捨てられることになる。
+			</para>
+		</listitem>
+	</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title>新しいアカウント格納システム</title>
+
+<para>
+Samba-3では多数の新しいパスワードバックエンド機能が導入された。
+<indexterm><primary>SAM backend</primary><secondary>tdbsam</secondary></indexterm>
+<indexterm><primary>SAM backend</primary><secondary>ldapsam</secondary></indexterm>
+</para>
+
+<variablelist>
+	<varlistentry><term>tdbsam</term>
+		<listitem>
+			<para>
+<indexterm><primary>rich database backend</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+		このバックエンドは、ローカルサーバに、リッチなデータベースバックエンドを
+		提供する。このバックエンドは、複数のドメインコントローラ（つまり、PDC+
+		一つ以上のBDCをインストールしている場合には適さない。
+			</para>
+
+			<para>
+<indexterm><primary>extended SAM</primary></indexterm>
+<indexterm><primary>TDB</primary></indexterm>
+<indexterm><primary>binary format TDB</primary></indexterm>
+<indexterm><primary>trivial database</primary></indexterm>
+<indexterm><primary>system access controls</primary></indexterm>
+<indexterm><primary>MS Windows NT4/200x</primary></indexterm>
+		<emphasis>tdbsam</emphasis>パスワードバックエンドは古い
+		<emphasis>smbpasswd</emphasis>情報のほかに、拡張された
+		Microsoft Windows NT/200xのSAM情報をバイナリ形式のTDB(トリビアルデータベース)
+		ファイルに格納する。拡張情報を含むことで、Samba-3が、Microsoft Windows NT4/200x
+		ベースのシステムと同様のアカウントアクセス及びシステムアクセス制御を実現する
+		ことを可能にする。
+			</para>
+
+			<para>
+<indexterm><primary>単純な操作</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+		<emphasis>tdbsam</emphasis>を入れたのは、OpenLDAPを稼動する伴う
+		複雑性と、その間接費用を発生させずに、シンプルななサイト運用を
+		可能にしたいというユーザからの要求にに直接応えるためである。これは、
+		ユーザー数250未満のサイトにのみ推奨する。これより大規模のサイト、
+		または実装では、OpenLDAP の使用またはActive Directoryへの統合を強く
+		推奨する。
+			</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term>ldapsam</term>
+		<listitem>
+			<para>
+<indexterm><primary>rich directory backend</primary></indexterm>
+<indexterm><primary>分散アカウント</primary></indexterm>
+		これは、分散アカウントを導入している場合に、リッチなディレクトリバックエンド
+		を提供する。
+			</para>
+
+			<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>Sambaスキーマ</primary></indexterm>
+<indexterm><primary>スキーマファイル</primary></indexterm>
+<indexterm><primary>examples/LDAP</primary></indexterm>
+		Samba-3ではLDAP用拡張の実装が新しくなり、これにより新しい形式のSambaスキーマを
+		持つOpenLDAPの設定を必要とする。新しい形式のスキーマファイルは、Samba
+		ディストリビューションの
+		<filename class="directory">examples/LDAP</filename>のディレクトリにある。
+			</para>
+
+			<para>
+<indexterm><primary>expands control abilities</primary></indexterm>
+<indexterm><primary>プロファイル</primary></indexterm>
+<indexterm><primary>ホームディレクトリ</primary></indexterm>
+<indexterm><primary>アカウントアクセス制御</primary></indexterm>
+<indexterm><primary>拡張性の向上</primary></indexterm>
+		新しいLDAPの実装は、Sambaの過去のバージョンで可能だったコントロール能力を
+		著しく向上するものである。このバージョンでは、<quote>ユーザーごとの</quote>
+		プロファイル設定、ホームディレクトリ、アカウントアクセス制御、その他
+		多くの設定が可能になった。企業サイトでは、機能性と拡張性の向上要求に、
+		Sambaチームがしっかり耳を傾けたと いうことが理解できるはずである。
+			</para>
+		</listitem>
+	</varlistentry>
+
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+<sect1 id="passdbtech">
+	<title>技術情報</title>
+
+	<para>
+<indexterm><primary>平文パスワード</primary></indexterm>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+	古いWindowsクライアントは、平文パスワードを送信する。Sambaはこれらの
+	パスワードを暗号化し、UNIXユーザデータベースに格納されているハッシュと
+	比較することにより、確認することができる。
+	</para>
+
+	<para>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+<indexterm><primary>LanMan</primary></indexterm>
+<indexterm><primary>平文パスワード</primary></indexterm>
+<indexterm><primary>レジストリ</primary></indexterm>
+	より新しいWindowsクライアントは、平文パスワードのかわりに、暗号化された
+	パスワード(Lanman及びNTハッシュと呼ばれるもの)を送信する。最新のクライアントは、
+	暗号化されたパスワードのみを送信し、クライアントのレジストリが改変されていない
+	限り、平文パスワードを送信することを拒否する。
+	</para>
+
+	<para>
+<indexterm><primary>UNIX風の暗号化パスワード</primary></indexterm>
+<indexterm><primary>変換</primary></indexterm>
+	Sambaはなぜ単純にUNIXパスワードデータベースを使うことが出来ないかという質問は
+	多くの人から聞く。Windowsは、パスワードに対してそれ固有の暗号化形式を要求する。
+	WindowsのパスワードはUNIX形式の暗号化パスワードに変換できない。そのため、標準
+	UNIXユーザデータベースを使うことが出来ず、Lanman ハッシュとNTハッシュは別の所に
+	格納しなければならない。
+	</para>
+
+	<para>
+<indexterm><primary>異なる暗号化パスワード方式</primary></indexterm>
+<indexterm><primary>プロファイル</primary></indexterm>
+<indexterm><primary>ワークステーション</primary></indexterm>
+<indexterm><primary>tdbsam</primary></indexterm>
+	パスワードの暗号化方式が異なるのみならず、WindowsはUNIXユーザデータベースには
+	格納されないような各ユーザに関する特定のデータを格納する。例えば、ユーザが
+	ログインする可能性のあるワークステーション、ユーザのプロファイルが格納されて
+	いる場所等々である。Sambaは<smbconfoption name="passdb backend"/>を使用して
+	この情報を取り出し、格納する。 通常、使用できるバックエンドは、LDAP、tdbsum
+	および平文ファイルである。<smbconfoption name="passdb backend"/>のパラメーター
+	に関する詳細は、&smb.conf;のマニュアルページを参照のこと。
+	</para>
+
+
+	<figure id="idmap-sid2uid">
+		<title>IDMAP: SIDのUIDへの解決</title>
+		<imagefile scale="40">idmap-sid2uid</imagefile>
+	</figure>
+
+	<para>
+	<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+	SIDのUIDへの解決は、Samba の適正運用の根幹を成す。以下の両例で、winbinddが
+	稼動していないか、あるいは、接続できない状況のとき、ローカルのSID/UID解決
+	のみが可能である。<link linkend="idmap-sid2uid">SIDのUIDへの解決</link>
+	および<link linkend="idmap-uid2sid">UIDのSIDへの解決</link>の図を参照のこと。
+	</para>
+
+	<figure id="idmap-uid2sid">
+		<title>IDMAP: SIDのUIDへの解決</title>
+		<imagefile scale="50">idmap-uid2sid</imagefile>
+	</figure>
+
+	<sect2>
+	<title>セキュリティに関する重要な注意事項</title>
+
+		<para>
+<indexterm><primary>SMBパスワードの暗号化</primary></indexterm>
+<indexterm><primary>平文パスワード</primary></indexterm>
+<indexterm><primary>hashed password equivalent</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>secret</primary></indexterm>
+	UNIXとSMBのパスワード暗号化のテクニックは、一見、類似しているように見える。しかし、
+	この類似性は、皮一枚だけの表面的なものである。。UNIXのスキームでは、通常 ログインの際に、
+	平文パスワードをネットワークを通して送信します。これは悪い方法である。SMBの暗号化
+	スキームは、ネットワークを通して平文パスワードを送信することは絶対にないが、ディスク上に
+	16バイトのハッシュ値を格納する。これも悪い方法である。なぜか。それは、16バイトのハッシュ
+	値は、<quote>パスワードと同等</quote>だからである。ユーザのパスワードをハッシュ値から
+	導き出すことはできないが、クライアントに手を加えれば、サーバにアクセスするために使える
+	可能性がある。これは、侵入者の側にかなりの技術的知識があることを前提としてるが、それでも
+	可能であることは確かである。従って、(smbpasswdファイル、 LDAP)いずれのパスワードデータ
+	ベースバックエンドを使用していても、そこに格納されたデータが、全ユーザの平文パスワードを
+	持っているかのように、慎重に取り扱わなければならない。これらのデータベースの内容は極秘とし、
+	ファイルは、適切に保護されていなければならない。
+		</para>
+
+		<para>
+<indexterm><primary>パスワードスキーム</primary></indexterm>
+<indexterm><primary>平文パスワード</primary></indexterm>
+<indexterm><primary>互換</primary></indexterm>
+	理想的には、ネットワーク上でもディスク上でも平文パスワードを持ったり送信したり
+	しないようなパスワードのスキームが欲しいところである。残念ながら、Sambaは他の
+	SMBシステム(Windows NT、Windows for Workgroups、Windows 9x/Me)との互換性を
+	確保しなければならないという要件のために、これは実現できない。
+		</para>
+
+		<para>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+<indexterm><primary>平文パスワード</primary></indexterm>
+	Windows NT 4.0 サービスパック 3は既定値で平文パスワードの送信を無効化している。
+	これにより、暗号化されたパスワードのサポートを使用するか、平文パスワードを再度
+	有効化するように Windows NT レジストリを編集するか、どちらかが必要となる。
+		</para>
+
+		<para>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+<indexterm><primary>ドメイン環境</primary></indexterm>
+	Microsoft Windowsの下記のバージョンは、ドメイン環境にログオンする可能性があるにも
+	かかわらず、完全なドメインセキュリティのプロトコルをサポートしていない:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>MS DOS ネットワーククライアント3.0で基本的なネットワーク リダイレクタがインストールされているもの</para></listitem>
+			<listitem><para>Windows 95で、アップデートされたネットワークリダイレクタがインストールされているもの</para></listitem>
+			<listitem><para>Windows 98 [Second Edition]</para></listitem>
+			<listitem><para>Windows Me</para></listitem>
+		</itemizedlist>
+
+		<note>
+		<para>
+<indexterm><primary>Windows XP Home</primary></indexterm>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>ドメインログオン</primary></indexterm>
+ 	MS Windows XP Home は、ドメインメンバになる機能はなく、ドメインログオンは実行できない。
+		</para>
+		</note>
+
+		<para>
+	下記のバージョンのMicrosoft Windowsは、ドメインセキュリティのプロトコルを完全にサポートしている。
+		</para>
+
+		<itemizedlist>
+			<listitem><para>Windows NT 3.5x.</para></listitem>
+			<listitem><para>Windows NT 4.0.</para></listitem>
+			<listitem><para>Windows 2000 Professional.</para></listitem>
+			<listitem><para>Windows 200x Server/Advanced Server.</para></listitem>
+			<listitem><para>Windows XP Professional.</para></listitem>
+		</itemizedlist>
+
+		<para>
+<indexterm><primary>SMB/CIFS</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>チャレンジ/レスポンスメカニズム</primary></indexterm>
+<indexterm><primary>平文</primary></indexterm>
+<indexterm><primary>暗号化</primary></indexterm>
+<indexterm><primary>ネゴシエート</primary></indexterm>
+	Microsoft SMB/CIFS クライアントの現在のリリース版は全て、ここに説明するSMBの
+	チャレンジ/ レスポンス認証の仕組みをサポートしている。平文認証を有効化しても、
+	クライアントが暗号化による認証に参加する能力を無効化するわけではない。そうではなく、
+	クライアントが平文でも暗号化でもどちらのパスワード認証方式にも対応できるようにする。
+		</para>
+
+		<para>
+<indexterm><primary>キャッシュされた暗号化パスワード</primary></indexterm>
+<indexterm><primary>平文パスワード</primary></indexterm>
+<indexterm><primary>レジストリ変更</primary></indexterm>
+<indexterm><primary>自動再接続</primary></indexterm>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+	Microsoft Windowsのクライアントは、暗号化されたパスワードのみキャッシュする。
+	レジストリの変更により、平文パスワードが再度有効化されても、平文パスワードは
+	キャッシュされない。このことは、ネットワーク接続が切れた場合、 キャッシュされた
+	(即ち暗号化された)パスワードのみがリソースサーバに送られて、自動再接続を実行する
+	ために使用されるということを意味する。リソースサーバが暗号化された パスワードを
+	サポートしていない場合、自動再接続はできない。暗号化されたパスワードの使用を強く
+	推奨する。
+		</para>
+
+		<sect3>
+		<title>暗号化されたパスワードの長所</title>
+
+			<itemizedlist>
+				<listitem><para>
+<indexterm><primary>ネットワーク経由での送信</primary></indexterm>
+<indexterm><primary>ネットワークスニファ</primary></indexterm>
+<indexterm><primary>SMBサーバ</primary></indexterm>
+		平文パスワードがネットワーク経由で送信されない。誰かがネットワーク
+		スニファーを使用して、SMBサーバに送られるパスワードを記録することができない。
+				</para></listitem>
+
+				<listitem><para>
+<indexterm><primary>どこにも保存されない</primary></indexterm>
+<indexterm><primary>メモリ</primary></indexterm>
+<indexterm><primary>ディスク</primary></indexterm>
+		平文パスワードが、メモリにもディスクにも、どこにも保存されない。
+				</para></listitem>
+ 
+				<listitem><para>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+<indexterm><primary>ユーザレベルのセキュリティ</primary></indexterm>
+<indexterm><primary>パスワードプロンプト</primary></indexterm>
+<indexterm><primary>SMB暗号化</primary></indexterm>
+		Windows NTは暗号化パスワードをサポートしないサーバとやりとりする
+		ことを好まない。また、サーバーが「userレベル」のセキュリティモード
+		になっているとき、そのサーバを ブラウズすることを拒否する。そのため、
+		接続の度に、ユーザにパスワードを入力するように要求するので、大変厄介
+		である。 これを止めさせる唯一の方法は、SMB暗号を使用することである。
+				</para></listitem>
+
+				<listitem><para>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+<indexterm><primary>自動再接続</primary></indexterm>
+		暗号化パスワードのサポートにより、共有(リソース)への自動再接続が可能になる。
+				</para></listitem>
+
+				<listitem><para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+		PDC/BDC の運用に暗号化パスワードは不可欠である。 
+				</para></listitem>
+			</itemizedlist>
+		</sect3>
+
+
+		<sect3>
+		<title>暗号化されていないパスワードの長所</title>
+
+			<itemizedlist>
+				<listitem><para>
+<indexterm><primary>メモリ中へのキャッシュ</primary></indexterm>
+		平文パスワードは、ディスクに保存されず、メモリにキャッシュされない。
+				</para></listitem>
+
+				<listitem><para>
+<indexterm><primary>Login</primary></indexterm>
+<indexterm><primary>FTP</primary></indexterm>
+		平文パスワードは、LoginやFTPなどの、UNIXの他のサービスと同じパスワード
+		ファイルが使用できる。
+				</para></listitem>
+
+				<listitem><para>
+<indexterm><primary>Telnet</primary></indexterm>
+<indexterm><primary>FTP</primary></indexterm>
+		TelnetやFTPなどの他のサービスが、平文パスワードをネットワーク上で
+		送信している。従って、SMBのために送信しても大勢に影響はない。
+				</para></listitem>
+			</itemizedlist>
+		</sect3>
+	</sect2>
+
+	<sect2>
+	<title>Microsoft Windows と UNIX の間の、ユーザ識別子のマッピング</title>
+
+	<para>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>マッピング</primary></indexterm>
+	Microsoft Windows NT4/200xがセキュリティ識別子(SID)を要求するのと同様に、
+	UNIX/Linuxの全ての操作は、ユーザ識別子(UID)を要求する。SambaはMicrosoft Windows
+	のユーザーをUNIX/LinuxのUID にマッピングするために、二つの方法を提供する。
+	</para>
+
+	<para>
+<indexterm><primary>Samba SAM</primary></indexterm>
+<indexterm><primary>SAM</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>アカウント情報データベース</primary></indexterm>
+<indexterm><primary>ローカルユーザアカウント</primary></indexterm>
+	第一に、すべてのSamba SAM(セキュリティアカウントマネージャデータベース)
+	アカウントが、そのアカウントとマッピングされるべきUNIX/Linux UID を必要とする。
+	アカウント情報データベースにユーザが追加されるにつれ、SambaはSambaのホストOSに
+	そのアカウントを追加するために、<smbconfoption name="add user script"/>
+	インタフェースを呼ぶ。本質的には、ローカルSAMの中の全アカウントが、
+	ローカルユーザアカウントを必要とする。
+	</para>
+
+	<para>
+	<indexterm><primary>idmap uid</primary></indexterm>
+	<indexterm><primary>idmap gid</primary></indexterm>
+	<indexterm><primary>UID</primary></indexterm>
+	<indexterm><primary>SAM</primary></indexterm>
+	<indexterm><primary>外部ドメイン</primary></indexterm>
+	<indexterm><primary>非メンバのWindowsクライアント</primary></indexterm>
+	<indexterm><primary>SID</primary></indexterm>
+	Windows SIDをUNIX UIDにマップする2番目の方法は、&smb.conf;中の
+	<emphasis>idmap uid</emphasis>と<emphasis>idmap gid</emphasis>パラメータを経由する
+	方法である。これらのパラメータの情報についてはマニュアルページを参照のこと。リモート
+	(非メンバのWindowsクライアントあるいは外部ドメイン)SAMサーバからのユーザマッピング
+	時にはこれらのパラメータは不可欠である。
+	</para>
+
+	</sect2>
+
+	<sect2 id="idmapbackend">
+	<title>分散マシン上の共通のUID/GIDマッピング</title>
+
+	<para>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>NFS</primary></indexterm>
+<indexterm><primary>rsync</primary></indexterm>
+	Samba-3は、分散ネットワーク環境中で、すべてのサーバ上で同一のUIDとGIDを使うことを
+	可能にする特別な機能を持っている。分散ネットワークとは、PDCが存在するもの、一つ以上の
+	BDCがあるもの、あるいは1つ以上のドメインメンバサーバがあるものである。なぜこれが
+	重要かというと、ファイルが1つ以上のプロトコル(たとえばNFS)で共有され、たとえば
+	<command>rsync</command>のようなツールを使ってUNIX/Linuxシステム間で、ユーザが
+	ファイルをコピーすることがあるからである。
+	</para>
+
+	<para>
+<indexterm><primary>LDAPベース</primary></indexterm>
+<indexterm><primary>idmap バックエンド</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>SAM バックエンド</primary></indexterm>
+<indexterm><primary>LDAP idmap バックエンド</primary></indexterm>
+	<indexterm><primary>idmapバックエンド</primary></indexterm>
+	<parameter>idmap backend</parameter>と呼ばれるパラメータを使って、
+	特別な機能を有効に出来る。このパラメータの既定値は空の文字列である。
+	技術的に、LDAPベースのidmapバックエンドをUIDとGID向けに使うことは可能
+	であるが、SAMバックエンド用にLDAPの使用も行うネットワーク設定用にこれを
+	使う時にこれは最も意味を持つ。この設定については
+	<link linkend="idmapbackendexample">LDAP idmap バックエンドを使う設定例</link>
+	にある。
+	</para>
+
+<indexterm><primary>SAM バックエンド</primary><secondary>ldapsam</secondary></indexterm>
+<example id="idmapbackendexample">
+<title>LDAP idmap バックエンドを使う設定例</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="idmap backend">ldap:ldap://ldap-server.quenya.org:636</smbconfoption>
+<smbconfcomment>Alternatively, this could be specified as:</smbconfcomment>
+<smbconfoption name="idmap backend">ldap:ldaps://ldap-server.quenya.org</smbconfoption>
+</smbconfblock>
+</example>
+
+	<para>
+<indexterm><primary>LDAPバックエンド</primary></indexterm>
+<indexterm><primary>PADLバックエンド</primary></indexterm>
+	LDAPバックエンドに重要な仕事をさせたいネットワーク管理者は、遅かれ
+	早かれPADLソフトウェアによって優れた功績を知ることになろう。
+	PADL <ulink url="http://www.padl.com"/>はとても興味深い一連の
+	ツールをオープンソースで作成し、公開している。これらのツールは
+	以下を含む:
+	</para>
+
+	<itemizedlist>
+		<listitem>
+		<para>
+<indexterm><primary>nss_ldap</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>AIX</primary></indexterm>
+<indexterm><primary>Linux</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>Solaris</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+		<emphasis>nss_ldap:</emphasis>AIX、Linux、Solarisやその他のOS向けの
+		ネイティブなネームサービスサポートを提供するLDAPネームサービススイッチ
+		(NSS)モジュール。このツールはUID/GIDの一元的な格納と検索に使う
+		ことができる。
+		</para>
+		</listitem>
+
+		<listitem>
+		<para>
+<indexterm><primary>pam_ldap</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>アクセス認証</primary></indexterm>
+		<emphasis>pam_ldap:</emphasis>PAMモジュールで、UNIX/Linuxシステムの
+		アクセス認証のLDAP統合を提供する。
+		</para>
+		</listitem>
+
+		<listitem>
+		<para>
+<indexterm><primary>idmap_ad</primary></indexterm>
+<indexterm><primary>IDMAPバックエンド</primary></indexterm>
+<indexterm><primary>RFC 2307</primary></indexterm>
+<indexterm><primary>PADL</primary></indexterm>
+		<emphasis>idmap_ad:</emphasis>PADL Web
+		<ulink url="http://www.padl.com/download/xad_oss_plugins.tar.gz">サイト</ulink>
+		からの、Microsoftサービスのための、UNIX RFC2307スキーマを
+		サポートするIDMAPバックエンド。
+		</para>
+		</listitem>
+	</itemizedlist>
+
+	</sect2>
+
+	<sect2>
+	<title>LDAPに関するコメント</title>
+
+	<para>
+<indexterm><primary>LDAP</primary><secondary>ディレクトリ</secondary></indexterm>
+<indexterm><primary>アーキテクチャ</primary></indexterm>
+<indexterm><primary>FIM</primary></indexterm>
+<indexterm><primary>SSO</primary></indexterm>
+	現在の情報技術界で、多くの興奮と関心がLDAPディレクトリに向けられている。
+	LDAPアーキテクチャは高度に拡張性があるように設計された。また、広範囲な
+	OSとプラットフォームを取り巻く、非常にたくさんのアプリケーションの潜在的
+	な領域をまたがって使うようにも設計されている。LDAP技術は会社全体のシングル
+	サインオン(SSO)環境の基盤となる連携アイデンティティ管理(FIM)ソリューション
+	の中心部をなしている(訳注:TivoliとかRSAでこのような製品がある様子)。
+	</para>
+
+	<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>eDirectory</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+	LDAPの実装は広範囲な種類のプラットフォームで構築されている。これは、
+	Microsoft Windows Active Directory(ADS)、NovellのeDirectoryやその他の
+	もののの中心に位置する。LDAPによるディレクトリサービスの実装は、
+	新しい世代のアプリケーションと同様に古いものとも相互に関係し、
+	それらはすべて何らかの認証サービスに依存する。
+	</para>
+
+	<para>
+<indexterm><primary>LDAPディレクトリ</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+<indexterm><primary>intermediate tools</primary></indexterm>
+<indexterm><primary>ミドルウェア</primary></indexterm>
+<indexterm><primary>central environment</primary></indexterm>
+<indexterm><primary>インフラストラクチャ</primary></indexterm>
+<indexterm><primary>ログインシェル</primary></indexterm>
+<indexterm><primary>mail</primary></indexterm>
+<indexterm><primary>メッセージングシステム</primary></indexterm>
+<indexterm><primary>quota制御</primary></indexterm>
+<indexterm><primary>印刷システム</primary></indexterm>
+<indexterm><primary>DNSサーバ</primary></indexterm>
+<indexterm><primary>DHCPサーバ</primary></indexterm>
+	UNIXのサービスは、ツールやユーティリティを介することによって、LDAPディレクトリ
+	の情報を認証のために利用することが出来る。LDAPディレクトリ
+	とミドルウェアのツールとユーティリティからなる統合環境により、すべての
+	ユーザが一元管理されたUNIXプラットフォームにアクセスすることが可能になる。
+	プラットフォームは、必要に応じて物理的に分散配置されてもよい。この機構の
+	恩恵を受けるアプリケーションとしては、UNIXログインシェル、メールとメッセージ
+	システム、quota制御、印刷システム、DNSサーバ、DHCPサーバやもちろんSambaも
+	含まれる。
+	</para>
+
+	<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>passdb backend</primary></indexterm>
+<indexterm><primary>scalable</primary></indexterm>
+<indexterm><primary>SAM backend</primary></indexterm>
+<indexterm><primary>LDAP directory</primary></indexterm>
+<indexterm><primary>management costs</primary></indexterm>
+	多くのサイトが、Samba用に拡張性のあるpassdbバックエンドを提供するために、
+	まずはじめにLDAPをインストールする。その他はSamba SAMバックエンドのような
+	新しいユーザのために存在するLDAPディレクトリに適合することが必要な場面に
+	直面する。Sambaに対する特別な必要性と魅力が何であっても、LDAPディレクトリ
+	構造とその実装のデザインに関する決定は、そのサイトの永続的な本質である。
+	これらは、長期にわたる情報システム管理コストに影響する広範囲な影響がある。
+	</para>
+
+	<para>
+<indexterm><primary>LDAP deployment</primary></indexterm>
+<indexterm><primary>ディレクトリ情報ツリー</primary><see>DIT</see></indexterm>
+	LDAPの展開を急いではならない。どのように、ディレクトリ情報ツリーが現在と
+	将来のサイトのニーズに影響するかのデザインを、それらが使える可能性と同じ
+	ように理解する時間を取ること。SambaのSAM情報は、サイトからサイトに異なる
+	DIT内に格納すべきであり、おのおのの実装において新しい経験が得られる。
+	最初の実装で目が覚め、2番目の実装では心配事が出来、三世代目でやっとうまく
+	いくというのは、LDAPのベテランはよく理解していることである。
+	</para>
+
+	<sect3>
+	<title>LDAPとSambaに対する注意</title>
+
+	<para>
+<indexterm><primary>POSIX identity</primary></indexterm>
+<indexterm><primary>ネットワーク環境</primary></indexterm>
+<indexterm><primary>ユーザアカウント</primary></indexterm>
+<indexterm><primary>グループアカウント</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>ドメイン間信頼アカウント</primary></indexterm>
+<indexterm><primary>intermediate information</primary></indexterm>
+	SambaはUNIX POSIX識別情報を、SambaとWindowsネットワーク環境に特有の
+	情報を格納する場所と同様に必要とする。取り扱われなければならない、
+	最もよく使われる情報はユーザアカウント、グループアカウント、マシン
+	信頼アカウント、ドメイン間信頼アカウントとSamba内部で使う固有の中間
+	情報を含む。
+	</para>
+
+	<para>
+<indexterm><primary>deployment guidelines</primary></indexterm>
+<indexterm><primary>HOWTO文書</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+	この文書中の、展開ガイドラインは、他の本とインターネット上で公開されて
+	いるHOWTO文書と同じように、出来上がっているディレクトリデザインと実装に
+	適合するわけではない。存在するDITは、共通のソース中で提案された単純な
+	情報レイアウトに適合することが出来ないかもしれない。更に追加すると、
+	Samba用に使われるLDAPディレクトリを提供するのに使われる共通スクリプトと
+	ツールはあなたの要求に適合しないかもしれない。
+	</para>
+
+	<para>
+<indexterm><primary>存在する LDAP DIT</primary></indexterm>
+	これは一般的ではないが、存在するLDAP DITを持つサイトのために、サイト
+	固有のスクリプトとユーティリティ一式を作成する必要がある場合に、サイト
+	操作のスコープ内でSambaを供給することは可能である。DITを使ってユーザと
+	グループアカウントを配布する方法はこれをチャレンジングなことにさせる。
+	解決方法は、もちろん、価値があることであるが、それを行うための試行錯誤は
+	チャレンジングである。サイトの要求を理解する時間を取り、急いで提供する
+	ことは避けること。
+	</para>
+
+	<para>
+<indexterm><primary>スクリプト</primary></indexterm>
+<indexterm><primary>ツール</primary></indexterm>
+	上記から、サイトに適合しないスクリプトとツールをむやみやたらに使わないこと。
+	存在する基盤が、不適切なツールの不用意な使用によって被害を被らないことを
+	確実にするために、すべてのスクリプトを、それを実行する前に検査して検証すること。
+	</para>
+
+	</sect3>
+
+	</sect2>
+
+	<sect2>
+	<title>LDAPディレクトリとWindowsのコンピュータアカウント</title>
+
+		<para>
+<indexterm><primary>turnkey solution</primary></indexterm>
+<indexterm><primary>LDAP.</primary></indexterm>
+<indexterm><primary>frustrating experience</primary></indexterm>
+	SambaはLDAPに対するターンキーソリューションを提供しない。Sambaとの統合の
+	前に、LDAPのデザインと設定を行う事は最も良いことである。LDAPの実用的な
+	知識はSambaの統合を容易にし、LDAPの知識がない場合には、いらいらした経験
+	しか得られない。
+		</para>
+
+		<para>
+<indexterm><primary>コンピュータアカウント</primary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+	コンピュータ(マシン)アカウントは、この章で説明されている、若干の制約を
+	受けるLDAPディレクトリサブジェクト中の好みの位置に配置できる。
+		</para>
+
+		<para>
+<indexterm><primary>POSIX</primary></indexterm>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>コンピュータアカウント</primary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+<indexterm><primary>Windows NT4/200X</primary></indexterm>
+<indexterm><primary>ユーザアカウント</primary></indexterm>
+<indexterm><primary>信頼アカウント</primary></indexterm>
+	コンピュータ(マシン)アカウントのPOSIXとsambaSamAccountコンポーネントは、
+	両者ともSambaによって使われる。そのため、マシンアカウントは、Windows 
+	NT/200xが扱うのと同じ方法で、Samba内部で扱われる。ユーザアカウントと
+	マシンアカウントは、マシンアカウントが$文字で終わることを除いてお互い
+	を識別できず、信頼アカウントも同じである。
+		</para>
+
+		<para>
+<indexterm><primary>ユーザ</primary></indexterm>
+<indexterm><primary>グループ</primary></indexterm>
+<indexterm><primary>マシン</primary></indexterm>
+<indexterm><primary>信頼</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+	有効なUNIX uidに結びつくWindowsのユーザ、グループ、マシン、信頼およびその他の
+	アカウントの必要性は、遙か昔前のSambaの開発時に決められた。この決定が覆されたり
+	変更することは、Samba-3.x系列の間にはありそうもない。
+		</para>
+
+		<para>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+	Windows SIDからのUID解決はSambaが動作しているホストOSを参照しなければならない
+	メカニズムによって、Samba内で行われる。NSSは、それが動いているすべてのホスト
+	OSについて全部を知る必要があるということから、(Sambaのような)アプリケーション
+	を隠蔽する良いメカニズムである。
+		</para>
+
+		<para>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>passwd</primary></indexterm>
+<indexterm><primary>shadow</primary></indexterm>
+<indexterm><primary>group</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+	SambaはNSS制御(設定)ファイル中の<quote>passwd</quote>、<quote>shadow</quote>
+	と<quote>group</quote>機能経由でホストOSが提供するUIDを問い合わせる。これを
+	達成するための最適なツールはUNIX管理者の決定にゆだねられている。それはSamba
+	によっては強制されない。Sambaは1つの方法としてそのサポートライブラリとwinbindd
+	を提供する。これをLDAP経由で行う事は可能で、すべてのアカウントエンティティが
+	LDAPディレクトリ中にあることが可能なような適切なフックを提供する。
+		</para>
+
+		<para>
+<indexterm><primary>PADL</primary></indexterm>
+<indexterm><primary>nss_ldap</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>documentation</primary></indexterm>
+	多くの人に対して、良い選択肢は、PADL nss_ldapライブラリを使うことである。
+	このユーティリティは、コンピュータアカウントがPOSIX/UNIXアカウントのUID
+	に解決できるように設定されねばならない。これは基本的にLDAPのデザインの問題
+	である。Sambaメーリングリストとドキュメントで提供される情報は役に立つ例だけ
+	を提供するようになっている。LDAPディレクトリのデザインは複雑な問題であり、
+	この文書の範囲外である。
+		</para>
+
+	</sect2>
+
+</sect1>
+
+<sect1 id="acctmgmttools">
+<title>アカウント管理ツール</title>
+
+<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+<indexterm><primary>管理ツール</primary></indexterm>
+Sambaはユーザとマシンアカウントを管理するための2つのツールを提供する:
+<command>smbpasswd</command>と<command>pdbedit</command>である。
+</para>
+
+<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>password aging</primary></indexterm>
+<indexterm><primary>失敗したログイン</primary></indexterm>
+<command>pdbedit</command>はSambaユーザアカウント情報に加えてアカウントポリシーを
+管理するために使うことが出来る。ポリシー管理機能は、パスワードのエージングと
+ログイン失敗の扱いの管理を行うドメインの既定値の設定を管理するために使われる。
+</para>
+
+<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>storage mechanism</primary></indexterm>
+<indexterm><primary>SambaSAMAccount</primary></indexterm>
+<indexterm><primary>net</primary></indexterm>
+何人かは、名前がSambaSAMAccount情報への格納メカニズムを参照しているために、
+参照が<literal>smbpasswd</literal>担っていることに困惑することがある。
+しかし、これはユーティリティツールの名前でもある。このツールは結局、
+<command>net</command>ツールセット(<link linkend="NetCommand">Netコマンド</link>を参照)
+という、新しく追加された新しい機能に取り替えられることになる。
+</para>
+
+	<sect2>
+	<title><command>smbpasswd</command>ツール</title>
+
+		<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>passwd</primary></indexterm>
+<indexterm><primary>yppasswd</primary></indexterm>
+<indexterm><primary>passdb backend</primary></indexterm>
+<indexterm><primary>storage methods</primary></indexterm>
+	<command>smbpasswd</command>は<command>passwd</command>と<command>yppasswd</command>
+	プログラムに似たユーティリティである。これはpassdbバックエンド中の2つの32バイト
+	パスワードフィールドを管理する。このユーティリティは実際のアカウントと、(&smb.conf;
+	ファイル中の <parameter>passdb backend</parameter>によって指定される)パスワード
+	格納方式とは独立して動作する。
+		</para>
+
+		<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>クライアント-サーバモード</primary></indexterm>
+	<command>smbpasswd</command>は、ユーザのパスワードを変更する時に、ローカルのsmbd
+	に接続する時にクライアント-サーバモードで動作する。これは非常なメリットがある。
+		</para>
+
+		<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>パスワードの変更</primary></indexterm>
+	<command>smbpasswd</command>はWindows NT上のパスワードを変更する能力もある(これは
+	NTドメインのユーザのパスワードを変更する時に、NT PDCにその要求を送る時にのみ動作
+	する)。
+		</para>
+
+		<para>
+		<indexterm><primary>ユーザ管理</primary></indexterm>
+		<indexterm><primary>ユーザアカウント</primary><secondary>追加/削除</secondary></indexterm>
+		<command>smbpasswd</command>は以下のように使うことが出来る:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>ユーザまたはマシンアカウントの<emphasis>追加</emphasis>。</para></listitem>
+			<listitem><para>ユーザまたはマシンアカウントの<emphasis>削除</emphasis>。</para></listitem>
+			<listitem><para>ユーザまたはマシンアカウントの<emphasis>有効化</emphasis>。</para></listitem>
+			<listitem><para>ユーザまたはマシンアカウントの<emphasis>無効化</emphasis>。</para></listitem>
+			<listitem><para>ユーザパスワードの<emphasis>削除</emphasis>。</para></listitem>
+			<listitem><para>ドメイン間信頼アカウントの<emphasis>管理</emphasis>。</para></listitem>
+		</itemizedlist>
+
+		<para>
+		通常のユーザでsmbpasswdを実行するには、以下のように入力する:
+		</para>
+
+		<para>
+<screen>
+&prompt;<userinput>smbpasswd</userinput>
+<prompt>Old SMB password: </prompt><userinput><replaceable>secret</replaceable></userinput>
+</screen>
+		<replaceable>secret</replaceable>には、古いパスワードを入力するか、もしも
+		古いパスワードがなければ単にリターンキーのみを入力する。
+<screen>
+<prompt>New SMB Password: </prompt><userinput><replaceable>new secret</replaceable></userinput>
+<prompt>Repeat New SMB Password: </prompt><userinput><replaceable>new secret</replaceable></userinput>
+</screen>
+		</para>
+
+		<para>
+		もしも古い値が、このユーザに対して格納されている現在の値と異なる場合か、
+		2つの新しい値が一致しない場合、パスワードは変更されない。
+		</para>
+
+		<para>
+<indexterm><primary>SMB password</primary></indexterm>
+		普通のユーザによって起動された場合、コマンドはそのユーザのみのSMBパスワード
+		のみ変更できる。
+		</para>
+
+		<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>SMB password</primary></indexterm>
+		rootで実行される場合、<command>smbpasswd</command>はSMBパスワードを変更
+		したいユーザ名をオプションの引数として指定できる。rootで実行される場合、
+		<command>smbpasswd</command>は古いパスワードの値をチェックするための
+		プロンプトを出さないので、パスワードを忘れたユーザのパスワードを設定できる。
+		</para>
+
+		<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>passwd</primary></indexterm>
+<indexterm><primary>yppasswd</primary></indexterm>
+<indexterm><primary>change capabilities</primary></indexterm>
+		<command>smbpasswd</command>は、<command>passwd</command>や<command>yppasswd</command>
+		コマンドを使っているUNIXユーザに親しみやすい方法で動作するように設計されて
+		いる。管理用として設計されているが、このツールは基本的なユーザレベルの
+		パスワード変更機能を提供する。
+		</para>
+
+		<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+		<command>smbpasswd</command>,の使い方の詳細は、マニュアルページ(最終的な
+		参照)を参照すること。
+		</para>
+	</sect2>
+
+	<sect2 id="pdbeditthing">
+	<title><command>pdbedit</command>ツール</title>
+
+		<para>
+		<indexterm><primary>pdbedit</primary></indexterm>
+		<indexterm><primary>ユーザ管理</primary></indexterm>
+		<indexterm><primary>アカウントポリシー</primary></indexterm>
+		<indexterm><primary>ユーザアカウントの</primary><secondary>追加/削除</secondary></indexterm>
+		<command>pdbedit</command>はrootでのみ使えるツールである。これは、
+		ドメイン全体でのアカウントポリシーの設定のようにpassdbバックエンド
+		を管理するのに使われる。<command>pdbedit</command>は以下のように使える:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>ユーザアカウントの追加、削除および変更。</para></listitem>
+			<listitem><para>ユーザアカウントの表示。</para></listitem>
+			<listitem><para>ユーザアカウントの移行(migrate)。</para></listitem>
+			<listitem><para>グループアカウントの移行。</para></listitem>
+			<listitem><para>アカウントポリシーの管理。</para></listitem>
+			<listitem><para>ドメインアクセスポリー設定の管理。</para></listitem>
+		</itemizedlist>
+
+		<para>
+		<indexterm><primary>Sarbanes-Oxley</primary></indexterm>
+		上場企業会計改革および投資家保護法(いわゆる米国SOX法)下で、アメリカの企業と
+		組織は一連の<literal>内部統制</literal>と伝達手段、記録、会計データの
+		保護を実施することが必要となった。米国SOX法はさらに以下の点についても影響
+		する:
+		</para>
+
+		<orderedlist>
+		<listitem><para>財務データを格納する情報システムにだれがアクセスするかということ。</para></listitem>
+		<listitem><para>どのように個人情報と会計情報が、従業員とビジネスパートナーとの間で扱われるかと言うこと。</para></listitem>
+		<listitem><para>どのようにセキュリティの欠陥を管理するかと言うこと。</para></listitem>
+		<listitem><para>すべての情報システムへのセキュリティとパッチレベル管理。</para></listitem>
+		<listitem><para>どのように情報システムの変更が文書化され、追跡できるようになるかと言うこと。</para></listitem>
+		<listitem><para>どのように情報アクセス制御が実装されて管理されているかと言うこと。</para></listitem>
+		<listitem><para>変更点とセキュリティに関するすべての情報システムの監査機能。</para></listitem>
+		<listitem><para>プライバシーを確実にするための規律手順と制御。</para></listitem>
+		</orderedlist>
+
+		<para>
+		<indexterm><primary>責任</primary></indexterm>
+		<indexterm><primary>コンプライアンス</primary></indexterm>
+		手短に言うと、米国SOX法は、ビジネス関連の情報システムに関して責任を
+		強める道具である。特に会計データ処理と個人情報の記録に使われるすべての
+		情報システムのコンプライアンスを強化する。同様な責任は世界中で要求され
+		ている。
+		</para>
+
+		<para>
+		<indexterm><primary>法律</primary></indexterm>
+		<indexterm><primary>規則</primary></indexterm>
+		<indexterm><primary>pdbedit</primary></indexterm>
+		<indexterm><primary>アクセス制御</primary></indexterm>
+		<indexterm><primary>アカウント管理</primary></indexterm>
+		政府の法律に従って情報システム操作を許可するSambaのツールと機能に
+		精通している必要性は明らかである。<command>pdbedit</command>は
+		アカウントとシステムアクセス制御とポリシーを管理する能力を提供する
+		唯一のSambaツールである。Samba-3シリーズの残存ライフサイクル中、
+		この重要な領域で新しいツールが実装されることはあり得る。
+		</para>
+
+		<para>
+		Sambaと比較した場合のWindows NT4で有効なドメイングローバルポリシー
+		制御は<link linkend="policycontrols">NT4 ドメイン対 Sambaポリシー制御</link>
+		中にある。
+		</para>
+
+		<table id="policycontrols">
+		<title>NT4ドメイン対Sambaポリシー制御</title>
+            <tgroup cols="5">
+                <colspec align="left" colwidth="2*"/>
+                <colspec align="left" colwidth="2*"/>
+                <colspec align="center" colwidth="1*"/>
+                <colspec align="center" colwidth="1*"/>
+                <colspec align="center" colwidth="1*"/>
+                <thead>
+                    <row>
+                        <entry><para>NT4ポリシー名</para></entry>
+                        <entry><para>Sambaポリシー名</para></entry>
+                        <entry><para>NT4 レンジ</para></entry>
+                        <entry><para>Samba レンジ</para></entry>
+                        <entry><para>Samba 既定値</para></entry>
+                    </row>
+                </thead>
+                <tbody>
+                    <row>
+					<entry><para>Maximum Password Age(パスワード有効期間)</para></entry>
+					<entry><para>maximum password age</para></entry>
+					<entry><para>0 - 999 (日)</para></entry>
+					<entry><para>0 - 4294967295 (秒)</para></entry>
+					<entry><para>4294967295</para></entry>
+                    </row>
+                    <row>
+					<entry><para>Minimum Password Age(パスワード変更禁止期間)</para></entry>
+					<entry><para>minimum password age</para></entry>
+					<entry><para>0 - 999 (日)</para></entry>
+					<entry><para>0 - 4294967295 (秒)</para></entry>
+					<entry><para>0</para></entry>
+                    </row>
+                    <row>
+					<entry><para>Mimimum Password Length(最小パスワード長)</para></entry>
+					<entry><para>min password length</para></entry>
+					<entry><para>1 - 14 (文字)</para></entry>
+					<entry><para>0 - 4294967295 (文字)</para></entry>
+					<entry><para>5</para></entry>
+                    </row>
+                    <row>
+					<entry><para>Password Uniqueness(パスワード履歴)</para></entry>
+					<entry><para>password history</para></entry>
+					<entry><para>0 - 23 (#)</para></entry>
+					<entry><para>0 - 4294967295 (#)</para></entry>
+					<entry><para>0</para></entry>
+                    </row>
+                    <row>
+					<entry><para>Account Lockout - Reset count after(アカウントロックアウト期間)</para></entry>
+					<entry><para>reset count minutes</para></entry>
+					<entry><para>1 - 99998 (分)</para></entry>
+					<entry><para>0 - 4294967295 (分)</para></entry>
+					<entry><para>30</para></entry>
+                    </row>
+                    <row>
+					<entry><para>Lockout after bad logon attempts(ロックアウトの閾値)</para></entry>
+					<entry><para>bad lockout attempt</para></entry>
+					<entry><para>0 - 998 (#)</para></entry>
+					<entry><para>0 - 4294967295 (#)</para></entry>
+					<entry><para>0</para></entry>
+                    </row>
+                    <row>
+					<entry><para>*** Not Known ***</para></entry>
+					<entry><para>disconnect time</para></entry>
+					<entry><para>TBA</para></entry>
+					<entry><para>0 - 4294967295</para></entry>
+					<entry><para>0</para></entry>
+                    </row>
+                    <row>
+					<entry><para>Lockout Duration(ロックアウト閾値のリセット)</para></entry>
+					<entry><para>lockout duration</para></entry>
+					<entry><para>1 - 99998 (min)</para></entry>
+					<entry><para>0 - 4294967295 (min)</para></entry>
+					<entry><para>30</para></entry>
+                    </row>
+                    <row>
+					<entry><para>Users must log on in order to change password</para></entry>
+					<entry><para>user must logon to change password</para></entry>
+					<entry><para>0/1</para></entry>
+					<entry><para>0 - 4294967295</para></entry>
+					<entry><para>0</para></entry>
+                    </row>
+                    <row>
+					<entry><para>*** Registry Setting ***</para></entry>
+					<entry><para>refuse machine password change(マシンパスワード変更の禁止)</para></entry>
+					<entry><para>0/1</para></entry>
+					<entry><para>0 - 4294967295</para></entry>
+					<entry><para>0</para></entry>
+                    </row>
+				</tbody>
+			</tgroup>
+		</table>
+
+		<para>
+		<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>ポリシー設定</primary></indexterm>
+<indexterm><primary>アカウントセキュリティ</primary></indexterm>
+<indexterm><primary>smbpasswd</primary></indexterm>
+		<command>pdbedit</command>ツールはアカウントセキュリティとポリシー
+		設定を管理できる唯一のツールである。これは、smbpasswdが出来ること
+		と同様のことを含むスーパーセットである。
+		</para>
+
+		<para>
+		<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>アカウントのインポート/エクスポート</primary></indexterm>
+<indexterm><primary>passdbバックエンド</primary></indexterm>
+		<command>pdbedit</command>の用途の中で特に重要なものの一つとして、
+		passdbバックエンドから他へのアカウント情報のインポート/エクスポート
+		機能がある。
+		</para>
+
+		<sect3>
+		<title>ユーザアカウントマネージャ</title>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>システムアカウント</primary></indexterm>
+<indexterm><primary>ユーザアカウント</primary></indexterm>
+<indexterm><primary>ドメインユーザマネージャ</primary></indexterm>
+<indexterm><primary>add user script</primary></indexterm>
+<indexterm><primary>interface scripts</primary></indexterm>
+		<command>pdbedit</command>ツールは<command>smbpasswd</command>ツールと
+		同様、UNIX/Linuxシステムアカウントデータベース(バックエンド)中にすでに
+		存在するPOSIXユーザアカウントを必要とする。システム管理者の責任と
+		考えられるので、ユーザアカウントを作成するためにOSを呼び出すことは
+		どちらのツールも行わない。NT4のドメインユーザマネージャがアカウント
+		を追加するために使われた時、Sambaは、ユーザ、グループ、マシンアカウント
+		が正しく作成され、変更されることを行うために、(他のインタフェース
+		スクリプトと同様)<literal>add user script</literal>を使う。
+		 <command>pdbedit</command>ツールを使用しても、それらのインタフェース
+		 スクリプトは使わない。
+		</para>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>POSIXアカウント</primary></indexterm>
+		<command>pdbedit</command>を、ユーザとマシンアカウントを管理
+		するために使うことを試みる前に、システム(POSIX)アカウントが
+		すでに作成されているかを確かめておくこと。
+		</para>
+
+		<sect4>
+		<title>ユーザとマシンアカウントの表示</title>
+
+		<para>
+<indexterm><primary>tdbsam</primary></indexterm>
+<indexterm><primary>パスワードバックエンド</primary></indexterm>
+		以下は、tdbsamパスワードバックエンド中に格納されているユーザアカウント
+		情報の例である。表示は以下のコマンドを実行することで行える:
+<screen>
+&prompt;<userinput>pdbedit -Lv met</userinput>
+UNIX username:        met
+NT username:          met
+Account Flags:        [U          ]
+User SID:             S-1-5-21-1449123459-1407424037-3116680435-2004
+Primary Group SID:    S-1-5-21-1449123459-1407424037-3116680435-1201
+Full Name:            Melissa E Terpstra
+Home Directory:       \\frodo\met\Win9Profile
+HomeDir Drive:        H:
+Logon Script:         scripts\logon.bat
+Profile Path:         \\frodo\Profiles\met
+Domain:               &example.workgroup;
+Account desc:
+Workstations:         melbelle
+Munged dial:
+Logon time:           0
+Logoff time:          Mon, 18 Jan 2038 20:14:07 GMT
+Kickoff time:         Mon, 18 Jan 2038 20:14:07 GMT
+Password last set:    Sat, 14 Dec 2002 14:37:03 GMT
+Password can change:  Sat, 14 Dec 2002 14:37:03 GMT
+Password must change: Mon, 18 Jan 2038 20:14:07 GMT
+</screen>
+		</para>
+
+		<para>
+<indexterm><primary>smbpasswd形式</primary></indexterm>
+		アカウントは古い<literal>smbpasswd</literal>形式でも表示出来る:
+<screen>
+&rootprompt;<userinput>pdbedit -Lw</userinput>
+root:0:84B0D8E14D158FF8417EAF50CFAC29C3:
+     AF6DD3FD4E2EA8BDE1695A3F05EFBF52:[U          ]:LCT-42681AB8:
+jht:1000:6BBC4159020A52741486235A2333E4D2:
+     CC099521AD554A3C3CF2556274DBCFBC:[U          ]:LCT-40D75B5B:
+rcg:1002:E95D4331A6F23AF8AAD3B435B51404EE:
+     BB0F2C39B04CA6100F0E535DF8314B43:[U          ]:LCT-40D7C5A3:
+afw:1003:1AAFA7F9F6DC1DEAAAD3B435B51404EE:
+     CE92C2F9471594CDC4E7860CA6BC62DB:[T          ]:LCT-40DA501F:
+met:1004:A2848CB7E076B435AAD3B435B51404EE:
+     F25F5D3405085C555236B80B7B22C0D2:[U          ]:LCT-4244FAB8:
+aurora$:1005:060DE593EA638B8ACC4A19F14D2FF2BB:
+     060DE593EA638B8ACC4A19F14D2FF2BB:[W          ]:LCT-4173E5CC:
+temptation$:1006:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:
+     A96703C014E404E33D4049F706C45EE9:[W          ]:LCT-42BF0C57:
+vaioboss$:1001:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:
+     88A30A095160072784C88F811E89F98A:[W          ]:LCT-41C3878D:
+frodo$:1008:15891DC6B843ECA41249940C814E316B:
+     B68EADCCD18E17503D3DAD3E6B0B9A75:[W          ]:LCT-42B7979F:
+marvel$:1011:BF709959C3C94E0B3958B7B84A3BB6F3:
+     C610EFE9A385A3E8AA46ADFD576E6881:[W          ]:LCT-40F07A4
+</screen>
+<indexterm><primary>login id</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>LanMangerのパスワード</primary></indexterm>
+<indexterm><primary>NTのパスワード</primary></indexterm>
+<indexterm><primary>アカウントフラグ</primary></indexterm>
+<indexterm><primary>LCT</primary><see>最終変更時刻</see></indexterm>
+		このコマンドが返すアカウント情報は、左から右に、以下の、コロンで
+		分離されたデータを含む:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>ログインID。</para></listitem>
+			<listitem><para>UNIX UID。</para></listitem>
+			<listitem>
+			  <para>Microsoft LanManagerパスワードハッシュ(パスワードは大文字に変換された後ハッシュされる)。</para>
+			</listitem>
+			<listitem><para>Microsoft NTパスワードハッシュ(大文字小文字の状態を保持したパスワードのハッシュ)。</para></listitem>
+			<listitem><para>Samba SAM アカウントフラグ。</para></listitem>
+			<listitem><para>LCTデータ(パスワード最終変更時刻)。</para></listitem>
+		</itemizedlist>
+
+		<para>
+<indexterm><primary>アカウントフラグ</primary></indexterm>
+<indexterm><primary>pdbedit</primary></indexterm>
+		アカウントフラグパラメータは<command>pdbedit</command>マニュアルページに
+		説明があり、
+		<link linkend="TOSHARG-acctflags">アカウントフラグ管理の節</link>
+		で簡単に説明されている。
+		</para>
+
+		<para>
+<indexterm><primary>最終変更時刻</primary></indexterm>
+		LCTデータは8桁の16進値で、最後にパスワードが変更された時刻の、
+		1970年1月1日からの値を保持している。
+		</para>
+
+		</sect4>
+
+		<sect4>
+		<title>ユーザアカウントの追加</title>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>add a user account</primary></indexterm>
+<indexterm><primary>スタンドアロンサーバ</primary></indexterm>
+<indexterm><primary>ドメイン</primary></indexterm>
+<indexterm><primary>SambaSAMAccount</primary></indexterm>
+		<command>pdbedit</command>は、スタンドアロンサーバまたはドメインに
+		ユーザアカウントを追加する時に使える。ここで紹介する例では、
+		 <literal>vlaan</literal>というユーザのアカウントが、SambaSAMAccount
+		を追加する前に作成されている。
+<screen>
+&rootprompt; pdbedit -a vlaan
+new password: secretpw
+retype new password: secretpw
+Unix username:        vlaan
+NT username:          vlaan
+Account Flags:        [U          ]
+User SID:             S-1-5-21-726309263-4128913605-1168186429-3014
+Primary Group SID:    S-1-5-21-726309263-4128913605-1168186429-513
+Full Name:            Victor Laan
+Home Directory:       \\frodo\vlaan
+HomeDir Drive:        H:
+Logon Script:         scripts\logon.bat
+Profile Path:         \\frodo\profiles\vlaan
+Domain:               &example.workgroup;
+Account desc:         Guest User
+Workstations:
+Munged dial:
+Logon time:           0
+Logoff time:          Mon, 18 Jan 2038 20:14:07 GMT
+Kickoff time:         Mon, 18 Jan 2038 20:14:07 GMT
+Password last set:    Wed, 29 Jun 2005 19:35:12 GMT
+Password can change:  Wed, 29 Jun 2005 19:35:12 GMT
+Password must change: Mon, 18 Jan 2038 20:14:07 GMT
+Last bad password   : 0
+Bad password count  : 0
+Logon hours         : FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+</screen>
+		</para>
+
+		</sect4>
+
+		<sect4>
+		<title>アカウントの削除</title>
+
+		<para>
+<indexterm><primary>アカウントの削除</primary></indexterm>
+<indexterm><primary>SambaSAMAccount</primary></indexterm>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>passdbバックエンド</primary></indexterm>
+		以下のコマンドを実行することで、SambaSAMAccountデータベースから
+		アカウントを削除できる。
+<screen>
+&rootprompt; pdbedit -x vlaan
+</screen>
+		アカウントは出力結果なしで削除される。アカウントはSambaSAMAccount
+		(passdb バックエンド)データベースからのみ削除され、UNIXアカウント
+		バックエンドからは削除されない。
+		</para>
+
+		<para>
+<indexterm><primary>delete user script</primary></indexterm>
+<indexterm><primary>pdbedit</primary></indexterm>
+		アカウントを削除するためにNT4ドメインユーザマネージャを使うと、
+		<parameter>delete user script</parameter>を起動するが、それは
+		<command>pdbedit</command>ツールではない。
+		</para>
+
+		</sect4>
+
+		<sect4>
+		<title>ユーザアカウントの変更</title>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+		<command>pdbedit</command>マニュアルページにこのツールで有効な
+		すべての操作の完全な詳細が記述されている。
+		</para>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+		下記は、ユーザアカウント情報の、フルネーム情報を変更する例である:
+<screen>
+&rootprompt; pdbedit -r --fullname="Victor Aluicious Laan" vlaan
+...
+Primary Group SID:    S-1-5-21-726309263-4128913605-1168186429-513
+Full Name:            Victor Aluicious Laan
+Home Directory:       \\frodo\vlaan
+...
+</screen>
+		</para>
+
+		<para>
+<indexterm><primary>grace time</primary></indexterm>
+<indexterm><primary>パスワード満了</primary></indexterm>
+<indexterm><primary>満了したパスワード</primary></indexterm>
+		ユーザのパスワードが満了して、ユーザがパスワードを変更できなくなった
+		を仮定してみよう。そのアカウントと本来のパスワードで作業が出来るように
+		するには、ユーザに追加の猶予時間が必要かもしれない。これは、どのように
+		パスワード満了の設定を更新できるかの例を示している。
+<screen>
+&rootprompt; pdbedit -Lv vlaan
+...
+Password last set:    Sun, 09 Sep 2001 22:21:40 GMT
+Password can change:  Thu, 03 Jan 2002 15:08:35 GMT
+Password must change: Thu, 03 Jan 2002 15:08:35 GMT
+Last bad password   : Thu, 03 Jan 2002 15:08:35 GMT
+Bad password count  : 2
+...
+</screen>
+<indexterm><primary>bad logon attempts</primary></indexterm>
+<indexterm><primary>lock the account</primary></indexterm>
+		ユーザは2回ログオンに失敗し、次でアカウントがロックされるが、
+		パスワードはすでに満了している。以下で、どのようにこのアカウントを
+		リセットするかを示す。
+<screen>
+&rootprompt; pdbedit -z vlaan
+...
+Password last set:    Sun, 09 Sep 2001 22:21:40 GMT
+Password can change:  Thu, 03 Jan 2002 15:08:35 GMT
+Password must change: Thu, 03 Jan 2002 15:08:35 GMT
+Last bad password   : 0
+Bad password count  : 0
+...
+</screen>
+		<literal>Password must change:</literal>パラメータは以下のようにして
+		リセットする:
+<screen>
+&rootprompt; pdbedit --pwd-must-change-time=1200000000 vlaan
+...
+Password last set:    Sun, 09 Sep 2001 22:21:40 GMT
+Password can change:  Thu, 03 Jan 2002 15:08:35 GMT
+Password must change: Thu, 10 Jan 2008 14:20:00 GMT
+...
+</screen>
+		別の方法として、このツールで日付を設定する方法もある:
+<screen>
+&rootprompt; pdbedit --pwd-must-change-time="2010-01-01" \
+              --time-format="%Y-%m-%d" vlaan
+...
+Password last set:    Sun, 09 Sep 2001 22:21:40 GMT
+Password can change:  Thu, 03 Jan 2002 15:08:35 GMT
+Password must change: Fri, 01 Jan 2010 00:00:00 GMT
+...
+</screen>
+<indexterm><primary>strptime</primary></indexterm>
+<indexterm><primary>時刻の形式</primary></indexterm>
+		時刻の形式についての情報は、strptimeマニュアルページを参照のこと。
+		</para>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>SambaSAMAccount</primary></indexterm>
+		SambaSAMAccountの操作に関するさらなる情報はpdbeditのマニュアルページ
+		を参照のこと。
+		</para>
+
+		<sect5 id="TOSHARG-acctflags">
+		<title>アカウントフラグ管理</title>
+
+		<para>
+<indexterm><primary>Samba SAMアカウントフラグ</primary></indexterm>
+<indexterm><primary>account control block</primary><see>ACB</see></indexterm>
+<indexterm><primary>account encode_bits</primary></indexterm>
+<indexterm><primary>account control flags</primary></indexterm>
+		Samba SAMアカウントフラグはSambaソースコード中で、ACB
+		(account control block)と呼ばれている。Sambaソースコードの一部では、
+		これらはaccount encode_bitsやaccount control flagsとしても参照される。
+		</para>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>ユーザアカウント</primary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+<indexterm><primary>信頼アカウント</primary></indexterm>
+<indexterm><primary>壊れたデータ</primary></indexterm>
+		手動での、ユーザ、マシン(ワークステーションまたはサーバ)、あるいは
+		ドメイン間信頼アカウントのアカウントフラグの調整は、通常Sambaを
+		使用している場合には必要ない。別の観点からすると、何らかの理由で
+		この情報が壊れた場合、壊れたデータの修正ができる可能性があると便利で
+		ある。そのような修正のためのツールの選択枝は<command>pdbedit</command>
+		ユーティリティである。
+		</para>
+
+		<para>
+<indexterm><primary>アカウントフラグ</primary></indexterm>
+<indexterm><primary>LDAP ディレクトリ</primary></indexterm>
+		固有のSamba管理ツールを作成する開発者からアカウントフラグの情報に関する
+		いくつかの要求があった。アカウントフラグの適切な管理に関する必要な情報
+		例は、LDAPディレクトリを管理するためのスクリプトの開発時に明白である。
+		</para>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>account flag order</primary></indexterm>
+		アカウントフラグフィールドは最大16文字である。現在11個が使われている。
+		<link linkend="accountflags">Samba SAM Accountコントロールブロックフラグ</link>
+		に一覧がある。<command>pdbedit</command>コマンドによって指定されたフラグの
+		順番に意味はない。実際、LDAPディレクトリ中のSambaAcctFlagsレコード中を
+		どのような順番にしても問題はない。
+		</para>
+
+		<table frame="all" id="accountflags">
+		<title>Samba SAM Accountコントロールブロックフラグ</title>
+        <tgroup cols="2" align="center">
+            <thead>
+            <row><entry align="center">フラグ</entry><entry>説明</entry></row>
+            </thead>
+            <tbody>
+            <row>
+				<entry align="center">D</entry>
+				<entry align="left">アカウントが無効。</entry>
+			</row>
+            <row>
+				<entry align="center">H</entry>
+				<entry align="left">ホームディレクトリが必要。</entry>
+			</row>
+            <row>
+				<entry align="center">I</entry>
+				<entry align="left">ドメイン間信頼アカウント。</entry>
+			</row>
+            <row>
+				<entry align="center">L</entry>
+				<entry align="left">アカウントが自動ロックされている。</entry>
+			</row>
+            <row>
+				<entry align="center">M</entry>
+				<entry align="left">MNS (Microsoft network service)ログオンアカウント。</entry>
+			</row>
+            <row>
+				<entry align="center">N</entry>
+				<entry align="left">パスワードが不要。</entry>
+			</row>
+            <row>
+				<entry align="center">S</entry>
+				<entry align="left">サーバ信頼アカウント。</entry>
+			</row>
+            <row>
+				<entry align="center">T</entry>
+				<entry align="left">一時的な重複アカウントエントリ。</entry>
+			</row>
+            <row>
+				<entry align="center">U</entry>
+				<entry align="left">通常のユーザアカウント。</entry>
+			</row>
+            <row>
+				<entry align="center">W</entry>
+				<entry align="left">ワークステーション信頼アカウント。</entry>
+			</row>
+            <row>
+				<entry align="center">X</entry>
+				<entry align="left">パスワードは満了していない。</entry>
+			</row>
+            </tbody>
+        </tgroup>
+        </table>
+
+		<para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>account control flags</primary></indexterm>
+		アカウントコントロールフラグを設定するための<command>pdbedit</command>
+		使用例は以下の通り:
+<screen>
+&rootprompt; pdbedit -r -c "[DLX]" jht
+Unix username:        jht
+NT username:          jht
+Account Flags:        [DHULX      ]
+User SID:             S-1-5-21-729263-4123605-1186429-3000
+Primary Group SID:    S-1-5-21-729263-4123605-1186429-513
+Full Name:            John H Terpstra,Utah Office
+Home Directory:       \\aurora\jht
+HomeDir Drive:        H:
+Logon Script:         scripts\logon.bat
+Profile Path:         \\aurora\profiles\jht
+Domain:               MIDEARTH
+Account desc:         BluntObject
+Workstations:
+Logon time:           0
+Logoff time:          Mon, 18 Jan 2038 20:14:07 GMT
+Kickoff time:         0
+Password last set:    Sun, 03 Jul 2005 23:19:18 GMT
+Password can change:  Sun, 03 Jul 2005 23:19:18 GMT
+Password must change: Mon, 18 Jan 2038 20:14:07 GMT
+Last bad password   : 0
+Bad password count  : 0
+Logon hours         : FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+</screen>
+<indexterm><primary>既定値の設定</primary></indexterm>
+	以下を実行することでフラグを既定値に設定できる:
+<screen>
+&rootprompt; pdbedit -r -c "[]" jht
+Unix username:        jht
+NT username:          jht
+Account Flags:        [U          ]
+User SID:             S-1-5-21-729263-4123605-1186429-3000
+Primary Group SID:    S-1-5-21-729263-4123605-1186429-513
+Full Name:            John H Terpstra,Utah Office
+Home Directory:       \\aurora\jht
+HomeDir Drive:        H:
+Logon Script:         scripts\logon.bat
+Profile Path:         \\aurora\profiles\jht
+Domain:               MIDEARTH
+Account desc:         BluntObject
+Workstations:
+Logon time:           0
+Logoff time:          Mon, 18 Jan 2038 20:14:07 GMT
+Kickoff time:         0
+Password last set:    Sun, 03 Jul 2005 23:19:18 GMT
+Password can change:  Sun, 03 Jul 2005 23:19:18 GMT
+Password must change: Mon, 18 Jan 2038 20:14:07 GMT
+Last bad password   : 0
+Bad password count  : 0
+Logon hours         : FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+</screen>
+		</para>
+
+		</sect5>
+
+		</sect4>
+
+		<sect4>
+		<title>ドメインアカウントポリシー管理</title>
+
+		<para>
+<indexterm><primary>ドメインアカウントのアクセスポリシー</primary></indexterm>
+<indexterm><primary>アクセスポリシー</primary></indexterm>
+		設定されているドメインアカウントアクセスポリシーを見るためには以下を実行する:
+<screen>
+&rootprompt; pdbedit -P ?
+No account policy by that name
+Account policy names are :
+min password length
+password history
+user must logon to change password
+maximum password age
+minimum password age
+lockout duration
+reset count minutes
+bad lockout attempt
+disconnect time
+refuse machine password change
+</screen>
+		</para>
+
+		<para>
+		ドメインに対する以下の制御を確立するとする:
+		</para>
+
+		<orderedlist>
+			<listitem><para>min password length = 8 characters.</para></listitem>
+			<listitem><para>password history = last 4 passwords.</para></listitem>
+			<listitem><para>maximum password age = 90 days.</para></listitem>
+			<listitem><para>minimum password age = 7 days.</para></listitem>
+			<listitem><para>bad lockout attempt = 8 bad logon attempts.</para></listitem>
+			<listitem><para>lockout duration = forever, account must be manually reenabled.</para></listitem>
+		</orderedlist>
+
+		<para>
+		以下のコマンドでこれらの設定を実行する:
+<screen>
+&rootprompt; pdbedit -P "min password length" -C 8
+account policy value for min password length was 5
+account policy value for min password length is now 8
+&rootprompt; pdbedit -P "password history" -C 4
+account policy value for password history was 0
+account policy value for password history is now 4
+&rootprompt; pdbedit -P "maximum password age" -C 7776000
+account policy value for maximum password age was 4294967295
+account policy value for maximum password age is now 7776000
+&rootprompt; pdbedit -P "minimum password age" -C 7
+account policy value for minimum password age was 0
+account policy value for minimum password age is now 7
+&rootprompt; pdbedit -P "bad lockout attempt" -C 8
+account policy value for bad lockout attempt was 0
+account policy value for bad lockout attempt is now 8
+&rootprompt; pdbedit -P "lockout duration" -C -1
+account policy value for lockout duration was 30
+account policy value for lockout duration is now 4294967295
+</screen>
+		</para>
+
+<note><para>
+最大(無限)なロックアウト時間を設定するためには値として-1を使用する。
+</para></note>
+
+<warning><para>
+アカウントポリシーはおのおののPDCとBDC上で個別にに設定する必要がある。この時点
+(Samba 3.0.11からSamba3.0.14a)で、アカウントポリシーは自動的に複製されない。
+これはSamba3.0.20がリリースされるか、それより少し後に修正される予定である。
+Samba-3リリースファイル中の、この機能に関する特定の更新情報がある WHATSNEW.txt
+ファイルをチェックしてみること。
+</para></warning>
+
+		</sect4>
+
+		</sect3>
+
+		<sect3>
+		<title>アカウントのインポート/エクスポート</title>
+
+		<para>
+		<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>account import/export</primary></indexterm>
+<indexterm><primary>authentication</primary></indexterm>
+		<command>pdbedit</command>ツールはあるバックエンドからほかのものに
+		認証情報(アカウント)データベースのインポート/エクスポートができる。
+		例えば、古い<filename>smbpasswd</filename>データベースから
+		<parameter>tdbsam</parameter>バックエンドにアカウントをインポート/
+		エクスポートするためには以下のように行う:
+		</para>
+
+		<procedure>
+			<step><para>
+<indexterm><primary>pdbedit</primary></indexterm>
+<screen>
+&rootprompt;<userinput>pdbedit -i smbpasswd -e tdbsam</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+		&smb.conf;中の<parameter>passdb backend</parameter>の設定を
+		<parameter>smbpasswd</parameter>から<parameter>tdbsam</parameter>に
+		置き換える。
+			</para></step>
+		</procedure>
+
+	</sect3>
+	</sect2>
+</sect1>
+
+<sect1>
+<title>パスワードバックエンド</title>
+
+<para>
+<indexterm><primary>アカウントデータベース</primary></indexterm>
+<indexterm><primary>SMB/CIFSサーバ</primary></indexterm>
+Sambaはバックエンドアカウントデータベースのデザインに柔軟性を提供する。この柔軟性
+は探せばすぐに見つかる。Sambaにおける最近の変更(Samba 3.0.23以降)はいくつかのインストール時
+にうまくいかなくなる問題を単純化するために複数バックエンド機能が削除された。この
+削除によりSamba-3の内部動作はより首尾一貫し安定した。
+</para>
+
+<para>
+<indexterm><primary>複数のバックエンド</primary></indexterm>
+<indexterm><primary>tdbsam データベース</primary></indexterm>
+Samba 3.0.23から、もはや複数のpassdbバックエンドを指定して使うことは出来なくなった。
+それ以前のSamba-3では、同じタイプのバックエンドを含む複数のpassdbバックエンドが指定できた。
+複数のpassdbバックエンド機能は名前->SID変換とSID->名前解決で多くの問題を引き起こした。
+Sambaチームはいろいろと検討した結果この機能を取り除く必要があると決定した。
+</para>
+
+	<sect2>
+	<title>平文</title>
+
+		<para>
+<indexterm><primary>ユーザデータベース</primary></indexterm>
+<indexterm><primary>/etc/samba/smbpasswd</primary></indexterm>
+<indexterm><primary>/etc/smbpasswd</primary></indexterm>
+<indexterm><primary>パスワードの暗号化</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+		古いバージョンのSambaではUNIXユーザデータベースからユーザ情報を検索し、
+		結局いくつかの他のフィールドは<filename>/etc/samba/smbpasswd</filename>
+		か<filename>/etc/smbpasswd</filename>ファイルから得ていた。パスワードの
+		暗号化が無効になっている時、SMB固有のデータは全く格納されない。その代わり、
+		すべての操作はSambaホストOSがその<filename>/etc/passwd</filename>
+		データベースによってアクセスする方法経由で制御される。ほとんどのLinux
+		システムでは、たとえば、すべてのユーザとグループの解決はPAM経由で行われる。
+		</para>
+
+	</sect2>
+
+	<sect2>
+	<title>smbpasswd: 暗号化したパスワードデータベース</title>
+
+		<para>
+		<indexterm><primary>SAM バックエンド</primary><secondary>smbpasswd</secondary></indexterm>
+<indexterm><primary>ユーザアカウント</primary></indexterm>
+<indexterm><primary>LM/NT パスワードハッシュ</primary></indexterm>
+<indexterm><primary>smbpasswd</primary></indexterm>
+		伝統的に<smbconfoption name="encrypt passwords">yes</smbconfoption>
+		とSambaの&smb.conf;ファイル中で設定した時、ユーザ名、LM/NTパスワード
+		ハッシュ、パスワード変更時間とアカウントフラグのようなユーザアカウント
+		情報は<filename>smbpasswd(5)</filename>ファイルに格納される。これは、
+		たくさんのユーザ(数千くらい)を抱えるサイトに対するアプローチとしては
+		不利である。
+		</para>
+
+		<itemizedlist>
+		<listitem><para>
+<indexterm><primary>lookups</primary></indexterm>
+		最初の問題は、すべての検索をシーケンシャルに行わなければならないという
+		ことである。ドメインログオン時におおよそ二つの検索(1つは最初のログオン
+		検証で、もう1つはセッション接続セットアップで、それはネットワーク
+		ドライブやプリンタのマッピング)が行われ、これは、大きなサイトでは、
+		性能のボトルネックになる。この場合必要なことは、データベースを使う
+		ような、インデックスを使うアプローチである。
+		</para></listitem>
+
+		<listitem><para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>複製</primary></indexterm>
+<indexterm><primary>rsync</primary></indexterm>
+<indexterm><primary>ssh</primary></indexterm>
+<indexterm><primary>カスタムスクリプト</primary></indexterm>
+		二番目の問題は、一つ以上のSambaサーバにsmbpasswdファイルを複製しよう
+		とする管理者は、たとえば、<command>rsync(1)</command>と
+		<command>ssh(1)</command>と、内製したカスタムスクリプトのような
+		外部ツールを使う必要があるということである。
+		</para></listitem>
+
+		<listitem><para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>ホームディレクトリ</primary></indexterm>
+<indexterm><primary>password expiration</primary></indexterm>
+<indexterm><primary>相対識別子</primary></indexterm>
+<indexterm><primary>相対識別子</primary><see>RID</see></indexterm>
+		最後に、smbpasswdエントリ中に格納されている情報の量には、たとえば
+		ホームディレクトリ、パスワード満了時刻や相対識別子(RID)のような
+		追加の属性を入れる領域がない。
+		</para></listitem>
+		</itemizedlist>
+
+		<para>
+<indexterm><primary>ユーザ属性</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>API</primary></indexterm>
+<indexterm><primary>samdbインタフェース</primary></indexterm>
+		上記のような機能不足の点から、ユーザ属性を格納するより堅牢な手段を
+		smbdによって使うことが開発されてきた。ユーザアカウントにアクセス
+		することを定義するAPIは、共通的にsamdbインタフェースとして参照される
+		(以前には、これはpassdb APIとして呼ばれていて、現在もSambaソース
+		コード中ではそのように名前が付けられている)。
+		</para>
+
+		<para>
+<indexterm><primary>passdbバックエンド</primary></indexterm>
+<indexterm><primary>smbpasswd平文データベース</primary></indexterm>
+<indexterm><primary>tdbsam</primary></indexterm>
+<indexterm><primary>ldapsam</primary></indexterm>
+<indexterm><primary>エンタープライズ</primary></indexterm>
+		Sambaは、Samba平文データベースの機能不足点を克服する一連の拡張された
+		passdbバックエンドを提供している。これらはtdbsamとldapsamである。
+		もちろん、ldapsamは、大きな会社や巨大サイトが興味を持つものである。
+		</para>
+
+	</sect2>
+
+	<sect2>
+	<title>tdbsam</title>
+
+		<para>
+		<indexterm><primary>SAMバックエンド</primary><secondary>tdbsam</secondary></indexterm>
+<indexterm><primary>trivial database</primary><see>TDB</see></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+		Sambaは<quote>TDB</quote>(trivial database)中にユーザとマシンアカウント
+		を格納できる。このバックエンドを使う時には追加の設定は不要である。
+		このバックエンドはLDAPを必要としない、新しくインストールする場合に
+		推奨される。
+		</para>
+
+		<para>
+<indexterm><primary>tdbsam</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>scalability</primary></indexterm>
+		一般的なガイドとして、Sambaチームは250人あるいはそれ以上のユーザが
+		いるサイトに、tdbsamバックエンドを使うことを推奨していない。さらに
+		追加で、tdbsamは、アカウントデータベースを複製することが要求される
+		PDC/BDC実装を要求するサイト中で使うための拡張性の能力はない。
+		明確にいうと、拡張性という理由で、ldapsamを使用すべきである。
+		</para>
+
+		<para>
+<indexterm><primary>250ユーザ制限</primary></indexterm>
+<indexterm><primary>パフォーマンスベース</primary></indexterm>
+<indexterm><primary>tdbsam</primary></indexterm>
+		250ユーザ制限は、純粋に、一般的に、おそらく一つ以上の物理配置
+		にまたがってばらけている、ルーティングネットワークを持つサイトを必要
+		とするという概念に基づく目安でしかない。Sambaチームは現時点で、tdbsam
+		アーキテクチャのパフォーマンスベースの拡張性制限を把握していない。
+		</para>
+
+		<para>
+<indexterm><primary>4,500ユーザアカウント</primary></indexterm>
+<indexterm><primary>passdbバックエンド</primary></indexterm>
+<indexterm><primary>tdbsam</primary></indexterm>
+<indexterm><primary>SambaSAMAccount</primary></indexterm>
+		数千のユーザを抱えているが、1台のサーバだけを必要とするサイトがある。
+		1つのサイトは最近UNIXシステム上で4500ユーザを保持していることを報告し、
+		<literal>tdbsam</literal>passdbバックエンドでよい性能が出たことを
+		報告した。<literal>tdbsam</literal>passdbバックエンドを使う場合の制限は、
+		TDB格納場所の制限に関連し、それはSambaSAMAccountバックエンドのための
+		分散メカニズムの必要性にのみ基づく。
+		</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ldapsam</title>
+
+		<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>ldapsam</primary></indexterm>
+		<indexterm><primary>SAM backend</primary><secondary>ldapsam</secondary></indexterm>
+		ldapsamが提供しないいくつかの弱点がある。この文書で参照されるLDAP
+		サポートは以下を含まない:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>Windows 200x Active Directoryサーバからの
+			ユーザアカウント情報を検索する手段。</para></listitem>
+			<listitem><para>/etc/passwdを置き換える手段。</para></listitem>
+		</itemizedlist>
+
+		<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>LGPL</primary></indexterm>
+		2番目の項目はLDAP NSSとPAMモジュールを使うことにより達成できる。LGPL
+		バージョンのそれらのライブラリは
+		<ulink url="http://www.padl.com/">PADL Software</ulink>で作成されて
+		いる。これらのパッケージに着いてのより詳細な情報は、
+		<ulink url="http://safari.oreilly.com/?XmlId=1-56592-491-6">
+		Gerald Carterによる<emphasis>LDAP, System Administration</emphasis>
+		の第6章、NISを置き換える</ulink>を参照のこと。
+		</para>
+
+		<para>
+<indexterm><primary>LDAPディレクトリ</primary></indexterm>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>ディレクトリサーバ</primary></indexterm>
+		このドキュメントでは、伝統的にsmbpasswd(5)ファイルに格納されている
+		Sambaユーザアカウント情報をLDAPディレクトリに格納するための使い方に
+		ついて説明している。読者はすでに基本的なLDAPの概念とすでにインストール
+		している動作中のディレクトリサーバを持っていることを仮定している。
+		LDAPのアーキテクチャとディレクトリについてのより詳細な情報は、以下の
+		サイトを参照してほしい:
+		</para>
+
+		<itemizedlist>
+			<listitem><para><ulink url="http://www.openldap.org/">OpenLDAP</ulink></para></listitem>
+			<listitem><para><ulink url="http://www.sun.com/software/products/directory_srvr_ee/index.xml">
+				Sun One Directory Server</ulink></para></listitem>
+			<listitem><para><ulink url="http://www.novell.com/products/edirectory/">Novell eDirectory</ulink></para></listitem>
+			<listitem><para><ulink url="http://www-306.ibm.com/software/tivoli/products/directory-server/">IBM
+				Tivoli Directory Server</ulink></para></listitem>
+			<listitem><para><ulink url="http://www.redhat.com/software/rha/directory/">Red Hat Directory Server</ulink></para></listitem>
+			<listitem><para><ulink url="http://www.linuxsecurity.com/content/view/119229">Fedora Directory
+				Server</ulink></para></listitem>
+		</itemizedlist>
+
+		<para>
+		有効に使える2つのSambaリソースは以下の通り:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+<indexterm><primary>Samba-PDC-LDAP-HOWTO</primary></indexterm>
+			The <ulink url="http://www.unav.es/cti/ldap-smb/ldap-smb-3-howto.html">Samba-PDC-LDAP-HOWTO</ulink>
+			Ignacio Coupeauによって管理されている。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>IDEALX</primary></indexterm>
+<indexterm><primary>NTマイグレーションスクリプト</primary></indexterm>
+<indexterm><primary>smbldap-tools</primary></indexterm>
+		<ulink url="http://samba.idealx.org/">IDEALX</ulink>からのNTマイグレーション
+		スクリプトは、Samba-LDAPドメインコントローラ構成でユーザとグループの
+		管理に関連づけるものである。Idealxはsmbldap-toolsと対話的な
+		コンソール管理ツールも作成している。
+			</para></listitem>
+		</itemizedlist>
+
+		<sect3>
+		<title>サポートしているLDAPサーバ</title>
+
+			<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>ldapsam</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>Netscape's Directory Server</primary></indexterm>
+		LDAPのldapsamコードはOpenLDAP 2.xサーバとクライアントライブラリを
+		使って開発とテストが行われている。同じコードはNetscape's Directory Server
+		とクライアントSDKでも動作する。しかし、それらはコンパイルエラーとバグが
+		必ず生じる。それらを直すのはとても難しい。
+		<link linkend="bugreport">バグ報告</link>中で概要が説明されている手順
+		経由で修正を投稿してほしい。
+			</para>
+
+			<para>
+			Sambaは任意の標準準拠のLDAPサーバとともに動作できる。
+			</para>
+
+		</sect3>
+
+		<sect3>
+		<title>RFC 2307 posixAccountとの関係とスキーマ</title>
+
+
+			<para>
+			Samba-3.0はソースコードディストリビューション中の
+			<filename>examples/LDAP/samba.schema</filename>中にある
+			OpenLDAP 2.x用に必要なスキーマファイルを用意している。
+			sambaSamAccountオブジェクトクラスのスキーマエントリは以下の通り:
+<programlisting>
+ObjectClass (1.3.6.1.4.1.7165.2.2.6 NAME 'sambaSamAccount' SUP top AUXILIARY
+    DESC 'Samba-3.0 Auxiliary SAM Account'
+    MUST ( uid $ sambaSID )
+    MAY  ( cn $ sambaLMPassword $ sambaNTPassword $ sambaPwdLastSet $
+          sambaLogonTime $ sambaLogoffTime $ sambaKickoffTime $
+          sambaPwdCanChange $ sambaPwdMustChange $ sambaAcctFlags $
+          displayName $ sambaHomePath $ sambaHomeDrive $ sambaLogonScript $
+          sambaProfilePath $ description $ sambaUserWorkstations $
+          sambaPrimaryGroupSID $ sambaDomainName ))
+</programlisting>
+			</para>
+
+			<para>
+<indexterm><primary>samba.schema</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>OID</primary></indexterm>
+			<filename>samba.schema</filename>ファイルはOpenLDAP 2.0/2.1
+			用の形式である。Sambaチームは上記のスキーマが使うOID空間を
+			所有し、この利用を推奨している。もしもNetscape DSが使うように
+			スキーマを変換したならば、
+			<ulink url="mailto:jerry@samba.org">jerry@samba.org</ulink>
+			にパッチとしてスキーマファイルを送ってほしい。
+			</para>
+
+			<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>AUXILIARY</primary></indexterm>
+<indexterm><primary>ObjectClass</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>RFC 2307.</primary></indexterm>
+		smbpasswdファイルが、ユーザの<filename>/etc/passwd</filename>エントリ
+		に追加の情報を提供する情報を格納するように、sambaSamAccountアカウント
+		オブジェクトはUNIXユーザアカウント情報を補う。sambaSamAccountは
+		<constant>補助型</constant>オブジェクトクラスであるので、LDAP
+		ディレクトリ中の存在するユーザアカウント情報に付随するものとして
+		使うことが出来、Sambaアカウントの操作のために必要な情報を提供する。
+		しかし、RFC2307で定義されているposixAccountオブジェクトクラスと
+		重複するいくつかのフィールド(たとえばuid)がある。これは意図的なものである。
+			</para>
+
+			<para>
+<indexterm><primary>アカウント情報</primary></indexterm>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>posixAccount</primary></indexterm>
+<indexterm><primary>ObjectClasses</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>getpwnam</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>NIS</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+		すべてのユーザアカウント情報(UNIXとSamba)をディレクトリ中に格納する
+		ために、sambaSamAccountとposixAccountオブジェクトクラスを組み合わせて
+		使う必要がある。しかし、<command>smbd</command>はそれでもgetpwnam()
+		のような標準Cライブラリコール経由でユーザのUNIXアカウント情報を、
+		得ることがある。これは、SambaサーバはLDAP NSSライブラリのインストールと
+		正しく動くための設定も必要とすることを意味する。このように情報を区分することで、
+		すべてのSambaアカウント情報をLDAP中に格納することが出来るようにするが、
+		ネットワークが完全なLDAP基盤に移行しながら、UNIX のアカウント情報は
+		NISで管理することができる。
+			</para>
+		</sect3>
+
+		<sect3>
+		<title>OpenLDAPの設定</title>
+
+		<para>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>slapd</primary></indexterm>
+<indexterm><primary>samba.schema</primary></indexterm>
+		OpenLDAPディレクトリサーバ中でsambaSamAccountのサポートを行うためには、
+		最初にsamba.schemaファイルをslapdの設定ディレクトリにコピーする。
+		samba.schemaファイルはSambaソースディストリビューション中の
+		<filename>examples/LDAP</filename>ディレクトリ中にある。
+<screen>
+&rootprompt;<userinput>cp samba.schema /etc/openldap/schema/</userinput>
+</screen>
+		</para>
+
+		<para>
+<indexterm><primary>samba.schema</primary></indexterm>
+<indexterm><primary>slapd.conf</primary></indexterm>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>cosine.schema</primary></indexterm>
+<indexterm><primary>uid</primary></indexterm>
+<indexterm><primary>inetorgperson.schema</primary></indexterm>
+<indexterm><primary>displayName</primary></indexterm>
+<indexterm><primary>属性</primary></indexterm>
+		次に、<filename>slapd.conf</filename>中に<filename>samba.schema</filename>
+		ファイルを含める。sambaSamAccountオブジェクトは他のスキーマファイルに
+		依存する2つの属性を含んでいる。<parameter>uid</parameter>属性は
+		<filename>cosine.schema</filename>中で定義され、
+		<parameter>displayName</parameter>属性は
+		<filename>inetorgperson.schema</filename>中で定義されている。両方は
+		<filename>samba.schema</filename>ファイルの前で定義しておかなければならない。
+<programlisting>
+## /etc/openldap/slapd.conf
+
+## スキーマファイル(core.schemaは既定値で必要とされる)
+include	           /etc/openldap/schema/core.schema
+
+## sambaSamAccountに必要なもの
+include            /etc/openldap/schema/cosine.schema
+include            /etc/openldap/schema/inetorgperson.schema
+include            /etc/openldap/schema/nis.schema
+include            /etc/openldap/schema/samba.schema
+....
+</programlisting>
+		</para>
+
+		<para>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>posixAccount</primary></indexterm>
+<indexterm><primary>posixGroup</primary></indexterm>
+<indexterm><primary>ObjectClasses</primary></indexterm>
+		以下の例のように、sambaSamAccountオブジェクトクラス上での検索のスピード
+		を上げるため、最もよく使う属性のいくつかにインデックスを付加することは
+		推奨される(そして、可能ならばそれはposixAccountとposixGroupも)。
+		</para>
+
+<para>
+<programlisting>
+# インデックスの管理
+## OpenLDAPで要求されるもの
+index objectclass             eq
+
+index cn                      pres,sub,eq
+index sn                      pres,sub,eq
+## pdb_getsampwnamをサポートするのに必要なもの
+index uid                     pres,sub,eq
+## pdb_getsambapwrid()をサポートするのに必要なもの
+index displayName             pres,sub,eq
+
+## uncomment these if you are storing posixAccount and
+## posixGroup entries in the directory as well
+##index uidNumber               eq
+##index gidNumber               eq
+##index memberUid               eq
+
+index   sambaSID              eq
+index   sambaPrimaryGroupSID  eq
+index   sambaDomainName       eq
+index   default               sub
+</programlisting>
+</para>
+
+		<para>
+		以下を実行し新しいインデックスを作成する:
+<screen>
+&rootprompt;./sbin/slapindex -f slapd.conf
+</screen>
+		</para>
+
+		<para>
+		上記の変更後、slapdを再起動するのを忘れないこと:
+<screen>
+&rootprompt;<userinput>/etc/init.d/slapd restart</userinput>
+</screen>
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>LDAPデータベースの初期化</title>
+
+		<para>
+<indexterm><primary>LDAP database</primary></indexterm>
+<indexterm><primary>account containers</primary></indexterm>
+<indexterm><primary>LDIF file</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+		LDAPデータベースにアカウントが追加できる前に、格納するためのアカウント
+		コンテナを作成する必要がある。以下のLDIFファイルは必要に応じて変更
+		する必要がある(DNSエントリなど):
+<programlisting>
+# Organization for Samba Base
+dn: dc=quenya,dc=org
+objectclass: dcObject
+objectclass: organization
+dc: quenya
+o: Quenya Org Network
+description: The Samba-3 Network LDAP Example
+
+# Organizational Role for Directory Management
+dn: cn=Manager,dc=quenya,dc=org
+objectclass: organizationalRole
+cn: Manager
+description: Directory Manager
+
+# Setting up container for Users OU
+dn: ou=People,dc=quenya,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: People
+
+# Setting up admin handle for People OU
+dn: cn=admin,ou=People,dc=quenya,dc=org
+cn: admin
+objectclass: top
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
+userPassword: {SSHA}c3ZM9tBaBo9autm1dL3waDS21+JSfQVz
+# Setting up container for groups
+dn: ou=Groups,dc=quenya,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: Groups
+
+# Setting up admin handle for Groups OU
+dn: cn=admin,ou=Groups,dc=quenya,dc=org
+cn: admin
+objectclass: top
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
+userPassword: {SSHA}c3ZM9tBaBo9autm1dL3waDS21+JSfQVz
+
+# Setting up container for computers
+dn: ou=Computers,dc=quenya,dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: Computers
+
+# Setting up admin handle for Computers OU
+dn: cn=admin,ou=Computers,dc=quenya,dc=org
+cn: admin
+objectclass: top
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
+userPassword: {SSHA}c3ZM9tBaBo9autm1dL3waDS21+JSfQVz
+</programlisting>
+		</para>
+
+		<para>
+<indexterm><primary>userPassword</primary></indexterm>
+<indexterm><primary>slappasswd</primary></indexterm>
+		上記で示されているuserPasswordは<command>slappasswd</command>を使って
+		生成する必要がある。
+		</para>
+
+		<para>
+<indexterm><primary>LDIF</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+		以下のコマンドでLDAPデータベース中にLDIFの内容をロードする。
+<indexterm><primary>slapadd</primary></indexterm>
+<screen>
+&prompt;<userinput>slapadd -v -l initldap.dif</userinput>
+</screen>
+		</para>
+
+		<para>
+		adminパスワードと同様に、アクセス制御リストを十分に使ってLDAPサーバの
+		安全性を確保することを忘れないこと。
+		</para>
+
+		<note><para>
+<indexterm><primary>secrets.tdb</primary></indexterm>
+		SambaがLDAPサーバにアクセスできる前に、Samba-3の
+		<filename>secrets.tdb</filename>データベース中にLDAP adminパスワード
+		を以下のようにして格納する必要がある:
+<indexterm><primary>smbpasswd</primary></indexterm>
+<screen>
+&rootprompt;<userinput>smbpasswd -w <replaceable>secret</replaceable></userinput>
+</screen>
+		</para></note>
+
+		</sect3>
+
+		<sect3>
+		<title>Sambaの設定</title>
+
+			<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+		以下の&smb.conf;中のパラメータは、SambaがLDAPサポートを出来るように
+		構築された場合にのみ有効である。Sambaは、LDAPライブラリを見つけると、
+		自動的にLDAPをサポートするように構築する。LDAPをサポートしているか
+		否かを調べる最も良い方法は以下の通り:
+<screen>
+&rootprompt; smbd -b | grep LDAP
+   HAVE_LDAP_H
+   HAVE_LDAP
+   HAVE_LDAP_DOMAIN2HOSTLIST
+   HAVE_LDAP_INIT
+   HAVE_LDAP_INITIALIZE
+   HAVE_LDAP_SET_REBIND_PROC
+   HAVE_LIBLDAP
+   LDAP_SET_REBIND_PROC_ARGS
+</screen>
+		もしも使用した<command>smbd</command>コマンドが<literal>HAVE_LDAP_H</literal>
+		を出力しない場合、なぜLDAPヘッダとライブラリがコンパイル中に見つから
+		なかったかということを調べる必要がある。
+			</para>
+
+			<para>LDAP関連のsmb.confオプションは以下の通り:
+			<smbconfblock>
+			<smbconfoption name="passdb backend">ldapsam:url</smbconfoption>
+			<smbconfoption name="ldap admin dn"/>
+			<smbconfoption name="ldap delete dn"/>
+			<smbconfoption name="ldap filter"/>
+			<smbconfoption name="ldap group suffix"/>
+			<smbconfoption name="ldap idmap suffix"/>
+			<smbconfoption name="ldap machine suffix"/>
+			<smbconfoption name="ldap passwd sync"/>
+			<smbconfoption name="ldap ssl"/>
+			<smbconfoption name="ldap suffix"/>
+			<smbconfoption name="ldap user suffix"/>
+			<smbconfoption name="ldap replication sleep"/>
+			<smbconfoption name="ldap timeout"/>
+			<smbconfoption name="ldap page size"/>
+			</smbconfblock>
+			</para>
+
+			<para>
+		これらは&smb.conf;マニュアルページに説明があり、ここでは繰り返さない。
+		しかし、LDAPディレクトリを使うための例は
+		<link linkend="confldapex">LDAP使用の設定例</link>にある。
+			</para>
+
+<example id="confldapex">
+<title>LDAP使用の設定例</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="security">user</smbconfoption>
+<smbconfoption name="encrypt passwords">yes</smbconfoption>
+<smbconfoption name="netbios name">MORIA</smbconfoption>
+<smbconfoption name="workgroup">NOLDOR</smbconfoption>
+
+<smbconfcomment>LDAP関連のパラメータ:</smbconfcomment>
+
+<smbconfcomment>LDAPサーバにバインドする時に使うDNの定義。</smbconfcomment>
+<smbconfcomment>smb.conf中にはこのDNのパスワードは格納されない。</smbconfcomment>
+<smbconfcomment>これは'smbpasswd -w secret'を使って</smbconfcomment>
+<smbconfcomment>secrets.tdbファイル中にパスフレーズを格納する。</smbconfcomment>
+<smbconfcomment>"ldap admin dn"を変更する場合、再設定する必要がある。</smbconfcomment>
+<smbconfoption name="ldap admin dn">"cn=Manager,dc=quenya,dc=org"</smbconfoption>
+
+<smbconfcomment>ディレクトリに接続ときのSSLオプションを設定する:</smbconfcomment>
+<smbconfcomment>('off', 'start tls', または 'on' (既定値))</smbconfcomment>
+<smbconfoption name="ldap ssl">start tls</smbconfoption>
+
+<smbconfcomment>syntax: passdb backend = ldapsam:ldap://server-name[:port]</smbconfcomment>
+<smbconfoption name="passdb backend">ldapsam:ldap://frodo.quenya.org</smbconfoption>
+
+<smbconfcomment>smbpasswd -x delete the entire dn-entry</smbconfcomment>
+<smbconfoption name="ldap delete dn">no</smbconfoption>
+
+<smbconfcomment>マシンとユーザサフィックスはベースサフィックスに追加される</smbconfcomment>
+<smbconfcomment>引用符なしで記述すること。未定義状態が既定値である</smbconfcomment>
+<smbconfoption name="ldap user suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap group suffix">ou=Groups</smbconfoption>
+<smbconfoption name="ldap machine suffix">ou=Computers</smbconfoption>
+
+<smbconfcomment>LDAP中の信頼UNIXアカウント情報</smbconfcomment>
+<smbconfcomment> (詳細はsmb.confマニュアルページを参照)</smbconfcomment>
+
+<smbconfcomment>ディレクトリを検索する時に使うベースDNの指定</smbconfcomment>
+<smbconfoption name="ldap suffix">dc=quenya,dc=org</smbconfoption>
+</smbconfblock>
+</example>
+
+		</sect3>
+
+		<sect3>
+		<title>アカウントとグループの管理</title>
+
+			<para>
+			<indexterm><primary>ユーザ管理</primary></indexterm>
+			<indexterm><primary>ユーザアカウント</primary><secondary>追加/削除</secondary></indexterm>
+			ユーザアカウントはsambaSamAccountオブジェクトクラスを通じて管理
+			されるため、使っている管理ツールをsambaSamAccount属性を扱えるよう
+			に修正する必要がある。
+			</para>
+
+			<para>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>/etc/openldap/sldap.conf</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+			マシンアカウントはsambaSamAccountオブジェクトクラスを使って管理
+			されるため、ユーザアカウントと同じように扱われる。しかし、これらの
+			アカウントをLDAP名前空間の異なったツリーに格納することはそれも
+			可能である。グループを格納するために、
+			<quote>ou=Groups,dc=quenya,dc=org</quote>を使うべきであり、
+			ユーザのために<quote>ou=People,dc=quenya,dc=org</quote>を
+			使うべきである。NSSとPAMの設定をそれに合わせて設定すること
+			(通常は、<filename>/etc/openldap/sldap.conf</filename>設定
+			ファイル中で設定する)。
+			</para>
+
+			<para>
+<indexterm><primary>POSIX</primary></indexterm>
+<indexterm><primary>posixGroup</primary></indexterm>
+<indexterm><primary>Domain Groups</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+			Samba-3では、グループ管理システムはPOSIXグループをベースにして
+			いる。これは、SambaはposixGroupオブジェクトクラスを使うという
+			ことを意味する。今の所、NT風のグループシステム管理はない(
+			グローバルとローカルグループという)。Samba-3は
+			<constant>Domain Groups</constant>のみを認識し、Microsoft
+			Windows 2000と Active Directoryとは異なり、Samba-3はネスト
+			されたグループをサポートしない。
+			</para>
+
+		</sect3>
+
+		<sect3>
+		<title>セキュリティとsambaSamAccount</title>
+
+
+			<para>
+<indexterm><primary>sambaSAMAccount</primary></indexterm>
+			ディレクトリ中のsambaSAMAccountエントリについてのセキュリティに関する
+			議論の際に覚えておかなければならない2つの重要な観点がある。
+			</para>
+
+			<itemizedlist>
+				<listitem><para><emphasis>絶対に</emphasis>SambaLMPasswordか
+<indexterm><primary>SambaNTPassword</primary></indexterm>
+				SambaNTPasswordの属性値を暗号化されていないLDAPセッション下で検索しない。</para></listitem>
+				<listitem><para><emphasis>絶対に</emphasis>管理者以外のユーザに
+				SambaLMPasswordかSambaNTPasswordの属性値を閲覧させない。</para></listitem>
+			</itemizedlist>
+
+			<para>
+<indexterm><primary>平文</primary></indexterm>
+<indexterm><primary>impersonate</primary></indexterm>
+<indexterm><primary>LM/NTパスワードハッシュ</primary></indexterm>
+			これらのパスワードハッシュは平文と同等であり、オリジナルの平文
+			文字列を得ないでもユーザを詐称するために使える。LM/NTハッシュ
+			についてのより詳細な情報は、この章の
+			<link linkend="passdb">アカウント情報データベース</link>
+			を参照のこと。
+			</para>
+
+			<para>
+<indexterm><primary>暗号化されたセッション</primary></indexterm>
+<indexterm><primary>StartTLS</primary></indexterm>
+<indexterm><primary>LDAPS</primary></indexterm>
+<indexterm><primary>安全な通信</primary></indexterm>
+			最初のセキュリティ問題に対応するため、<smbconfoption name="ldap ssl"/>
+			&smb.conf;パラメータは、ディレクトリサーバに接続する際に、
+			既定値のポート<constant>636</constant>を使う暗号化セッション
+			(<smbconfoption name="ldap ssl">on</smbconfoption>)を既定値で
+			要求する。OpenLDAPサーバを使う場合、LDAPSを指定する場所で、
+			StartTLS LDAP拡張操作を使うことが可能である。この場合、安全な
+			通信プロトコルを使うことを強く推奨する(そのため、
+			<smbconfoption name="ldap ssl">off</smbconfoption>を設定しては
+			ならない)。
+			</para>
+
+			<para>
+<indexterm><primary>LDAPS</primary></indexterm>
+<indexterm><primary>StartTLS</primary></indexterm>
+<indexterm><primary>LDAPv3</primary></indexterm>
+			LDAPSプロトコルはLDAPv3 StartTLS拡張オプションが優先されるので、非推奨
+			であることに注意。しかし、OpenLDAPライブラリは引き続きクライ
+			アントとサーバ間の古い安全な通信方法をサポートする。
+			</para>
+
+			<para>
+<indexterm><primary>harvesting password hashes</primary></indexterm>
+<indexterm><primary>ACL</primary></indexterm>
+<indexterm><primary>slapd.conf</primary></indexterm>
+			次の安全対策は、管理者以外がディレクトリからパスワードハッシュを
+			得ることを防ぐことである。これは<filename>slapd.conf</filename>
+			中に以下のACLを設定することで行える:
+			</para>
+
+<para>
+<programlisting>
+## "ldap admin dn" アクセスは許可するがそれ以外は拒否
+access to attrs=SambaLMPassword,SambaNTPassword
+     by dn="cn=Samba Admin,ou=People,dc=quenya,dc=org" write
+     by * none
+</programlisting>
+</para>
+
+		</sect3>
+
+		<sect3>
+		<title>sambaSamAccountsのための特別なLDAP属性</title>
+
+			<para>sambaSamAccountオブジェクトクラスは以下の表にあるような属性の集合である:
+			  <link	linkend="attribobjclPartA">Part A</link>と<link linkend="attribobjclPartB">Part B</link>。
+			</para>
+
+			<table frame="all" id="attribobjclPartA">
+				<title>Attributes in the sambaSamAccountのオブジェクトクラス(LDAP), Part A</title>
+			<tgroup cols="2" align="justify">
+					<colspec align="left"/>
+					<colspec align="justify" colwidth="1*"/>
+			<tbody>
+				<row><entry><constant>sambaLMPassword</constant></entry>
+				     <entry>16進文字列表現で格納されているLanManパスワードの16バイトハッシュ値。</entry></row>
+				<row><entry><constant>sambaNTPassword</constant></entry>
+				     <entry>16進文字列表現で格納されているNTパスワードの16バイトハッシュ値。</entry></row>
+				<row><entry><constant>sambaPwdLastSet</constant></entry>
+				     <entry><constant>sambaLMPassword</constant>と<constant>sambaNTPassword</constant>が
+				       最後に設定された時刻の、1970年からの経過秒数(整数値)。</entry></row>
+
+				<row><entry><constant>sambaAcctFlags</constant></entry>
+				     <entry>大カッコ[]で囲まれた11文字の文字列で、U(ユーザ)、W(ワークステーション)、
+				       X(パスワード満了なし)、I(ドメイン信頼アカウント)、H(ホームディレクトリが必要)、
+				       S(サーバ信頼アカウント)とD(無効)のようなアカウントフラグが格納。</entry></row>
+
+				<row><entry><constant>sambaLogonTime</constant></entry><entry>未使用(整数値)。</entry></row>
+
+				<row><entry><constant>sambaLogoffTime</constant></entry><entry>未使用(整数値)。</entry></row>
+
+				<row><entry><constant>sambaKickoffTime</constant></entry>
+				     <entry>ユーザがロックされてログインできなくなる時刻(UNIX時刻形式)を指定。
+				       もしも属性が省略された場合、アカウントは決して満了しない。この
+				       属性をshadowAccountオブジェクトクラスのshadowExpire属性と一緒に
+				       使うことで正確な日時で完全にアカウントを満了できる。</entry></row>
+
+				<row><entry><constant>sambaPwdCanChange</constant></entry>
+				     <entry>ユーザにパスワード変更が許可されている時刻(UNIX時刻形式)。
+				       もしもこの属性が設定されていない場合、ユーザは任意の時刻に
+				       パスワードを変更できる。</entry></row>
+
+				<row><entry><constant>sambaPwdMustChange</constant></entry>
+				  <entry>パスワードを強制的に変更しなければならない時刻(UNIX時刻形式)。
+				    もしもこの値が0ならば、ユーザは最初のログイン時にパスワードを変更
+				    しなければならない。この属性が設定されていない場合、パスワードは
+				    決して満了しない。</entry></row>
+
+				<row><entry><constant>sambaHomeDrive</constant></entry>
+				  <entry>sambaHomePathによって指定されるUNCパスにマップされるドライブ
+				    名を指定。ドライブ名はXがマップするドライブ名である、
+				    <quote>X:</quote>という形式で指定する必要がある。
+				    smb.conf(5)マニュアルページ中の<quote>logon drive</quote>
+				    パラメータにある詳細を参照のこと。</entry></row>
+
+				<row><entry><constant>sambaLogonScript</constant></entry>
+				  <entry>sambaLogonScriptプロパティは、.CMD, .EXE, や .BATファイルの
+				    ようなユーザのログオンスクリプトのパスを指定する。文字列は空
+				    でもよい。パスはnetlogon共有からの相対パスである。詳細な情報は、
+				    &smb.conf;マニュアルページの<smbconfoption name="logon script"/>
+				    パラメータを参照のこと。</entry></row>
+
+				<row><entry><constant>sambaProfilePath</constant></entry>
+				  <entry>ユーザのプロファイルのパスを指定。この値は空、ローカル
+				    な絶対パス、あるいはUNCパスが使える。詳細な情報は、&smb.conf;
+				    マニュアルページの<smbconfoption name="logon path"/>パラメータ
+				    を参照のこと。</entry></row>
+
+				<row><entry><constant>sambaHomePath</constant></entry>
+				  <entry>ユーザのホームディレクトリのパスを指定するsambaHomePath
+				    プロパティ。この値は空でも良い。もしもsambaHomeDriveが
+				    設定され、ドライブ名の場合、sambaHomePathはUNCパスである
+				    必要がある。パスは<filename>\\server\share\directory</filename>
+				    のようなネットワークUNCパスでなければならない。詳細な情報は、
+				    &smb.conf;マニュアルページの<command>logon home</command>
+				    パラメータを参照のこと。
+				</entry></row>
+			</tbody>
+			</tgroup></table>
+
+
+			<table frame="all" id="attribobjclPartB">
+				<title>sambaSamAccountオブジェクトクラスの属性, Part B</title>
+			<tgroup cols="2" align="justify">
+					<colspec align="left"/>
+					<colspec align="justify" colwidth="1*"/>
+			<tbody>
+				<row><entry><constant>sambaUserWorkstations</constant></entry>
+				  <entry>ユーザのログイン可能な、カンマで分離されたマシンのリスト。
+				    Sambaドメインメンバに接続することを試みる時に問題が発生する
+				    かもしれない。なぜならば、ドメインメンバがこのリストになく、
+				    ドメインコントローラはそれを拒否するため。この属性が省略された
+				    場合、既定値は何の制限がないことを仮定する。
+				</entry></row>
+
+				<row><entry><constant>sambaSID</constant></entry>
+				  <entry>ユーザのセキュリティ識別子(SID)。WindowsにおけるUNIX
+				    UID相当のもの。</entry></row>
+
+				<row><entry><constant>sambaPrimaryGroupSID</constant></entry>
+				  <entry>ユーザのプライマリグループのセキュリティ識別子(SID)。</entry></row>
+
+				<row><entry><constant>sambaDomainName</constant></entry>
+				  <entry>ユーザが属するドメイン。</entry></row>
+			</tbody>
+			</tgroup></table>
+
+
+			<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+			これらのパラメータの大多数はSambaがドメイン
+			(どのようにSambaをPDCとして設定するかについての詳細がある
+			<link linkend="samba-pdc">ドメイン制御</link>を参照)として振る舞う
+			時にのみ使われる。以下の4つの属性は、値が既定値でない場合にのみ
+			sambaSamAccountエントリに格納される。
+			</para>
+
+			<itemizedlist>
+<indexterm><primary>sambaHomePath</primary></indexterm>
+<indexterm><primary>sambaLogonScript</primary></indexterm>
+<indexterm><primary>sambaProfilePath</primary></indexterm>
+<indexterm><primary>sambaHomeDrive</primary></indexterm>
+				<listitem><para>sambaHomePath</para></listitem>
+				<listitem><para>sambaLogonScript</para></listitem>
+				<listitem><para>sambaProfilePath</para></listitem>
+				<listitem><para>sambaHomeDrive</para></listitem>
+			</itemizedlist>
+
+			<para>
+<indexterm><primary>sambaSamAccount</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>smbHome</primary></indexterm>
+			これらの属性は、値が既定値でない場合にのみsambaSamAccountに
+			格納される。例えば、MORIAがPDCとして設定され、その&smb.conf;
+			ファイル中で<smbconfoption name="logon home">\\%L\%u</smbconfoption>
+			が定義されているとする。<quote>becky</quote>という名前のユーザが
+			がドメインにログオンした時には<smbconfoption name="logon home"/>
+			文字列は\\MORIA\beckyに展開される。もしも、smbHome属性が
+			<quote>uid=becky,ou=People,dc=samba,dc=org</quote>エントリ中に
+			存在するならば、この値が使われる。しかし、もしもこの属性が存在
+			しない場合、<smbconfoption name="logon home"/>パラメータの値が
+			その場所に使われる。Sambaは、値が既定値以外の何かである場合
+			(例えば<filename>\\MOBY\becky</filename>)にのみ、属性値を
+			ディレクトリエントリに書き込む。
+			</para>
+
+		</sect3>
+
+		<sect3>
+		<title>sambaSamAccountのLDIFエントリの例</title>
+
+			<para>
+			以下は、SambaSamAccountオブジェクトクラスの、動作するLDIFの使用例である。
+<programlisting>
+dn: uid=guest2, ou=People,dc=quenya,dc=org
+sambaLMPassword: 878D8014606CDA29677A44EFA1353FC7
+sambaPwdMustChange: 2147483647
+sambaPrimaryGroupSID: S-1-5-21-2447931902-1787058256-3961074038-513
+sambaNTPassword: 552902031BEDE9EFAAD3B435B51404EE
+sambaPwdLastSet: 1010179124
+sambaLogonTime: 0
+objectClass: sambaSamAccount
+uid: guest2
+sambaKickoffTime: 2147483647
+sambaAcctFlags: [UX         ]
+sambaLogoffTime: 2147483647
+sambaSID: S-1-5-21-2447931902-1787058256-3961074038-5006
+sambaPwdCanChange: 0
+</programlisting>
+			</para>
+
+			<para>
+			以下はsambaSamAccountとposixAccountオブジェクトクラスに対するLDIF
+			エントリである:
+<programlisting>
+dn: uid=gcarter, ou=People,dc=quenya,dc=org
+sambaLogonTime: 0
+displayName: Gerald Carter
+sambaLMPassword: 552902031BEDE9EFAAD3B435B51404EE
+sambaPrimaryGroupSID: S-1-5-21-2447931902-1787058256-3961074038-1201
+objectClass: posixAccount
+objectClass: sambaSamAccount
+sambaAcctFlags: [UX         ]
+userPassword: {crypt}BpM2ej8Rkzogo
+uid: gcarter
+uidNumber: 9000
+cn: Gerald Carter
+loginShell: /bin/bash
+logoffTime: 2147483647
+gidNumber: 100
+sambaKickoffTime: 2147483647
+sambaPwdLastSet: 1010179230
+sambaSID: S-1-5-21-2447931902-1787058256-3961074038-5004
+homeDirectory: /home/moria/gcarter
+sambaPwdCanChange: 0
+sambaPwdMustChange: 2147483647
+sambaNTPassword: 878D8014606CDA29677A44EFA1353FC7
+</programlisting>
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>パスワードの同期</title>
+
+		<para>
+		Samba-3以降のバージョンは、アカウントとして格納される非Samba(LDAP)パスワード
+		を更新できる。pam_ldapを使う場合、UNIXとWindowsパスワードを同時に変更できる。
+		</para>
+
+		<para>
+		<smbconfoption name="ldap passwd sync"/>オプションでは、
+		<link linkend="ldappwsync">設定可能な<emphasis>ldap passwd sync</emphasis>
+		  の値</link>にある値を使うことが出来る。</para>
+
+		<table frame="all" id="ldappwsync">
+		<title>設定可能な<parameter>ldap passwd sync</parameter>の値</title>
+		<tgroup cols="2">
+			<colspec align="left" colwidth="1*"/>
+			<colspec align="justify" colwidth="4*"/>
+		<thead>
+			<row><entry align="left">値</entry><entry align="center">説明</entry></row>
+		</thead>
+		<tbody>
+		<row><entry>yes</entry><entry><para>ユーザがパスワード変更時に
+		      <constant>SambaNTPassword</constant>, <constant>SambaLMPassword</constant>
+		      と<constant>password</constant>フィールドを更新する。</para></entry></row>
+
+		<row><entry>no</entry><entry><para><constant>SambaNTPassword</constant>と
+					<constant>SambaLMPassword</constant>のみ更新する。</para></entry></row>
+
+		<row><entry>only</entry><entry><para>LDAPパスワードとLDAPサーバに他の
+		      フィールドについても更新を行う。このオプションはいくつかのLDAP
+		      サーバと、LDAPサーバがLDAP_EXOP_X_MODIFY_PASSWDをサポートする
+		      時のみ有効である。</para></entry></row>
+		</tbody>
+		</tgroup>
+		</table>
+
+
+		<para>より詳細な情報は &smb.conf; マニュアルページにある。</para>
+
+		</sect3>
+
+		<sect3>
+		<title>パスワード同期のためのOpenLDAPオーバレイの使用</title>
+
+		<para>
+		Howard Chuは、<command>smbk5pwd</command>という特別なオーバレイを書いた。
+		このツールは、LDAP_EXOP_X_MODIFY_PASSWD操作が実行される時に、
+		OpenLDAPエントリ中の<literal>SambaNTPassword</literal>,
+		<literal>SambaLMPassword</literal>と<literal>Heimdal</literal>ハッシュを
+		変更する。
+		</para>
+
+		<para>
+		オーバレイはOpenLDAP-2.3に含まれ、
+		<filename>contrib/slapd-modules/smbk5pwd</filename>サブディレクトリ
+		にある。このモジュールはOpenLDAPでも使える。
+		</para>
+
+		</sect3>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+	<sect2>
+		<title>ユーザがログオンできない</title>
+
+		<para><quote>Sambaをインストールしたが、UNIXアカウントを使ってログオンできない!</quote></para>
+
+		<para>現在の<smbconfoption name="passdb backend"/>にユーザが追加されて
+		  いるかを確認すること。詳細は
+		<link linkend="acctmgmttools">アカウント管理ツール</link>を読むこと。</para>
+
+	</sect2>
+
+	<sect2>
+	<title><parameter>auth methods</parameter>の設定</title>
+
+	<para>
+	明示的に<smbconfoption name="auth methods"/>パラメータを設定する場合、
+	<parameter>guest</parameter>はエントリの最初の行に指定しなければならない &smbmdash;
+	例えば、<smbconfoption name="auth methods">guest sam</smbconfoption>である。
+	</para>
+
+	</sect2>
+
+</sect1>
+
+</chapter>

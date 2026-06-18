@@ -1,0 +1,178 @@
+.\"     Title: pwck
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Polecenia Zarządzania Systemem
+.\"    Source: Polecenia Zarządzania Systemem
+.\"
+.TH "PWCK" "8" "11/23/2008" "Polecenia Zarządzania Systemem" "Polecenia Zarządzania Systemem"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAZWA"
+pwck \- verify integrity of password files
+.SH "SKŁADNIA"
+.HP 5
+\fBpwck\fR [\-q] [\-s] [\fIpasswd\fR\ [\ \fIshadow\fR\ ]]
+.HP 5
+\fBpwck\fR [\-q] [\-r] [\fIpasswd\fR\ \fIshadow\fR]
+.SH "OPIS"
+.PP
+The
+\fBpwck\fR
+command verifies the integrity of the system authentication information\&. All entries in the
+\fI/etc/passwd\fR
+and
+\fI/etc/shadow\fR
+are checked to see that the entry has the proper format and valid data in each field\&. The user is prompted to delete entries that are improperly formatted or which have other uncorrectable errors\&.
+.PP
+Checks are made to verify that each entry has:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'the correct number of fields
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'a unique user name
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'a valid user and group identifier
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'a valid primary group
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'a valid home directory
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'a valid login shell
+.RE
+.PP
+The checks for correct number of fields and unique user name are fatal\&. If the entry has the wrong number of fields, the user will be prompted to delete the entire line\&. If the user does not answer affirmatively, all further checks are bypassed\&. An entry with a duplicated user name is prompted for deletion, but the remaining checks will still be made\&. All other errors are warning and the user is encouraged to run the
+\fBusermod\fR
+command to correct the error\&.
+.PP
+The commands which operate on the
+\fI/etc/passwd\fR
+file are not able to alter corrupted or duplicated entries\&.
+\fBpwck\fR
+should be used in those circumstances to remove the offending entry\&.
+.SH "OPCJE"
+.PP
+Polecenie
+\fBpwck\fR
+posiada następujące opcje:
+.PP
+\fB\-q\fR
+.RS 4
+Report errors only\&. The warnings which do not require any action from the user won\'t be displayed\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+Execute the
+\fBpwck\fR
+command in read\-only mode\&.
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+Sort entries in
+\fI/etc/passwd\fR
+and
+\fI/etc/shadow\fR
+by UID\&.
+.RE
+.PP
+By default,
+\fBpwck\fR
+operates on the files
+\fI/etc/passwd\fR
+and
+\fI/etc/shadow\fR\&. The user may select alternate files with the
+\fIpasswd\fR
+and
+\fIshadow\fR
+parameters\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBPASS_MAX_DAYS\fR (number)
+.RS 4
+The maximum number of days a password may be used\&. If the password is older than this, a password change will be forced\&. If not specified, \-1 will be assumed (which disables the restriction)\&.
+.RE
+.PP
+\fBPASS_MIN_DAYS\fR (number)
+.RS 4
+The minimum number of days allowed between password changes\&. Any password changes attempted sooner than this will be rejected\&. If not specified, \-1 will be assumed (which disables the restriction)\&.
+.RE
+.PP
+\fBPASS_WARN_AGE\fR (number)
+.RS 4
+The number of days warning given before a password expires\&. A zero means warning is given only upon the day of expiration, a negative value means no warning is given\&. If not specified, no warning will be provided\&.
+.RE
+.SH "PLIKI"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informacje o grupach użytkowników\&.
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informacja o kontach użytkowników\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informacje chronione o użytkownikach\&.
+.RE
+.SH "ZOBACZ TAKŻE"
+.PP
+\fBgroup\fR(5),
+\fBpasswd\fR(5),
+\fBshadow\fR(5),
+\fBusermod\fR(8)\&.
+.SH "KOD ZAKOŃCZENIA"
+.PP
+Polecenie
+\fBpwck\fR
+kończy działanie z następującymi wartościami kodów zakończenia:
+.PP
+\fI0\fR
+.RS 4
+poprawne zakończenie działania programu
+.RE
+.PP
+\fI1\fR
+.RS 4
+niepoprawna składnia polecenia
+.RE
+.PP
+\fI2\fR
+.RS 4
+one or more bad password entries
+.RE
+.PP
+\fI3\fR
+.RS 4
+can\'t open password files
+.RE
+.PP
+\fI4\fR
+.RS 4
+can\'t lock password files
+.RE
+.PP
+\fI5\fR
+.RS 4
+can\'t update password files
+.RE

@@ -1,0 +1,31 @@
+exif-0.6.17 (2008-11-06):
+  * Fixed the output of -s and -t when iconv is configured
+  * Updated translations: pl
+  * Added translations: id nl sk sv vi zh_CN
+  * Fixed a double character encoding conversion problem with recent
+    GNU gettext because version >= 0.10.36 does the conversion of message
+    texts itself.
+
+
+exif-0.6.16 (unreleased version):
+  * Updated translations: pl
+
+
+New in 0.6.15:
+
+  * Misc. (build) bug fixes.
+
+
+New since 0.6.9 (2004-05-27):
+
+  * Bug fixes: #994706, #1005652
+
+  * return exit code != 0 in case of invalid command line
+
+  * Updated build system
+
+  * (Cross-)compiles for Windows (mingw32)
+
+  * Partially updated translations
+
+  * Misc. small fixes (see ChangeLog)

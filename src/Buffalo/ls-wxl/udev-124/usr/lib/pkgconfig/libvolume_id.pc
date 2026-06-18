@@ -1,0 +1,10 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=/usr/lib
+includedir=/usr/include
+
+Name: libvolume_id
+Description: Filesystem label and uuid access
+Version: 0.85.0
+Libs: -L${libdir} -lvolume_id
+Cflags: -I${includedir}

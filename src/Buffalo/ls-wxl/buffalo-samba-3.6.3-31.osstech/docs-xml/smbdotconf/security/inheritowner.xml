@@ -1,0 +1,21 @@
+<samba:parameter name="inherit owner"
+                 context="S"
+		 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> 新規作成したファイルやディレクトリの所有者としては、
+    通常接続しているユーザの実行 UID の値が用いられる。
+    このパラメータにより、Samba の管理者は、
+    新規作成したファイルやディレクトリの所有者を
+    親ディレクトリの所有者と同一にすることが可能となる。</para>
+
+    <para>この動作が有用な状況としては、
+    ユーザがファイルの作成や修正はできるが、削除はできないようにした drop box や、
+    あるユーザの移動プロファイルのディレクトリ内に新規作成されたファイルの所有者が
+    そのユーザとなるようにしたい場合などが挙げられる。</para>
+</description>
+
+<related>inherit permissions</related>
+
+<value type="default">no</value>
+</samba:parameter>

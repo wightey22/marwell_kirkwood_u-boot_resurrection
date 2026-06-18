@@ -1,0 +1,27 @@
+<samba:parameter name="locking"
+				 type="boolean"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、
+	クライアントからのロック要求により、
+	サーバがロック処理を行うかどうかを制御する。</para>
+
+	<para><command moreinfo="none">locking = no</command>の場合、
+	すべてのロックおよびアンロック要求は成功したものとして扱われ、
+	すべてのロック状態の問い合わせは、ファイルがロック可能であると応答する。</para>
+
+	<para><command moreinfo="none">locking = yes</command>の場合、
+	サーバにより実際のロック処理が実行される。</para>
+
+	<para>このオプションを<constant>no</constant>にすることは、
+	いかなる場合でも推奨されないが、
+	ロックを必要としない<emphasis>と思われる</emphasis> read only
+	のファイルシステム(例えばCDROMドライブ)では、有用 <emphasis>かも知れない</emphasis>。</para>
+
+	<para>ロックが機能しない場合、
+	データが破壊される可能性もあるため、全体に対しても、
+	個々の共有に対しても、ロックを無効にする際には注意すること。このパラメータの設定は通常必要ない。</para>
+</description>
+<value type="boolean">yes</value>
+</samba:parameter>

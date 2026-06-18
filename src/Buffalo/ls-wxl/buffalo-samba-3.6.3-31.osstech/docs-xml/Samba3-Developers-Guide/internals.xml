@@ -1,0 +1,435 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="internals">
+<chapterinfo>
+	<author>
+		<firstname>David</firstname><surname>Chappell</surname>
+		<affiliation>
+			<address><email>David.Chappell@mail.trincoll.edu</email></address>
+		</affiliation>
+	</author>
+	<pubdate>8 May 1996</pubdate>
+</chapterinfo>
+
+<title>Sambaの内部</title>
+
+<sect1>
+<title>文字の取り扱い</title>
+<para>
+この章では、Samba3.0以降におけるSamba内部での文字セットの取り扱いについて言及する。
+
+</para>
+
+<para>
+以前のバージョンのSambaは、とてもその場しのぎの文字セット処理を行っていた。点在する
+コードはDOSのコードページへ、あるいはコードページから特定の文字列を変換するのに、
+数多くの呼び出しが使われていた。問題は、特定のchar*がdosのコードページかUNIXの
+コードページかを確認するすべがないということである。これは、一般的な場合での取り扱いが
+ない、特定の場合に対応する事を試みる悪夢のようなコードになってしまう。
+</para>
+</sect1>
+
+<sect1>
+<title>新しい機能</title>
+
+<para>
+新しいシステムは以下のように動作する:
+</para>
+
+<orderedlist>
+<listitem><para>
+    Samba内部におけるすべてのchar*文字列は"unix"文字列である。smb.conf中の
+    "unix charset"オプションによって定義される文字セット中にはマルチバイト
+    文字列が存在する。
+</para></listitem>
+
+<listitem><para>
+    unix文字列用の1バイト固定文字セットは存在しないが、使われている任意の文字セットは
+    以下の性質を必要としている:
+	</para>
+	<orderedlist>
+	
+	<listitem><para>
+	    行終端を除いて、NULL文字が含まれてはならない
+	</para></listitem>
+
+	<listitem><para>
+	    Cの文字列と互換がある7ビット文字でなければならず、そのため、C用の
+	    定数文字列か文字は、選択された文字セット中で同等の文字列とバイト単位で
+	    全く同じである。
+	</para></listitem>
+	
+	<listitem><para>
+	    文字列を大文字化あるいは小文字化した場合、もはやオリジナルの文字列と
+	    同じではなくなる。
+	</para></listitem>
+
+	<listitem><para>
+	    クライアントから送信されてきたすべての文字を扱えねばならない。
+	</para></listitem>
+	</orderedlist>
+	
+	<para>
+	  例えば、UTF-8は良くできていて、ほとんどのマルチバイトのアジアの文字セットに
+	  対応するが、UCS2は、内部にNULLが含まれているため、UNIX文字列としては使うことが
+	  できない。
+	</para>
+</listitem>
+
+<listitem><para>
+    ネットワーク上に送信しようとするためのバッファ中に文字列を書き込む必要がある場合、
+    あるいは、クライアントの文字セットと互換のある文字セット形式での文字列を必要とする
+    場合、pull_またはpush_関数を使う必要がある。pull_関数は送信バッファから(マルチバイト)
+    UNIX文字列中に変換する。push_関数は文字列を書き込みバッファに書く。
+</para></listitem>
+
+<listitem><para>
+    理解する必要がある2つの主要なpull_とpush_関数は、pull_stringとpush_stringである。
+    これらの関数は文字列が入っているSMBパケットの開始位置をポイントすべきである、
+    ベースポインタを取る。関数は、パケットがユニコードパケットとしてマーク
+    されているかを自動的に決定するため、パケット中のフラグフィールドをチェックし、
+    このフラグに基づいて、文字列に対してユニコードを使うかどうかを決める。また、
+    STR_UNICODEかSTR_ASCIIを使うことによって、この決定を強制的に行わせてもよい。
+    smbd/とlibsmb/中での使用のために、適切な最初の引数を付けてpull_/push_関数を
+    呼び出すclistr_とsrvstr_ラッパー関数がある。
+	</para>
+	
+	<para>
+	  また、特定の文字列がASCIIかユニコードか分かっている場合、pull_ascii/
+	  pull_ucs2かpush_ascii/push_ucs2関数を呼び出しても良い。たとえば
+	  pull_ascii_pstring()のような、特定の共通の引数を持つpush_/pull_関数を
+	  呼び出すcharcnv.c中に、数多くの他の便利な関数もある。
+	</para>
+</listitem>
+
+<listitem><para>
+    覚えておかなければならない最も大きな問題は、Samba中の内部(UNIX)文字列は、
+    マルチバイト文字を含むかもしれないということである。これは、文字が常時1バイト
+    であることを仮定できないと言うことを意味する。しばしばこれは文字列をucs2に
+    変換しなければならないということであり、いくつかの(表面上)単純な作業を行うために、
+    再度逆変換する必要があるということである。どのようにこれを行うかの例は、
+    strchr_m()関数を見ること。これはとても遅いことが分かっていて、結局、これを
+    高速化したが、現在、スピードよりも正確さを求めている。
+</para></listitem>
+
+<listitem><para>
+    すべてのlp_関数は現在UNIX文字列を返す。パラメータ上の特別な"DOS"フラグはなくなった。
+</para></listitem>
+
+<listitem><para>
+    すべてのvfs関数はUNIX文字列を取る。それに渡すときに変換してはならない。
+</para></listitem>
+
+</orderedlist>
+
+</sect1>
+
+<sect1>
+<title>byteorder.h中のマクロ</title>
+
+<para>
+この節では、byteorder.h内で定義されているマクロについて説明する。それらのマクロは
+Sambaのコード内で広範囲に使われている。
+</para>
+
+<sect2>
+<title>CVAL(buf,pos)</title>
+
+<para>
+符号なし文字としてバッファbuf内のオフセット位置をバイト単位で返す。
+</para>
+</sect2>
+
+<sect2>
+<title>PVAL(buf,pos)</title>
+<para>符号なし文字タイプとしてキャストしたCVAL(buf,pos)の値を返す。</para>
+</sect2>
+
+<sect2>
+<title>SCVAL(buf,pos,val)</title>
+<para>valという値でバッファbuf内のバイト位置を設定する。</para>
+</sect2>
+
+<sect2>
+<title>SVAL(buf,pos)</title>
+<para>
+  バッファbuf内の、符号なしshort(16ビット)リトルエンディアン整数値によるオフセット位置の
+  値を返す。このタイプの整数は時々USHORTとして参照される。
+</para>
+</sect2>
+
+<sect2>
+<title>IVAL(buf,pos)</title>
+<para>バッファbuf内の符号なし32ビットリトルエンディアン整数によるオフセット位置を
+返す。</para>
+</sect2>
+
+<sect2>
+<title>SVALS(buf,pos)</title>
+<para>バッファbuf内の符号付きshort(16ビット)リトルエンディアン整数値によるオフセット
+位置の値を返す。</para>
+</sect2>
+
+<sect2>
+<title>IVALS(buf,pos)</title>
+<para>バッファbuf内での符号付き32ビットリトルエンディアン整数によるオフセット位置の
+値を返す。</para>
+</sect2>
+
+<sect2>
+<title>SSVAL(buf,pos,val)</title>
+<para>バッファbufへの符号なしshort(16ビット)リトルエンディアン整数によるオフセット位置を
+valという値で設定する。</para>
+</sect2>
+
+<sect2>
+<title>SIVAL(buf,pos,val)</title>
+<para>バッファbufへの符号なし32ビットリトルエンディアン整数によるオフセット位置を
+valという値で設定する。</para>
+</sect2>
+
+<sect2>
+<title>SSVALS(buf,pos,val)</title>
+<para>バッファbufへのshort(16ビット)符号付きリトルエンディアン整数によるオフセット位置を
+valという値で設定する。</para>
+</sect2>
+
+<sect2>
+<title>SIVALS(buf,pos,val)</title>
+<para>バッファbufへの符号付き32ビットリトルエンディアン整数によるオフセット位置を
+valという値で設定する。</para>
+</sect2>
+
+<sect2>
+<title>RSVAL(buf,pos)</title>
+<para>バッファbuf内での、符号なしshort(16bit)ビッグエンディアン整数によるオフセット位置を
+返す。</para>
+</sect2>
+
+<sect2>
+<title>RIVAL(buf,pos)</title>
+<para>バッファbuf内の、符号なし32ビットビッグエンディアン整数によるオフセット位置を
+返す。</para>
+</sect2>
+
+<sect2>
+<title>RSSVAL(buf,pos,val)</title>
+<para>
+バッファbuf内で、符号なしshort(16ビット)ビッグエンディアン整数値のオフセット位置を、
+valという値に設定する。これは"USHORT"として参照される。</para>
+</sect2>
+
+<sect2>
+<title>RSIVAL(buf,pos,val)</title>
+<para>バッファbuf内で、符号なし32ビットビッグエンディアン整数値のオフ設定値を、
+valという値に設定する。</para>
+</sect2>
+
+</sect1>
+
+
+<sect1>
+<title>LAN Manager用Samba API</title>
+
+<para>
+この節では、LANマネージャRPCコールを行わせるのに必要な関数について説明する。
+この情報はSambaコードの調査とLANマネージャ 2.0APIのドキュメントに依存している。
+これは完全に信頼できるものではない。
+
+</para>
+
+<para>
+<programlisting>
+call_api(int prcnt, int drcnt, int mprcnt, int mdrcnt, 
+	char *param, char *data, char **rparam, char **rdata);
+</programlisting>
+</para>
+
+<para>
+この関数はclient.c内で定義されている。リモートAPIを呼び出すためにSMBトランザクションで
+使われる。
+</para>
+
+<sect2>
+<title>パラメータ</title>
+
+<para>パラメータは以下の通り:</para>
+
+<orderedlist>
+<listitem><para>
+	prcnt: the number of bytes of parameters begin sent.
+</para></listitem>
+<listitem><para>
+	drcnt:   the number of bytes of data begin sent.
+</para></listitem>
+<listitem><para>
+	mprcnt:  the maximum number of bytes of parameters which should be returned
+</para></listitem>
+<listitem><para>
+	mdrcnt:  the maximum number of bytes of data which should be returned
+</para></listitem>
+<listitem><para>
+	param:   a pointer to the parameters to be sent.
+</para></listitem>
+<listitem><para>
+	data:    a pointer to the data to be sent.
+</para></listitem>
+<listitem><para>
+	rparam:  a pointer to a pointer which will be set to point to the returned
+	parameters.  The caller of call_api() must deallocate this memory.
+</para></listitem>
+<listitem><para>
+	rdata:   a pointer to a pointer which will be set to point to the returned 
+	data.  The caller of call_api() must deallocate this memory.
+</para></listitem>
+</orderedlist>
+
+<para>
+パラメータブロック中で、現れる順番で送らなければならないパラメータがある:
+</para>
+
+<orderedlist>
+
+<listitem><para>
+符号なし16ビット整数値。SSVAL()を使ってこの値を設定すべきである。この数値が
+どこで説明されているかは分からない。
+</para></listitem>
+
+<listitem><para>
+LANマネージャのドキュメント中で定義されてるようなAPI関数のためのパラメータを
+説明するASCIIZ文字列。最初のパラメータはサーバ名で、省略されている。この文字列は
+マニュアル中で説明されているようなAPI関数に基づいていて、実際に渡されるデータではない。
+</para></listitem>
+
+<listitem><para>
+戻されるべきデータ構造を説明するASCIIZ文字列。
+</para></listitem>
+
+<listitem><para>
+関数呼び出し中で現れる任意のパラメータで、LANマネージャAPIドキュメント中の、
+"Server"の後、"uLevel"パラメータまでを含むように定義されている。
+Any parameters which appear in the function call, as defined in the LAN
+Manager API documentation, after the "Server" and up to and including the
+"uLevel" parameters.
+</para></listitem>
+
+<listitem><para>
+符号なし16ビット整数値で、戻されるデータ構造体配列を受け取るために使われる
+バッファの大きさをバイト単位で与える。これはおそらくmdrcntと同じであるべきである。
+この値はSSVAL()を使って設定されるべきである。
+</para></listitem>
+
+<listitem><para>
+戻されるべき副構造体を説明するASCIIZ文字列。もしも副構造体が適用されなければ、
+この文字列の長さは0である。
+</para></listitem>
+
+</orderedlist>
+
+<para>
+client.c中のコードは常時データなしでcall_api()を呼び出す。0以外の長さを持つデータ
+バッファがいつ送られるかは不明である。
+</para>
+
+</sect2>
+
+<sect2>
+<title>戻り値</title>
+
+<para>
+戻されるパラメータ(rparamによって指示される)の、現れる順番は以下の通り:
+</para>
+
+<orderedlist>
+
+<listitem><para>
+符号なし16ビット整数値で、API関数の戻りコードを含んでいる。この値はSVAL()
+を使って読まれるべきである。
+</para></listitem>
+
+<listitem><para>
+戻されたデータ中のポインタによる、調整すべき調整量。この値はSVAL()を使って読まれる
+べきである。基本的に戻されたバッファの開始アドレスは、それに追加される戻された
+ポインタ値を持ち、戻されたデータバッファ中の現在のオフセットを得るために、それから
+この値が引かれる。
+An adjustment which tells the amount by which pointers in the returned
+data should be adjusted.  This value should be read with SVAL().  Basically, 
+the address of the start of the returned data buffer should have the returned
+pointer value added to it and then have this value subtracted from it in
+order to obtain the currect offset into the returned data buffer.
+</para></listitem>
+
+<listitem><para>
+戻された構造体配列中の要素の数。時々、これは戻されたバイト数である可能性もある。
+</para></listitem>
+</orderedlist>
+
+<para>
+calll_api()から戻ったとき、rparamは戻りパラメータを指示する。それがある場合、
+最初のものは戻り値である。API呼び出しが成功した場合、それは0である。これは、
+"SVAL(rparam,0)"として読まれる。
+</para>
+
+<para>
+2番目のパラメータは"SVAL(rparam,2)"として読むことが出来る。戻されたデータバッファの
+ベースアドレスがサーバ上で構築された時に何だったかを指示する16ビットオフセットである。
+これは使用の前にポインタを正しくするのに使われるべきである。
+use.
+</para>
+
+<para>
+戻されたデータバッファには戻されたデータ構造体配列が含まれている。すべてのポインタは
+使用する前に調整しなければならないことに注意。client.c中の関数fix_char_ptr()は、
+この目的のために使える。
+</para>
+
+<para>
+3番目のパラメータ("SVAL(rparam,4)"として読むことが出来る)は、戻されたデータの量を
+指示するか、十分なバッファ空間がある場合、戻すことが出来るデータのようなものである。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>コード文字テーブル</title>
+<para>
+特定のデータ構造は、コード文字を含むASCIIZ文字列を使って記述される。以下は
+コード文字である:
+</para>
+
+<orderedlist>
+<listitem><para>
+W	バイト単位のリトルエンディアン符号なし整数
+</para></listitem>
+<listitem><para>
+N	そのあとに続く副構造体の数
+</para></listitem>
+<listitem><para>
+D	4バイトのリトルエンディアン符号なし整数
+</para></listitem>
+<listitem><para>
+B	バイト(そのあとに続くASCII数値として表現された、任意のカウントが続く)
+</para></listitem>
+<listitem><para>
+z	4バイトのNULLで終端する文字列へのオフセット
+</para></listitem>
+<listitem><para>
+l	4バイトの非文字列ユーザデータへのオフセット
+</para></listitem>
+<listitem><para>
+b	データへのオフセット(そのあとに、ASCII数値として表現されるカウントが続く)
+</para></listitem>
+<listitem><para>
+r	戻されるデータバッファへのポインタ???
+</para></listitem>
+<listitem><para>
+L	戻されるデータバッファのバイト長???
+</para></listitem>
+<listitem><para>
+h	有効な情報のバイト数???
+</para></listitem>
+</orderedlist>
+
+</sect1>
+</chapter>

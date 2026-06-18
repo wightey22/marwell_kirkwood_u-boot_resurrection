@@ -1,0 +1,13 @@
+New in libiconv-1.10-ja-1.patch:
+* iso-2022-jp-ms への変換で JIS X 0201 片仮名を 8 ビットのまま出力していた
+  不具合を修正
+* check tests/SHIFT_JISX0213.TXT の修正
+* CP932 のエイリアスに WINDOWS-932 を追加
+* CP51932 のエイリアスに WINDOWS-51932, MS51932 を追加
+* ISO-2022-JP-MS のエイリアスに WINDOWS-50221, MS50221 を追加
+* eucJP-ms のエイリアスに eucjpms (MySQL) を追加
+* 環境変数 CHARSET_ALIAS の導入
+  例)
+    sh での設定例
+      $ CHARSET_ALIAS="Shift_JIS=WINDOWS-932:EUC-JP=EUC-JP-MS:ISO-2022-JP=ISO-2022-JP-MS"
+      $ export CHARSET_ALIAS

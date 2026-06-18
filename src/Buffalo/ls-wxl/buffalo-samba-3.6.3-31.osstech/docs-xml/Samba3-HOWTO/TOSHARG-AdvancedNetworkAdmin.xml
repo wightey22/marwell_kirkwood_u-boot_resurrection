@@ -1,0 +1,489 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="AdvancedNetworkManagement">
+<chapterinfo>
+	&author.jht;
+    <pubdate>June 15 2005</pubdate>
+</chapterinfo>
+
+<title>詳細なネットワーク管理</title>
+
+<para>
+<indexterm><primary>アクセス制御</primary></indexterm>
+この章では、ネットワークリソースアクセス制御を改善するためと、ユーザ環境を自動化する
+ためと、使用時の作業をより簡単にすることをしたいと思っているネットワーク管理者のための
+とても重要な周辺機器についての問題を記述する。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+しばしば、作業中のネットワーク環境とより理解しているものの違いは、すべてをより協調させる
+<emphasis>小分け</emphasis>の観点で最もよく測れる。すべてのネットワークソリューションの
+重要な部分は、リモートからMicrosoft Windowsワークステーションを管理すること、リモートで
+Sambaサーバにアクセスすること、より信頼出来るネットワーク操作の場面において手助けとなる
+他の保守作業と同様の、カスタマイズしたログオンスクリプトを提供することである。
+</para>
+
+<para>
+この章では、それらの各領域についての情報を提供する。それらはここにあり、他の章にはなく、
+そのため、参照が容易である。
+</para>
+
+</sect1>
+
+<sect1>
+<title>リモートサーバ管理</title>
+
+
+<para><quote>どのようにしてユーザマネージャとサーバマネージャを手に入れたらよいのか?</quote></para>
+
+<para>
+<indexterm><primary>ユーザマネージャ</primary></indexterm>
+<indexterm><primary>サーバマネージャ</primary></indexterm>
+<indexterm><primary>イベントビューワ</primary></indexterm>
+<application>NT4 サーバ</application>を購入する必要がないので、どのようにしてユーザ
+マネージャとサーバマネージャを手に入れたらよいのか?
+</para>
+
+<para>
+<indexterm><primary>Nexus.exe</primary></indexterm>
+<indexterm><primary>Windows 9x/Me</primary></indexterm>
+Microsoftは、<application>Windows 9x/Me</application>システム上でインストールするための、
+<filename>Nexus.exe</filename>と呼ばれるバージョンのツールを配布している。ツールセット
+には、以下が含まれている:
+</para>
+
+<itemizedlist>
+	<listitem><para>サーバマネージャ</para></listitem>
+	<listitem><para>ドメイン用のユーザマネージャ</para></listitem>
+	<listitem><para>イベントビューワ</para></listitem>
+</itemizedlist>
+
+<para>
+Microsoftの
+<ulink noescape="1" url="ftp://ftp.microsoft.com/Softlib/MSLFILES/NEXUS.EXE">Nexus</ulink>
+から書庫ファイルをダウンロードする。
+</para>
+
+<para>
+<indexterm><primary>SRVTOOLS.EXE</primary></indexterm>
+<indexterm><primary>ドメイン用のユーザマネージャ</primary></indexterm>
+<indexterm><primary>サーバマネージャ</primary></indexterm>
+ドメインとサーバマネージャ用の、<application>Windows NT 4.0</application>バージョン用の
+ユーザマネージャは、Microsoftの
+<ulink url="ftp://ftp.microsoft.com/Softlib/MSLFILES/SRVTOOLS.EXE">via ftp</ulink>にある。
+</para>
+
+</sect1>
+
+<sect1>
+<title>リモートデスクトップ管理</title>
+
+<para>
+<indexterm><primary>リモートデスクトップ管理</primary></indexterm>
+<indexterm><primary>ネットワーク管理</primary></indexterm>
+自由に使えるものから、費用がかかるものまでの間で、数多くのリモートデスクトップ管理
+ソリューションが存在する。黙ってみていてはいけない。最も費用がかかるソリューションは
+えてして最も効果的なものである。どの場合も、使用しているネットワーク環境で、どれが
+最も良いツールかを、自分で結論づける必要がある。
+</para>
+
+	<sect2>
+	<title>NoMachine.Comによるリモート管理</title>
+
+	<para>
+	<indexterm><primary>NoMachine.Com</primary></indexterm>
+	以下の情報はSambaメーリングリストに、2003年4月3日 23:33:50(UTC+00:00)に投稿
+	されたものである。以下は若干修正(プライバシーの理由で投稿者の詳細を省略)して
+	ある。完全な答えは、削除したいくつかのコメントを考慮して再構成してある。
+	</para>
+
+		<para><quote>
+<indexterm><primary>リモートデスクトップの能力</primary></indexterm>
+		PDCとしてネットワーク上で動いている、優れたなLinux/Sambaサーバがある。
+		これに、ユーザが外部からシステムにログイン出来るようにして、家や他の
+		国からデスクトップ状態を使えるようにする、リモートデスクトップ機能を
+		追加したい。
+		</quote></para>
+
+		<para><quote>
+<indexterm><primary>Windowsターミナルサーバ</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>リモートログイン</primary></indexterm>
+		これを達成する方法はあるだろうか?Windowsターミナルサーバが必要だろうか?
+		それを設定する必要があり、それはドメインのメンバか、BDCあるいはPDCになる
+		のだろうか?コンピュータがドメイン中にいる場合でも、Microsoft Windows XPを
+		リモートログインにするようなhackはあるだろうか?
+		</quote></para>
+
+		<para>
+		提供された回答:
+		<ulink noescape="1" url="http://www.nomachine.com/">NoMachine</ulink>から
+		提供されている新しい<quote>NX</quote>ソフトウェアを申し込む。
+		</para>
+
+	<para>
+<indexterm><primary>リモート X プロトコル</primary></indexterm>
+<indexterm><primary>VNC/RFB</primary></indexterm>
+<indexterm><primary>rdesktop/RDP</primary></indexterm>
+	これは、VNC/RFBとrdesktop/RDBをその中に取り込んでいる、簡単に使える、
+	リモートXプロトコルを実装しているが、今まで使ったことがあるかもしれない
+	他のものよりもパフォーマンスがよい。
+	</para>
+
+	<para>
+<indexterm><primary>modem/ISDN</primary></indexterm>
+	リモートXは別に新しいものではないが、これが成し遂げたものは、遅いmodem/ISDN
+	接続上でも十分に使えるくらいのスピードを出す、新しい圧縮方法とキャッシング
+	技術である。
+	</para>
+
+	<para>
+<indexterm><primary>KDE konqueror</primary></indexterm>
+<indexterm><primary>mouse-over</primary></indexterm>
+<indexterm><primary>rdesktop</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+	イタリアで(公開の)Red Hatマシンに対して、負荷の高いインターネット接続で、
+	KDE konquerorのサムネイルプレビューを有効にして、<quote>マウスを載せると</quote>
+	その時点でポップアップするようにしてテストしてみた。その内側(リモートX)の
+	セッションで、Windows XPマシンへののrdesktopセッションを起動した。パフォーマンスを
+	測ってみたところ、最初に631750ポイントというスコアが出た。
+	</para>
+
+	<para>
+<indexterm><primary>NX</primary></indexterm>
+<indexterm><primary>TightVNC</primary></indexterm>
+<indexterm><primary>rdesktop</primary></indexterm>
+<indexterm><primary>Remote X</primary></indexterm>
+	NXは、TightVNC, rdesktopやromete Xという、その時点までに使っていた他の
+	<quote>純粋な</quote>接続方法のどれよりも、ローカルLANよりも良いパフォーマンスを
+	出す。2つのノードを直接クロス接続するよりも速い。
+	</para>
+
+	<para>
+<indexterm><primary>Remote X</primary></indexterm>
+<indexterm><primary>KDEセッション</primary></indexterm>
+<indexterm><primary>コピーアンドペースト</primary></indexterm>
+	リモートXアプリケーションから手元のマシンに対して、音を再生することも出来、
+	(イタリアにあるKDEセッションで動いている)NXウィンドウからMozillaメールソフトに
+	<quote>コピーアンドペーストを</quote>する事も出来た。このソフトはとてもよく
+	動いている!
+	</para>
+
+	<para>
+	リモートコンピューティングに一時的な興味のみあるどなたにも、
+	<ulink noescape="1" url="http://www.nomachine.com/testdrive.php">NX</ulink>を使って
+	見る事をお勧めする。
+	</para>
+
+	<para>
+	無料で使えるクライアントソフトウェアをダウンロードし(Red Hat、SuSE、Debianと
+	Windows用がある)、起動し5分間使える(この時testdrive.nomachine.com上に実際の
+	UNIXアカウントを割り当てるために、アカウントデータを送る必要がある)。
+	</para>
+
+	<para>
+	計画されている要点では、クラスタのノードとしてNXアプリケーションサーバを
+	動かせるようになり、単にNXセッションをローカルに起動し、透過的に
+	アプリケーションを動かせる(アプリケーションが他のNXノードで動いていたとしても、
+	同じウィンドウで表示されるために、最初のログインで使われていたのと同じように
+	動く。また、フルスクリーンでも動作でき、そのすぐにリモートログインしていることを
+	全く忘れてしまうだろう)。
+	</para>
+
+	<para>
+<indexterm><primary>GPL</primary></indexterm>
+	最後に最も良いことを:すべての主要な圧縮とキャッシュ技術はGPLのもとでリリース
+	され、何かに組み込もうと思う人誰にもそのソースコードが公開されている!これらの
+	技術はちゃんと動くが、コマンドラインのみから起動する(そして、完全に動作する
+	リモートXセッションを起動し動かすために使うにはとても不便である)。
+	</para>
+
+	<para>
+	質問に対する回答は以下の通り:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>
+		ターミナルサーバをインストールする必要はない。XPはRDPのサポートを内蔵している。
+		</para></listitem>
+
+		<listitem><para>
+		NXはCitrixよりも安価であり&smbmdash;対抗できうる性能があり、おそらくより速い。
+		</para></listitem>
+
+		<listitem><para>
+		XPをハックする必要はない。&smbmdash;それはちゃんと動く。
+		</para></listitem>
+
+		<listitem><para>
+		透過的にリモートからXPマシンにログイン出来(そして、ドメインに対する認証が
+		必要だとしても、接続時に何かを変更する必要はない)。
+		</para></listitem>
+
+		<listitem><para>
+		NXの主要な技術はすべてオープンソースでGPLでリリースされている&smbmdash;。
+		(とても不便だが)無料で、コマンドラインで使う事が出来るが、お金を出せば、
+		便利な(商用の)NX GUIフロントエンドを買うことが出来る。
+		</para></listitem>
+
+		<listitem><para>
+<indexterm><primary>OSS/Free Software</primary></indexterm>
+<indexterm><primary>LTSP</primary></indexterm>
+<indexterm><primary>KDE</primary></indexterm>
+<indexterm><primary>GNOME</primary></indexterm>
+<indexterm><primary>NoMachine</primary></indexterm>
+		そのようなフロントエンドに対する、OSS/Free Softwareでの実装に、NoMachineは
+		自分自身に対する競合を意味しているのにもかかわらず、力を貸し、手助けを
+		している(このような主旨を、LTSP、KDEとGNOME開発メーリングリストにも表明
+		している)。
+		</para></listitem>
+	</itemizedlist>
+
+	</sect2>
+	<sect2>
+	<title>ThinLincを使うリモート管理</title>
+	<para>
+	リモートアクセスに対する他の解は、Cendioによる<emphasis>ThinLinc</emphasis>である。
+	</para>
+
+	<para>
+<indexterm><primary>ThinLinc</primary></indexterm>
+<indexterm><primary>ターミナルサーバ</primary></indexterm>
+<indexterm><primary>Linux</primary></indexterm>
+<indexterm><primary>Solaris</primary></indexterm>
+<indexterm><primary>TightVNC</primary></indexterm>
+<indexterm><primary>SSH</primary></indexterm>
+<indexterm><primary>NFS</primary></indexterm>
+<indexterm><primary>PulseAudio</primary></indexterm>
+	ThxnLincは、LinuxとSolarisベースで使える、SSH、TightVNC、NFSとPulseAudioのような
+	標準プロトコルをベースとしたターミナルサーバである。
+	</para>
+
+	<para>
+<indexterm><primary>LAN</primary></indexterm>
+<indexterm><primary>シンクライアント</primary></indexterm>
+	ThinLincは、LAN環境において組織におけるシンクライアント運用にも、狭帯域においても
+	使えるリモートから仕事をする人がセキュアなリモートアクセスを行うのにも使える。
+	ThinLincは、単一の同時アクセスするユーザに対して自由に使える。
+	</para>
+
+	<para>
+<indexterm><primary>Citrix</primary></indexterm>
+<indexterm><primary>Windowsターミナルサーバ</primary></indexterm>
+<indexterm><primary>Java</primary></indexterm>
+	プロダクトはWindowsターミナルサーバかCitrix環境のフロントエンドとしても、
+	Windows XPマシンのフロントエンドとしても使え、sshプロトコル経由で接続時の安全性を
+	確保している。クライアントはLinux(数多くのシンクライアント端末と同様すべてのLinux
+	ディストリビューションをサポート)とWindows用がある。JavaベースのWebクライアントも
+	提供されている。
+	</para>
+
+	<para>
+	ThinLincはCendioのデモシステムに接続することで評価が出来る。下記を参照。
+	<ulink noescape="1" url="http://www.cendio.com">Cendio's</ulink> web サイト
+	<ulink noescape="1" url="http://www.cendio.com/testdrive">testdrive</ulink> センタ。
+	</para>
+
+	<para>
+	Cendiaは以下を含む、いくつかのオープンソースプロジェクトにおける主要な貢献者である。
+	<ulink noescape="1" url="http://www.tightvnc.com">TightVNC</ulink>,
+	<ulink noescape="1" url="http://pulseaudio.org">PulseAudio</ulink> , unfsd,
+	<ulink noescape="1" url="http://www.python.org">Python</ulink> と
+	<ulink noescape="1" url="http://www.rdesktop.org">rdesktop</ulink>.
+	</para>
+
+	</sect2>
+</sect1>
+
+<sect1>
+<title>ネットワークログオンスクリプトの魔法</title>
+
+<para>
+固有のネットワーク設定環境を作成するための、いくつかの機会がある。
+</para>
+
+<itemizedlist>
+	<listitem><para>ログオンスクリプトなし。</para></listitem>
+	<listitem><para>すべてのユーザに適用される、単純な汎用ログオンスクリプト。</para></listitem>
+	<listitem><para>ユーザ単位あるいはグループ単位の属性に適用する条件付きログオンスクリプトの使用。</para></listitem>
+	<listitem><para>固有のログオンスクリプトを作るための、NETLOGON共有に対する
+	アクセス上の、Sambaのpreexecとpostexec機能を使用し、それを実行。</para></listitem>
+	<listitem><para>kixStartのようなツールのユーザ。</para></listitem>
+</itemizedlist>
+
+<para>
+Sambaソースコードの中には2つのログオンスクリプト生成/実行ツールが含まれている。
+<filename>examples</filename>ディレクトリの<filename>genlogon</filename>と
+<filename>ntlogon</filename>サブディレクトリを参照。
+</para>
+
+<para>
+以下のリストはgenlogonディレクトリからのものである。
+</para>
+
+
+<para>
+<indexterm><primary>genlogon.pl</primary></indexterm>
+これは、<filename>genlogon.pl</filename>ファイルである:
+
+<programlisting>
+	#!/usr/bin/perl
+	#
+	# genlogon.pl
+	#
+	# Perl script to generate user logon scripts on the fly, when users
+	# connect from a Windows client. This script should be called from 
+	# smb.conf with the %U, %G and %L parameters. I.e:
+	#
+	#       root preexec = genlogon.pl %U %G %L
+	#
+	# The script generated will perform
+	# the following:
+	#
+	# 1. Log the user connection to /var/log/samba/netlogon.log
+	# 2. Set the PC's time to the Linux server time (which is maintained
+	#    daily to the National Institute of Standards Atomic clock on the
+	#    internet.
+	# 3. Connect the user's home drive to H: (H for Home).
+	# 4. Connect common drives that everyone uses.
+	# 5. Connect group-specific drives for certain user groups.
+	# 6. Connect user-specific drives for certain users.
+	# 7. Connect network printers.
+
+	# Log client connection
+	#($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+	open LOG, ">>/var/log/samba/netlogon.log";
+	print LOG "$mon/$mday/$year $hour:$min:$sec";
+	print LOG " - User $ARGV[0] logged into $ARGV[1]\n";
+	close LOG;
+
+	# Start generating logon script
+	open LOGON, ">/shared/netlogon/$ARGV[0].bat";
+	print LOGON "\@ECHO OFF\r\n";
+
+	# Connect shares just use by Software Development group
+	if ($ARGV[1] eq "SOFTDEV" || $ARGV[0] eq "softdev")
+	{
+		print LOGON "NET USE M: \\\\$ARGV[2]\\SOURCE\r\n";
+	}
+
+	# Connect shares just use by Technical Support staff
+	if ($ARGV[1] eq "SUPPORT" || $ARGV[0] eq "support")
+	{
+		print LOGON "NET USE S: \\\\$ARGV[2]\\SUPPORT\r\n";
+	}
+
+	# Connect shares just used by Administration staff
+	If ($ARGV[1] eq "ADMIN" || $ARGV[0] eq "admin")
+	{
+		print LOGON "NET USE L: \\\\$ARGV[2]\\ADMIN\r\n";
+		print LOGON "NET USE K: \\\\$ARGV[2]\\MKTING\r\n";
+	}
+
+	# Now connect Printers. We handle just two or three users a little
+	# differently, because they are the exceptions that have desktop
+	# printers on LPT1: - all other user's go to the LaserJet on the
+	# server.
+	if ($ARGV[0] eq 'jim'
+	    || $ARGV[0] eq 'yvonne')
+	{
+		print LOGON "NET USE LPT2: \\\\$ARGV[2]\\LJET3\r\n";
+		print LOGON "NET USE LPT3: \\\\$ARGV[2]\\FAXQ\r\n";
+	}
+	else
+	{
+		print LOGON "NET USE LPT1: \\\\$ARGV[2]\\LJET3\r\n";
+		print LOGON "NET USE LPT3: \\\\$ARGV[2]\\FAXQ\r\n";
+	}
+
+	# All done! Close the output file.
+	close LOGON;
+</programlisting>
+</para>
+
+<para>
+これらは、より精巧か、有用なログイン処理システムがそれらのサイトを確認する事を期待している:
+</para>
+
+<itemizedlist>
+	<listitem><para><ulink noescape="1" url="http://www.craigelachie.org/rhacer/ntlogon">http://www.craigelachie.org/rhacer/ntlogon</ulink></para></listitem>
+	<listitem><para><ulink noescape="1" url="http://www.kixtart.org">http://www.kixtart.org</ulink></para></listitem>
+</itemizedlist>
+
+<sect2>
+<title>ユーザの干渉なしにプリンタを追加する</title>
+
+
+<para>
+<indexterm><primary>rundll32</primary></indexterm>
+プリンタは以下を使用することで、ログオンスクリプト処理中に自動的に追加することが出来る:
+<screen>
+&dosprompt;<userinput>rundll32 printui.dll,PrintUIEntry /?</userinput>
+</screen>
+
+<ulink url="http://support.microsoft.com/kb/189105/ja">ユーザーによる操作なしで Windowsにプリンタを追加する方法</ulink>
+を参照のこと。
+</para>
+</sect2>
+
+<sect2>
+	<title>ログオン接続の制限</title>
+
+	<para>
+	  時々、Samba共有リソースへの同時接続の数を制限することが必要な場合がある。
+	  たとえば、ユーザ毎に1つのネットワークログインのみを、サイトが許可したいような
+	  場合である。
+	</para>
+
+	<para>
+	  Sambaの<parameter>preexec script</parameter>パラメータはユーザ単位に1つの接続
+	  のみを許可するのに使える。この方法は完全に安全性があるわけではなく、副作用が
+	  あるかもしれない。以下の寄贈された方法はより良い解を誰かに思いつかさせて、
+	  提供を促すかもしれない。
+	</para>
+
+	<para>
+	  これは、Windowsクライアントが、実際にそうである間、共有をもう使っていないと
+	  見える場合に、自動再接続機能を使って、アイドル状態の接続を切ってしまうことが
+	  出来るという理由で完全な解ではない。そうだったとしても、これは、
+	  <parameter>preexec script</parameter>パラメータの使用の原理的なデモである。
+	</para>
+
+	<para>
+	  以下の共有設定は<link linkend="Tpees"/>中で示されるスクリプトの使用をデモする。
+<programlisting>
+[myshare]
+	...
+	preexec script = /sbin/PermitSingleLogon.sh
+	preexec close = Yes
+	...
+</programlisting>
+	</para>
+
+<example id="Tpees">
+<title>Script to Enforce Single Resource Logon</title>
+<screen>
+#!/bin/bash
+
+IFS="-"
+RESULT=$(smbstatus -S -u $1 2> /dev/null | awk 'NF \
+        > 6 {print $1}' | sort | uniq -d)
+
+if [ "X${RESULT}" == X  ]; then
+  exit 0
+else
+  exit 1
+fi
+</screen>
+</example>
+
+</sect2>
+
+</sect1>
+
+</chapter>

@@ -1,0 +1,18 @@
+<samba:parameter name="max disk size"
+                 context="G"
+		 type="integer"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションにより、見かけ上のディスクの容量の上限を設定することができる。このオプションを 100 に設定すると、すべての共有は 100MB 以上の容量に見えることはない。</para>
+
+    <para>このオプションは、ディスクに置くことができるデータの容量を制限するものではないことに注意。前述した設定を行なった場合でも、 100MB を越える容量をディスクに書き込むことは可能であるが、クライアントがディスクの空き容量や総ディスクサイズを求めると、結果は <parameter moreinfo="none">max 
+    disk size</parameter> で指定された量に制限されることになる。</para>
+
+    <para>このオプションは、主として非常に大きいディスク、特に 1GB を越えるサイズをもつディスクを扱えないソフトウェアのバグを回避する際に有用である。</para>
+
+    <para><parameter moreinfo="none">max disk size</parameter> パラメータが 0 の場合は、無制限を意味する。</para>
+</description>
+<value type="default">0</value>
+<value type="example">1000</value>
+</samba:parameter>

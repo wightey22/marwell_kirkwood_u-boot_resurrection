@@ -1,0 +1,29 @@
+<samba:parameter name="strict locking"
+                 context="S"
+				 type="enum"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>これは、
+	サーバ上でのロックの扱いを制御する列挙型の値のパラメータである。
+	<constant>yes</constant> に設定された場合、
+	サーバはすべての読み書きのアクセスについてファイルのロック状態を検査し、
+	ロックされている場合はアクセスを拒否する。
+	システムによっては、アクセス速度の低下につながるだろう。</para>
+
+	<para>
+	strict locking が Auto (既定値)の場合、サーバは oplock が行なわれていないファイルについてのみ、ロック状態の検査を行なう。
+	Windows のリダイレクタの多くは、oplock が行なわれているファイルについてはファイルロックのチェックをローカルで実施しているため、
+	この設定は、パフォーマンス低下とのうまいトレードオフを実現している。
+	</para>
+
+	<para>strict locking が無効の場合、
+	サーバは、クライアントが明示的に要求したときに限って、
+	ファイルのロック状態の確認を行なう。</para>
+
+	<para>
+	行儀のよいクライアントは、
+	重要な操作を行ない際には必ずロックの状態を問い合わせる。
+	従って、大抵の場合は <command moreinfo="none">strict locking = Auto</command> か <command moreinfo="none">strict locking = no</command> がよい。</para>
+</description>
+<value type="default">Auto</value>
+</samba:parameter>

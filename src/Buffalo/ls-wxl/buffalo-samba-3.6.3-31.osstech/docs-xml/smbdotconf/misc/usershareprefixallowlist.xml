@@ -1,0 +1,21 @@
+<samba:parameter name="usershare prefix allow list"
+	         context="G"
+		 basic="1" advanced="1"
+		 type="string"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータには、ユーザ定義共有による共有を許可する絶対パス名のリストを指定する。
+	共有しようとしているパス名の先頭がこのリストに指定されたパス名のいずれかと合致していない場合、公開は許可されない。
+	これにより、Samba の管理者がユーザ定義共有による公開を可能とするディレクトリを制限することが可能となる。
+	</para>
+	<para>
+	「usershare prefix deny list」と「usershare prefix allow list」の両方が定義されている場合は、
+	拒否リスト側が先に処理され、後から許可リストが処理される。
+	これにより、拒否リストによる制限を優先している。
+	</para>
+
+</description>
+<value type="default">NULL</value>
+<value type="example">/home /data /space</value>
+</samba:parameter>

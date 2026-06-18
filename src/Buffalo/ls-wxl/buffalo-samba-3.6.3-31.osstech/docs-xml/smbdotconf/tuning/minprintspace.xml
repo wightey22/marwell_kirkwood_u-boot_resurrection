@@ -1,0 +1,12 @@
+<samba:parameter name="min print space"
+                 context="S"
+		 type="integer"
+                 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>ユーザの印刷ジョブをスプールする際に利用可能でなければならない空きディスクスペースの最小容量を設定する。この値はキロバイト単位で指定する。デフォルトは 0 で、この場合、ユーザは常に印刷ジョブをスプールできる。</para>
+</description>
+<related>printing</related>
+<value type="default">0</value>
+<value type="example">2000</value>
+</samba:parameter>

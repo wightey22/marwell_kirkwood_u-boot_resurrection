@@ -1,0 +1,16 @@
+<samba:parameter name="min wins ttl"
+                 context="G"
+				 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このオプションは、 <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry>
+    がWINSサーバとして動作している時に 
+    (<smbconfoption name="wins support">yes</smbconfoption>)、
+    <command moreinfo="none">nmbd</command> に登録された NetBIOS 名の最小の TTL (time to live)を秒単位で指定する。
+    このパラメータを変更する必要はないであろう。
+    デフォルトは6時間(21600秒)である。</para>
+</description>
+<value type="default">21600</value>
+</samba:parameter>

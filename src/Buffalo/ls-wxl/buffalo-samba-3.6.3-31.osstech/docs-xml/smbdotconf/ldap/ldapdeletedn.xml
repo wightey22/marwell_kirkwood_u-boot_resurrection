@@ -1,0 +1,12 @@
+<samba:parameter name="ldap delete dn"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは ldapsam の削除の操作時に、エントリを完全に
+	削除するか、Samba でしか使用されない属性だけを消すかの制御を行なう。
+	</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbgetrc.5">
+
+<refmeta>
+	<refentrytitle>smbgetrc</refentrytitle>
+	<manvolnum>5</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ファイルフォーマットと規約</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbgetrc</refname>
+	<refpurpose>smbget の設定ファイル</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<para><filename>smbgetrc</filename></para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>
+このマニュアルでは <emphasis>smbgetrc</emphasis> ファイルのフォーマットと
+オプションについて述べる。このファイルは <citerefentry><refentrytitle>
+smbget</refentrytitle><manvolnum>1</manvolnum></citerefentry> 
+ユーティリティーの設定ファイルとして使用される。内容にはキーと値のペアを、
+１行に１組ずつ記述する。キーと値の間はスペースで区切る。
+	</para>
+
+	<para>
+デフォルトでは、smbget は設定値を <emphasis>$HOME/.smbgetrc</emphasis> から
+読み込むが、ファイルの位置はコマンドラインオプションで変更可能である。　
+		</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<para>
+	設定できるキーは以下の通り：
+</para>
+
+	<variablelist>
+		<varlistentry><term>resume on|off</term>
+			<listitem><para>
+			前回中断したところの続きからダウンロードするかどうか
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>recursive on|off</term>
+			<listitem><para>ディレクトリーを再帰的にダウンロードするかどうか</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>username <replaceable>名前</replaceable></term>
+			<listitem><para>リモートサーバーへのログインの際に使用するユーザー名。
+匿名アクセスでは空の文字列を使用する。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>password <replaceable>パスワード</replaceable></term>
+			<listitem><para>ログインの際のパスワード</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>workgroup <replaceable>ワークグループ名</replaceable></term>
+			<listitem><para>ログインの際に使用するワークグループ名</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>nonprompt on|off</term>
+			<listitem><para>ユーザー名とパスワードをオペレーターに問い合わせるかどうか。スクリプト実行の際に役立つ。</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>debuglevel <replaceable>整数</replaceable></term>
+			<listitem><para>実行時の（Samba の）デバッグレベル。プトロコルレベルの問題を追跡するのに役立つ。</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>dots on|off</term>
+			<listitem><para>１ブロックダウンロードするたびに、デフォルトの
+進捗表示の代わりに１個のドットを表示するかどうか。</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>blocksize <replaceable>整数</replaceable></term>
+			<listitem><para>１ブロックあたりのバイト数</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>
+このマニュアルは Sambaバージョン 3用である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>smbget</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry> および <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+		オリジナルの Samba ソフトウェアおよび関連するユーティリティーは、
+		Andrew Tridgell によって書かれた。現在は Samba は Samba Team によって 
+		Linux カーネルの開発と同様に、オープンソースプロジェクトとして
+		開発されている。
+	</para>
+
+	<para>smbget のマニュアルは Jelmer Vernooij によって書かれた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>によって行なわれた。</para>
+</refsect1>
+
+</refentry>

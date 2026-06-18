@@ -1,0 +1,27 @@
+<samba:parameter name="dos filetime resolution"
+		 context="S"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>DOS や Windows の FAT ファイルシステム下では、
+	時刻の最小単位は 2 秒である。共有に対してこのパラメータを設定すると、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>
+	に対して 1 秒精度の要求が 行なわれた際に、
+	返却される時間をもっとも近い 2 秒の境界値に丸める。
+	</para>
+
+	<para> このオプションはおもに、Samba の共有で Visual C++ を
+	使用するための互換性オプションとして利用する。
+	共有で oplock が有効であると、
+	Visual C++ はファイルが最後の読み込みから変更されていないかを検査するときに、
+	扱う日付の最小単位が異なる 2 つの時刻取得の呼び出し (call) を利用する。
+	そのうちのひとつの呼び出しは 1秒単位であり、もうひとつは 2 秒単位になっている。
+	2 秒単位で扱う呼び出しが奇数秒を切り捨てるため、
+	ファイルが奇数秒の日付であると 2 つの日付が一致せず、
+	Visual C++ はファイルが変更されたと報告し続けてしまう。
+	このオプションを<constant>yes</constant>に設定することで 2 つの日付は一致し、Visual C++ も幸福になれる。</para>
+
+</description>
+<value type="default">no</value>
+</samba:parameter>

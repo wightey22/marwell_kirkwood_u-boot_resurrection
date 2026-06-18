@@ -1,0 +1,513 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="SambaHA">
+<chapterinfo>
+	&author.jht;
+	&author.jeremy;
+</chapterinfo>
+
+<title>高可用性</title>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>可用性</primary></indexterm>
+<indexterm><primary>intolerance</primary></indexterm>
+<indexterm><primary>vital task</primary></indexterm>
+ネットワーク管理者は、しばしばファイルと印刷サービスの可用性について関心を持っている。
+ネットワークユーザは、きわめて重要な、責任ある仕事を遂行するのに依存するサービスに
+対して、厳しい態度をとりがちである。
+</para>
+
+<para>
+コンピュータルームにある以下の標語が、スタッフに自らの責任を思い起こさせるのであった。
+それは以下のようなものであった:
+</para>
+
+<blockquote>
+<para>
+<indexterm><primary>障害</primary></indexterm>
+<indexterm><primary>managed by humans</primary></indexterm>
+<indexterm><primary>economically wise</primary></indexterm>
+<indexterm><primary>anticipate failure</primary></indexterm>
+すべての人間は過ちを犯すものである。大小を問わず、我々は絶えず過ちを犯している。
+機会も同様に故障するものである。コンピュータは人によって管理される機械であり、
+故障の結果は悲惨なものとなりうる。管理者の責任は、故障に対処し、故障を予測し、
+人知の及ぶ限り、かつ経済的に合理的な範囲でその可能性を抹消することに他ならない。
+あなたの行動は、問題の一部となるか、それとも解決の一部となるか。
+</para>
+</blockquote>
+
+<para>
+もしも、計画的、生産的な方法で障害に対処するのであれば、まず最初に問題を理解する
+必要がある。それがこの章の目的である。
+</para>
+
+<para>
+<indexterm><primary>高可用性</primary></indexterm>
+<indexterm><primary>CIFS/SMB</primary></indexterm>
+<indexterm><primary>state of knowledge</primary></indexterm>
+以下の議論には障害に対抗するためにネットワーク基盤をどのように展開すべきかについての
+ポイントとなる情報も含まれている。ただし、ここでの目的は、高可用性に関する長大な論文を
+発表することではない。そのため、高可用性を提供するソリューションの具体的な実例は提示
+していない。Samba を含む CIFS/SMB 技術を展開する際に適用するための、高可用性に関する
+最新の知識とノウハウの紹介を主眼に置いた詳細なドキュメントの作成に誰か
+が挑戦してくれることを期待して、ここでの記述は概論に留める判断を行っている。
+</para>
+
+</sect1>
+
+<sect1>
+<title>技術的な議論</title>
+
+<para>
+<indexterm><primary>SambaXPカンファレンス</primary></indexterm>
+<indexterm><primary>ドイツ</primary></indexterm>
+<indexterm><primary>inspired structure</primary></indexterm>
+以下の要約は、2003年4月に、ドイツのゲッティンンゲンで行われた、SambaXP 2003
+カンファレンスで、Jeremy Allisonによって行われた発表の一部である。
+素材となる情報は、幾つか追加されているが、それらを以下の構成に
+まとめあげたのは、Jeremy ならではである。
+</para>
+
+	<sect2>
+	<title>最終目的</title>
+
+	<para>
+<indexterm><primary>クラスタリング技術</primary></indexterm>
+<indexterm><primary>affordable power</primary></indexterm>
+<indexterm><primary>無停止サービス</primary></indexterm>
+	すべてのクラスタリング技術は以下の1つあるいはそれ以上を達成することを目的としている:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>コンピュータの能力を最大限使えること。</para></listitem>
+		<listitem><para>より高速なプロトコル実行を行うこと。</para></listitem>
+		<listitem><para>無停止サービスを提供すること。</para></listitem>
+		<listitem><para>単一障害点を避けること。</para></listitem>
+		<listitem><para>資源を最も効果的に使うこと。</para></listitem>
+	</itemizedlist>
+
+	<para>
+	クラスタ化されたファイルサーバは理想的に以下の属性を有している:
+<indexterm><primary>クラスタ化されたファイルサーバ</primary></indexterm>
+<indexterm><primary>透過的な接続</primary></indexterm>
+<indexterm><primary>透過的な再接続</primary></indexterm>
+<indexterm><primary>分散ファイルシステム</primary></indexterm>
+	</para>
+
+	<itemizedlist>
+		<listitem><para>すべてのクライアントはどのサーバにも透過的に接続できる。</para></listitem>
+		<listitem><para>サーバが故障するとクライアントは透過的に他のサーバに再接続できる。</para></listitem>
+		<listitem><para>すべてのサーバは、同じファイル群を提供する。</para></listitem>
+		<listitem><para>すべてのファイルの変更は、すべてのサーバで直接行われるように見える。</para>
+			<itemizedlist><listitem><para>分散ファイルシステムが必要。</para></listitem></itemizedlist></listitem>
+		<listitem><para>より多くのサーバやディスクを追加することで、無限に拡張できる。</para></listitem>
+	</itemizedlist>
+
+	</sect2>
+
+	<sect2>
+	<title>これがなぜ難しいか?</title>
+
+	<para>
+	簡単に言うと、問題は<emphasis>状態(state)</emphasis>にある。
+	</para>
+
+	<itemizedlist>
+		<listitem>
+			<para>
+<indexterm><primary>state information</primary></indexterm>
+			すべてのTCP/IP接続はステート情報に依存する。
+			</para>
+			<para>
+<indexterm><primary>TCP failover</primary></indexterm>
+			TCP接続はパケットシーケンス番号を持っている。このシーケンス
+			番号は、シームレスなTCPフェールオーバーを引き起こすために、
+			クラスタ中で、すべてのマシン上で動的に更新される必要がある。
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+<indexterm><primary>CIFS/SMB</primary></indexterm>
+<indexterm><primary>TCP</primary></indexterm>
+			CIFS/SMB(Windowsネットワークプロトコル)はTCP接続を使用している。
+			</para>
+			<para>
+			これは、基本的な設計の見地から、フェイルオーバーは真剣に考慮
+			されていない事を意味する。
+			<itemizedlist>
+				<listitem><para>
+				すべての現在のSMBクラスタはフェールオーバーソリューション
+				である。&smbmdash;これらは再接続するクライアントに
+				頼っている。これは、サーバのフェールオーバーを提供するが、
+				クライアントはサーバの故障のために情報を失う可能性がある。
+<indexterm><primary>サーバの故障</primary></indexterm>
+				</para></listitem>
+			</itemizedlist>
+			</para>
+		</listitem>
+		<listitem>
+			<para>
+			サーバはクライアント接続に関するステート情報を保存する。
+			<itemizedlist>
+<indexterm><primary>state</primary></indexterm>
+				<listitem><para>CIFS/SMBには多くのステートがある。</para></listitem>
+				<listitem><para>すべてのファイルのオープンは、共有モードを
+				    チェックするために他のオープンしているファイルと比較する。</para></listitem>
+			</itemizedlist>
+			</para>
+		</listitem>
+	</itemizedlist>
+
+		<sect3>
+		<title>最先端の状況</title>
+
+		<para>
+<indexterm><primary>クラスタサービス</primary></indexterm>
+<indexterm><primary>単一サーバ</primary></indexterm>
+<indexterm><primary>TCPデータストリーム</primary></indexterm>
+<indexterm><primary>front-end virtual server</primary></indexterm>
+<indexterm><primary>仮想サーバ</primary></indexterm>
+<indexterm><primary>de-multiplex</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+		1つの名前と1つのIPアドレスを持つ単一のサーバのように、ファイルサーバの
+		クラスタを見せるためにすることは可能で、クライアントから受信した
+		TCPデータストリームはフロントエンドの仮想サーバによって処理される必要が
+		ある。このサーバはSMBプロトコルレイヤレベルで、入力したパケットを分割し、
+		次に、クラスタ中の異なったサーバにSMBパケットを中継する。
+		</para>
+
+		<para>
+<indexterm><primary>IPC$接続</primary></indexterm>
+<indexterm><primary>RPC呼び出し</primary></indexterm>
+		印刷とユーザ検索要求を扱うためには、すべてのIPC$接続とRPC呼び出しを1台の
+		サーバに振り分けるしかない。RPC印刷ハンドルは、異なったIPC$
+		セッションで共有される。&smbmdash;これをクラスタを構成するサーバ間で
+		分割するのは難しい!
+		</para>
+
+		<para>
+		概念的に、他のすべてのサーバはファイルサービスのみ提供する。これは
+		集中させるよりも簡単な問題である。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>SMBリクエストの分割</title>
+
+		<para>
+<indexterm><primary>SMBリクエスト</primary></indexterm>
+<indexterm><primary>SMBステート情報</primary></indexterm>
+<indexterm><primary>フロントエンド仮想サーバ</primary></indexterm>
+<indexterm><primary>込み入った問題</primary></indexterm>
+		SMBリクエストを分割する事は、SMBステート情報を知っていることが要求され、そのすべては
+		フロントエンドの<emphasis>仮想</emphasis>サーバによって保持されねばならない。
+		これは解決するのには複雑で難しい問題である。
+		</para>
+
+		<para>
+<indexterm><primary>vuid</primary></indexterm>
+<indexterm><primary>tid</primary></indexterm>
+<indexterm><primary>fid</primary></indexterm>
+		Windows XPとその後継は、その意味を変更し、そのため、ステート情報
+		(vuid,tid,fid)は操作が成功するために一致しなければならない。これは、
+		以前よりも物事を単純にし、前へ進むためのよい一歩である。
+		</para>
+
+		<para>
+<indexterm><primary>SMBリクエスト</primary></indexterm>
+<indexterm><primary>ターミナルサーバ</primary></indexterm>
+		SMBリクエストは、それに対応するサーバにvuidによって送られる。
+		このソリューションを作り出すコードは現在存在しない。この問題は、
+		Samba中で、Windows 2000ターミナルサーバからの複数のリクエストからの
+		リクエストを正しく処理する問題と、概念的に似ている。
+		</para>
+
+		<para>
+<indexterm><primary>分割</primary></indexterm>
+		直接クライアントにサーバプールを提示することで開始するという
+		1つの可能性がある。これは、分割ステップを省略できる。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>分散ファイルシステムの試み</title>
+
+		<para>
+<indexterm><primary>分散ファイルシステム</primary></indexterm>
+		UNIXとLinux用に、たくさんの分散ファイルシステムがある。
+		</para>
+
+		<para>
+<indexterm><primary>バックエンド</primary></indexterm>
+<indexterm><primary>SMB semantics</primary></indexterm>
+<indexterm><primary>共有モード</primary></indexterm>
+<indexterm><primary>locking</primary></indexterm>
+<indexterm><primary>oplock</primary></indexterm>
+<indexterm><primary>分散ファイルシステム</primary></indexterm>
+		SMB文法を認識することを、ずっと心にとめている間は、我々のクラスタの
+		バックエンドに多くが適用できる(共有モード、ロックとoplock問題は特に)。
+		一般的な自由に使える分散ファイルシステムには以下がある:
+		Many could be adopted to backend our cluster, so long as awareness of SMB
+		semantics is kept in mind (share modes, locking, and oplock issues in particular).
+		Common free distributed file systems include:
+<indexterm><primary>NFS</primary></indexterm>
+<indexterm><primary>AFS</primary></indexterm>
+<indexterm><primary>OpenGFS</primary></indexterm>
+<indexterm><primary>Lustre</primary></indexterm>
+		</para>
+
+		<itemizedlist>
+			<listitem><para>NFS</para></listitem>
+			<listitem><para>AFS</para></listitem>
+			<listitem><para>OpenGFS</para></listitem>
+			<listitem><para>Lustre</para></listitem>
+		</itemizedlist>
+
+		<para>
+<indexterm><primary>サーバプール</primary></indexterm>
+		サーバプール(クラスタ)は、もしもすべてのSMB文法がそのプール内で実行出来るならば、
+		任意の分散ファイルシステムを使える。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>分散ファイルシステム上の限定的な制約</title>
+
+		<para>
+<indexterm><primary>SMBサービス</primary></indexterm>
+<indexterm><primary>oplockハンドリング</primary></indexterm>
+<indexterm><primary>サーバプール</primary></indexterm>
+<indexterm><primary>backend file system pool</primary></indexterm>
+		クラスタ化されたサーバが純粋なSMBサービスを提供するとき、oplockの
+		処理は、バックエンドのファイルシステムプールに渡す必要性はなく、
+		サーバプール内で完結してもよい。
+		</para>
+
+		<para>
+<indexterm><primary>NFS</primary></indexterm>
+<indexterm><primary>相互運用性</primary></indexterm>
+		他方、サーバプールがNFSや他のファイルサービスをも提供する場合、
+		SMBサービスと相互運用できるように、oplockを認識する実装は基本である。
+		これは、現在有意義な挑戦である。これの相互運用性の提供に失敗すると、
+		Microsoft Windows クライアントのユーザによってはっきりと気がつく
+		明確な性能の低下をもたらす。
+		</para>
+
+		<para>
+		最後に、すべてのステート情報は、サーバプール間で共有されるべきである。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>サーバプールの通信</title>
+
+		<para>
+<indexterm><primary>POSIX semantics</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>POSIX locks</primary></indexterm>
+<indexterm><primary>SMB locks</primary></indexterm>
+		ほとんどのバックエンドファイルシステムは、POSIXファイルシステムを
+		サポートしている。これは、SMB文法をファイルシステム中で使うことを
+		困難にしている。POSIXのロック機構は、SMBのロック機構とは異なる
+		属性と文法である。
+		</para>
+
+		<para>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>tdb</primary></indexterm>
+<indexterm><primary>クラスタ化されたsmbd</primary></indexterm>
+		サーバプール中のすべての<command>smbd</command>プロセスはごく短時間に
+		通信しなければならない。このため、Sambaが使う現在の
+		<parameter>tdb</parameter>ファイル構造はネットワーク間で使うのには
+		適していない。クラスタ化された<command>smbd</command>は何らかの、
+		他のものを使う必要がある。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>サーバプール通信の要求</title>
+
+		<para>
+		サーバプール内の高速サーバ間通信は、完全に機能するシステムのために
+		あらかじめ必要な機能である。これを可能にするものは以下のものがある:
+		</para>
+
+		<itemizedlist>
+<indexterm><primary>Myrinet</primary></indexterm>
+<indexterm><primary>scalable coherent interface</primary><see>SCI</see></indexterm>
+			<listitem><para>
+			商用の共有メモリバス(例:MyrinetまたはSCI [scalable coherent interface])。
+			これはとても価格が高い。
+			</para></listitem>
+		
+			<listitem><para>
+			ギガビットイーサネット(現在簡単に使える)。
+			</para></listitem>
+		
+			<listitem><para>
+			生のイーサネットフレーミング(TCPとUDPのオーバヘッドをバイパス)。
+			</para></listitem>
+		</itemizedlist>
+
+		<para>
+		これらの機能を有効化する効果の有無を計るパフォーマンス指標はまだ確立していない。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>Sambaに対する変更要求</title>
+
+		<para>
+		Sambaは、透過的なフィルオーバクラスタが出来るように、高速サーバ間接続システムで
+		動くように、明確に修正する必要がある。
+		</para>
+
+		<para>
+		影響を受けると思われるSamba内の特定の機能は以下の通り:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+			データベースのロック、oplockの通知と共有モードデータベース。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>failure semantics</primary></indexterm>
+<indexterm><primary>oplock messages</primary></indexterm>
+			何をもって「障害」とみなすかを定義する必要がある。Sambaは
+			Windowsと同様に動作する。oplockが失敗を通知すると、ファイル
+			オープン要求は許可されるが、これはクラスタ環境では潜在的な
+			危険性がある。サーバ間プールの障害という意味は、どのように
+			位置づけるべきか、またこうした機能をどのように実装すべきか。
+			</para></listitem>
+
+			<listitem><para>
+			これはポイントツーポイントロックマネージャを使って実装すべきか、
+			あるいは、マルチキャスト手法を使って行うべきだろうか?
+			</para></listitem>
+
+		</itemizedlist>
+
+		</sect3>
+	</sect2>
+
+	<sect2>
+	<title>簡単なソリューション</title>
+
+	<para>
+<indexterm><primary>フェイルオーバサーバ</primary></indexterm>
+<indexterm><primary>エクスポートされたファイルシステム</primary></indexterm>
+<indexterm><primary>分散ロックプロトコル</primary></indexterm>
+	フェイルオーバサーバにエクスポートされたファイルシステム内で異なった機能を
+	扱えるようにすることは、分散ロッキングプロトコルを要求する問題をなくす。
+	</para>
+
+	<para>
+<indexterm><primary>high-speed server interconnect</primary></indexterm>
+<indexterm><primary>complex file name space</primary></indexterm>
+	もしも、ペアの中で1つのサーバのみアクティブである場合、高速サーバ間通信の必要性は
+	無くなる。この場合、新しいものを開発する代わりに、既存の高可用性ソリューションが
+	使える。これはかなりのコストがかかる単純なソリューションである。&smbmdash;
+	そのコストとは、より複雑なファイル名空間を管理する必要があるということである。
+	単一のファイルシステムではないため、管理者はすべてのサービスがどこに配置されて
+	いるかを覚えておかなければならない。&smbmdash;複雑さは、扱うのが容易ではない。
+	</para>
+
+	<para>
+<indexterm><primary>仮想サーバ</primary></indexterm>
+	<emphasis>仮想サーバ</emphasis>は、バックエンドサーバに要求をリダイレクトする
+	ため、引き続き必要である。バックエンドファイル空間の完全性は管理者の責任である。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>高可用性サーバ製品</title>
+
+	<para>
+<indexterm><primary>resource failover</primary></indexterm>
+<indexterm><primary>高可用性サーバ</primary></indexterm>
+<indexterm><primary>dedicated heartbeat</primary></indexterm>
+<indexterm><primary>LAN</primary></indexterm>
+<indexterm><primary>フェイルオーバプロセス</primary></indexterm>
+	フェイルオーバサーバはリソースのフェイルオーバを扱うために通信する必要がある。
+	これは高可用性サービスでは基本である。専用のハートビートを使うことは、
+	フェイルオーバプロセスで、ある種の自立性を導入する、一般的な技術である。
+	これは、しばしは専用のリンク(LANまたはシリアル通信)上で行われる。
+	</para>
+
+	<para>
+<indexterm><primary>SCSI</primary></indexterm>
+<indexterm><primary>Red Hatクラスタマネージャ</primary></indexterm>
+<indexterm><primary>Microsoft Wolfpack</primary></indexterm>
+<indexterm><primary>Fiber Channel</primary></indexterm>
+<indexterm><primary>failover communication</primary></indexterm>
+	多くのフェイルオーバソリューション(Red HatクラスタマネージャとMicrosoft Wolfpack
+	のような)はフェイルオーバ通信のためにファイバチャネルディスクストレージアレイ
+	をSCSIで共有して使える。Sambaに対するRed Hat高可用性ソリューションについての
+	情報は、
+	<ulink url="http://www.redhat.com/docs/manuals/enterprise/RHEL-AS-2.1-Manual/cluster-manager/s1-service-samba.html">www.redhat.com</ulink>
+	で得られる。
+	</para>
+
+	<para>
+<indexterm><primary>Linux高可用性プロジェクト</primary></indexterm>
+	Linux高可用性プロジェクトは、高可用性Sambaファイルサーバソリューションを構築
+	したいならば、考慮するに値するリソースである。
+	<ulink url="http://www.linux-ha.org/">www.linux-ha.org/</ulink>にある
+	ホームページを見てほしい。
+	</para>
+
+	<para>
+<indexterm><primary>バックエンドの障害</primary></indexterm>
+<indexterm><primary>サービスの継続性</primary></indexterm>
+	フロントエンドサーバの複雑性は、すべてのネットワーククライアントに対して、
+	サービスの継続性を同時に提供する間、バックエンドの障害をうまく扱わなければ
+	ならないという理由で、高可用性に対する挑戦の余地がある。
+	</para>
+	
+	</sect2>
+
+	<sect2>
+	<title>MS-DFS: 貧者のクラスター</title>
+
+	<para>
+<indexterm><primary>MS-DFS</primary></indexterm>
+<indexterm><primary>DFS</primary><see>MS-DFS, 分散ファイルシステム</see></indexterm>
+	MS-DFSリンクは異なったバックエンドサーバにクライアントをリダイレクトするのに
+	使われる。これはMicrosoftによってすでに導入された何かで、ネットワーククライアントに
+	複雑性を増やしてしまう。MS-DFSは単純な、ファイルレベルでさえ動作する、継続的な
+	ファイルシステム名前空間という幻影を作成する。
+	</para>
+
+	<para>
+	とりわけ、管理の複雑さを犠牲にすると、分散システム(仮のクラスタ)は既存のSambaの
+	機能を使うことで作成できる。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>結論</title>
+
+	<itemizedlist>
+		<listitem><para>透過的なSMBクラスタは作るのが難しい!</para></listitem>
+		<listitem><para>クライアントフェイルオーバは現在出来る最も良いものである。</para></listitem>
+		<listitem><para>実用的で管理が楽な高可用性透過的クラスタソリューションを可能にする前には、
+		    たくさんの作業が必要である。</para></listitem>
+		<listitem><para>MS-DFSは単一の透過的クラスタという幻想を作るのことができる。</para></listitem>
+	</itemizedlist>
+
+	</sect2>
+
+</sect1>
+</chapter>

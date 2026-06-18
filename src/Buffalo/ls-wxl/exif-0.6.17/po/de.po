@@ -1,0 +1,299 @@
+# translation of de.po to Deutsch
+# German translation for exif.
+# This file is distributed under the same license as the exif package.                                                   
+# Copyright © 2002, 2008 Free Software Foundation, Inc.
+#
+# Lutz Müller <lutz@users.sourceforge.net>, 2002.
+# Marcus Meissner <marcus@jet.franken.de>, 2005, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: exif 0.6.16-pre1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-11-06 01:03-0800\n"
+"PO-Revision-Date: 2008-11-05 16:17+0100\n"
+"Last-Translator: Marcus Meissner <marcus@jet.franken.de>\n"
+"Language-Team: German <translation-team-de@lists.sourceforge.net>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=n == 1 ? 0 : 1;\n"
+
+#: exif/actions.c:56
+#, c-format
+msgid "Not enough memory."
+msgstr "Nicht genügend Speicher."
+
+#: exif/actions.c:74
+#, c-format
+msgid "Setting a value for this tag is unsupported!"
+msgstr "Das Setzen eines Wertes für dieses Tag ist nicht unterstützt!"
+
+#: exif/actions.c:91
+#, c-format
+msgid "Too few components specified!"
+msgstr "Zu wenig Komponenten angegeben!"
+
+#: exif/actions.c:106
+#, c-format
+msgid "Internal error. Please contact <%s>."
+msgstr "Interner Fehler. Bitte nehmen Sie Kontakt mit <%s> auf."
+
+#: exif/actions.c:143
+#, c-format
+msgid "Not yet implemented!"
+msgstr "Noch nicht implementiert!"
+
+#: exif/actions.c:150
+#, c-format
+msgid "Warning; Too many components specified!"
+msgstr "Warnung: Zu viele Komponenten angegeben!"
+
+#: exif/actions.c:172
+#, c-format
+msgid "Too much EXIF data (%i bytes). Only %i bytes are allowed."
+msgstr "Zuviel EXIF Daten (%i Bytes). Das Maximum ist %i Bytes."
+
+#: exif/actions.c:183 exif/actions.c:358
+#, c-format
+msgid "Wrote file '%s'."
+msgstr "Datei '%s' geschrieben."
+
+#: exif/actions.c:203
+#, c-format
+msgid "EXIF entry '%s' "
+msgstr "EXIF Eintrag '%s'"
+
+#: exif/actions.c:205
+#, c-format
+msgid "(0x%x, '%s') "
+msgstr "(0x%x, '%s') "
+
+#: exif/actions.c:208
+#, c-format
+msgid "exists in IFD '%s':\n"
+msgstr "existiert in IFD %s:\n"
+
+#: exif/actions.c:251
+#, c-format
+msgid "IFD '%s' does not contain a tag '%s'!"
+msgstr "IFD '%s' enthält keinen Eintrag '%s'!"
+
+#: exif/actions.c:282
+#, c-format
+msgid "Could not open '%s' (%m)!"
+msgstr "Konnte '%s' nicht öffnen (%m)!"
+
+#: exif/actions.c:285
+#, c-format
+msgid "Could not open '%s' (%s)!"
+msgstr "Konnte '%s' nicht öffnen (%s)!"
+
+#: exif/actions.c:295
+#, c-format
+msgid "Could not read '%s' (%m)."
+msgstr "Konnte '%s' nicht lesen (%m)."
+
+#: exif/actions.c:298
+#, c-format
+msgid "Could not read '%s' (%s)."
+msgstr "Konnte '%s' nicht lesen (%s)."
+
+#: exif/actions.c:317
+#, c-format
+msgid "IFD '%s' does not contain tag '%s'."
+msgstr "IFD '%s' enthält keinen Eintrag '%s'."
+
+#: exif/actions.c:323
+#, c-format
+msgid "'%s' does not contain tag '%s'."
+msgstr "'%s' enthält keinen Eintrag '%s'."
+
+#: exif/actions.c:341
+#, c-format
+msgid "'%s' does not contain a thumbnail!"
+msgstr "'%s' enthält keine Vorschau!"
+
+#: exif/actions.c:350
+#, c-format
+msgid "Could not open '%s' for writing (%m)!"
+msgstr "Konnte '%s' nicht zum Schreiben öffnen (%m)!"
+
+#: exif/actions.c:353
+#, c-format
+msgid "Could not open '%s' for writing (%s)!"
+msgstr "Konnte '%s' nicht zum Schreiben öffnen (%s)!"
+
+#: exif/actions.c:371
+#, c-format
+msgid "EXIF tags in '%s':"
+msgstr "EXIF Einträge in '%s':"
+
+#: exif/actions.c:440
+#, c-format
+msgid "Unknown MakerNote format.\n"
+msgstr "Unbekanntes MakerNote Format.\n"
+
+#: exif/actions.c:447
+#, c-format
+msgid "MakerNote does not contain any value.\n"
+msgstr "MakerNote enthält keinen Wert!\n"
+
+#: exif/actions.c:450
+#, c-format
+msgid "MakerNote contains %i value:\n"
+msgid_plural "MakerNote contains %i values:\n"
+msgstr[0] "MakerNote %i Wert:\n"
+msgstr[1] "MakerNote enthält %i Werte:\n"
+
+#: exif/actions.c:460
+msgid "Unknown tag"
+msgstr "Unbekannter Eintrag"
+
+#: exif/actions.c:464
+msgid "Unknown value"
+msgstr "Unbekannter Wert"
+
+#: exif/actions.c:490
+#, c-format
+msgid "EXIF tags in '%s' ('%s' byte order):"
+msgstr "EXIF Einträge in '%s' ('%s' Byte-Reihenfolge):"
+
+#: exif/actions.c:495 exif/actions.c:497
+msgid "Tag"
+msgstr "Eintrag"
+
+#: exif/actions.c:501 exif/actions.c:503 exif/main.c:199
+msgid "Value"
+msgstr "Wert"
+
+#: exif/actions.c:509
+#, c-format
+msgid "EXIF data contains a thumbnail (%i bytes)."
+msgstr "EXIF Daten enthalten eine Vorschau (%i Bytes)."
+
+#: exif/actions.c:545
+#, c-format
+msgid "ThumbnailSize\t%i\n"
+msgstr "Thumbnailgröße\t%i\n"
+
+#: exif/main.c:175
+msgid "Display software version"
+msgstr "Zeige Software Version an"
+
+#: exif/main.c:177
+msgid "Show IDs instead of tag names"
+msgstr "Zeige IDs anstelle der Namen der Einträge"
+
+#: exif/main.c:179
+msgid "Select tag"
+msgstr "Wähle Eintrag"
+
+#: exif/main.c:179
+msgid "tag"
+msgstr "Eintrag"
+
+#: exif/main.c:181
+msgid "Select IFD"
+msgstr "Wähle IFD"
+
+#: exif/main.c:181
+msgid "IFD"
+msgstr "IFD"
+
+#: exif/main.c:183
+msgid "List all EXIF tags"
+msgstr "Liste alle EXIF Einträge auf"
+
+#: exif/main.c:185
+msgid "Show contents of tag MakerNote"
+msgstr "Zeige Inhalt des MakerNote-Eintrags"
+
+#: exif/main.c:187
+msgid "Remove tag or ifd"
+msgstr "Entferne Tag oder IFD"
+
+#: exif/main.c:189
+msgid "Show description of tag"
+msgstr "Zeige Beschreibung des Eintrags"
+
+#: exif/main.c:191
+msgid "Extract thumbnail"
+msgstr "Extrahiere Vorschau"
+
+#: exif/main.c:193
+msgid "Remove thumbnail"
+msgstr "Lösche Vorschaubild"
+
+#: exif/main.c:195
+msgid "Insert FILE as thumbnail"
+msgstr "Füge DATEI als Vorschau ein"
+
+#: exif/main.c:195 exif/main.c:197
+msgid "FILE"
+msgstr "DATEI"
+
+#: exif/main.c:197
+msgid "Write data to FILE"
+msgstr "Schreibe Daten in DATEI"
+
+#: exif/main.c:201
+msgid "Create EXIF data if not existing"
+msgstr "Erzeuge EXIF Daten wenn noch nicht vorhanden"
+
+#: exif/main.c:203
+msgid "Output in a machine-readable (tab delimited) format"
+msgstr "Gebe maschinenlesbares Format (tab delimited) aus."
+
+#: exif/main.c:206
+msgid "Output in a XML format"
+msgstr "Ausgabe in einem XML Format"
+
+#: exif/main.c:209
+msgid "Show debugging messages"
+msgstr "Zeige Diagnose-Nachrichten"
+
+#: exif/main.c:229
+msgid "[OPTION...] file"
+msgstr "[OPTION...] datei"
+
+#: exif/main.c:241
+#, c-format
+msgid ""
+"Invalid IFD '%s'. Valid IFDs are '0', '1', 'EXIF', 'GPS', and "
+"'Interoperability'."
+msgstr ""
+"Unzulässiger IFD '%s'. Zulässige IFDs sind '0', '1', 'EXIF', 'GPS' und "
+"'Interoperability'."
+
+#: exif/main.c:250
+#, c-format
+msgid "Invalid tag '%s'!"
+msgstr "Ungültiger Eintrag '%s'!"
+
+#: exif/main.c:258
+msgid "You need to specify a tag!"
+msgstr "Bitte geben Sie einen Eintrag an!"
+
+#: exif/main.c:263
+msgid "You need to specify an IFD!"
+msgstr "Bitte geben Sie einen IFD an!"
+
+#: exif/main.c:286
+#, c-format
+msgid "Tag '%s' "
+msgstr "Eintrag '%s'"
+
+#: exif/main.c:288
+#, c-format
+msgid "(0x%04x, '%s'): "
+msgstr "(0x%04x, '%s'): "
+
+#: exif/main.c:338
+#, c-format
+msgid "'%s' does not contain EXIF data!"
+msgstr "'%s' enthält keine EXIF Daten!"
+
+#, fuzzy
+#~ msgid "Please specify a tag!"
+#~ msgstr "Bitte geben Sie einen Eintrag an!"

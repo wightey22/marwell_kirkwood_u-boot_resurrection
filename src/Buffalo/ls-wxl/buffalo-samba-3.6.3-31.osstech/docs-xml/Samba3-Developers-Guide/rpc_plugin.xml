@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="rpc-plugin">
+<chapterinfo>
+	<author>
+		<firstname>Anthony</firstname><surname>Liguori</surname>
+		<affiliation>
+			<orgname>IBM</orgname>
+			<address><email>aliguor@us.ibm.com</email></address>
+		</affiliation>
+	</author>
+	<author>
+		<firstname>Jelmer</firstname><surname>Vernooij</surname>
+		<affiliation>
+			<orgname>Samba Team</orgname>
+			<address><email>jelmer@samba.org</email></address>
+		</affiliation>
+	</author>
+	<pubdate>January 2003</pubdate>
+</chapterinfo>
+
+<title>RPC着脱可能なモジュール</title>
+
+<sect1>
+<title>はじめに</title>
+
+<para>
+この文書は、どのようにSamba3.0用の新しいRPC着脱可能なモジュール機能を使えるように
+するかについて説明している。このアーキテクチャは、メインのCVSブランチから分かれて
+作業されることをRPCパイプについて許可しているSambaの維持管理性を向上させることを
+付加する。RPMアーキテクチャはまた、サードパーティベンダに対して、プラグインを通して、
+Sambaに対して機能を追加する事も認めている。
+</para>
+
+</sect1>
+
+<sect1>
+<title>概要</title>
+
+<para>
+RPC呼び出しがsmbdに送られる時、smbdは、もしもその呼び出しを内部的に処理する方法が
+無い場合、それを処理するための、<filename>librpc_&lt;pipename&gt;.so</filename>
+という名前の共有ライブラリをロードしようとする。例えば、LSA呼び出しは
+<filename>librpc_lsass.so</filename>によって処理される。これらの共有ライブラリは、
+<filename>&lt;sambaroot&gt;/lib/rpc</filename>中に配置されるべきである。
+smbdは次に共有ライブラリ内のinit_module関数を呼び出そうとする。詳細はモジュールの
+章を参照のこと。
+</para>
+
+<para>
+init_module関数内で、ライブラリはrpc_pipe_register_commands()を呼び出すべきである。
+この関数は以下の引数を取る:
+</para>
+
+<para><programlisting>
+NTSTATUS rpc_pipe_register_commands(int version, const char *clnt, const char *srv,
+                               const struct api_struct *cmds, int size);
+</programlisting></para>
+
+<variablelist>
+
+<varlistentry><term>version</term>
+<listitem><para>RPCインタフェースのバージョン番号。この引数に対しては、
+<emphasis>SMB_RPC_INTERFACE_VERSION</emphasis>という定義を使うこと。</para></listitem>
+</varlistentry>
+		
+<varlistentry><term>clnt</term>
+<listitem><para>名前付きパイプのクライアント名</para></listitem>
+</varlistentry>
+
+<varlistentry><term>srv</term>
+<listitem><para>名前付きパイプのサーバ名</para></listitem>
+</varlistentry>
+
+<varlistentry><term>cmds</term>
+<listitem><para>RPC ordinal番号を関数呼び出しにマップするapi構造体のリスト</para></listitem>
+</varlistentry>
+
+<varlistentry><term>size</term>
+<listitem><para>
+cmd中に含まれるapi_structsの数</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>
+どのようにこのライブラリを使うかについての小さな例については、
+rpc_server/srv_reg.c と rpc_server/srv_reg_nt.cを参照。
+</para>
+
+</sect1>
+</chapter>

@@ -1,0 +1,25 @@
+<samba:parameter name="enumports command"
+                 context="G"
+				 type="string"
+		 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>ここでいう「ポート(port)」の概念は、
+	UNIXのものと大きく異なる。Windows NT/2000のプリントサーバにおいて、
+	ポートはポートモニタと関連付けられ、通常ローカルポート(LPT1:、COM1:、
+	FILE:)やリモートポート(LPD Port Monitorなど)といった名称をもつ。
+	Sambaのデフォルトでは、
+	<constant>「Samba Printer Port」</constant> というポートのみが定義されている。
+	Windows NT/2000においては、すべてのプリンタに適切なポート名がある。
+	デフォルトの<constant>「Samba Printer Port」
+	</constant>以外のポート名をポートの一覧に表示させたい場合
+	(<command moreinfo="none">smbd</command>はポート名を全く使用していない)、
+	標準出力に対してポート名のリストを1行に一つずつ生成するようなプログラムを
+	<parameter moreinfo="none">enumports command</parameter>で定義することができる。
+	この一覧はレベル1および2のEnumPorts() RPCのレスポンス中で利用される。
+	</para>
+</description>
+
+<value type="default"></value>
+<value type="example">/usr/bin/listports</value>
+</samba:parameter>

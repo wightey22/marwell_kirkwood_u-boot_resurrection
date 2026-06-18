@@ -1,0 +1,16 @@
+<samba:parameter name="server string"
+                 context="G"
+                 basic="1" advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+        <para>このパラメータにより、プリンタマネージャにおける各プリンタのコメント欄および <command moreinfo="none">net view</command> において IPC 接続の横に表示されるテキストが設定される。ユーザに表示させたい任意のテキストを設定することができる。</para>
+		
+	<para>このパラメータにより、ブラウズリストでコンピュータ名の横に表示されるテキストも設定される。</para>
+
+	<para><parameter moreinfo="none">%v</parameter> は、 Samba のバージョン番号に置換される。</para>
+
+	<para><parameter moreinfo="none">%h</parameter> は、ホスト名に置換される。</para>
+</description>
+<value type="default">Samba %v</value>
+<value type="example">University of GNUs Samba Server</value>
+</samba:parameter>

@@ -1,0 +1,45 @@
+<samba:parameter name="map readonly"
+                 context="S"
+		 type="enum"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータは、DOS の読み取り専用属性を UNIX のファイルシステムに対応付ける方法を制御する。
+	</para>
+
+	<para>
+	このパラメータには 3通りの値を指定することが可能である。これにより、
+	<smbconfoption name="store dos attributes"/> が <constant>No</constant>、もしくは拡張属性が存在しない環境において、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> がファイルの読み取り専用属性を表示する方法を制御することが可能である。
+	<smbconfoption name="store dos attributes"/> が <constant>yes</constant> の場合、このパラメータは<emphasis>無視される</emphasis>。
+	これは Samba 3.0.21 で新設されたパラメータである。
+	</para>
+
+    <para>3 通りの値を以下に示す:</para>
+
+    <itemizedlist>
+		<listitem><para>
+		<constant>Yes</constant> - 読み取り専用の DOS 属性は、UNIX のパーミッションビットにおけるユーザ、すなわち所有者の書き込み権ビットに反転した形で対応付けられる。
+		所有者の書き込み権ビットが設定されていない場合、ファイルには読み取り専用属性が付加されているものとみなされる。もしも、読み取り専用のDOS属性が設定されてた場合、
+グループとその他の書き込み権ビットはゼロに設定される。ACL中の書き込みビットはSambaによって無視される。もしも、読み取り専用のDOS属性が設定されていなかった場合、Sambaは単にそれの所有者の書き込みビットを設定する。
+		</para></listitem>
+
+		<listitem><para>
+		<constant>Permissions</constant> - 読み取り専用の DOS 属性は、接続しているユーザに対する有効なパーミッションに対応付けられる。
+		これは、<citerefentry><refentrytitle>smbd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry>
+		が UNIX のパーミッションおよび (存在していれば) POSIX の ACL を読みとることにより確認される。
+		接続しているユーザにファイルを編集するパーミッションがない場合、ファイルには読み取り専用属性が付加されているものとみなされる。
+		</para></listitem>
+
+		<listitem><para>
+		<constant>No</constant> - 読み取り専用 DOS 属性は、パーミッションに対応付けられず、
+		<smbconfoption name="store dos attributes"/> パラメータによってのみ付与される。
+		これは、マウント中の CD を共有する場合にも便利かも知れない。
+		</para></listitem>
+    </itemizedlist>
+
+</description>
+<value type="default">yes</value>
+</samba:parameter>

@@ -1,0 +1,15 @@
+<samba:parameter name="ldap debug threshold"
+		type="integer"
+		context="G"
+		developer="1" advanced="1"
+		xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+このパラメータは、Samba のデバッグレベルの中で、LDAP ライブラリの
+デバッグ出力を Samba のログに出力するためのレベルをコントロールする。
+詳細は <parameter>ldap debug level</parameter> を参照のこと。
+	</para>
+</description>
+<value type="default">10</value>
+<value type="example">5</value>
+</samba:parameter>

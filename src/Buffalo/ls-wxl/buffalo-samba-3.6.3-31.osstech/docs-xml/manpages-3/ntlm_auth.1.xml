@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="ntlm-auth.1">
+
+<refmeta>
+	<refentrytitle>ntlm_auth</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>ntlm_auth</refname>
+	<refpurpose>Winbind 機構の NTLM 認証機能を外部から利用可能とするツール
+	</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>ntlm_auth</command>
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">-l logdir</arg>
+		<arg choice="opt">-s &lt;smb config file&gt;</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para><command>ntlm_auth</command> はユーザを NTLM 認証方式で認証するためのヘルパーユーティリティである。ユーザ認証が成功した場合 0 を返し、アクセスが拒否された
+	場合は 0 を返す。ntlm_auth は winbind を使用してドメインのユーザと認証データに
+	アクセスする。このユーティリティは外部プログラム（現在は 
+	<ulink url="http://www.squid-cache.org/">Squid</ulink>
+	と <ulink
+	url="http://download.samba.org/ftp/unpacked/lorikeet/trunk/mod_ntlm_winbind/">mod_ntlm_winbind</ulink>) 
+	で用いることを目的としている。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>その他の必要条件</title>
+
+    <para>
+    多くの機能については、
+    <citerefentry><refentrytitle>winbindd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> デーモンが機能している必要がある。
+    </para>
+
+    <para>幾つかの機能については、上記に加えて
+    <filename>$LOCKDIR</filename> 中の
+    <filename>winbindd_privileged</filename> ディレクトリへアクセスできることも必要である。
+    これには、コマンドを root で実行するか、
+    <filename>winbindd_privileged</filename> 
+    ディレクトリにアクセス可能なグループに所属させる必要がある。
+    セキュリティ上、
+    このディレクトリは誰もがアクセス可能にすべきでない。
+    </para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+	<varlistentry>
+	<term>--helper-protocol=PROTO</term>
+	<listitem><para>
+	標準入出力を用いるヘルパープログラムとして動作させる。
+	認識可能なプロトコルは以下のとおり:
+        </para> 
+        <variablelist>
+	      <varlistentry>
+		<term>squid-2.4-basic</term>
+		<listitem><para>
+		Squid 2.4 のベーシック(平文)認証で用いるためのサーバ側ヘルパー
+		</para>
+                </listitem>
+		</varlistentry>
+	      <varlistentry>
+		<term>squid-2.5-basic</term>
+		<listitem><para>
+		Squid 2.5 のベーシック(平文)認証で用いるためのサーバ側ヘルパー
+		</para>
+                </listitem>
+		</varlistentry>
+	      <varlistentry>
+		<term>squid-2.5-ntlmssp</term>
+		<listitem><para>
+		Squid 2.5 の NTLMSSP 認証で用いるためのサーバ側ヘルパー
+		</para>
+		<para> これは、
+		<filename>$LOCKDIR</filename> 内の <filename>winbindd_privileged</filename> ディレクトリへのアクセスが必要である。
+		利用されるプロトコルについての詳細は
+		<ulink
+		url="http://devel.squid-cache.org/ntlm/squid_helper_protocol.html">http://devel.squid-cache.org/ntlm/squid_helper_protocol.html</ulink> を参照のこと。
+		このプロトコルでは
+		<command>YR</command> コマンドの引数として NTLMSSP のネゴシエートパケットが含まれるように拡張されている。
+		(これにより、プロトコル情報の交換における情報の消失を回避している)。
+                </para>
+                </listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>ntlmssp-client-1</term>
+		<listitem><para>
+		Samba の NTLMSSP 認証の結果を用いる任意の外部プログラムのためのクライアント側ヘルパー
+		</para>
+		<para>
+		このヘルパーはクライアントであり、任意のユーザから実行可能である。
+		用いられるプロトコルは前述したプロトコルを逆転させたものである。
+		<command>YR</command> コマンド (引数無し) により、
+		認証情報の交換が開始される。
+                </para>
+                </listitem>
+	      </varlistentry>
+
+	      <varlistentry>
+		<term>gss-spnego</term>
+		<listitem><para>
+		GSS-SPNEGO を実装するサーバ側ヘルパー。
+		これは
+  		<command>squid-2.5-ntlmssp</command> とほぼ同様のプロトコルを用いるが、微妙な違いがある。この違いについては現時点ではドキュメント化されておらず、ソースコードを確認するしかない。
+                </para>
+		<para> これは、
+		<filename>$LOCKDIR</filename> 内の <filename>winbindd_privileged</filename> ディレクトリへのアクセスが必要である。
+               </para>
+                </listitem>
+		</varlistentry>
+                 
+	        <varlistentry>
+		<term>gss-spnego-client</term>
+		<listitem><para>
+		GSS-SPNEGO を実装するクライアント側ヘルパー。
+		これは前述したヘルパーとほぼ同様のプロトコルを用いる。
+		現在のところドキュメント化されていない。
+                </para>
+                </listitem>
+		</varlistentry>
+
+	        <varlistentry>
+		<term>ntlm-server-1</term>
+		<listitem><para>
+		RADIUS サーバ、もしくは pppd の「winbind」プラグインに、
+		MSCHAP や MSCHAPv2 認証を提供するために用いられるサーバ側ヘルパー。
+                </para>
+		<para>このプロトコルは、以下の形式の行からなる:
+                <command>Parameter: 値</command> および <command>Paramter::
+                Base64エンコード値</command>。単独のピリオド(
+                <command>.</command>) は、(ヘルパーがユーザ認証を行なう際に)
+		一方が他方へ提供するデータの終了を意味する。
+                </para>
+
+		<para>外部プログラムからヘルパーに情報を提供するために現在実装されているパラメータは以下のとおりである:</para>
+		<variablelist>
+		  <varlistentry>
+		  <term>Username</term>
+		  
+                <listitem><para>ユーザ名。これは Samba の
+                <smbconfoption name="unix charset"/> でエンコードされているとみなされる。
+                </para>
+
+		      <para><example>Username: bob</example></para>
+		      <para><example>Username:: Ym9i</example></para>
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>Username (訳注: domain の誤りだと思われる)</term>
+                <listitem><para>ユーザの所属するドメイン。これは Samba の
+                <smbconfoption name="unix charset"/> でエンコードされているとみなされる。
+                </para>
+
+		      <para><example>Domain: WORKGROUP</example></para>
+		      <para><example>Domain:: V09SS0dST1VQ</example></para>
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>Full-Username</term>
+                <listitem><para>完全なユーザ名。これは Samba の
+                <smbconfoption  name="unix charset"/> でエンコードされているとみなされる。
+		また、ディリミタには <smbconfoption name="winbind separator"/> が用いられる。
+                </para>
+
+		      <para><example>Full-Username: WORKGROUP\bob</example></para>
+		      <para><example>Full-Username:: V09SS0dST1VQYm9i</example></para>
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>LANMAN-Challenge</term>
+		  
+                <listitem><para> 8 バイトの <command>LANMAN Challenge</command> の値。
+		これはサーバ側でランダムに生成されるか、サーバとクライアントの双方である規則に従って生成される(MSCHAPv2 の場合)。
+                </para>	
+		      <para><example>LANMAN-Challege: 0102030405060708</example></para>
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>LANMAN-Response</term>
+		  
+                <listitem><para>24 バイトの <command>LANMAN Response</command> の値。
+		これはユーザのパスワードと提供された
+                <command>LANMAN Challenge</command> から計算される。
+		通常、この値は認証を受けようとするクライアントからネットワーク経由で提供される。
+                </para>	
+		      <para><example>LANMAN-Response: 0102030405060708090A0B0C0D0E0F101112131415161718</example></para>
+
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>NT-Response</term>
+                <listitem><para>24 バイト以上の <command>NT Response</command> 。
+		これはユーザのパスワードと提供された
+                <command>LANMAN Challenge</command> から計算される。
+		通常、この値は認証を受けようとするクライアントからネットワーク経由で提供される。
+                 </para>	
+		      <para><example>NT-Response: 0102030405060708090A0B0C0D0E0F101112131415161718</example></para>
+
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>Password</term>
+                <listitem><para>ユーザのパスワード。
+		これは、ヘルパーが平文のパスワードを用いるレガシーな環境で用いられている場合に、ネットワーククライアントから提供される。
+                 </para>	
+		      <para><example>Password: samba2</example></para>
+		      <para><example>Password:: c2FtYmEy</example></para>
+
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>Request-User-Session-Key</term>
+                <listitem><para>認証に成功した際に、ログインに対応するユーザのセッション鍵を返却するか。
+                 </para>	
+		      <para><example>Request-User-Session-Key: Yes</example></para>
+
+		    </listitem></varlistentry>
+
+		  <varlistentry>
+		  <term>Request-LanMan-Session-Key</term>
+                <listitem><para>認証に成功した際に、ログインに対応する LANMAN セッション鍵を返却するか。
+                 </para>	
+		      <para><example>Request-LanMan-Session-Key: Yes</example></para>
+
+		    </listitem></varlistentry>
+
+		<para><warning>
+		実装の際は、改行文字のような微妙なデータが混入されることを考慮して、すべてのデータ(ユーザ名やパスワードを含む)を base64 エンコードするように考慮すべきである。
+		ただしこの場合、ヘルパー側で base64 でエンコードされている文字列をデコードする必要が発生する。
+		</warning></para>
+	</variablelist>
+
+                </listitem>
+		</varlistentry>
+	</variablelist>
+	</listitem>
+      </varlistentry>
+      
+      <varlistentry>
+	<term>--username=USERNAME</term>
+	<listitem><para>
+	認証するユーザのユーザ名を指定する
+	</para></listitem>
+	
+      </varlistentry>
+      
+      <varlistentry>
+	<term>--domain=DOMAIN</term>
+	<listitem><para>
+	認証するユーザのドメイン名を指定する
+	</para></listitem>
+      </varlistentry>
+
+      <varlistentry>
+	<term>--workstation=WORKSTATION</term>
+	<listitem><para>
+	認証するユーザが使用するワークステーション名を指定する
+	</para></listitem>
+      </varlistentry>
+
+	<varlistentry>
+	<term>--challenge=STRING</term>
+	<listitem><para>NTLM チャレンジ (HEXADECIMAL エンコード)</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--lm-response=RESPONSE</term>
+	<listitem><para>チャレンジに対する LM レスポンス (HEXADECIMAL エンコード)</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--nt-response=RESPONSE</term>
+	<listitem><para>チャレンジに対する NT もしくは NTLMv2 レスポンス (HEXADECIMAL エンコード)</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--password=PASSWORD</term>
+	<listitem><para>ユーザの平文パスワード</para><para>
+	コマンドラインでこの指定がない場合、必要時にはプロンプトが表示される。
+	</para>
+
+	  <para>NTLMSSPベースのサーバロールのために、このパラメータは拡張
+	されたパスワードを指定し、winbinddの動作なしでテストすることを可能
+	にする。</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--request-lm-key</term>
+	<listitem><para>LMセッションキーの検索</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>--request-nt-key</term>
+	<listitem><para>NTキーの要求</para></listitem>
+	</varlistentry>
+
+      <varlistentry>
+	<term>--diagnostics</term>
+	<listitem><para>認証チェーン上での診断の実行。
+	<command>--password</command>によるパスワードを使うか、
+	パスワード要求のプロンプトを出す。</para>
+        </listitem>
+        </varlistentry>
+	
+	<varlistentry>
+	    <term>--require-membership-of={SID|Name}</term>
+	    <listitem><para>成功のために、認証のために指定したグループ
+		(かSIDの名前)のメンバとなるユーザを要求する。</para>
+	    </listitem>
+	</varlistentry>
+
+	  &stdarg.server.debug;
+	  &popt.common.samba;
+	  &stdarg.help;
+	
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>セットアップ例</title>
+
+        <para>基本とNTLMSSP認証の両方でsquid 2.5用に設定するには、
+	<filename>squid.conf</filename>ファイル中に以下を設定する。
+<programlisting>
+auth_param ntlm program ntlm_auth --helper-protocol=squid-2.5-ntlmssp
+auth_param basic program ntlm_auth --helper-protocol=squid-2.5-basic
+auth_param basic children 5
+auth_param basic realm Squid proxy-caching web server
+auth_param basic credentialsttl 2 hours
+</programlisting></para>
+
+<note><para>この例は、ntlm_authのパスが通っていることと、それが、上記で説明
+	されている、<filename>winbindd_privileged</filename>上のグループ
+	パーミッションが設定されていることを仮定している。</para></note>
+
+	<para>上記の例で、グループ制限を追加して、squid 2.5用にntlm_auth
+	をセットアップするには、以下の記述を、<filename>squid.conf</filename>
+	に書く。
+<programlisting>
+auth_param ntlm program ntlm_auth --helper-protocol=squid-2.5-ntlmssp --require-membership-of='WORKGROUP\Domain Users'
+auth_param basic program ntlm_auth --helper-protocol=squid-2.5-basic --require-membership-of='WORKGROUP\Domain Users'
+</programlisting></para>
+	
+</refsect1>
+
+<refsect1>
+	<title>トラブルシューティング</title>
+	
+	<para>もしも、ntlm_authの、NTLMSSP認証ヘルパ (--helper-protocol=squid-2.5-ntlmssp)
+	に対して、MS Windows 9X または Millenium Edition 配下で
+	MSIEを動かして認証の問題が発生したら、
+<ulink url="http://support.microsoft.com/support/kb/articles/Q239/8/69.ASP">
+	の、Microsoft Knowledge Baseの#239869を見て，そこに書いてある
+	ことを実行すること。</ulink></para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba 3 対応のものである。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連ユーティリティは、
+	Andrew Tridgellによって作成された。 現在 Samba は、Samba Team
+	 によってLinux カーネルの 開発と同様に、オープンソースプロジェク
+	トとして開発されている。</para>
+	
+	<para>The ntlm_authのマニュアルページは Jelmer Vernooij と
+	Andrew Bartlett によって書かれた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.23 - 3.5.3  対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.24 対応の翻訳は
+たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+太田俊哉 (ribbon@samba.gr.jp) によって行なわれた。</para>
+</refsect1>
+</refentry>

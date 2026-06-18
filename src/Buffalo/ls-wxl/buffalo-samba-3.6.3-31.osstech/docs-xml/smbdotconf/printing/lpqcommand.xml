@@ -1,0 +1,41 @@
+<samba:parameter name="lpq command"
+                 context="S"
+		 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータには、
+	<command moreinfo="none">lpq</command>形式のプリンタ状態情報を得るため、
+	サーバ上で実行するコマンドを指定する。</para>
+
+	<para> このコマンドは、プリンタ名のみを引数としてとり 、
+	プリンタ状態情報を出力するプログラムやスクリプトでなければならない。
+	</para>
+
+	<para> 現在、BSD、AIX、LPRNG、PLP、SYSV、HPUX、QNX、CUPS、SOFTQ
+	という9つの印刷形式がサポートされており、
+	これにより大部分の UNIX システムがサポートされる。
+	<parameter moreinfo="none">printing =</parameter> オプションにより、利用する形式を指定することも可能である。</para>
+
+	<para>クライアントによっては(特にWindows for Workgroups)、
+	状態情報を要求しているプリンタの接続番号(connection number)を正しく送らないことがある。
+	この場合、サーバはクライアントが接続している最初の印刷サービスの状況を報告する。この動作は、
+	与えられた接続番号が不正な場合にのみ行なわれる。</para>
+
+	<para><parameter moreinfo="none">%p</parameter> 変数は、
+	プリンタ名に置換される。この変数が指定されなかった場合、プリンタ名はコマンドの最後に付加される。</para>
+
+
+	<para> サーバの <envar>$PATH</envar> 環境変数が利用できないかもしれないことを考慮して、
+	<parameter moreinfo="none">lpq command</parameter> を絶対パスで記述する癖をつけておくと良い。
+	CUPS ライブラリを付加してコンパイルした場合は、
+	smbd が印刷キューのリストを取得するためのライブラリコールを行なうため、
+	<parameter moreinfo="none">lpq command</parameter> は必要ない。
+	</para>
+</description>
+
+<related>printing</related>
+
+<value type="example">/usr/bin/lpq -P%p</value>
+<value type="default"></value>
+</samba:parameter>

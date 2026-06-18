@@ -1,0 +1,465 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="securing-samba">
+
+<chapterinfo>
+	&author.tridge;
+	&author.jht;
+	<pubdate>May 26, 2003</pubdate>
+</chapterinfo>
+
+<title>Securing Samba</title>
+
+<sect1>
+<title>序論</title>
+
+<para>
+<indexterm><primary>security</primary></indexterm>
+<indexterm><primary>direct internet access</primary></indexterm>
+<indexterm><primary>ファイアウォール</primary></indexterm>
+<indexterm><primary>プライベートネットワーク</primary></indexterm>
+<indexterm><primary>barriers</primary></indexterm>
+<indexterm><primary>deterents</primary></indexterm>
+<indexterm><primary>セキュアなネットワーク</primary></indexterm>
+この章に含まれる情報は、一般的にすべての導入したSambaに対して適用できる。セキュリティは
+IT界において、すべての人の関心事である。驚くべき数のSambaサーバが直接インターネットに
+接続するマシン環境上にあり、そのため、ファイアウォールの内側でプライベートネットワーク
+上にあるサーバよりもよりセキュリティ的に危険な状態にある。極端にサーバセキュリティを重視
+する場合、セキュアなネットワーク中に配置されるサーバはもちろん、頑丈なファイアウォールを、
+ネットワーク管理者の一部が要求することになる。この章では、どのように必要とされる障壁
+(バリア)を作るかと言うことと、<quote>脅威</quote>に対する防御を理解する管理者(所属は
+問わない)を手助けする情報を提供する。
+</para>
+
+<blockquote>
+<para>
+新しい実習生が、ボイラー室のチーフエンジニアの所に、任務のために出勤してきた。彼曰く、
+<quote>ただいま出勤しました。ボイラーを見せていただければ作業を開始します。</quote>
+エンジニア曰く、<quote>そのボイラーに腰掛けているぞ！</quote>
+</para>
+</blockquote>
+
+<para>
+セキュリティに関する関心はこのようなものである。その大部分が本当にどのくらい明白かを
+評価するため、この問題に対して多少知っておく必要がある。挑戦の大部分は、熟練者が持つ
+秘技を解き明かすかもしれない知識の最初のかけらを探り出すことである。
+</para>
+
+</sect1>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>適度なセキュリティ</primary></indexterm>
+<indexterm><primary>perimeter firewall</primary></indexterm>
+<indexterm><primary>ホストのセキュリティ</primary></indexterm>
+<indexterm><primary>Sambaのセキュリティ</primary></indexterm>
+サイトを少なくとも適度に安全にするために守るべき、セキュリティ原則の3つのレベルがある。
+それらは外側に対するファイアウォール、Sambaが動いているホストサーバの設定とSambaそれ
+自身である。
+</para>
+
+<para>
+Sambaは、ネットワークセキュリティに対する最も柔軟なアプローチを認めている。可能な限り、
+Sambaは、Microsoft Windowsのファイルとプリント操作に対して許可される、よりセキュアな、
+最も最新のプロトコルを実装している。
+</para>
+
+<para>
+<indexterm><primary>ホストベースの保護</primary></indexterm>
+<indexterm><primary>インタフェースベースの除外</primary></indexterm>
+<indexterm><primary>リソースベースの除外</primary></indexterm>
+Sambaはローカルネットワーク外から来る接続からセキュアに出来る。これは
+<emphasis>ホストベースの保護</emphasis>を、<quote>tcpwrappers</quote>として知られている、
+技術の実装を使うことか、<emphasis>インタフェースベースの除外</emphasis>を使うことで行え、
+その結果、&smbd;は許可された特定のインタフェースのみにバインドする。また、たとえば
+<smbconfsection name="[IPC$]"/>自動共有上のような、共有またはリソースベースの除外を
+設定することも可能である。<smbconfsection name="[IPC$]"/>共有は、TCP/IPコネクションを
+確立するのと同様、ブラウジング目的に使われる。
+</para>
+
+<para>
+<indexterm><primary>アクセス制御エントリ</primary><see>ACE</see></indexterm>
+<indexterm><primary>ACL</primary></indexterm>
+<indexterm>controls<primary></primary></indexterm>
+Sambaをセキュアに出来る他の方法は、共有それ自身に、アクセスコントロールリスト(ACL)中に
+アクセス制御エントリ(ACE)を設定することである。これは
+<link linkend="AccessControls">ファイル、ディレクトリと共有のアクセス制御</link>
+に説明がある。
+</para>
+
+</sect1>
+
+<sect1>
+<title>保護対応と問題に関する技術的な議論</title>
+
+<para>
+既知のセキュリティ上の弱点と侵害技術に対して保護するために、せいぜいドアを閉めることで
+十分であることが、セキュリティの鍵となる難問である。これらの少ない処置を行ったので、
+Sambaサーバが入り込めない要塞になると仮定してはいけない。これまでの情報システムの歴史を
+見れば、誰かが他の脆弱性を見つけ出すのは時間の問題である。
+</para>
+
+	<sect2>
+	<title>ホストベースの保護の使用</title>
+
+	<para>
+<indexterm><primary>outside threat</primary></indexterm>
+<indexterm><primary>セキュアでない</primary></indexterm>
+<indexterm><primary>インターネット</primary></indexterm>
+	数多くのインストール済みSambaにおいて、最も大きな脅威は、隣接したネットワークの
+	外部から来る。既定値で、Sambaは任意のホストからの接続を受け、それはすなわち、
+	もしも、インターネットに直接接続されているホスト上でセキュアでないバージョンの
+	Sambaを動かしていた場合、特に脆弱になるということである。
+	</para>
+
+	<para>
+<indexterm><primary>アクセスの許可</primary></indexterm>
+<indexterm><primary>ホストの範囲</primary></indexterm>
+	この場合の最も簡単な修正の1つは、<smbconfoption name="hosts allow"/>と
+	<smbconfoption name="hosts deny"/>をSambaの&smb.conf;設定ファイル中で、
+	特定の範囲のホストから飲みサーバにアクセスを許可するように使うことである。
+	設定例は以下の通り:
+	<smbconfblock>
+	<smbconfoption name="hosts allow">127.0.0.1 192.168.2.0/24 192.168.3.0/24</smbconfoption>
+	<smbconfoption name="hosts deny">0.0.0.0/0</smbconfoption>
+	</smbconfblock>
+	</para>
+
+	<para>
+<indexterm><primary>localhost</primary></indexterm>
+<indexterm><primary>プライベートネットワーク</primary></indexterm>
+<indexterm><primary>called name</primary></indexterm>
+	上記はSMB接続を、<constant>localhost</constant>(自分自身)と2つのプライベート
+	ネットワークである192.168.2 と 192.168.3. からのみ許可する。その他の接続要求は
+	クライアントから最初のパケットが来たらすぐに拒否される。拒否は、
+	<literal>呼び出された名前ではリッスンしていない</literal>というエラーとして
+	マークされる。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ユーザベースの保護</title>
+
+	<para>
+	もしも、サーバへのアクセスを有効なユーザのみに制限したいならば、以下の方法を
+	使うことが出来る。&smb.conf;中の<smbconfsection name="[global]"/>セクションに
+	以下を記述する:
+	<smbconfblock>
+	<smbconfoption name="valid users">@smbusers, jacko</smbconfoption>
+	</smbconfblock>
+	</para>
+
+	<para>
+<indexterm><primary>smbusers</primary></indexterm>
+	これは、ユーザ<emphasis>jacko</emphasis>かシステムグループ<emphasis>smbusers</emphasis>
+	のメンバのみに、すべてのサーバアクセスを制限する。
+	</para>
+
+	</sect2>
+
+	<sect2>
+
+	<title>インタフェース保護の使用</title>
+
+	<para>
+<indexterm><primary>ネットワークインタフェース</primary></indexterm>
+<indexterm><primary>接続許可</primary></indexterm>
+<indexterm><primary>インターネット</primary></indexterm>
+	既定値では、Sambaはシステム上にある任意のネットワークインタフェースからの
+	接続を受け付ける。これは、もしもISDNかPPPでインターネットに接続している
+	場合、Sambaはそれらからの接続を受け付けるということである。これはおそらく
+	希望していることではないだろう。
+	</para>
+
+	<para>
+	この動作は、以下のようなオプションで変更できる:
+	<smbconfblock>
+	<smbconfoption name="interfaces">eth* lo</smbconfoption>
+	<smbconfoption name="bind interfaces only">yes</smbconfoption>
+	</smbconfblock>
+	</para>
+
+	<para>
+<indexterm><primary>インタフェース</primary></indexterm>
+<indexterm><primary>ループバックインタフェース</primary></indexterm>
+<indexterm><primary>イーサネットアダプタ</primary></indexterm>
+<indexterm><primary>listen for connections</primary></indexterm>
+	これは、たとえば<constant>eth0</constant> や <constant>eth1</constant>のような
+	<constant>eth</constant>で始まる名前のインタフェースと、<constant>lo</constant>
+	という名前のループバックインタフェースからの接続のみを受け付ける事を指示する。
+	必要とする名前はどのOSを使っているかに依存する。上記ではLinux上での共通的な
+	イーサネットアダプタの名前を使っている。
+	</para>
+
+	<para>
+<indexterm><primary>PPP</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>cracker</primary></indexterm>
+<indexterm><primary>confirm address</primary></indexterm>
+	もしも、上記を使い、誰かが<constant>ppp0</constant>という名前のPPPインタフェース
+	上でホストに対してSMB接続を行おうとした時には、TCPの接続が拒否されたという応答が
+	帰る。この場合、OSが、任意のSambaプロセスに対して、そのインタフェースからの接続を
+	渡さないと通知するため、Sambaは全く動作しない。しかし、接続拒否という応答は、
+	クラッカーに対して、そのIPアドレスが有効なサービスを提供しているという確認をさせて
+	しまうということにもなる。
+	</para>
+
+	<para>
+<indexterm><primary>接続を無視</primary></indexterm>
+<indexterm><primary>接続を拒否</primary></indexterm>
+<indexterm><primary>exploitation</primary></indexterm>
+<indexterm><primary>サービス不能</primary></indexterm>
+<indexterm><primary>ファイアウォール</primary></indexterm>
+	もっと良い対応は、接続を全く無視することである(たとえばppp0から)。接続を拒否する
+	ことと比較して接続を無視する試みの利点は、脆弱性攻撃かサービス不能(DoS)攻撃時に
+	後で使うための有効なIPアドレスを見つけるためが唯一の意図の探索を失敗させることで
+	ある。潜在的な悪意がある行動を取り扱うこの方法は、適切なファイアウォール機構
+	を使うことが必要である。
+	</para>
+
+	</sect2>
+
+	<sect2 id="firewallports">
+	<title>ファイアウォールの使用</title>
+
+	<para>
+<indexterm><primary>deny access</primary></indexterm>
+<indexterm><primary>exposed</primary></indexterm>
+<indexterm><primary>ファイアウォールが有効</primary></indexterm>
+	多くの人が、使用しているネットワーク外に公開したくないサービスへのアクセスを拒否
+	するためにファイアウォールを使っている。これはよいアイデアではあるが、上記の
+	と関連して使用することを勧める。そうすると、何らかの理由でファイアウォールが
+	無効になったとしても保護が出来る。
+	</para>
+
+	<para>
+	もしもファイアウォールを設定するとき、どのTCPとUDPポートを許可し、ブロック
+	るかを知っておく必要がある。Sambaは以下のポートを使う:
+<indexterm><primary>Port 135/TCP</primary></indexterm>
+<indexterm><primary>Port 137/UDP</primary></indexterm>
+<indexterm><primary>Port 138/UDP</primary></indexterm>
+<indexterm><primary>Port 139/TCP</primary></indexterm>
+<indexterm><primary>Port 445/TCP</primary></indexterm>
+	</para>
+
+	<simplelist>
+		<member>Port 135/TCP - used by smbd</member>
+		<member>Port 137/UDP - used by nmbd</member>
+		<member>Port 138/UDP - used by nmbd</member>
+		<member>Port 139/TCP - used by smbd</member>
+		<member>Port 445/TCP - used by smbd</member>
+	</simplelist>
+
+	<para>
+<indexterm><primary>ファイアウォールの設定</primary></indexterm>
+	最後のものは、多くの古いファイアウォールの設定がそれを知らないかもしれない
+	という理由で重要である。このポートは最近付け加えられた。
+	</para>
+
+	<para>
+<indexterm><primary>ファイアウォールの設定</primary></indexterm>
+<indexterm><primary>high order ports</primary></indexterm>
+<indexterm><primary>入力パケットのブロック</primary></indexterm>
+	ファイアウォールを設定するとき、ハイオーダポート(1024-65535)は外向きの接続に
+	使われ、そのため、ファイアウォールを通るようにする必要がある。確立した接続を
+	除いて、ハイオーダポート上の入力パケットをブロックすることは賢明である。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>IPC$ 共有ベースの拒否の使用</title>
+
+	<para>
+<indexterm><primary>IPC$</primary></indexterm>
+<indexterm><primary>deny</primary></indexterm>
+<indexterm><primary>security hole</primary></indexterm>
+	もしも、上記の方法が適していないのであれば、最近セキュリティホールで使われた
+	IPC$共有に拒否の設定をすることが出来る。これは、潜在的に信頼できないホスト
+	からのIPC$へのアクセスを拒否する間、他の共有へのアクセスを提供する。
+	</para>
+
+	<para>
+	これを行うには以下のようにする:
+	<smbconfblock>
+	<smbconfsection name="[IPC$]"/>
+	<smbconfoption name="hosts allow">192.168.115.0/24 127.0.0.1</smbconfoption>
+	<smbconfoption name="hosts deny">0.0.0.0/0</smbconfoption>
+	</smbconfblock>
+	</para>
+
+	<para>
+<indexterm><primary>IPC$</primary></indexterm>
+<indexterm><primary>攻撃者からの保護</primary></indexterm>
+<indexterm><primary>有効なユーザ名/パスワード</primary></indexterm>
+	これは、2つの指定されたネットワークアドレス(ローカルホストと 192.168.115の
+	サブネット)以外のどこからもIPC$共有への接続を許可しないようにSambaに指示する。
+	IPC$共有のみが常時匿名でアクセスできる共有であるという理由で、これは、
+	そのホストで有効なユーザ名/パスワードを知らない攻撃者に対してあるレベルの
+	保護を提供する。
+	</para>
+
+	<para>
+<indexterm><primary>アクセス拒否</primary></indexterm>
+<indexterm><primary>IPC$</primary></indexterm>
+<indexterm><primary>共有のブラウズ</primary></indexterm>
+	もしもこの方法を使うのであれば、クライアントがIPC$共有にアクセスした時に、
+	<literal>`access denied'</literal>となる。それらクライアントは共有をブラウズ
+	出来ず、その他のリソースの一部にもアクセスできないだろう。この方法は、ここで説明
+	してきた方法のどれかが、何らかの理由で使えない場合を除いて推奨しない。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>NTLMv2のセキュリティ</title>
+
+	<para>
+<indexterm><primary>NTLMv2</primary></indexterm>
+	NTLMv2認証を設定するためには、以下のレジストリキーは知っておく価値がある:
+	</para>
+
+	<para>
+		<screen>
+		[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa]
+		"lmcompatibilitylevel"=dword:00000003
+		</screen>
+	</para>
+
+	<para>
+	0x00000003という値はNTLMv2レスポンスのみを送ることを意味する。クライアントは
+	NTLMv2認証を使う。もしもサーバがサポートしているなら、NTLMv2セッション
+	セキュリティを使うこと。ドメインコントローラはLM、NTLMとNTLMv2認証を受け取る。
+	</para>
+
+	<para>
+		<screen>
+		[HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Lsa\MSV1_0]
+		"NtlmMinClientSec"=dword:00080000
+		</screen>
+	</para>
+
+	<para>
+	0x00080000という値はNTLMv2セッションセキュリティのみを許可することを意味する。
+	もしも、NtlmMinClientSecかNtlmMinServerSecが0x00080000に設定されるならば、
+	もしもNTLMv2セッションセキュリティがネゴシエートされたときに接続は失敗する。
+	</para>
+	</sect2>
+</sect1>
+
+<sect1>
+<title>Sambaのアップグレード</title>
+
+<para>
+<indexterm><primary>updates</primary></indexterm>
+<indexterm><primary>important announcements</primary></indexterm>
+<indexterm><primary>security vulnerability</primary></indexterm>
+アップデートと重要な通知があるかどうかを、
+<ulink noescape="1" url="http://www.samba.org/">http://www.samba.org/</ulink>
+で定期的に確認してほしい。時折セキュリティリリースが作成され、セキュリティ上の脆弱性が
+発見されたときには直ちにSambaをアップグレードすることを強く推奨する。また、OS固有の
+アップグレードはOSベンダに確認すること。
+</para>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+もしも、SambaおよびSambaが動作するホストの設定が、誰もが期待するように直感的であれば、
+この章は不必要である。セキュリティの問題は、問題の複雑性の理由からではなく、
+セキュリティ問題の要求と判明することを投稿するほとんどの管理者が、全くSambaの問題で
+あると確信しているという理由で、サポート担当の人にとってしばしばやっかいである。
+</para>
+
+	<sect2>
+	<title>smbclientはローカルホストで動くが、ネットワークは死んでいる</title>
+
+	<para>
+	これはよくある問題である。Linuxベンダは既定値のファイアウォールをインストールする
+	傾向がある。既定値のファイアウォールの状態ではループバックアダプタ
+	(IPアドレスが 127.0.0.1)のみの通信が、ファイアウォール経由で許可される。
+	</para>
+
+	<para>
+	解決方法は、ファイアウォールを取り除く(停止する)か、SMBネットワークトラフィックが
+	通過できるようにファイアウォールスクリプトを修正することである。
+	<link linkend="firewallports">ファイアウォールの使用</link>の節を参照のこと。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>なぜユーザが他のユーザのホームディレクトリをアクセスできるのか?</title>
+
+	<para>
+	<quote>
+<indexterm><primary>ホームディレクトリのマッピング</primary></indexterm>
+<indexterm><primary>固有のホームディレクトリ</primary></indexterm>
+	一度有効なパスワードが供給されると、他のユーザのホームディレクトリへ個別のユーザが
+	マッピングすることを阻止できない。ユーザが自分自身のホームディレクトリのみを
+	マッピング出来るように、Sambaを設定する方法を見つけられない。
+	</quote>
+	</para>
+
+	<para><quote>
+	ユーザxyzzyは自分自身のホームディレクトリをマップ出来る。一度マップすると、ユーザ
+	xyzzyは他の誰のホームディレクトリでもマップ出来る。
+	</quote></para>
+
+	<para>
+<indexterm><primary>セキュリティの欠陥</primary></indexterm>
+<indexterm><primary>定義済みの共有</primary></indexterm>
+	これはセキュリティの欠陥ではない。これはデザインによるものである。Sambaは、
+	定義された共有に許されるように、ファイルシステム上のそのような表示のみを
+	認める事を除いて、UNIXマシンにログオンしていた時と正確に同じような、
+	UNIX ファイルシステムへのアクセスをユーザに認める。
+	</para>
+
+	<para>
+<indexterm><primary>UNIXのホームディレクトリ</primary></indexterm>
+<indexterm><primary>permissions</primary></indexterm>
+	もしも、使用しているUNIXのホームディレクトリが設定されていてあるユーザが、
+	他のユーザのディスク中に、何の問題もなく<command>cd</command>でき、
+	<command>ls</command>を実行出来るならば、UNIXのセキュリティの解は、
+	ユーザのホームディレクトリ上のファイルのパーミッションを変更して、
+	そのために、 <command>cd</command> と <command>ls</command>は拒否される。
+	</para>
+
+	<para>
+<indexterm><primary>セキュリティポリシー</primary></indexterm>
+<indexterm><primary>パーミッション</primary></indexterm>
+	Samba は、UNIX管理者が定めるセキュリティポリシを勝手に解釈(second guess)
+	しないように、非常に気を使っており、UNIX管理者が、ポリシーやパーミッションを
+	意図通りに(desire)設定していると確信している。
+	</para>
+
+	<para>
+	Sambaは要求した動作を許可する。<smbconfsection name="[homes]"/>共有定義中に
+	 <smbconfoption name="only user">%S</smbconfoption>オプションを単におくこと。
+	Samba allows the behavior you require. Simply put the <smbconfoption name="only user">%S</smbconfoption>
+	option in the <smbconfsection name="[homes]"/> share definition.
+	</para>
+
+	<para>
+	<smbconfoption name="only user"></smbconfoption>パラメータは
+	<smbconfoption name="users">list</smbconfoption>パラメータと一緒に動作するので、
+	要求する動作を得るためには以下の行を追加する:
+	<smbconfblock>
+	<smbconfoption name="users">%S</smbconfoption>
+	</smbconfblock>
+	これは下記を追加するのと同じである。
+	<smbconfblock>
+	<smbconfoption name="valid users">%S</smbconfoption>
+	</smbconfblock>
+	<smbconfsection name="[homes]"/>共有の定義のためには、&smb.conf;
+	マニュアルページでの推奨のようにする。
+	</para>
+	</sect2>
+
+</sect1>
+</chapter>

@@ -1,0 +1,37 @@
+<samba:parameter name="lpresume command"
+                 context="S"
+				 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータには、
+	特定の印刷ジョブの印刷やスプールを再開したり続行するためにサーバ上で実行するコマンドを指定する。</para>
+
+	<para> このコマンドは、
+	プリンタ名とジョブ番号を受け取るとその印刷ジョブを再開するプログラムやスクリプトでなければならない。
+    <smbconfoption name="lppause command"/> パラメータも参照のこと。</para>
+
+	<para><parameter moreinfo="none">%p</parameter> 変数は、
+	プリンタ名に置換される。
+	<parameter moreinfo="none">%j</parameter> はジョブ番号(整数)に置換される。</para>
+		
+	<para> サーバの PATH 環境変数が利用できないかもしれないことを考慮して、
+	<parameter moreinfo="none">lpresume command</parameter> を絶対パスで記述することを推奨する。
+	</para>
+		
+    <para><smbconfoption name="printing"/> パラメータも参照のこと。</para>
+
+	<para>既定値: 現在のところ、この設定の既定値は設定されていない。
+	ただし、<parameter moreinfo="none">printing</parameter> パラメータの値が <constant>SYSV</constant> の場合、
+	既定値は以下の通り:</para>
+
+    <para><command moreinfo="none">lp -i %p-%j -H resume</command></para>
+
+	<para>また、<parameter moreinfo="none">printing</parameter> パラメータの値が
+	<constant>SOFTQ</constant> の場合、デフォルト値は以下の通り:</para>
+
+    <para><command moreinfo="none">qstat -s -j%j -r</command></para>
+</description>
+
+<value type="default">lpresume command = /usr/bin/lpalt %p-%j -p2</value>
+</samba:parameter>

@@ -1,0 +1,13 @@
+<samba:parameter name="paranoid server security"
+                 context="G"
+		 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>Windows NT 4.x のバージョンによっては、問題のあるパスワードの非ゲストアカウントが許容されている。このオプションを有効にした場合、 Samba はこうした Windows NT 4.x サーバを password server として使用せず、ログに出力を行ない終了するようになる。
+    </para>
+
+    <para>このオプションを無効にすることで、 Samba がこのチェックを行なわなくなるため、リモートサーバに対する問題のあるログオンの試行が明示的に許可される。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

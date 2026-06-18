@@ -1,0 +1,16 @@
+<samba:parameter name="dos charset"
+				 type="string"
+                 context="G"
+                 advanced="1" developer="1"
+				 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>DOS SMB クライアントは、サーバ側でも自身と同じ文字コードセットを使用していると想定する。
+        このオプションにより、 Samba が DOS クライアントと通信する際に用いられる文字コードセットを指定する。
+	</para>
+
+	<para>デフォルトは Samba にインストールされた文字コードセットによって異なる。
+	Samba は、文字コードセット 850 の使用を試みるが、使用できない場合は ASCII を使用する。
+	<citerefentry><refentrytitle>testparm</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry> コマンドを実行することで、システム上の既定値を確認することが可能である。</para>
+</description>
+</samba:parameter>

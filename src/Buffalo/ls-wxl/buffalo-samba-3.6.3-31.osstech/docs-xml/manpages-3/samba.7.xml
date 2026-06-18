@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="samba.7">
+
+<refmeta>
+	<refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">その他</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>samba</refname>
+	<refpurpose>UNIX 用の Windows SMB/CIFS ファイルサーバ</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis><command>samba</command></cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+	
+	<para> Sambaシステムは、Server Message Block (通常 SMB と略される) 
+	プロトコルを実装した UNIX 用のプログラムの集合体である。
+	このプロトコルは、Common Internet File System(CIFS) として言及される
+	こともある。より詳細な説明は、<ulink url="http://www.ubiqx.org/cifs/">
+	http://www.ubiqx.org/cifs/</ulink> を参照のこと。
+	また Samba は nmbd によって NetBIOS プロトコルを実装する。</para>
+	
+	<variablelist>
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>smbd</command> デーモンは Windows 
+		95/98、Windows NT、Windows for Workgroups 、 LAN
+		Manager といった SMB クライアントに対し、ファイルとプリンタのサービスを提供する。
+		このデーモンの設定ファイルは <citerefentry><refentrytitle>
+		smb.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+		にて説明している。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term><citerefentry><refentrytitle>nmbd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>nmbd</command> デーモンは NetBIOS
+		ネームサービスとブラウジング機能を提供する。
+		このデーモンの設定ファイルは <citerefentry><refentrytitle>
+		smb.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+		にて説明している。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbclient</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbclient</command> プログラムは
+		シンプルな ftp クライアントのような機能を提供する。これは、(Windows
+		NT のような) 互換性のあるサーバの SMB 共有へのアクセスに便利である。
+		また、これを用いることで、UNIX マシンから SMB サーバ (Windows
+		NT が動作している PC など) に接続されているプリンタへの印刷も可能となる。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>testparm</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>testparm</command> ユーティリティは、
+		Samba の <citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> 
+		設定ファイルに対するシンプルな文法チェッカである。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>testprns</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>testprns</command> ユーティリティは、
+		Sambaで使用される <filename>printcap</filename>
+		ファイルで定義されているプリンタに対するテストをサポートする。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbstatus</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbstatus</command> ツールは
+		<command>smbd</command> へのコマンド実行時点での接続状態を提供する。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>nmblookup</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>nmblookup</command> ツールは、UNIX
+		ホストから NetBIOS 名の問い合わせを行うことを可能にする。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbpasswd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>smbpasswd</command> コマンドは、Samba
+		や Windows NT サーバの LanMan や NTLM
+		のパスワードハッシュ値を変更するツールである。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbcacls</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbcacls</command> コマンドはリモート
+		CIFS サーバの ACL を設定するツールである。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbsh</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbsh</command> コマンドは
+		ロードされた VFS を用いて unix shell を実行するプログラムである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbtree</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbtree</command> コマンドは、
+		テキストベースの「マイネットワーク」ツールである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbtar</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbtar</command> は CIFS/SMB
+		サーバのデータバックアップをとるツールである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbspool</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>smbspool</command> は CIFS
+		サーバに接続されたプリンタから印刷を行うためのヘルパーユーティリティである。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbcontrol</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbcontrol</command> は
+		起動中の Samba デーモンの動作を変更することができるユーティリティである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>rpcclient</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>rpcclient</command> はリモートの CIFS
+		サーバに対して RPC コマンドを実行することができる
+		ユーティリティである。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>pdbedit</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>pdbedit</command> コマンドは、Samba
+		サーバのローカルユーザデータベースの管理に使用できる。
+		</para></listitem></varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>findsmb</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>findsmb</command> コマンドは
+		ローカルネットワーク上の SMB サーバを探すために使用できる。
+		</para></listitem></varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>net</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>net</command> コマンドは DOS/Windows
+		の NET.EXE コマンドと似た動作をする。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>swat</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>swat</command> は Web ベースの
+		<filename>smb.conf</filename> 設定インターフェースである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>winbindd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>winbindd</command> は、
+		UNIX の認証とユーザデータベースを統合するデーモンである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>wbinfo</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>wbinfo</command> は winbind に関係する
+		情報の取得や保存を行うユーティリティである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>profiles</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>profiles</command> はある SID を別の
+		SID に置換するために使用するコマンドラインのユーティリティである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>log2pcap</refentrytitle>
+				<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>log2pcap</command> は Samba 
+		のログファイルから pcap trace ファイルを生成するユーティリティ
+		である。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>vfstest</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>vfstest</command> は VFS 
+		モジュールをテストするために使用されるユーティリティである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>ntlm_auth</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>ntlm_auth</command> は外部プログラムが
+		NTLM 認証を使用できるようにするためのヘルパーユーティリティである。
+		</para></listitem></varlistentry>
+
+		<varlistentry>
+			<term>
+<citerefentry><refentrytitle>smbmount</refentrytitle><manvolnum>8</manvolnum></citerefentry>, 
+<citerefentry><refentrytitle>smbumount</refentrytitle><manvolnum>8</manvolnum></citerefentry>, 
+<citerefentry><refentrytitle>smbmnt</refentrytitle><manvolnum>8</manvolnum></citerefentry></term>
+		<listitem><para><command>smbmount</command> 、
+		<command>smbmnt</command> 、 <command>smbmnt</command> は、Linux の CIFS/SMB 共有をマウントするために使用されるコマンドである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smbcquotas</refentrytitle>
+		<manvolnum>1</manvolnum></citerefentry></term>
+		<listitem><para><command>smbcquotas</command> はリモート
+		サーバの NTFS5 の QUOTA を設定するツールである。</para>
+		</listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>コンポーネント</title>
+	
+	<para>Samba システムは複数のコンポーネントで構成される。
+	各コンポーネントにはそれぞれ個別のマニュアルページが用意されている。
+	Samba に付属するドキュメントと、使用するコンポーネントの
+	マニュアルページを読むことを強く推奨する。
+	マニュアルページの中によくわからない所があれば、
+	<ulink url="http://devel.samba.org/">http://devel.samba.org</ulink>
+	からバグレポートの報告やパッチの提供に関する情報を取得できる。
+	</para>
+
+	<para>もしなんらかの助けが必要な場合、Samba の Web サイト
+	<ulink url="http://samba.org/">http://www.samba.org/</ulink>
+	を参照してほしい。
+	さまざまなオプションが利用できる筈である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>入手性</title>
+	
+	<para>Sambaシステムは、GNU Public License (GPL)
+	の許にライセンスされている。
+	ライセンス文書は、パッケージ中の COPYING ファイルにあるはずである。
+	Samba システムの複製を配布することは奨励されているが、
+	このライセンスをきちんと遵守してほしい。</para>
+
+	<para>Sambaシステムの最新版は anonymous ftp によって
+	samba.org のディレクトリ pub/samba/ から入手できる。
+	また世界中のさまざまなミラー・サイトからも入手可能である。</para>
+
+	<para>Samba の有益な情報は <ulink url="news:comp.protocols.smb">
+	comp.protocol.smb</ulink> ニュースグループや、Samba メーリングリスト
+	から入手することができるかもしれない。
+	メーリングリストに参加するための詳細な情報は、Samba に付属している
+	README ファイルに記されている。</para>
+	
+	<para>もし Web ブラウザ (Mozilla や Konqueror など)
+	が使えるなら、<ulink url="http://lists.samba.org/">
+	http://lists.samba.org</ulink> にて Samba メーリングリストの過去記事を
+	含む多くの有用な情報を得ることができる。</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+	
+	<para>この man ページは、Samba システムのバージョン 3 用である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>協力</title>
+	
+	<para>Samba プロジェクトに協力したいと考えるなら、
+	<ulink url="http://lists.samba.org/">http://lists.samba.org</ulink> の
+	Samba メーリングリストに加入することを勧める。
+	</para>
+
+	<para>提供可能なパッチや報告すべきバグを持っているなら、
+	<ulink url="http://devel.samba.org/">http://devel.samba.org/</ulink>
+	を参照してパッチ提供の方法に関する情報を入手してほしい。
+	パッチは <command>diff -u</command> 形式が望ましい。</para>
+</refsect1>
+
+<refsect1>
+	<title>協力者</title>
+	
+	<para>プロジェクトの貢献者は多数にのぼるため、ここには記述しないが、
+	全員が全ての Samba ユーザから称賛されるに値する。
+	全員のリストを見るには、cvs で管理する以前については
+	ソースパッケージ中の <filename>change-log</filename> を、cvs で管理するようになってからの
+	貢献者については <ulink url="http://cvs.samba.org/">
+	http://cvs.samba.org/</ulink> を参照のこと。
+	CVS は Samba Team が Samba の開発に利用しているオープンソースの
+	ソース管理システムである。
+	このプロジェクトは、cvs 無しには管理しきれないに違いない(訳注:現在はgitを使用している)。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作られた。
+	Samba は現在 Linux カーネルが 開発されているような方法での
+	オープンソースプロジェクトである Samba Team によって開発されている。
+	</para>
+
+	<para>オリジナルの Samba の マニュアルページは Karl Auer
+	によって書かれた。
+	マニュアルページは YODL 形式 (別の優秀なオープンソースソフトウェアで、
+	<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink> にある) で変換され、
+	Jeremy Allison によって Samba 2.0 リリースのために更新された。
+	Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。
+	Samba 3.0 のための DocBook XML 4.2 への変換は Alexander Bokovoy に
+	よって行われた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.23 - 3.5.3 対応のものである。</para>
+        <para>このマニュアルページの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>たかはしもとのぶ (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>佐藤 文優</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+
+	<para>このマニュアルページの Samba 3.0.23 - 3.5.3 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>

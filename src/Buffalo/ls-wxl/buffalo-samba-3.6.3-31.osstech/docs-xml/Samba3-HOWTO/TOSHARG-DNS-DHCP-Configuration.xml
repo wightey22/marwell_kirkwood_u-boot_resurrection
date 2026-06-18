@@ -1,0 +1,357 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="DNSDHCP">
+<chapterinfo>
+	&author.jht;
+</chapterinfo>
+
+<title>DNSとDHCP設定ガイド</title>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>Dynamic Host Configuration Protocol</primary><see>DHCP</see></indexterm>
+<indexterm><primary>Domain Name System</primary><see>DNS</see></indexterm>
+UNIXの領域においては、
+Domain Name System (DNS) と Dynamic Host Configuration Protocol (DHCP)
+と同じくらいたくさんの論争が起こる主題はない。
+DNSとDHCPの特定の実装に賛成、反対する意見の一部は有効である。
+There are few subjects in the UNIX world that might raise as much contention as
+Domain Name System (DNS) and Dynamic Host Configuration Protocol (DHCP).
+Not all opinions held for or against particular implementations of DNS and DHCP
+are valid.
+</para>
+
+<para>
+多くの情報技術を利用する人が、携帯性と利用の自由を要求する現代に、我々は生きている。
+Microsoft Windows ユーザは特に、使用しているノートPCをネットワークに繋げば、
+<quote>ちゃんと動く</quote>事を期待している。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+UNIX管理者はpoint。Microsoft Windowsの領域における多くの標準的な習慣が、セキュリティの
+観点からは悪い習慣上で最も良い境界にある(???)。Microsoft Windows ネットワーク
+プロトコルは、ネットワーク上に、ワークステーションそれ自身を登録する機能を用意している。
+Windows 2000のActive DirectoryはDNS名前空間に、UNIX管理者が困惑するような、エントリを
+登録する。世界は変わってしまったのである!
+UNIX administrators have a point. Many of the normative practices in the Microsoft
+Windows world at best border on bad practice from a security perspective.
+Microsoft Windows networking protocols allow workstations to arbitrarily register
+themselves on a network. Windows 2000 Active Directory registers entries in the DNS namespace
+that are equally perplexing to UNIX administrators. Welcome to the new world!
+</para>
+
+
+<para>
+<indexterm><primary>ISC</primary><secondary>DNS</secondary></indexterm>
+<indexterm><primary>ISC</primary><secondary>DHCP</secondary></indexterm>
+<indexterm><primary>ダイナミックDNS</primary><see>DDNS</see></indexterm>
+この章の目的は、Microsoft Windows 2000 サーバ製品中でのものと互換性のある、動的サービスを
+提供するために、Internet Software Consortium (ISC) のDNSとDHCPサーバの設定をデモすること
+である。
+</para>
+
+<para>
+この章では、DNSとDHCPサーバの両方に対する、動く設定ファイルの例を提供する以上のものでは
+ない。例は、このドキュメント中のどこかで使われている設定例に一致するものを使う。
+</para>
+
+<para>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>DHCP</primary></indexterm>
+<indexterm><primary>BIND9.NET</primary></indexterm>
+この章では、明示的にチュートリアルでも、全体として、この文書の意図と範囲を超えているので、
+DNSとDHCPのリファレンスガイドの代替品を提供しない。DNSまたはDHCPについてのより詳細な
+参考情報を知りたいのであれば、ISCのWebサイト 
+<ulink noescape="1" url="http://www.isc.org"> http://www.isc.org</ulink>を参照のこと。
+書籍として情報が欲しいのであれば、
+<ulink url="http://www.oreilly.com/catalog/dns/index.htm">オライリー</ulink>
+のWebサイトに行って、DNSの本の情報を、また、
+<ulink url="http://www.bind9.net/books-dhcp">BIND9.NET</ulink>というWebサイトを
+見てみると良い。
+
+書籍情報は以下の通り:
+</para>
+
+<orderedlist>
+	<listitem><para>DNS and BIND, By Cricket Liu, Paul Albitz, ISBN: 1-56592-010-4(訳注:日本語訳あり)</para></listitem>
+	<listitem><para>DNS &amp; Bind Cookbook, By Cricket Liu, ISBN: 0-596-00410-9</para></listitem>
+	<listitem><para>The DHCP Handbook (2nd Edition), By: Ralph Droms, Ted Lemon, ISBN 0-672-32327-3</para></listitem>
+</orderedlist>
+
+</sect1>
+
+<sect1>
+<title>設定例</title>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+DNSは、インターネットにとっては、生活における水のようなものである。ほとんどすべての
+情報リソース(ホスト名)はDNSを通してそのIPアドレスに解決される。Windowsネットワークは
+DNSの複雑さを防ぐために、かなりいろいろな事をやっていたが、結局DNSの勝ちであった。
+<indexterm><primary>WINS</primary></indexterm>
+DNSの代わりとしてWindows Internet Name Service (WINS) &smbmdash;がある。
+NetBIOS networking over the TCP/IPプロトコルの悪い点は、情報技術ネットワークの
+複雑さと規模が発展していく時に、管理できなくなる、平坦で階層構造のない名前空間の
+ような拡張性の問題が明らかとなっていることである。
+</para>
+
+<para>
+<indexterm><primary>RFC 1001</primary></indexterm>
+<indexterm><primary>RFC 1002</primary></indexterm>
+WINSはMicrosoftによるRFC1001/1002 NetBIOS Name Service (NBNS)の実装である。これは、
+NetBIOSクライアント(Microsoft Windowsマシンのような)に、マシンに与えられたIPアドレスと
+一緒に管理者かユーザが選べる任意のマシン名を解決することができる。WINSを使うと、
+ネットワーククライアントマシンは、マシン名をそのIPアドレスに解決できる。
+</para>
+
+<para>
+NetBIOSネットワークファミリの制限に対する代替のための要求は、最終的に、Microsoftが
+DNSとActive Directoryを使うように追い込んだ。Microsoftの新しい実装は、NetBIOS
+ネットワークにおいて、WINSが使われる方法と同様のやり方で、DNSを使うことを試みている。
+WINSとMicrosoft DNSの両方は、動的な名前登録に頼っている。
+</para> 
+
+<para>
+Microsoft Windows クライアントは起動時にDNSサーバに対して動的な名前登録を行うことが
+できる。その代わりに、ワークステーションのIPアドレスを割り当てるところにDNSが使われる
+場面において、クライアントが、IPアドレスの貸出を受け取ったら直ちに、DHCPサーバによって
+そのホスト名とIPアドレスを登録することが出来る。最後に、Microsoft DNSは、Microsoft WINS
+経由でホスト名を解決できる。
+</para>
+
+<para>以下の設定は、単純な、セキュリティを考慮していないDNSサーバと、DNSの設定にあわせた
+単純なDHCPサーバの例を提示している。
+</para>
+
+	<sect2>
+	<title>ダイナミックDNS</title>
+
+	<para>
+	<indexterm><primary>DNS</primary><secondary>Dynamic</secondary></indexterm>
+	DNS設定の例は、ネットワーク 192.168.1.0/25のIPアドレス範囲中のプライベート
+	ネットワーク用である。プライベートなネットワークアドレス空間はRFC1918に
+	説明がある。
+	</para>
+
+
+	<para>
+	<indexterm><primary>BIND</primary></indexterm>
+	このネットワークは安全なファイアウォールの内側に位置していることを仮定している。
+	以下のファイルはISC BINDバージョン9用である。BINDは
+	Berkeley Internet Name Daemonの略である。
+	</para>
+
+	<para>
+	マスタ設定ファイル<filename>/etc/named.conf</filename>は、この後使用する
+	すべての設定ファイルの位置を決める。このファイルの位置と名前は、OSの一部である
+	起動スクリプト内で指定されている。
+<programlisting>
+# Quenya.Org の設定ファイル
+
+acl mynet {
+	192.168.1.0/24;
+	127.0.0.1;
+};
+
+options {
+
+	directory "/var/named";
+	listen-on-v6 { any; };
+	notify no;
+	forward first;
+	forwarders {
+		192.168.1.1;
+		};
+	auth-nxdomain yes;
+	multiple-cnames yes;
+	listen-on {
+		mynet;
+		};
+};
+
+# The following three zone definitions do not need any modification.
+# The first one defines localhost while the second defines the
+# reverse lookup for localhost. The last zone "." is the
+# definition of the root name servers.
+
+zone "localhost" in {
+	type master;
+	file "localhost.zone";
+};
+
+zone "0.0.127.in-addr.arpa" in {
+	type master;
+	file "127.0.0.zone";
+};
+
+zone "." in {
+	type hint;
+	file "root.hint";
+};
+
+# You can insert further zone records for your own domains below.
+
+zone "quenya.org" {
+	type master;
+	file "/var/named/quenya.org.hosts";
+	allow-query {
+		mynet;
+		};
+	allow-transfer {
+		mynet;
+		};
+	allow-update {
+		mynet;
+		};
+	};
+
+zone "1.168.192.in-addr.arpa" {
+	type master;
+	file "/var/named/192.168.1.0.rev";
+	allow-query {
+		mynet;
+	};
+	allow-transfer {
+		mynet;
+	};
+	allow-update {
+		mynet;
+	};
+};
+</programlisting>
+	</para>
+
+	<para>
+	以下のファイルはすべて<filename>/var/named</filename>というディレクトリにある。
+	これは<filename>/var/named/localhost.zone</filename>ファイルである:
+<programlisting>
+$TTL 1W
+@               IN SOA  @   root (
+				42              ; serial (d. adams)
+				2D              ; refresh
+				4H              ; retry
+				6W              ; expiry
+				1W )            ; minimum
+
+		IN NS           @
+		IN A            127.0.0.1
+	</programlisting>
+	</para>
+
+	<para>
+	<filename>/var/named/127.0.0.zone</filename>ファイルである:
+<programlisting>
+$TTL 1W
+@               IN SOA          localhost.  root.localhost. (
+				42              ; serial (d. adams)
+				2D              ; refresh
+				4H              ; retry
+				6W              ; expiry
+				1W )            ; minimum
+
+				IN NS           localhost.
+1               IN PTR          localhost.
+</programlisting>
+	</para>
+
+	<para>
+		<filename>/var/named/quenya.org.host</filename>ファイルである:
+<programlisting>
+$ORIGIN .
+$TTL 38400      ; 10 hours 40 minutes
+quenya.org      IN SOA  marvel.quenya.org. root.quenya.org. (
+				2003021832 ; serial
+				10800      ; refresh (3 hours)
+				3600       ; retry (1 hour)
+				604800     ; expire (1 week)
+				38400      ; minimum (10 hours 40 minutes)
+				)
+			NS      marvel.quenya.org.
+			MX      10 mail.quenya.org.
+$ORIGIN quenya.org.
+frodo                   A       192.168.1.1
+marvel                  A       192.168.1.2
+;
+mail                    CNAME   marvel
+www                     CNAME   marvel
+</programlisting>
+</para>
+
+<para>
+	<filename>/var/named/192.168.1.0.rev</filename>ファイルである:
+<programlisting>
+$ORIGIN .
+$TTL 38400      ; 10 hours 40 minutes
+1.168.192.in-addr.arpa  IN SOA  marvel.quenya.org. root.quenya.org. (
+				2003021824 ; serial
+				10800      ; refresh (3 hours)
+				3600       ; retry (1 hour)
+				604800     ; expire (1 week)
+				38400      ; minimum (10 hours 40 minutes)
+				)
+			NS      marvel.quenya.org.
+$ORIGIN 1.168.192.in-addr.arpa.
+1                       PTR     frodo.quenya.org.
+2                       PTR     marvel.quenya.org.
+</programlisting>
+	</para>
+
+	<para>
+<indexterm><primary>BIND</primary></indexterm>
+<indexterm><primary>動的登録ファイル</primary></indexterm>
+	ここで示された設定ファイルは完全に動くシステムからコピーしたものである。すべての
+	動的に登録されるエントリは削除されている。それらのファイルに対してはさらに、
+	BINDバージョン9が、<filename>.jnl</filename>という拡張子を持つファイルである、
+	各動的登録ファイルを作成する。構成ファイルと作成された<filename>.jnl</filename>
+	ファイルを編集したり、不正に変更してはならない。
+	</para>
+
+	</sect2>
+
+	<sect2 id="DHCP">
+	<title>DHCPサーバ</title>
+
+	<para>
+	以下のファイルはISC DHCPサーバ バージョン3で使われる。ファイルは、
+	<filename>/etc/dhcpd.conf</filename>にある:
+	</para>
+
+	<para>
+	<programlisting>
+ddns-updates on;
+ddns-domainname "quenya.org";
+option ntp-servers 192.168.1.2;
+ddns-update-style ad-hoc;
+allow unknown-clients;
+default-lease-time 86400;
+max-lease-time 172800;
+
+option domain-name "quenya.org";
+option domain-name-servers 192.168.1.2;
+option netbios-name-servers 192.168.1.2;
+option netbios-dd-server 192.168.1.2;
+option netbios-node-type 8;
+
+subnet 192.168.1.0 netmask 255.255.255.0 {
+	range dynamic-bootp 192.168.1.60 192.168.1.254;
+	option subnet-mask 255.255.255.0;
+	option routers 192.168.1.2;
+	allow unknown-clients;
+}
+</programlisting>
+	</para>
+
+	<para>
+	この例では、192.168.1.1と192.168.1.59のIPアドレス範囲は固定IPアドレス
+	(よく<constant>hard-wired</constant>と呼ばれる)のために予約されている。
+	192.168.1.60から192.168.1.254の間のアドレスは動的な割り当てに使われる。
+	</para>
+
+	</sect2>
+
+</sect1>
+</chapter>

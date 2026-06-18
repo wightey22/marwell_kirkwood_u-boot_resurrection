@@ -1,0 +1,20 @@
+<samba:parameter name="debug prefix timestamp"
+                 context="G"
+                 developer="1"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+このオプションを有効にすると、デバッグメッセージにタイムスタンプメッセージ
+ヘッダが付くようになる。ただし <smbconfoption name="debug timestamp"/>
+に含まれるファイル名や関数情報には付加されない。
+タイムスタンプを表すためだけに、新たなデバッグ行が発生することはない。
+    </para>
+
+    <para>
+注意：このパラメータは <smbconfoption name="debug timestamp"/> を上書きする。
+    </para>
+
+</description>
+<value type="default">no</value>
+</samba:parameter>

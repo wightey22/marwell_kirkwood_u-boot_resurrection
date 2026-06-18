@@ -1,0 +1,20 @@
+<samba:parameter name="client lanman auth"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、<citerefentry><refentrytitle>smbclient</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> などの Samba のクライアントツールが
+    脆弱な LANMAN パスワードハッシュを使用した認証を行なうか否かを制御する。 無効にした場合、 Samba クライアントからは、NT パスワードハッシュを利用するクライアント (Windows NT/2000クライアント、Samba など。しかし Windows 95/98 は含まない) に対してのみ接続できる。 </para>
+
+    <para> LANMAN 暗号化レスポンスは簡単に解読することが可能である。 これは大文字と小文字を区別しないことや、使用しているアルゴリズムなどに起因する。 Windows 95/98 サーバが存在しない場合は、このオプションを無効にした方がよいだろう。</para>
+
+    <para>このオプションを無効にすると、<command
+    moreinfo="none">client plaintext auth</command> オプションも同時に無効となる。</para>
+
+    <para>同様に、 <command moreinfo="none">client ntlmv2
+    auth</command> パラメータを有効にした場合、NTLMv2 ログインのみが可能となる。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

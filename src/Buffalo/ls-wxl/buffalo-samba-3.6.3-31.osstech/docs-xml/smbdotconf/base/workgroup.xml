@@ -1,0 +1,14 @@
+<samba:parameter name="workgroup"
+				 type="string"
+                 basic="1" advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>これは、クライアントが問い合わせを行なった際に、
+    サーバが表示されるワークグループを設定する。
+    このパラメータにより、 
+    <smbconfoption name="security">domain</smbconfoption>
+    の設定におけるドメイン名も設定されることに注意。</para>
+</description>
+<value type="default">WORKGROUP</value>
+<value type="example">MYGROUP</value>
+</samba:parameter>

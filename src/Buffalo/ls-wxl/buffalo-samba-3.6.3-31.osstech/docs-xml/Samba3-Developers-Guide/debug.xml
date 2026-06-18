@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="debug">
+<chapterinfo>
+	<author>
+		<firstname>Chris</firstname><surname>Hertel</surname>
+	</author>
+	<pubdate>July 1998</pubdate>
+</chapterinfo>
+
+<title>Sambaのデバッグシステム</title>
+
+<sect1>
+<title>新しい出力形式</title>
+
+<para>
+  デバッグログファイルの文法は以下の通り:
+</para>
+
+<para><programlisting>
+  &gt;debugfile&lt; :== { &gt;debugmsg&lt; }
+
+  &gt;debugmsg&lt;  :== &gt;debughdr&lt; '\n' &gt;debugtext&lt;
+
+  &gt;debughdr&lt;  :== '[' TIME ',' LEVEL ']' FILE ':' [FUNCTION] '(' LINE ')'
+
+  &gt;debugtext&lt; :== { &gt;debugline&lt; }
+
+  &gt;debugline&lt; :== TEXT '\n'
+</programlisting></para>
+
+<para>
+TEXTは改行文字を含まない文字列である。
+</para>
+
+<para>
+LEVEL はメッセージのDEBUGレベルである(0から10の範囲の整数値)。
+</para>
+
+<para>
+TIME はタイムスタンプである。
+</para>
+
+<para>
+FILE はでバグメッセージが生成されたファイルの名前である。
+</para>
+
+<para>
+FUNCTIONはデバッグメッセージが生成された関数である。
+</para>
+
+<para>
+LINEはメッセージが生成されたデバッグ文の行番号である。
+</para>
+
+<para>基本的に、それが意味するところは以下の通り:</para>
+<orderedlist>
+<listitem><para>
+デバッグログファイルはデバッグメッセージで構成される。
+</para></listitem>
+<listitem><para>
+核でバッグメッセージはヘッダとテキストから構成される。ヘッダは改行によってテキストと
+分離されている。
+</para></listitem>
+<listitem><para>
+ヘッダはタイムスタンプで始まり、括弧の中にデバッグレベルが続く。メッセージによって
+生成されたファイル名、関数名、と行番号がそのあとに続く。ファイル名はコロンで終了し、
+関数名は行番号を含む括弧で終了する。コンパイラに依存するが、関数名は無いかもしれない
+(これは、広く実装はされていない__FUNCTION__マクロによって生成される、dangit)。
+</para></listitem>
+<listitem><para>
+メッセージテキストは0かそれ以上の行から構成され、おのおのは改行で終端する。
+</para></listitem>
+</orderedlist>
+
+<para>出力の例:</para>
+
+<para><programlisting>
+    [1998/08/03 12:55:25, 1] nmbd.c:(659)
+      Netbios nameserver version 1.9.19-prealpha started.
+      Copyright Andrew Tridgell 1994-1997
+    [1998/08/03 12:55:25, 3] loadparm.c:(763)
+      Initializing global parameters
+</programlisting></para>
+
+<para>
+上記の例において関数名はヘッダ行には表示されていないことに注意。これは、上記の例は
+SGI Indyによって生成され、SGIコンパイラは__FUNCTION__マクロをサポートしていないという
+理由による。
+</para>
+
+</sect1>
+
+<sect1>
+<title>DEBUG() マクロ</title>
+
+<para>
+DEBUG()マクロの使用は変わっていない。DEBUG()は2つのパラメータをとる。
+最初のものはメッセージレベルであり、2番目のものはDebug1()関数を呼び出すための
+関数呼び出しの実体である。
+</para>
+
+<para>これは混乱させる。</para>
+
+<para>若干の手助けとなるかもしれない例は以下の通り。もしも</para>
+
+<para><programlisting>
+printf( "This is a %s message.\n", "debug" );
+</programlisting></para>
+
+<para>
+と書いて結果を標準出力に送りたいのであれば、
+to send the output to stdout, then you would write
+</para>
+
+<para><programlisting>
+DEBUG( 0, ( "This is a %s message.\n", "debug" ) );
+</programlisting></para>
+
+<para>
+と書くことで、結果はデバッグファイルに送られる。すべての通常のprintf()
+フォーマットのエスケープ処理はちゃんと動作する。
+</para>
+
+<para>
+上記の例において、DEBUGメッセージレベルは0に設定されていることに注意。メッセージレベル
+0は常時出力される。基本的に、もしもメッセージレベルがグローバル値DEBUGLEVEL以下の場合、
+DEBUG文は処理される。
+</para>
+
+<para>
+上記の例の出力は以下のようなものになる:
+</para>
+
+<para><programlisting>
+    [1998/07/30 16:00:51, 0] file.c:function(128)
+      This is a debug message.
+</programlisting></para>
+
+<para>
+おのおののDEBUG()呼び出しは、以前の呼び出しによって生成された出力の行末が、
+"\n"で終わっていないならば、新しいヘッダを作成する。デバッグファイルへの出力は、
+改行が来るたびごとにフラッシュされるフォーマットバッファを通して渡される。
+もしも、DEBUG()が呼ばれたときにバッファがからでなければ、新しい入力は単に
+追加される。
+</para>
+
+<para>
+...しかし、これは全くその場しのぎである。DEBUG()が分割された行を書き込むのに
+使われると言う理由で、適切な位置に置かれる。以下は今説明したことに関する、
+この種の簡単な例である:
+</para>
+
+<para><programlisting>
+    DEBUG( 0, ("The test returned " ) );
+    if( test() )
+      DEBUG(0, ("True") );
+    else
+      DEBUG(0, ("False") );
+    DEBUG(0, (".\n") );
+</programlisting></para>
+
+<para>
+フォーマッティングバッファなしでは、出力(test()がtrueを返すことを仮定)は以下のようになる:
+
+</para>
+
+<para><programlisting>
+    [1998/07/30 16:00:51, 0] file.c:function(256)
+      The test returned
+    [1998/07/30 16:00:51, 0] file.c:function(258)
+      True
+    [1998/07/30 16:00:51, 0] file.c:function(261)
+      .
+</programlisting></para>
+
+<para>これは使い物にはならない。フォーマットバッファというその場しのぎの方法は、
+この問題を解決する。
+</para>
+
+</sect1>
+
+<sect1>
+<title>DEBUGADD()マクロ</title>
+
+<para>
+上記で説明されている行が壊れてしまう問題への、その場しのぎの解決方法への追加として、
+もっときれいな解決方法がある。DEBUGADD()マクロは決してヘッダを生成しない。フォーマット
+バッファがからであったとしても、これは現在のデバッグメッセージに対して新しいテキストを
+追加する。DEBUGADD()マクロの文法はDEBUG()マクロのものと同じである。
+</para>
+
+<para><programlisting>
+    DEBUG( 0, ("This is the first line.\n" ) );
+    DEBUGADD( 0, ("This is the second line.\nThis is the third line.\n" ) );
+</programlisting></para>
+
+<para>これは以下を生成する。</para>
+
+<para><programlisting>
+    [1998/07/30 16:00:51, 0] file.c:function(512)
+      This is the first line.
+      This is the second line.
+      This is the third line.
+</programlisting></para>
+
+</sect1>
+
+<sect1>
+<title>DEBUGLVL()マクロ</title>
+
+<para>
+DEBUG()マクロにおける問題の1つは、DEBUG()行が長すぎる傾向にあると言うことである。
+nmbd_sendannounce.cからの以下の例について考えてみよう:
+</para>
+
+<para><programlisting>
+  DEBUG(3,("send_local_master_announcement: type %x for name %s on subnet %s for workgroup %s\n",
+            type, global_myname, subrec->subnet_name, work->work_group));
+</programlisting></para>
+
+<para>
+この問題の1つの解は、DEBUG()とDEBUGADD()を以下のように使って行を分割することである:
+</para>
+
+<para><programlisting>
+  DEBUG( 3, ( "send_local_master_announcement: " ) );
+  DEBUGADD( 3, ( "type %x for name %s ", type, global_myname ) );
+  DEBUGADD( 3, ( "on subnet %s ", subrec->subnet_name ) );
+  DEBUGADD( 3, ( "for workgroup %s\n", work->work_group ) );
+</programlisting></para>
+
+<para>
+同様だが、もっとすてきな方法は、DEBUGLVL()マクロを使う方法である。
+このマクロは、メッセージレベルがグローバル値DEBUGLEVEL以下の場合に真を返すので:
+</para>
+
+<para><programlisting>
+  if( DEBUGLVL( 3 ) )
+    {
+    dbgtext( "send_local_master_announcement: " );
+    dbgtext( "type %x for name %s ", type, global_myname );
+    dbgtext( "on subnet %s ", subrec->subnet_name );
+    dbgtext( "for workgroup %s\n", work->work_group );
+    }
+</programlisting></para>
+
+<para>と書ける(dbgtext()関数は以下で説明する)。</para>
+
+<para>この方式ではいくつかの利点がある:</para>
+<orderedlist>
+<listitem><para>
+値の評価が1回のみ実行される。
+</para></listitem>
+<listitem><para>
+変数を、DEBUGLVL()ブロック内でのみ使われるスタックの外側に配置できる。
+</para></listitem>
+<listitem><para>
+デバッグ出力にのみ該当する処理はDEBUGLVL()ブロック内に配置できる。
+</para></listitem>
+</orderedlist>
+
+</sect1>
+
+<sect1>
+<title>新しい関数</title>
+
+<sect2>
+<title>dbgtext()</title>
+<para>
+この関数はフォーマットバッファ経由でデバッグファイル(と可能であればsyslog)に
+デバッグメッセージテキストを出力する。関数はprintf()やDebug1(0のような可変引数を取る。
+入力はvslprintf()関数を使ってバッファ中に格納され、format_debug_text()に渡される。
+
+もしもDEBUGLVL()を使っているならば、おそらくdbgtext()を使ってメッセージ本体を出力
+しているだろう。
+</para>
+</sect2>
+
+<sect2>
+<title>dbghdr()</title>
+<para>
+これは、デバッグメッセージヘッダを出力する関数である。ヘッダはフォーマットバッファ
+経由では処理されない。また、もしも、フォーマットバッファがからでない場合、dbghdr()
+の呼び出しは何らの出力も行わないことに注意。より詳細についてはdbghdr()中のコメントを
+参照。
+</para>
+
+<para>
+この関数は直接呼ばれることはない。DEBUG()とDEBUGADD()によって使われる。
+</para>
+</sect2>
+
+<sect2>
+<title>format_debug_text()</title>
+<para>
+これはdebug.c中のstaticな関数である。これは、改行が来るまで、バッファ中に
+出力テキストのメッセージ本体を格納する。改行が来た場合、Debug1()関数を使って
+デバッグファイルにバッファが書き込まれ、バッファはリセットされる。これは、
+メッセージ本体の各行の始まりのインデントを追加することが出来るようになり、
+また、(syslog出力がきれいになる)その時点で行単位に出力が書かれるようになる。
+</para>
+</sect2>
+</sect1>
+</chapter>

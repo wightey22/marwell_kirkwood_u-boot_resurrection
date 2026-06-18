@@ -1,0 +1,21 @@
+<samba:parameter name="afs username map"
+                 context="G"
+				 type="string"
+                 advanced="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	<para>ダミーの kaserver の AFS 機能を使用している場合、
+	作成するトークンのユーザ名を指定したい場合もあるだろう。
+	たとえば、AFS Protection Database に複数のドメインのユーザが混在している場合などが挙げられる。
+	一つの解決策は、winbind と同じように + をセパレータとして 
+	DOMAIN+User と指定することである。
+	</para>
+
+	<para>マップされたユーザ名はログインするためのセル名を含んでいる必要がある。
+	そのため、このパラメータが指定されていない場合、トークンは使用されない。</para>
+	<para>(訳注: AFSに関する知識不足のため、訳の正確性については担保できない)</para>
+</description>
+
+<value type="default"/>
+<value type="example">%u@afs.samba.org</value>
+</samba:parameter>

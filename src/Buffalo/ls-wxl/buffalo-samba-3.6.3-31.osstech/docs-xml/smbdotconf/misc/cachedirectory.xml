@@ -1,0 +1,23 @@
+<samba:parameter name="cache directory"
+                 context="G"
+                 advanced="1" developer="1"
+		 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>通常、TDBファイルのほとんどは、
+	  <parameter moreinfo="none">lock directory</parameter>
+	  中に格納される。Samba 3.4.0から、
+	  <parameter moreinfo="none">state directory</parameter>と
+	  <parameter moreinfo="none">cache directory</parameter>オプションを使って、
+	  恒常的なデータを持つTDBファイルと、一時的なデータを持つTDBファイルの間で
+	  異なる設定が可能となった。
+	</para>
+
+	<para>このオプションは、一時的なデータを保持するTDBファイルを億ディレクトリ
+	  を指定する。
+	</para>
+</description>
+
+<value type="default">${prefix}/var/locks</value>
+<value type="example">/var/run/samba/locks/cache</value>
+</samba:parameter>

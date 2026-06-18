@@ -1,0 +1,94 @@
+.\"     Title: chsh
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23.11.2008
+.\"    Manual: Dienstprogramme für Benutzer
+.\"    Source: Dienstprogramme für Benutzer
+.\"
+.TH "CHSH" "1" "23.11.2008" "Dienstprogramme für Benutzer" "Dienstprogramme für Benutzer"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+chsh \- ändert die Login-Shell
+.SH "SYNOPSIS"
+.HP 5
+\fBchsh\fR [\fIOptionen\fR] [\fILOGIN\fR]
+.SH "BESCHREIBUNG"
+.PP
+chsh ändert die Login\-Shell eines Benutzers\&. Es legt den Befehl fest, der bei der Anmeldung ausgeführt wird\&. Ein normaler Benutzer kann nur die Login\-Shell seines eigenen Kontos ändern, während Root dies für alle Konten darf\&.
+.SH "OPTIONEN"
+.PP
+Die Optionen, die vom Befehl
+\fBchsh\fR
+unterstützt werden, sind:
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Zeigt die Hilfe an und beendet das Programm\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shell\fR\fISHELL\fR
+.RS 4
+Der Name der neuen Login\-Shell des Benutzers\&. Falls dieses Feld leer gelassen wird, verwendet das System die Standard\-Login\-Shell\&.
+.RE
+.PP
+Wenn die Option
+\fB\-s\fR
+nicht ausgewählt ist, wird
+\fBchsh\fR
+im interaktiven Modus betrieben\&. Dabei wird der Benutzer mit der aktuellen Login\-Shell zur Eingabe einer neuen aufgefordert\&. Durch Eingabe eines Wertes wird die Shell geändert, während sie bei einer leeren Zeile beibehalten wird\&. Die aktuelle Shell wird zwischen einem Paar von
+\fI[ ]\fR
+angezeigt\&.
+.SH "ANMERKUNGEN"
+.PP
+Die einzige Beschränkung für die Login\-Shell ist, dass der Name des Befehls in der Datei
+\fI/etc/shells\fR
+enthalten sein muss\&. Root darf allerdings jeden beliebigen Befehl ausführen\&. Bei Konten, denen eine beschränkte Login\-Shell zugewiesen ist, ist es nicht möglich, die Login\-Shell zu ändern\&. Daher ist es nicht ratsam,
+\fI/bin/rsh\fR
+in
+\fI/etc/shells\fR
+einzutragen, da ein Benutzer nicht zu seiner ursprünglichen Login\-Shell zurückwechseln kann, falls er versehentlich eine beschränkte Shell als Login\-Shell auswählt\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBCHSH_AUTH\fR (boolean)
+.RS 4
+If
+\fIyes\fR, the
+\fBchsh\fR
+program will require authentication before making any changes, unless run by the superuser\&.
+.RE
+.PP
+\fBLOGIN_STRING\fR (string)
+.RS 4
+The string used for prompting a password\&. The default is to use "Password: ", or a translation of that string\&. If you set this variable, the prompt will no be translated\&.
+.sp
+If the string contains
+\fI%s\fR, this will be replaced by the user\'s name\&.
+.RE
+.SH "DATEIEN"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informationen zu den Benutzerkonten\&.
+.RE
+.PP
+\fI/etc/shells\fR
+.RS 4
+Liste der möglichen Login\-Shells\&.
+.RE
+.PP
+\fI/etc/login\&.defs\fR
+.RS 4
+Konfiguration des Shadow\-Passwort\-Systems
+.RE
+.SH "SIEHE AUCH"
+.PP
+\fBchfn\fR(1),
+\fBlogin.defs\fR(5),
+\fBpasswd\fR(5)\&.

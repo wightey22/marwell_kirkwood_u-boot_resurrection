@@ -1,0 +1,19 @@
+<samba:parameter name="short preserve case"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> この真偽値パラメータは、
+	すべて大文字で適切な長さという 8.3 形式の条件を満たすファイル名を大文字のファイル名にして作成するか、
+	<smbconfoption name="default case"/> パラメータに従って作成するかを指定する(訳注: 実際は、8+3 形式の名前において大文字小文字の混在を容認するか、規定値の文字指定に統一するかを制御する)。
+	このオプションは、
+	<smbconfoption name="preserve case">yes</smbconfoption>
+	を用いて長いファイル名の大文字小文字の情報を保持している際に、
+	短いファイル名における大文字小文字の情報を保持するために利用する。
+	</para>
+		
+	<para><link linkend="NAMEMANGLINGSECT">
+	名前の短縮</link>セクションも参照のこと。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

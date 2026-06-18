@@ -1,0 +1,19 @@
+<samba:parameter name="csc policy"
+                 context="S"
+				 type="enum"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、<emphasis>クライアントサイドのキャッシングポリシー</emphasis>を規定し、
+	オフラインキャッシュ機能を持つクライアントが、
+	共有上のファイルをどのようにキャッシュするかを規定する。
+	有効な値は、manual, documents, programs, disable である。</para>
+
+	<para>これらの値は、Windows のサーバ側の設定に対応している。</para>
+
+	<para>例えば、移動プロファイルが格納されている共有では、
+	<smbconfoption name="csc policy">disable</smbconfoption> とすることで、
+	オフラインキャッシュを無効にできる。</para>
+</description>
+<value type="default">manual</value>
+<value type="example">programs</value>
+</samba:parameter>

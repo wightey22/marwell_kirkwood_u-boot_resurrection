@@ -1,0 +1,73 @@
+1.2.4 (10 Dec 20010)
+====================
+
+Bug fixes by Christian Brunello
+	* fix readline and termcap configuration
+	* fix some compilation warnings
+	* fix libparted version checking
+	* fix default input handling
+	* fix case sensitive when user request partition codes
+
+1.2.3 (8 Oct 2009)
+==================
+Bug fixes by Colin Watson:
+  * fix strlen() typo
+  * detect linux-swap correctly
+
+1.2.2 (2 march 2009)
+===================
+* Better configuration for systems where readline is not found
+
+1.2.1 (28 Jan 2009)
+==================
+* Fix gettext and mkinstalldirs
+
+1.2 (11 Jan 2009)
+================
+* GNU Readline support
+* Fix to build documentation with makeinfo.
+* 3 bug fixed.
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=445304
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=504747
+  http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=463720
+
+1.0 (6 Jul 2007)
+================
+* GPLv3
+* support for BSD-style named devices
+* cfdisk now optional
+* Terminal fixes
+* msdos logical partition fix (previous versions left a 4 MB gap)
+* minor test suite fixes
+* Lots of BSD label improvements 
+
+0.9.4
+=====
+Fixed a bug in configure.ac that prevented users without 'check'
+from compiling.
+
+0.9.3
+=====
+Option to compile without GNU extensions (Robert Millan).
+Minor fixes.  Removed autotools kludge.
+
+0.9.2
+=====
+Added autotools kludge so mkinstalldirs is correctly substituted.
+
+0.9.1
+=====
+Fix to include man pages in distribution.
+
+0.9
+===
+Initial release with lfdisk, gfdisk and cfdisk.
+
+-----------------------------------------------------------------------------
+
+This file is part of GNU fdisk 
+Copyright (C) 2006 Free Software Foundation Inc.
+
+This file may be modified and/or distributed without restriction.  This is
+not an invitation to misrepresent the history of GNU fdisk.
+

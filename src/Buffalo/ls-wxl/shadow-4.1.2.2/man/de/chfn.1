@@ -1,0 +1,103 @@
+.\"     Title: chfn
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23.11.2008
+.\"    Manual: Dienstprogramme für Benutzer
+.\"    Source: Dienstprogramme für Benutzer
+.\"
+.TH "CHFN" "1" "23.11.2008" "Dienstprogramme für Benutzer" "Dienstprogramme für Benutzer"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+chfn \- ändert den Benutzernamen und sonstige Informationen
+.SH "SYNOPSIS"
+.HP 5
+\fBchfn\fR [\-f\ \fIVoller_Name\fR] [\-r\ \fIZimmer_Nr\fR] [\-w\ \fITel_Arbeit\fR] [\-h\ \fITel_Privat\fR] [\-o\ \fIsonstiges\fR] [\fIBenutzer\fR]
+.SH "BESCHREIBUNG"
+.PP
+Der Befehl
+\fBchfn\fR
+ändert den vollen Namen, die Büronummer und Büroerweiterung sowie private Telefonnummer für ein Benutzerkonto\&. Diese Informationen werden typischerweise von
+\fBfinger\fR(1)
+und anderen Programmen verwendet\&. Ein normaler Benutzer darf nur die Felder für seines eigenen Kontos ändern und muss dabei zudem die Einschränkungen in
+\fI/etc/login\&.defs\fR
+beachten\&. So ist es Benutzern standardmäßig nicht möglich, ihren vollen Namen zu ändern\&. Root kann die Felder aller Konten verändern\&. Außerdem darf nur Root mittels der Option
+\fB\-o\fR
+die undefinierten Teile des GECOS\-Feldes ändern\&.
+.PP
+These fields must not contain any colons\&. Except for the
+\fIother\fR
+field, they should not contain any comma or equal sign\&. It is also recommended to avoid non\-US\-ASCII characters, but this is only enforced for the phone numbers\&. The
+\fIother\fR
+field is used to store accounting information used by other applications\&.
+.PP
+Wenn keine Option ausgewählt wird, arbeitet
+\fBchfn\fR
+interaktiv\&. Dabei wird der Benutzer nach den aktuellen Werten für alle Felder befragt\&. Bei Eingabe eines neuen Wertes wird dieser verwendet, bei Eingabe einer Leerzeile stattdessen der Originalwert beibehalten\&. Der aktuelle Wert wird zwischen einem Paar von
+\fB[ ]\fR
+angezeigt\&. Ohne Optionen fragt
+\fBchfn\fR
+nach einem Benutzerkonto\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBCHFN_AUTH\fR (boolean)
+.RS 4
+If
+\fIyes\fR, the
+\fBchfn\fR
+program will require authentication before making any changes, unless run by the superuser\&.
+.RE
+.PP
+\fBCHFN_RESTRICT\fR (string)
+.RS 4
+This parameter specifies which values in the
+\fIgecos\fR
+field of the
+\fI/etc/passwd\fR
+file may be changed by regular users using the
+\fBchfn\fR
+program\&. It can be any combination of letters
+\fIf\fR,
+\fIr\fR,
+\fIw\fR,
+\fIh\fR, for Full name, Room number, Work phone, and Home phone, respectively\&. For backward compatibility,
+\fIyes\fR
+is equivalent to
+\fIrwh\fR
+and
+\fIno\fR
+is equivalent to
+\fIfrwh\fR\&. If not specified, only the superuser can make any changes\&. The most restrictive setting is better achieved by not installing
+\fBchfn\fR
+SUID\&.
+.RE
+.PP
+\fBLOGIN_STRING\fR (string)
+.RS 4
+The string used for prompting a password\&. The default is to use "Password: ", or a translation of that string\&. If you set this variable, the prompt will no be translated\&.
+.sp
+If the string contains
+\fI%s\fR, this will be replaced by the user\'s name\&.
+.RE
+.SH "DATEIEN"
+.PP
+\fI/etc/login\&.defs\fR
+.RS 4
+Konfiguration des Shadow\-Passwort\-Systems
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informationen zu den Benutzerkonten\&.
+.RE
+.SH "SIEHE AUCH"
+.PP
+\fBchsh\fR(1),
+\fBlogin.defs\fR(5),
+\fBpasswd\fR(5)\&.

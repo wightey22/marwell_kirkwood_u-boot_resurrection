@@ -1,0 +1,9 @@
+<samba:parameter name="default case"
+	context="S"
+	type="string" xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para><smbconfoption name="name mangling"/> セクションを参照のこと。
+    <smbconfoption name="short preserve case"/> パラメータにも注意。</para>
+</description>
+<value type="default">lower</value>
+</samba:parameter>

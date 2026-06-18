@@ -1,0 +1,14 @@
+<samba:parameter name="browse list"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータは、クライアントからの <command moreinfo="none">NetServerEnum</command>
+    コールに対して、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> がブラウズリストを提供するかどうかを制御する。
+    通常 <constant>true</constant> に設定されている。
+    これを変更する必要はまずないであろう。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

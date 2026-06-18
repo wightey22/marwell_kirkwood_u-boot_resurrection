@@ -1,0 +1,15 @@
+<samba:parameter name="use mmap"
+                 context="G"
+		 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このグローバルパラメータは、 Samba が内部的に利用する tdb の動作を、システムの mmap が正しく動作するかどうかに依存させるかどうかを制御する。
+    Samba は一貫性の保たれた mmap (read-write system memory cache) を必要とする。
+    現在、HPUX については、こうした一貫性のあるキャッシュが実装されていないため、 HPUX におけるこのパラメータのデフォルトは、<constant>no</constant> になっている。
+    それ以外のシステムにおいては、このパラメータの値を変更すべきではない。
+    このパラメータは、Samba 開発者の tdb の内部コードの問題解析を支援するために提供されている。
+    </para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

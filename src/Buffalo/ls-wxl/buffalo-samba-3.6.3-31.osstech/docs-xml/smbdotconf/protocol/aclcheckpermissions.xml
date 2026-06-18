@@ -1,0 +1,30 @@
+<samba:parameter name="acl check permissions"
+                 context="S"
+		 type="boolean"
+                 advanced="1" wizard="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータは、
+    <citerefentry><refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+    が Windows クライアントから「open for delete」というプロトコル要求を受けとった際の挙動を制御する。
+    Windows クライアントにファイル削除のパーミッションがない場合は、オープン時に失敗することが想定される挙動である。しかし、POSIX システムでは、実際にファイルやディレクトリを削除しようとした段階で、初めて削除のパーミッション確認が行なわれる。
+    Windows クライアントは「delete on close」ビットを外すことで、削除のリクエストを「取り止める」ことが可能である。
+    このため、Samba が「open for delete」リクエストが行なわれた時点で該当のファイルを削除してみるといった方策も、
+    一度削除されたファイルを復活させることはできないため難しい。
+    このパラメータが true (デフォルト) の場合、smbd は「open for delete」リクエストの際にファイルシステムのパーミッションを直接チェックし、
+    ファイルシステムのパーミッション上削除できないと考えられる場合、該当のリクエストを拒否するようになる。
+    これは完全な方法ではなく、Samba がパーミッションを適切に確認できない場合に、ユーザがファイルを削除できてしまう可能性があるが、
+    大半の場合は Windows と同様の挙動となるであろう。
+    通常 Samba は POSIX ACL の挙動を適切に確認できるはずである。
+    </para>
+    <para>
+    このパラメータを「false」に設定した場合、Samba は「open for delete」リクエストの際にパーミッションの確認を行なわずにオープンを許可する。
+    ユーザにファイルを削除するアクセス許可がない場合は、クローズする時までわからない。
+    Windows 上のツールにとって、クローズ時点でこれが判明しても遅過ぎるため、ユーザにエラーメッセージが表示されるだろう。
+    また、削除したように見えたファイルが Windows 側のエクスプローラで再表示すると「魔法のように」復活するといった現象も発生するであろう。
+    これは非常に高度なプロトコルに関するパラメータであり、通常変更する必要はないはずである。
+    このパラメータは Samba 3.0.21 で現在の形となったが、現在とは若干挙動が異なる古い版は Samba 3.0.20 で導入された。古い版の挙動について、ここでは言及していない。
+    </para>
+</description>
+<value type="default">True</value>
+</samba:parameter>

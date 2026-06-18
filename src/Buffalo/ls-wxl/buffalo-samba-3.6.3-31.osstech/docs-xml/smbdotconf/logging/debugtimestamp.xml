@@ -1,0 +1,15 @@
+<samba:parameter name="debug timestamp"
+                 context="G"
+				 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>timestamp logs</synonym>
+<description>
+	<para>Samba のデバッグログのメッセージには、
+	デフォルトでタイムスタンプが付加されるが、
+	高い、<smbconfoption name="debug level"/> を設定している場合、
+	このタイムスタンプが目障りに感じることもあるだろう。
+	この真偽値パラメータにより、タイムスタンプの付加を抑止することができる。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

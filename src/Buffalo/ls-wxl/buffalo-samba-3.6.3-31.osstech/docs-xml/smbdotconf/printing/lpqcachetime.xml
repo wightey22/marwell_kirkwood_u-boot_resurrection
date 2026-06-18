@@ -1,0 +1,27 @@
+<samba:parameter name="lpq cache time"
+		 context="G"
+		 type="integer"
+		 developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、
+	<command moreinfo="none">lpq</command> コマンドが頻繁に呼び出されるのを防ぐため、lpr の情報(出力)をキャッシュする期間を制御する。
+	システムが使用する <command moreinfo="none">lpq</command> コマンドの種別毎にキャッシュが行なわれる。そのため、ユーザ毎に異なった
+	<command moreinfo="none">lpq</command> コマンドを使用する場合、
+	キャッシュ情報は共有されない。</para>
+
+	<para> キャッシュファイルは <filename moreinfo="none">/tmp/lpq.xxxx</filename> に保存される。
+	xxxx は使用している <command moreinfo="none">lpq</command> コマンドのハッシュ値となる。</para>
+
+	<para>デフォルトは 30 秒であるため、キャッシュされたデータが30秒以内の場合は、
+	前回行なわれた同一の<command moreinfo="none">lpq</command>の実行結果のキャッシュが用いられる。
+	<command moreinfo="none"> lpq </command> コマンドのレスポンスが非常に遅い場合は、この値を大きくすることを推奨する。</para>
+
+	<para>値を 0 にした場合、キャッシュは完全に無効となる。</para>
+</description>
+
+<related>printing</related>
+
+<value type="default">30</value>
+<value type="example">10</value>
+</samba:parameter>

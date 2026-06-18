@@ -1,0 +1,81 @@
+.\"     Title: newgrp
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23.11.2008
+.\"    Manual: Dienstprogramme für Benutzer
+.\"    Source: Dienstprogramme für Benutzer
+.\"
+.TH "NEWGRP" "1" "23.11.2008" "Dienstprogramme für Benutzer" "Dienstprogramme für Benutzer"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+newgrp \- als neue Gruppe anmelden
+.SH "SYNOPSIS"
+.HP 7
+\fBnewgrp\fR [\-] [\fIGruppe\fR]
+.SH "BESCHREIBUNG"
+.PP
+Mit dem Befehl
+\fBnewgrp\fR
+kann während einer Login\-Sitzung die aktuelle Gruppen\-ID geändert werden\&. Wenn zusätzlich der Schalter
+\fB\-\fR
+angegeben wird, wird die Benutzerumgebung neu gestartet, so als ob sich der Benutzer angemeldet hätte\&. Anderenfalls bleibt die aktuelle Umgebung einschließlich des aktuellen Arbeitsverzeichnisses unverändert\&.
+.PP
+\fBnewgrp\fR
+wechselt von der aktuellen echten Gruppen\-ID zu der angegeben Gruppe oder, falls kein Gruppenname angegeben wird, so der Standardgruppe, wie sie in
+\fI/etc/passwd\fR
+festgelegt ist\&. Zudem versucht
+\fBnewgrp\fR, die Gruppe der Gruppensammlung des Benutzers hinzuzufügen\&. Wenn der Benutzer kein Passwort (in
+\fI/etc/shadow\fR, falls er einen Eintrag in der Shadow\-Passwort\-Datei hat, anderenfalls in
+\fI/etc/passwd\fR), die Gruppe aber eines hat, oder wenn der Benutzer nicht Mitglied der Gruppe ist und die Gruppe ein Passwort besitzt, und der Benutzer nicht Root ist, wird er nach einem Passwort gefragt\&. Der Zugriff wird verweigert, wenn das Gruppenpasswort leer ist und der Benutzer nicht Gruppenmitglied ist\&.
+.PP
+Wenn sich in
+\fI/etc/gshadow\fR
+ein Eintrag für diese Gruppe befindet, wird die Mitgliederliste und das Passwort dieser Gruppe dieser Datei entnommen\&. Anderenfalls ist der Eintrag in
+\fI/etc/group\fR
+relevant\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBSYSLOG_SG_ENAB\fR (boolean)
+.RS 4
+Enable "syslog" logging of
+\fBsg\fR
+activity\&.
+.RE
+.SH "DATEIEN"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informationen zu den Benutzerkonten\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Verschlüsselte Informationen zu den Benutzerkonten\&.
+.RE
+.PP
+\fI/etc/group\fR
+.RS 4
+Informationen zu den Gruppenkonten\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Verschlüsselte Informationen zu den Gruppenkonten\&.
+.RE
+.SH "SIEHE AUCH"
+.PP
+
+\fBid\fR(1),
+\fBlogin\fR(1),
+\fBsu\fR(1),
+\fBsg\fR(1),
+\fBgpasswd\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)\&.

@@ -1,0 +1,1978 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+
+<chapter id="NetCommand">
+<chapterinfo>
+	&author.jht;
+	&author.vl;
+	&author.gd;
+	<pubdate>May 9, 2005</pubdate>
+</chapterinfo>
+
+<title>リモートとローカル管理:Netコマンド</title>
+
+<para>
+<indexterm><primary>net</primary></indexterm>
+<indexterm><primary>リモート管理</primary></indexterm>
+<indexterm><primary>コマンド行</primary></indexterm>
+<indexterm><primary>scripted control</primary></indexterm>
+<command>net</command>コマンドはSamba-3における新しい機能の1つで、共通作業のために、
+多くの必要なリモート管理操作用の便利なツールを提供する試みである。<command>net</command>
+は自由度が高いデザインで、スクリプト制御アプリケーションのためと同様にコマンド行操作
+でも使うように出来ている。
+</para>
+
+<para>
+<indexterm><primary>net</primary></indexterm>
+<indexterm><primary>ネットワーク管理者の道具箱</primary></indexterm>
+<indexterm><primary>smbgroupedit</primary></indexterm>
+<indexterm><primary>rpcclient</primary></indexterm>
+当初は同じ名前のMicrosoft Windows コマンドの模倣を狙って作られたが、<command>net</command>
+は、Sambaネットワーク管理者の道具箱の基本的な部分になる、非常に強力なツールに変貌した。
+Samba Teamは、<command>smbgroupedit</command>と<command>rpcclient</command>のような
+ツールも提供していて、それらは本当に役に立つ能力が<command>net</command>コマンドに集約
+された。<command>smbgroupedit</command>コマンドは、いくつかの機能のみが
+<command>rpcclient</command>に集約された間、<command>net</command>コマンドに完全に移植された。
+それらのユーティリティや機能に対する古いリファレンスを見つけた場合、それ以外を探す前に、
+<command>net</command>コマンドを見るべきである。
+</para>
+
+<para>
+Samba-3管理者は、そうすることが、自ら招いた痛み、苦しみと自暴自棄を科すことをほとんど
+確実に引き起こすので、この章を取り繕うことができない。
+</para>
+
+	<sect1>
+	<title>概要</title>
+
+	<para>
+<indexterm><primary>スタンドアロン</primary></indexterm>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>DMS</primary></indexterm>
+<indexterm><primary>authentication</primary></indexterm>
+	Samba-3サーバのインストールに伴う作業は、スタンドアロンかドメインメンバの
+	どちらも、さらにドメインコントローラ(PDCまたはBDC)は管理者権限の作成を必要と
+	するところから始まる。もちろん、ユーザとグループアカウントの作成は、スタンド
+	アロンサーバとPDC両者において必須である。BDCまたはドメインメンバサーバ(DMS)
+	においては、ドメインユーザとグループアカウントは中央のドメイン認証バック
+	エンドから得られる。
+	</para>
+
+	<para>
+<indexterm><primary>サーバタイプ</primary></indexterm>
+<indexterm><primary>ローカルUNIXグループ</primary></indexterm>
+<indexterm><primary>mapped</primary></indexterm>
+<indexterm><primary>ドメイングローバルグループ</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>アクセス権</primary></indexterm>
+<indexterm><primary>net</primary></indexterm>
+	インストールされているサーバのタイプに関係なく、ローカルUNIXグループはWindowsの
+	ネットワークにおけるドメイングローバルグループアカウントにマップされねばならない。
+	なぜだろうか?それは、Sambaは常時、伝統的なUNIXのUIDとGID制御によってホスト
+	サーバのリソースのアクセスを制限するからである。これは、ドメイングローバル
+	グループのメンバであるドメインユーザは、Sambaがホスティングしているサーバの
+	ローカルなUIDとGIDをベースとしたアクセス権が与えられるようにするために、
+	ローカルグループはドメイングローバルグループにマップされなければならない。
+	このようなマッピングは<command>net</command>コマンドを使うことで実装される。
+	</para>
+
+	<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>DMS</primary></indexterm>
+<indexterm><primary>セキュリティアカウント</primary></indexterm>
+<indexterm><primary>domain authentication</primary></indexterm>
+<indexterm><primary>信頼アカウント</primary></indexterm>
+<indexterm><primary>net</primary></indexterm>
+	メンバ(PDC、BDCあるいはDMS)として動作しているSamba-3サーバがホスティングしている
+	UNIXシステムは、ドメイン認証データベース(かあるいはディレクトリ)中にマシン信頼
+	アカウントを持たねばならない。そのようなセキュリティ(あるいは信頼)アカウントの
+	作成も、<command>net</command>コマンドを使うことよって扱える。
+	</para>
+
+	<para>
+<indexterm><primary>ドメイン間の信頼関係</primary></indexterm>
+<indexterm><primary>net</primary></indexterm>
+<indexterm><primary>administrative duties</primary></indexterm>
+<indexterm><primary>ユーザ管理</primary></indexterm>
+<indexterm><primary>グループ管理</primary></indexterm>
+<indexterm><primary>共有管理</primary></indexterm>
+<indexterm><primary>プリンタ管理</primary></indexterm>
+<indexterm><primary>プリンタのマイグレーション</primary></indexterm>
+<indexterm><primary>SID管理</primary></indexterm>
+	<command>net</command>コマンドを使うことで、ドメイン間信頼関係をも確立でき、
+	また、ユーザ管理、グループ管理、共有とプリンタ管理、ファイルとプリンタの
+	マイグレーション、SIDの管理などのような、有り余るほどの典型的な管理作業も
+	できる。
+	</para>
+
+	<para>
+<indexterm><primary>net</primary></indexterm>
+<indexterm><primary>man pages</primary></indexterm>
+	全体の構成は今明確にすべきである:<command>net</command>はSamba-3の動作において
+	重要な役割を演じる。その役割は継続して開発されている。この章に含まれているもの
+	は、その重要性の証拠であり、それは、完全にオンラインUNIXマニュアル中でその
+	使用をカバーすることが賢明であるとは、もはや考えられない点において、複雑に成長
+	してきた。
+	</para>
+
+	</sect1>
+	
+	<sect1>
+	<title>管理者の作業と手段</title>
+
+	<para>
+<indexterm><primary>net</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>分散コンピューティング環境</primary><see>DCE</see></indexterm>
+<indexterm><primary>リモートプロシジャーコール</primary><see>RPC</see></indexterm>
+	<command>net</command>の基本的な動作はここに文書化されている。この文書は完璧
+	ではなく、不完全である。WindowsサーバからSambaサーバへの移行について最も着目
+	しているので、分散コンピューティング環境のリモートプロシジャーコール(DCE RPC)
+	モードの操作について強調している。Active Directoryドメインのメンバであるサーバに
+	対して使用されるとき、ADSモード操作を使うことは望ましい(そして、それはしばしば
+	必要である)。<command>net</command>は両方ともサポートするが、すべての操作に
+	対してではない。モードが指定されない多くの操作では、<command>net</command>は
+	自動的に<constant>ads</constant>, <constant>rpc</constant>と
+	<constant>rap</constant>モードにフォールバックする。このユーティリティの
+	能力についてのより包括的な概要はマニュアルページを参照のこと。
+	</para>
+
+	</sect1>
+
+	<sect1>
+	<title>UNIXとWindowsのグループ管理</title>
+
+	<para>
+<indexterm><primary>Active Directory</primary></indexterm>
+<indexterm><primary>net</primary><secondary>rpc</secondary></indexterm>
+<indexterm><primary>net</primary><secondary>ads</secondary></indexterm>
+<indexterm><primary>net</primary><secondary>rap</secondary></indexterm>
+<indexterm><primary>RAP</primary></indexterm>
+	初めに、この章の主要な注目点は、Sambaによってサポートされている
+	<command>net rpc</command>ファミリの動作の使用方法である。それらの大半は、
+	Active Directoryに接続したときに使われる<command>net ads</command>モードでも
+	サポートされる。<command>net rap</command>動作モードもそれらの操作のいくつかで
+	サポートされる。RAPプロトコルはIBM OS/2といくつかの初期のSMBサーバによって
+	使われる。
+	</para>
+
+	<para>
+<indexterm><primary>net</primary></indexterm>
+<indexterm><primary>ユーザ管理</primary></indexterm>
+<indexterm><primary>グループ管理</primary></indexterm>
+	Sambaの<command>net</command>ツールはコマンドラインで完結するための、すべての
+	共通な管理作業が出来る十分な能力を実装している。このセクションでは、必須の
+	ユーザとグループ管理機能のそれぞれについて説明している。
+	</para>
+
+	<para>
+<indexterm><primary>グループ</primary></indexterm>
+<indexterm><primary>ドメイン</primary><secondary>groups</secondary></indexterm>
+<indexterm><primary>ローカル</primary><secondary>groups</secondary></indexterm>
+<indexterm><primary>ドメインユーザアカウント</primary></indexterm>
+	Samba-3は2種類のグループを認識する。それは、<emphasis>ドメイングループ</emphasis>
+	と<emphasis>ローカルグループ</emphasis>である。ドメイングループは(メンバとして)
+	ドメインユーザアカウントのみを含むことは出来る。ローカルグループはローカル
+	グループ、ドメインユーザとメンバとしてのドメイングループをを含むことが出来る。
+	</para>
+
+	<para>
+	ローカルグループの目的は、そのグループアカウントに対して、通常のUNIX/Linux
+	グループのようにファイルのアクセス権を	設定することであり、また、Windows
+	ファイルサーバを再配置しても継続的である。
+	</para>
+
+	<sect2>
+	<title>グループアカウントの追加、改名、あるいは削除</title>
+
+	<para>
+	SambaはWindowsクライアントにファイルと印刷サービスを提供する。Windows環境に
+	対して有効にしたファイルシステムリソースは、必要に応じてWindowsネットワーク
+	環境と互換の方式で提供しなければならない。UNIXグループはUNIX OSとそのファイル
+	システム内で、操作の必要で提供するために要求に応じて作成および削除される。
+	</para>
+
+	<para>
+	Windows環境に対して有効にするために、Sambaは、Windows(あるいはドメイン)グループ
+	と呼ばれる論理的なエントリに、UNIXグループをマップされることが出来る機能を持つ。
+	Sambaはローカルとグローバルと言う2つのタイプのWindowsグループをサポートする。
+	グローバルグループはメンバとグローバルユーザを含むことが出来る。このメンバシップは
+	通常のUNIX流儀に影響されるが、UNIXユーザをUNIXグループに追加する。Windowsユーザ
+	アカウントはユーザのSambaSAMAccount(論理エントリ)とUNIXユーザアカウントとの
+	マッピングから成り立つ。そのため、UNIXユーザはWindowsユーザにマップされ(すなわち、
+	Windowsユーザアカウントとパスワードが与えられる)、そのユーザに属するUNIX
+	グループはWindowsグループアカウントにマップされる。この結果は、Windowsアカウント
+	環境においてそのユーザが、UNIXグループメンバシップであるという理由で、Windows
+	グループアカウントのメンバでもあるということである。
+	</para>
+
+	<para>
+	Windowsグループ管理を扱う以下の項では、Windowsグループアカウントとそのメンバの
+	間の関係について、それぞれのWindowsグループアカウントの関係をデモする。これは、
+	論理マッピングが作成されるとすぐに、どのように自動的にUNIXグループメンバをWindows
+	グループメンバシップに渡すかを表示する。
+	</para>
+
+	<sect3>
+	<title>新しいグループの追加又は作成</title>
+
+	<para>
+	Windowsグループアカウントを追加する前に、現在有効なグループは以下のようにして表示できる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group</tertiary></indexterm>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group list</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc group list -Uroot%not24get
+Password:
+Domain Admins
+Domain Users
+Domain Guests
+Print Operators
+Backup Operators
+Replicator
+Domain Computers
+Engineers
+</screen>
+	</para>
+
+<?latex \newpage ?>
+	<para>
+	<quote>SupportEngrs</quote>というWindowsグループアカウントは、以下のコマンドを
+	実行することで追加できる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group add</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc group add "SupportEngrs" -Uroot%not24get
+</screen>
+	以下のコマンドを実行することで、新しいグループアカウント追加の結果が有効になって
+いることが検証できる:
+<screen>
+&rootprompt; net rpc group list -Uroot%not24get
+Password:
+Domain Admins
+Domain Users
+Domain Guests
+Print Operators
+Backup Operators
+Replicator
+Domain Computers
+Engineers
+SupportEngrs
+</screen>
+	</para>
+
+	<para>
+<indexterm><primary>POSIX</primary></indexterm>
+<indexterm><primary>smbldap-groupadd</primary></indexterm>
+<indexterm><primary>getent</primary></indexterm>
+	以下はPOSIX(UNIX/Linuxシステムアカウント)グループが、
+	<smbconfoption name="add group script">/opt/IDEALX/sbin/smbldap-groupadd -p "%g"</smbconfoption>
+	インタフェーススクリプトを呼び出すことによって作成されたことを表示する:
+<screen>
+&rootprompt; getent group
+...
+Domain Admins:x:512:root
+Domain Users:x:513:jht,lct,ajt,met
+Domain Guests:x:514:
+Print Operators:x:550:
+Backup Operators:x:551:
+Replicator:x:552:
+Domain Computers:x:553:
+Engineers:x:1002:jht
+SupportEngrs:x:1003:
+</screen>
+	以下は、グループアカウントを追加する<command>net</command>の使用で、Windows
+	グループアカウントのために作られたPOSIXグループの即時的なマッピング中での結果を示す:
+<indexterm><primary>net</primary><secondary>groupmap</secondary><tertiary>list</tertiary></indexterm>
+<screen>
+&rootprompt; net groupmap list
+Domain Admins (S-1-5-21-72630-4128915-11681869-512) -> Domain Admins
+Domain Users (S-1-5-21-72630-4128915-11681869-513) -> Domain Users
+Domain Guests (S-1-5-21-72630-4128915-11681869-514) -> Domain Guests
+Print Operators (S-1-5-21-72630-4128915-11681869-550) -> Print Operators
+Backup Operators (S-1-5-21-72630-4128915-11681869-551) -> Backup Operators
+Replicator (S-1-5-21-72630-4128915-11681869-552) -> Replicator
+Domain Computers (S-1-5-21-72630-4128915-11681869-553) -> Domain Computers
+Engineers (S-1-5-21-72630-4128915-11681869-3005) -> Engineers
+SupportEngrs (S-1-5-21-72630-4128915-11681869-3007) -> SupportEngrs
+</screen>
+	</para>
+
+	</sect3>
+
+	<sect3>
+	<title>WindowsグループからUNIXグループへのマッピング</title>
+
+	<para>
+<indexterm><primary>mapped</primary></indexterm>
+<indexterm><primary>Windowsグループ</primary></indexterm>
+<indexterm><primary>システムグループ</primary></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+	Windowsグループは、SambaサーバをホスティングしているOSに適した方法での首尾一貫
+	した方法で主張できるファイルシステムのアクセス制御が出来るように、UNIXシステム
+	(POSIX)グループにマップされる必要がある。
+	</para>
+
+	<para>
+<indexterm><primary>access controls</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>locally known UID</primary></indexterm>
+	SambaサーバをホスティングしているUNIX/Linuxサーバのファイルシステムで、すべての
+	ファイルシステム(ファイルとディレクトリ)アクセス制御はUID/GID識別の組を使って
+	実装される。SambaはUNIXファイルシステムの仕組みに優先したり、置き換えることは
+	しない。これは、ファイルシステムにアクセスするすべてのWindowsネットワーク操作は、
+	Windowsユーザから特定のUNIX/Linuxグループアカウントにマップするメカニズムを
+	提供する。ユーザアカウントはローカルに知られているUIDにもマップする必要がある。
+	<command>net</command>コマンドはここでは任意のRPC機能は呼び出さないが、passdbに
+	直接アクセスすることに注意。
+	</para>
+
+	<para>
+<indexterm><primary>既定値のマッピング</primary></indexterm>
+<indexterm><primary>Domain Admins</primary></indexterm>
+<indexterm><primary>Domain Users</primary></indexterm>
+<indexterm><primary>Domain Guests</primary></indexterm>
+<indexterm><primary>Windowsグループ</primary></indexterm>
+<indexterm><primary>UNIXグループ</primary></indexterm>
+<indexterm><primary>マッピング</primary></indexterm>
+	Sambaは<constant>Domain Admins, Domain Users</constant>と
+	<constant>Domain Guests</constant>グローバルグループの既定値のマッピングに
+	依存する。追加のグループはサンプルで与えられた中でのように追加できる。存在する
+	UNIXグループアカウントをWindowsグループにマップすることが必要なときがある。
+	この操作は実際Windowsグループアカウントをマップ生成の結果として作成する。
+	</para>
+
+	<para>
+<indexterm><primary>net</primary><secondary>groupmap</secondary><tertiary>modify</tertiary></indexterm>
+<indexterm><primary>net</primary><secondary>groupmap</secondary><tertiary>add</tertiary></indexterm>
+<indexterm><primary>net</primary><secondary>groupmap</secondary><tertiary>delete</tertiary></indexterm>
+	<constant>add</constant>、<constant>modify</constant>と<constant>delete</constant>
+	を含む操作が許可される。それぞれの操作の例はここで示される。
+	</para>
+
+	<note><para>
+	Samba-3.0.23で始まるWindowsドメイングループは明示的に作成する必要がある。既定値
+	では、すべてのUNIXグループはWindowsローカルグループとしてWindowsネットワーク
+	に対して公開される。
+	</para></note>
+
+	<para>
+	存在するUNIXグループは以下の例のようにして存在するWindowsグループにマップされる:
+<screen>
+&rootprompt; net groupmap modify ntgroup="Domain Users" unixgroup=users
+</screen>
+	存在するUNIXグループは以下の例のようにして新しいWindowsグループにマップされる:
+<screen>
+&rootprompt; net groupmap add ntgroup="EliteEngrs" unixgroup=Engineers type=d
+</screen>
+	サポートされているマッピングタイプは'd'(ドメイングローバル)と'l'(ドメインローカル)
+	である。Windowsグループは削除でき、新しいWindowsグループは以下のコマンドでUNIX
+	グループにマップ出来る:
+<screen>
+&rootprompt; net groupmap delete ntgroup=Engineers
+&rootprompt; net groupmap add ntgroup=EngineDrivers unixgroup=Engineers type=d
+</screen>
+	削除と追加操作はWindowsグループかドメイングループとして知られている論理エントリ
+	のみに影響する。操作は、UNIXシステムグループの削除も作成もしないので、UNIX
+	システムグループには影響しない。UNIXグループからWindowsグループへのマッピングは、
+	ドメインメンバクライアント上(ワークステーションとサーバ)のファイルとフォルダが、
+	ドメインユーザとグループに対してドメイン全体のアクセス制御を得ることが出来る
+	ようにするために、WindowsグループとしてWindowsグループを有効にさせる。
+	</para>
+
+	<para>
+	<constant>domain(グローバル)</constant>と<constant>local</constant>という
+	二種類のWindowsグループか作成できる。前者の例では、作成されたWindowsグループは
+	<constant>domain</constant>かグローバルタイプである。以下のコマンドでは、
+	<constant>local</constant>タイプのWindowsグループを作成する。
+<screen>
+&rootprompt; net groupmap add ntgroup=Pixies unixgroup=pixies type=l
+</screen>
+	サポートされているマッピングタイプは'd' (ドメイングローバル)と 'l' (ドメイン
+	ローカル)で、Samba中でのドメインローカルグループは個別のSambaサーバに対する
+	ローカルなものとして扱われる。ローカルグループは、複数ネストされたグループの
+	サポートを有効にするためにSambaで使うことができる。
+	</para>
+
+	</sect3>
+
+	<sect3>
+	<title>グループアカウントの削除</title>
+
+	<para>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group delete</tertiary></indexterm>
+	グループアカウントは以下のコマンドで削除できる:
+<screen>
+&rootprompt; net rpc group delete SupportEngineers -Uroot%not24get
+</screen>
+	</para>
+
+	<para>
+	削除の検証は有効である。同じコマンドは以下で示されるように実行できる。
+	</para>
+
+	</sect3>
+
+	<sect3>
+	<title>グループアカウントの改名</title>
+
+	<note><para>
+	このコマンドはマニュアルページには記述がない。ソースコード上では実装されているが、
+	現時点では動作しない。ソースコード上から得られた文書例は、どのようにそれが
+	動くかを示す。これがいつ修正されるかを、今後のリリースにおけるリリースノート
+	で確認すること(訳注:3.4.0でもマニュアルに記載はない)。
+	</para></note>
+
+	<para>
+	時々グループアカウントの改名が必要なときがある。良い管理者は、この単純な要求が
+	無視されるならば、何人かのマネージャの要求がどのくらい痛ましくなるかを知っている。
+	以下のコマンドは、どのようにWindowsグループ<quote>SupportEngrs</quote>が
+	<quote>CustomerSupport</quote>に改名できるかを示す:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group rename</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc group rename SupportEngrs \
+    CustomerSupport -Uroot%not24get
+</screen>
+	</para>
+
+	</sect3>
+
+	</sect2>
+
+	<sect2 id="grpmemshipchg">
+	<title>グループメンバシップの操作</title>
+
+	<para>
+	3つの操作をグループメンバシップに関して行うことが出来る。それは、(1)Windows
+	ユーザをWindowsグループに追加する、(2)WindowsグループからWindowsユーザを削除する、
+	(3)Windowsグループに属するWindowsユーザを表示する である。
+	</para>
+
+	<para>
+	混乱を防ぐため、何らかの変更を行う前に、グループメンバシップを確認することは
+	意味がある。<command>getent group</command>はUNIX/Linuxのグループメンバシップを
+	表示する。UNIX/Linuxグループメンバは<command>net groupmap</command>コマンド
+	(<link linkend="groupmapping"/>を参照)で、マップされたWindowsグループのメンバ
+	としても見ることができる。以下のUNIX/Linuxメンバシップは、<constant>ajt</constant>
+	というユーザが<constant>Engineers</constant>というUNIX/Linuxのグループのメンバ
+	であることを示している。
+<screen>
+&rootprompt; getent group
+...
+Domain Admins:x:512:root
+Domain Users:x:513:jht,lct,ajt,met,vlendecke
+Domain Guests:x:514:
+Print Operators:x:550:
+Backup Operators:x:551:
+Replicator:x:552:
+Domain Computers:x:553:
+Engineers:x:1000:jht,ajt
+</screen>
+	WindowsグループにマップされたUNIX/Linuxのグループは以下のようになる:
+<screen>
+&rootprompt; net groupmap list
+Domain Admins (S-1-5-21-72630-412605-116429-512) -> Domain Admins
+Domain Users (S-1-5-21-72630-412605-116429-513) -> Domain Users
+Domain Guests (S-1-5-21-72630-412605-116429-514) -> Domain Guests
+Print Operators (S-1-5-21-72630-412605-116429-550) -> Print Operators
+Backup Operators (S-1-5-21-72630-412605-116429-551) -> Backup Operators
+Replicator (S-1-5-21-72630-412605-116429-552) -> Replicator
+Domain Computers (S-1-5-21-72630-412605-116429-553) -> Domain Computers
+Engineers (S-1-5-21-72630-412605-116429-3001) -> Engineers
+</screen>
+	</para>
+
+	<para>
+	与えられた<constant>ajt</constant>というユーザは、すでにUNIX/Linuxグループの
+	メンバで、グループマッピング経由、Windowsグループのメンバで、このアカウントを
+	再度追加する試みは失敗する。これのデモは以下の通り:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group addmem</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc group addmem "MIDEARTH\Engineers" ajt -Uroot%not24get
+Could not add ajt to MIDEARTH\Engineers: NT_STATUS_MEMBER_IN_GROUP
+</screen>
+	これは、UNIX/LinuxグループとWindowsグループの間のグループマッピングは有効でかつ
+	透過的であることを示している。
+	</para>
+
+	<para>
+	ユーザ<constant>ajt</constant>を、<command>net rpc group</command>ユーティリティ
+	を使って追加することを許可するために、このアカウントは最初に削除されねばならない。
+	削除とその確認は以下のようになる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group delmem</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc group delmem "MIDEARTH\Engineers" ajt -Uroot%not24get
+&rootprompt; getent group Engineers
+Engineers:x:1000:jht
+&rootprompt; net rpc group members Engineers -Uroot%not24get
+MIDEARTH\jht
+</screen>
+	この例2つの中で、UNIX/Linuxシステムレベルで、グループはもはや<constant>ajt</constant>
+	をメンバとしてはいない。上記は又Windowsグループメンバシップの場合も示している。
+	</para>
+
+	<para>
+	<command>net rpc group</command>ユーティリティを使ってアカウントは再度追加される:
+<screen>
+&rootprompt; net rpc group addmem "MIDEARTH\Engineers" ajt -Uroot%not24get
+&rootprompt; getent group Engineers
+Engineers:x:1000:jht,ajt
+&rootprompt; net rpc group members Engineers -Uroot%not24get
+MIDEARTH\jht
+MIDEARTH\ajt
+</screen>
+	</para>
+
+	<para>
+	この例では、Windowsの<constant>Domain Users</constant>アカウントのメンバは
+	<command>net rpc group</command>ユーティリティを使って検証される。この
+	UNIX/Linuxグループの内容は4つ前のパラグラフで示されていることに注意。
+	Windows(ドメイン)グループメンバシップは以下のようになる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group members</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc group members "Domain Users" -Uroot%not24get
+MIDEARTH\jht
+MIDEARTH\lct
+MIDEARTH\ajt
+MIDEARTH\met
+MIDEARTH\vlendecke
+</screen>
+	この特別な例は、Windowsグループ名が、大文字小文字を区別しない流儀で
+	(Microsoft Windowsと同じ)Sambaによって扱われることを示す:
+<screen>
+&rootprompt; net rpc group members "DomAiN USerS" -Uroot%not24get
+MIDEARTH\jht
+MIDEARTH\lct
+MIDEARTH\ajt
+MIDEARTH\met
+MIDEARTH\vlendecke
+</screen>
+	</para>
+
+	<note><para>
+	単純に<constant>Domain Users</constant>の代わりに
+	<constant>MIDEARTH\Domain Users</constant>という形でグループ名を指定しても
+	失敗する。net rpc group の既定値の動作はローカルマシンへコマンドの動作を
+	行うからである。Windowsグループはマシンに対してローカルなように扱われる。
+	もしも他のマシンに対して問い合わせが必要ならば、その名前は、
+	<command>net</command>コマンドの<constant>-S servername</constant>
+	パラメータを使って指定する。
+	</para></note>
+
+	</sect2>
+
+	<sect2 id="nestedgrpmgmgt">
+	<title>ネストされたグループのサポート</title>
+
+	<para>
+	ドメインユーザとドメイングループのメンバである(含む)ローカルグループを作成する
+	ことはWindows(と現在はSambaも)で可能である。<constant>demo</constant>という
+	ローカルグループは以下のようにして作成できる:
+<screen>
+&rootprompt; net rpc group add demo -L -S MORDON -Uroot%not24get
+</screen>
+	ここで、-L スイッチはローカルグループ作成を意味する。特定のサーバに対しての
+	動作を行う場合は、 -S 引数を使う。-U引数はマシン上で適切な権限と権利を持つ
+	ユーザを指定するのに使う。
+	</para>
+
+	<para>
+	グループメンバの追加と削除は<command>net rpc group</command>コマンドの
+	<constant>addmem</constant>と<constant>delmem</constant>サブコマンドを使う
+	ことで行える。たとえば、ローカルグループ<constant>demo</constant>に対して
+	<quote>DOM\Domain Users</quote>を追加するには以下のように行う:
+<screen>
+&rootprompt; net rpc group addmem demo "DOM\Domain Users" -Uroot%not24get
+</screen>
+	</para>
+
+	<para>
+	以下のようにして、ネストされたグループのメンバを表示することが出来る:
+<screen>
+&rootprompt; net rpc group members demo -Uroot%not24get
+DOM\Domain Users
+DOM\Engineers
+DOM\jamesf
+DOM\jht
+</screen>
+	</para>
+
+	<para>
+	ネストされたグループメンバは以下のようにして削除出来る:
+<screen>
+&rootprompt; net rpc group delmem demo "DOM\jht" -Uroot%not24get
+</screen>
+	</para>
+
+	<sect3>
+	<title>Sambaサーバからのワークステーション上のネストされたグループの管理</title>
+
+	<para>
+	Windowsネットワーク管理者はしばしばSambaメーリングリストに、個々のワーク
+	ステーション上ですべての人に管理者権限を許可することが可能かと言うことを
+	質問してくる。これは、もちろんとても悪い習慣ではあるが、一般的にユーザの不満を
+	防ぐために行われる。個々では、どのようにSamba PDCまたはBDCからリモートでそれが
+	出来るかを示す:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group addmem</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc group addmem "Administrators" "Domain Users" \
+    -S WINPC032 -Uadministrator%secret
+</screen>
+	</para>
+
+	<para>
+	これはスクリプト化出来、そのためにWindowsワークステーションからドメインに
+	ログオンするユーザとして実行できる。どのようにそれが行われるかの簡単な例を
+	以下に示す。
+	</para>
+
+	<procedure>
+	<title>ワークステーションの Power Usersグループへの自動的なユーザの追加</title>
+
+		<step><para>
+		<link linkend="autopoweruserscript"></link>で示されているスクリプトを
+		作成し、<filename>autopoweruser.sh</filename>という名前で
+		ディレクトリ<filename>/etc/samba/scripts</filename>中に配置する。
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group addmem</tertiary></indexterm>
+<indexterm><primary>autopoweruser.sh</primary></indexterm>
+<indexterm><primary>/etc/samba/scripts</primary></indexterm>
+		</para></step>
+
+<example id="autopoweruserscript">
+<title>ワークステーションのPower UsersグループにDomain Users を自動で追加するスクリプト</title>
+<screen>
+#!/bin/bash
+
+/usr/bin/net rpc group addmem "Power Users" "DOMAIN_NAME\$1" \
+                   -UAdministrator%secret -S $2
+
+exit 0
+</screen>
+</example>
+
+		<step><para>
+		ログオンプロセスの一部として実行できるようにスクリプトにパーを設定する:
+<screen>
+&rootprompt; chown root:root /etc/samba/autopoweruser.sh
+&rootprompt; chmod 755 /etc/samba/autopoweruser.sh
+</screen>
+		</para></step>
+
+		<step><para>
+		<link linkend="magicnetlogon">Netlogonのsmb.confファイルでの例</link>
+		で示されるような<literal>NETLOGON</literal>セクションが含むパラメータ
+		のように&smb.conf;ファイルを変更する。
+		</para></step>
+
+<example id="magicnetlogon">
+<title>Magic Netlogon共有</title>
+<smbconfblock>
+<smbconfsection name="[netlogon]"/>
+<smbconfoption name="comment">Netlogon Share</smbconfoption>
+<smbconfoption name="path">/var/lib/samba/netlogon</smbconfoption>
+<smbconfoption name="root preexec">/etc/samba/scripts/autopoweruser.sh %U %m</smbconfoption>
+<smbconfoption name="read only">Yes</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+		<step><para>
+		すべてのWindowsワークステーション管理者アカウントが、
+		<link linkend="magicnetlogon">Netlogonのsmb.confファイルでの例</link>
+		にあるようなスクリプト中で使われるのと同じパスワードを持つようにする。
+		</para></step>
+
+</procedure>
+
+	<para>
+	このスクリプトはユーザがネットワークにログオンする時には毎回実行される。
+	そのため、すべてのユーザはローカルWindowsワークステーションの管理権限を
+	持つ。これはもちろんグループを使って割り当てることが出来、その場合、
+	この手続きの使用のためには微少な修正ですむ。この方法の使用のための修正
+	点の肝心なところは、すべてのユーザがワークステーション上で適切な権限を
+	持つことを保証することである。
+	</para>
+
+	</sect3>
+
+	</sect2>
+
+	</sect1>
+
+	<sect1>
+	<title>UNIXとWindowsのユーザ管理</title>
+
+	<para>
+<indexterm><primary>ユーザアカウント</primary></indexterm>
+<indexterm><primary>UNIX/Linuxのユーザアカウント</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>POSIXアカウント</primary></indexterm>
+<indexterm><primary>レンジ</primary></indexterm>
+<indexterm><primary>Windowsのユーザアカウント</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>アカウント情報</primary></indexterm>
+	すべてのWindowsネットワークユーザアカウントはUNIX/Linuxユーザアカウントに変換
+	されねばならない。実際には、UNIX/LinuxのSambaサーバは、アカウント情報の内のUID
+	のみを必要とする。UIDは、システム(POSIX)アカウントか、Windowsユーザアカウントに
+	よって使われるために割り当てられる目的で予約されるUID番号の事前割当範囲(レンジ)
+	から取得される。この場合、UID事前割当範囲(訳注:pool)の場合、特定のユーザに
+	対するUIDは<command>winbindd</command>によって割り当てられる。
+	</para>
+
+	<para>
+	ここは、異なった名前を持つUNIXアカウントにWindowsユーザアカウントをマッピング
+	する重要な方法であ<smbconfoption name="username map"/>インタフェース機能を
+	議論するのにふさわしい場所ではない。この機能についての詳細は&smb.conf;ファイルの
+	マニュアルページを参照のこと。
+	</para>
+
+	<sect2 id="sbeuseraddn">
+	<title>ユーザアカウントの追加</title>
+
+	<para>
+	<command>net</command>経由(詳細はマニュアルページ)でのユーザの追加は以下の通り:
+<screen>
+net [&lt;method&gt;] user ADD &lt;name&gt; [-c container] [-F user flags] \
+    [misc. options] [targets]
+</screen>
+	ユーザアカウントのパスワードは以下の方法で設定できる:
+<screen>
+net rpc password &lt;username&gt; [&lt;password&gt;] -Uadmin_username%admin_pass
+</screen>
+	</para>
+
+	<para>
+	以下ではサーバ<constant>FRODO</constant>にアカウントを追加する例を示す:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>user add</tertiary></indexterm>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>user password</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc user add jacko -S FRODO -Uroot%not24get
+Added user jacko
+</screen>
+	アカウントのパスワードは以下の方法で追加できる(すべて同じ操作を示す):
+<screen>
+&rootprompt; net rpc password jacko f4sth0rse -S FRODO -Uroot%not24get
+&rootprompt; net rpc user password jacko f4sth0rse \
+    -S FRODO -Uroot%not24get
+</screen>
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ユーザアカウントの削除</title>
+
+	<para>
+	ユーザアカウントの削除方法は以下の通り:
+<screen>
+net [&lt;method&gt;] user DELETE &lt;name&gt; [misc. options] [targets]
+</screen>
+	以下ではユーザアカウント<constant>jacko</constant>を削除する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>user delete</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc user delete jacko -Uroot%not24get
+Deleted user account
+</screen>
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ユーザアカウントの管理</title>
+
+	<para>
+	2の基本的なユーザアカウント操作が定常的に使われる:パスワード変更とどのグループに
+	ユーザが所属しているかの問い合わせである。パスワード変更操作は
+	<link linkend="sbeuseraddn"/>の通り。
+	</para>
+
+	<para>
+	Windowsグループのメンバシップの問い合わせ能力は基本的である。以下では、リモート
+	サーバが、どのグループにユーザが属しているかを調べることが出来るかを示す:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>user info</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc user info jacko -S SAURON -Uroot%not24get
+net rpc user info jacko -S SAURON -Uroot%not24get
+Domain Users
+Domain Admins
+Engineers
+TorridGroup
+BOP Shop
+Emergency Services
+</screen>
+	</para>
+
+	<para>
+	古いユーザ名から新しいユーザ名へのユーザアカウントの改名も可能である。ただし、この操作はSambaサーバに対しては動作しないことに注意。しかし、ユーザ名の改名はWindowsサーバでは可能である。
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>user rename</tertiary></indexterm>
+
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ユーザのマッピング</title>
+
+	<para>
+<indexterm><primary>ログイン名</primary></indexterm>
+<indexterm><primary>/etc/samba/smbusers</primary></indexterm>
+<indexterm><primary>username map</primary></indexterm>
+	ある条件下で、ユーザのWindowsにおけるログオン名はSambaサーバ上で持つユーザの
+	ログインIDと異なることは避けられない。Sambaサーバ上で、Windowsユーザ名を
+	異なったUNIX/Linuxユーザ名にマップできる特別なファイルを作ることが出来る。
+	&smb.conf;ファイルも、<constant>[global]</constant>セクションで以下の
+	パラメータを含むように変更しなければならない。
+<screen>
+username map = /etc/samba/smbusers
+</screen>
+	<filename>/etc/samba/smbusers</filename>ファイルの内容は以下の通り:
+<screen>
+parsonsw: "William Parsons"
+marygee: geeringm
+</screen>
+	この例では、Windowsユーザアカウント<quote>William Parsons</quote>はUNIXユーザ
+	<constant>parsonsw</constant>にマップされ、Windowsユーザアカウント
+	<quote>geeringm</quote>はUNIXユーザ<constant>marygee</constant>にマップされる。
+	</para>
+
+	</sect2>
+
+	</sect1>
+
+	<sect1>
+	<title>管理ユーザの権限と権利</title>
+
+	<para>
+<indexterm><primary>credentials</primary></indexterm>
+<indexterm><primary>プリンタ管理</primary></indexterm>
+<indexterm><primary>共有管理</primary></indexterm>
+<indexterm><primary>グループ管理</primary></indexterm>
+<indexterm><primary>ユーザ管理</primary></indexterm>
+	3.0.11より前のすべてのSambaは、Sambaサーバ上で、ユーザ、グループ、共有、プリンタ
+	とその他の管理を行うのに、<constant>root</constant>アカウントしか使えなかった。
+	これは、何人かのユーザには問題を引き起こし、しばしばUNIX/Linuxシステム上で、最も
+	セキュリティに敏感なアカウントの権限を渡す必要があるという弱点の元であった。
+	</para>
+
+	<para>
+<indexterm><primary>管理者権限の委譲</primary></indexterm>
+<indexterm><primary>通常のユーザ</primary></indexterm>
+<indexterm><primary>権利と権限</primary></indexterm>
+<indexterm><primary>特権管理</primary></indexterm>
+<indexterm><primary>ユーザのグループ</primary></indexterm>
+	Sambaバージョン3.0.11から、ユーザまたはユーザが属するグループに対して必要に応じて
+	管理者権限を委譲する機能が加わった。管理者特権の重要性は<link linkend="rights"/>に
+	説明がある。ユーザ権限と権利管理に関する<command>net</command>コマンドの使用例は
+	この章の適切な箇所にある。
+	</para>
+
+	<note><para>
+	ユーザ権限と権利が正しく設定した場合、UNIX UID=0である<constant>root</constant>ユーザ
+	(およびその同義語)のためのWindowsネットワークアカウントの必要がなくなる。初期のユーザ
+	権限と権利は、<constant>Domain Admins</constant>グループのメンバの任意のアカウントに
+	割り当てることが出来る。権利はグループアカウントと同じように割り当てられる。
+	</para></note>
+
+	<para>
+	既定値では、何らの権利と権限も割り当てられない。これは以下のコマンドを実行する
+	ことで以下のように表示される:
+<screen>
+&rootprompt; net rpc rights list accounts -U root%not24get
+BUILTIN\Print Operators
+No privileges assigned
+
+BUILTIN\Account Operators
+No privileges assigned
+
+BUILTIN\Backup Operators
+No privileges assigned
+
+BUILTIN\Server Operators
+No privileges assigned
+
+BUILTIN\Administrators
+No privileges assigned
+
+Everyone
+No privileges assigned
+</screen>
+	</para>
+
+	<para>
+	<command>net</command>コマンドは、以下の方法で現在サポートされている権利と
+	権限を得るのに使える:
+<indexterm><primary>SeMachineAccountPrivilege</primary></indexterm>
+<indexterm><primary>SePrintOperatorPrivilege</primary></indexterm>
+<indexterm><primary>SeAddUsersPrivilege</primary></indexterm>
+<indexterm><primary>SeRemoteShutdownPrivilege</primary></indexterm>
+<indexterm><primary>SeDiskOperatorPrivilege</primary></indexterm>
+<indexterm><primary>SeBackupPrivilege</primary></indexterm>
+<indexterm><primary>SeRestorePrivilege</primary></indexterm>
+<indexterm><primary>SeTakeOwnershipPrivilege</primary></indexterm>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>rights list</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc rights list -U root%not24get
+     SeMachineAccountPrivilege  Add machines to domain
+      SePrintOperatorPrivilege  Manage printers
+           SeAddUsersPrivilege  Add users and groups to the domain
+     SeRemoteShutdownPrivilege  Force shutdown from a remote system
+       SeDiskOperatorPrivilege  Manage disk shares
+             SeBackupPrivilege  Back up files and directories
+            SeRestorePrivilege  Restore files and directories
+      SeTakeOwnershipPrivilege  Take ownership of files or other objects
+</screen>
+	Machine account権限は、Windows NT4以降のネットワーククライアントをドメインに
+	参加させるために必要である。disk operator権限は、ユーザが所有していない
+	オブジェクトの、共有のACLとファイルとディレクトリのACLを管理するために必要である。
+	</para>
+
+	<para>
+	この例では、すべての権利は<constant>Domain Admins</constant>グループに割り当てられる。これは、このグループのメンバが通常全権を有することになっている。この割り当ては以下のようになっている:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>rights grant</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc rights grant "MIDEARTH\Domain Admins" \
+    SeMachineAccountPrivilege SePrintOperatorPrivilege \
+    SeAddUsersPrivilege SeRemoteShutdownPrivilege \
+    SeDiskOperatorPrivilege  -U root%not24get
+Successfully granted rights.
+</screen>
+	次に、ドメインユーザ<constant>jht</constant>は、日々の管理の必要性のために権限を
+	割り当てられる:
+<screen>
+&rootprompt; net rpc rights grant "MIDEARTH\jht" \
+    SeMachineAccountPrivilege SePrintOperatorPrivilege \
+    SeAddUsersPrivilege SeDiskOperatorPrivilege \
+    -U root%not24get
+Successfully granted rights.
+</screen>
+	</para>
+
+	<para>
+	以下のステップでは今行った変更の確認を行う:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>rights list accounts</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc rights list accounts -U root%not24get
+MIDEARTH\jht
+SeMachineAccountPrivilege
+SePrintOperatorPrivilege
+SeAddUsersPrivilege
+SeDiskOperatorPrivilege
+
+BUILTIN\Print Operators
+No privileges assigned
+
+BUILTIN\Account Operators
+No privileges assigned
+
+BUILTIN\Backup Operators
+No privileges assigned
+
+BUILTIN\Server Operators
+No privileges assigned
+
+BUILTIN\Administrators
+No privileges assigned
+
+Everyone
+No privileges assigned
+
+MIDEARTH\Domain Admins
+SeMachineAccountPrivilege
+SePrintOperatorPrivilege
+SeAddUsersPrivilege
+SeRemoteShutdownPrivilege
+SeDiskOperatorPrivilege
+</screen>
+	</para>
+
+	</sect1>
+
+	<sect1>
+	<title>信頼関係の管理</title>
+
+	<para>
+	基本的な信頼関係には2つのタイプがある:最初のものは、ドメインコントローラと
+	ドメインメンバマシン(ネットワーククライアント)間のものであり、2番目のものは、
+	ドメイン間(ドメイン間信頼関係と呼ばれる)である。ドメインセキュリティに参加する
+	すべてのSambaサーバは、Windows NT/200x/XPワークステーションがそうであるように、
+	ドメインメンバシップ信頼アカウントを必要とする。
+	</para>
+
+	<sect2>
+	<title>マシン信頼アカウント</title>
+
+	<para>
+	それ自身の固有の設定を取得するために、netコマンドは&smb.conf;ファイルを見に行く。
+	そのため、以下のコマンドは、&smb.conf;から、どのドメインに参加するかを知っている。
+	</para>
+
+	<para>
+	Sambaサーバのドメイン信頼アカウントは以下の例のようにして確認できる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>testjoin</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc testjoin
+Join to 'MIDEARTH' is OK
+</screen>
+	ここで、ドメインメンバシップアカウントがないか、アカウントの認証が無効の場合、
+	以下の結果が表示される:
+<screen>
+net rpc testjoin -S DOLPHIN
+Join to domain 'WORLDOCEAN' is not valid
+</screen>
+	</para>
+
+	<para>
+	The equivalent command for joining a Samba server to a Windows ADS domain is shown here:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>testjoin</tertiary></indexterm>
+<screen>
+&rootprompt; net ads testjoin
+Using short domain name -- TAKEAWAY
+Joined 'LEMONADE' to realm 'TAKEAWAY.BIZ'
+</screen>
+	ADSの信頼関係が確立されていない状態か、何らかの理由で無効になっている場合、
+	以下のエラーメッセージが表示される:
+<screen>
+&rootprompt; net ads testjoin -UAdministrator%secret
+Join to domain is not valid
+</screen>
+	</para>
+
+	<para>
+	以下は、コマンドが実行された時にSambaサーバがターゲットのドメイン中でマシン
+	信頼アカウントを作成する手順を示す:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc join -S FRODO -Uroot%not24get
+Joined domain MIDEARTH.
+</screen>
+	SambaドメインにSambaサーバを参加させると、マシンアカウントが作成される。
+	その例は以下の通り:
+<screen>
+&rootprompt; pdbedit -Lw merlin\$
+merlin$:1009:9B4489D6B90461FD6A3EC3AB96147E16:\
+176D8C554E99914BDF3407DEA2231D80:[S          ]:LCT-42891919:
+</screen>
+	大カッコの中のSは、これがサーバ(PDC/BDC)アカウントであることを意味する。
+	ドメインの参加は、純粋にワークステーションとして参加するために処理が行われ、
+	その場合はSはW(ワークステーションアカウントを意味する)に置き換えられる。
+	これを行うには以下のコマンドを使う:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join member</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc join member -S FRODO -Uroot%not24get
+Joined domain MIDEARTH.
+</screen>
+	コマンドラインパラメータ<constant>member</constant>はこれをjoin固有にすること
+	に注意。既定値では、タイプは&smb.conf;ファイルの設定から推測される。特に、PDC又は
+	BDCとしてjoinするためには、コマンドラインパラメータを
+	<constant>[PDC | BDC]</constant>とする。例をあげると、
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join bdc</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc join bdc -S FRODO -Uroot%not24get
+Joined domain MIDEARTH.
+</screen>
+	となる。これは、&smb.conf;ファイル中の設定からドメインへのjoinのタイプを
+	Sambaに理解させるのに最も良い方法である。
+	</para>
+
+	<para>
+	Windows ADSにSambaサーバをjoinさせるコマンドは以下の通り:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>join</tertiary></indexterm>
+<screen>
+&rootprompt; net ads join -UAdministrator%not24get
+Using short domain name -- GDANSK
+Joined 'FRANDIMITZ' to realm 'GDANSK.ABMAS.BIZ'
+</screen>
+	</para>
+
+	<para>
+	NT4ドメインからマシンを削除するための特定のオプションはない。ドメインから削除
+	されるドメインメンバがWindowsマシンの場合、ドメインメンバシップアカウントは自動的
+	には削除されない。無効になっているドメインアカウントは、何らかのツールで削除する
+	ことが出来る。もしも必要ならば、マシンアカウントは以下の<command>net</command>
+	コマンドで削除できる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>user delete</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc user delete HERRING\$ -Uroot%not24get
+Deleted user account.
+</screen>
+	削除は、マシンアカウントが末尾に$が付いたユーザアカウントのようになっている
+	ために可能となる。アカウント管理操作はユーザとマシンアカウントの間で同じ方法で
+	扱える。
+	</para>
+
+	<para>
+	Windows ADS メンバであるSamba-3サーバはドメインから、以下のコマンドで離脱できる:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>leave</tertiary></indexterm>
+<screen>
+&rootprompt; net ads leave
+</screen>
+	</para>
+
+	<para>
+	ADSドメインについての詳細な情報は、以下を使ってSamba DMSマシンから得られる:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>status</tertiary></indexterm>
+<screen>
+&rootprompt; net ads status
+</screen>
+	この件に関する情報は非常にたくさんある。詳細は<quote>Samba-3 by Example</quote>
+	という書籍の第七章を参照してほしい。この本は書籍か、あるいはオンライン上では
+	<ulink url="http://www.samba.org/samba/docs/Samba3-ByExample.pdf">Samba-3 by Example</ulink>
+	(訳注:英語版)で入手できる。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ドメイン間の信頼関係</title>
+
+	<para>
+	ドメイン間の信頼関係は、あるドメインのユーザが、他のドメインでアクセス許可と
+	権利を得ることが出来ることについての主要なメカニズムを構成する。
+	</para>
+
+	<para>
+	ドメイン間の信頼歓迎がどうなっているかを調べるには、以下のコマンドを実行する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>trustdom list</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc trustdom list -Uroot%not24get
+Trusted domains list:
+
+none
+
+Trusting domains list:
+
+none
+</screen>
+	この時点ではドメイン間の信頼関係はない;以下のステップでこれを作成する。
+	</para>
+
+	<para>
+	ローカルドメインで信頼アカウントを作成することが必要である。2番目のドメイン中の
+	ドメインコントローラはこのアカウントを使って信頼された接続を作成できる。これは、
+	外部のドメインがローカルドメイン中でアクセスするために信頼されていると言うことを
+	意味する。このコマンドはローカル信頼アカウントを作成する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>trustdom add</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc trustdom add DAMNATION f00db4r -Uroot%not24get
+</screen>
+	アカウントは<command>pdbedit</command>を使って表示できる:
+<screen>
+&rootprompt; pdbedit -Lw DAMNATION\$
+DAMNATION$:1016:9AC1F121DF897688AAD3B435B51404EE: \
+7F845808B91BB9F7FEF44B247D9DC9A6:[I         ]:LCT-428934B1:
+</screen>
+	信頼アカウントはいつでも大括弧の中にIという値を持っている。
+	</para>
+
+	<para>
+	もしも信頼されているドメインへ接続できないと、以下のコマンドは失敗する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>trustdom list</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc trustdom list -Uroot%not24get
+Trusted domains list:
+
+none
+
+Trusting domains list:
+
+DAMNATION           S-1-5-21-1385457007-882775198-1210191635
+</screen>
+	The above command executed successfully; a failure is indicated when the following response is obtained:
+<screen>
+net rpc trustdom list -Uroot%not24get
+Trusted domains list:
+
+DAMNATION           S-1-5-21-1385457007-882775198-1210191635
+
+Trusting domains list:
+
+DAMNATION           domain controller is not responding
+</screen>
+	</para>
+
+	<para>
+	信頼アカウントが外部ドメインで作成された場合、Sambaは信頼関係を外部アカウントに
+	対して(接続して)確立する。プロセスの中で、リモートドメイン上でリソースに対する
+	1方向の信頼を確立する。このコマンドは信頼関係に参加する目的を達成する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>trustdom establish</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc trustdom establish DAMNATION
+Password: xxxxxxx	== f00db4r
+Could not connect to server TRANSGRESSION
+Trust to domain DAMNATION established
+</screen>
+	今確立した双方向の信頼関係の表示は以下のように行える:
+<screen>
+&rootprompt; net rpc trustdom list -Uroot%not24get
+Trusted domains list:
+
+DAMNATION           S-1-5-21-1385457007-882775198-1210191635
+
+Trusting domains list:
+
+DAMNATION           S-1-5-21-1385457007-882775198-1210191635
+</screen>
+	</para>
+
+	<para>
+	時々、外部ドメインにアクセするためのローカルユーザのための能力を取り去る必要が
+	ある。信頼している接続は以下のように取り去ることが出来る:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>trustdom revoke</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc trustdom revoke DAMNATION -Uroot%not24get
+</screen>
+	また別の時には、ローカルドメイン内のリソースにアクセス出来る外部ドメインから、
+	ユーザを削除する機能が必要な時がある。以下はこれを行えるようにする:
+<screen>
+&rootprompt; net rpc trustdom del DAMNATION -Uroot%not24get
+</screen>
+
+	</para>
+
+	</sect2>
+
+	</sect1>
+
+	<sect1>
+	<title>セキュリティ識別子(SID)の管理</title>
+
+	<para>
+<indexterm><primary>セキュリティ識別子</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>デスクトッププロファイル</primary></indexterm>
+<indexterm><primary>user encoded</primary></indexterm>
+<indexterm><primary>グループSID</primary></indexterm>
+	すべてのWindowsネットワーキング操作で使われる基本的なセキュリティ識別子は
+	Windowsセキュリティ識別子(SID)である。すべてのWindowsネットワークマシン(サーバと
+	ワークステーション)、ユーザとグループはそれぞれのSIDで確認される。すべてのデス
+	クトッププロファイルも、ユーザが存在しているドメインのSIDに固有のユーザと
+	グループSIDでエンコードされる。
+	</para>
+
+	<para>
+<indexterm><primary>machine SID</primary></indexterm>
+<indexterm><primary>domain SID</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>rejoin</primary></indexterm>
+	保護のためにマシンやドメインのSIDをファイルに保存することは、本当に重要である。
+	なぜか?なぜならば、ホスト名中かドメイン(ワークグループ)中の名前の変更点が、
+	SID内の変更になるかもしれないからである。SIDが手元にある場合、それを回復さ
+	せることは簡単な問題である。別の方法を取ると、ユーザデスクトッププロファイルを
+	回復しなければならず、すべてのメンバメンバマシンを再結合しなければならないとい
+	う手間暇で苦しむことになる。
+	</para>
+
+	<para>
+	最初に、ファイル中にローカルSIDを格納することを忘れないこと。&smb.conf;が保存
+	されているディレクトリ中に配置しておくのは良い方法である。これを行うのは
+	以下のように行う:
+<indexterm><primary>net</primary><secondary>getlocalsid</secondary></indexterm>
+<screen>
+&rootprompt; net getlocalsid > /etc/samba/my-sid
+</screen>
+	これで、ローカルのマシンSIDが安全に保存できた。PDC/BDC上ではドメインSID
+	でもある。
+	</para>
+
+	<para>
+	以下のコマンドは、前者が<filename>my-sid</filename>と呼ばれているファイル中に
+	入れなければならなかったことを明らかにする:
+<screen>
+&rootprompt; net getlocalsid
+SID for domain MERLIN is: S-1-5-21-726309263-4128913605-1168186429
+</screen>
+	</para>
+
+	<para>
+	もしも、<filename>my-sid</filename>ファイル中に格納されたSIDをリストアする
+	必要性がある場合、単純にSID(<constant>S-1-5-21</constant>で始まる文字列)を
+	以下のコマンドラインのように行う:
+<indexterm><primary>net</primary><secondary>setlocalsid</secondary></indexterm>
+<screen>
+&rootprompt; net setlocalsid S-1-5-21-1385457007-882775198-1210191635
+</screen>
+	マシンSIDのリストアは単純な操作であるが、バックアップコピーがないととて
+	も大変である。
+	</para>
+
+	<para>
+	以下の操作はマシンがPDCまたはBDCに設定されている時のみ有用である。DMSとワーク
+	ステーションクライアントは名前空間の競合の可能性を防ぐために固有のSIDを持つ
+	べきである。以下は、BDCのSIDをPDCに同期する例である(これは既定値の NT4
+	ドメインの動作である):
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>getsid</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc getsid -S FRODO -Uroot%not24get
+Storing SID S-1-5-21-726309263-4128913605-1168186429 \
+    for Domain MIDEARTH in secrets.tdb
+</screen>
+	通常、ターゲットのサーバ(-S FRODO)や管理者アカウントのパスワード(-Uroot%not24get)
+	を指定する必要はない。
+	</para>
+
+	</sect1>
+	
+	<sect1>
+	<title>共有管理</title>
+
+	<para>
+	共有管理は、すべてのファイルサービス操作にとって主要なものである。通常の共有
+	操作は以下を含む:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>共有の作成/変更/削除</para></listitem>
+		<listitem><para>共有へのACLの設定/変更</para></listitem>
+		<listitem><para>サーバ間での共有の移動</para></listitem>
+		<listitem><para>共有内容のパーミッションの変更</para></listitem>
+	</itemizedlist>
+
+	<para>
+	上記のおのおのは、それらが必要としている範囲において、
+	<command>net</command>コマンドを使ってここで分けられる。このコマンドの
+	範囲外の操作はこの文書のどこかで触れられている。
+	</para>
+
+	<sect2>
+	<title>共有の作成、編集と削除</title>
+
+	<para>
+	共有は<command>net rpc share</command>の能力を使って追加できる。ターゲットマシン
+	はローカルまたは-Sオプションを指定することでリモートでもよい。このツールを使った
+	共有の追加と削除は、適切なインタフェーススクリプトが有効であることに依存する
+	ことに注意しなければならない。Sambaの<command>smbd</command>が使うインタフェース
+	スクリプトは、<smbconfoption name="add share command"/>、
+	<smbconfoption name="delete share command"/>と
+	smbconfoption name="change share command"/>と呼ばれる。スクリプトの例一式は、
+	Sambaのソース内のディレクトリ<filename>~samba/examples/scripts</filename>
+	で提供されている。
+	</para>
+
+	<para>
+	以下のステップは、<command>net</command>ユーティリティの共有管理能力を使う例を
+	表示する。最初のステップで、<constant>Bulge</constant>という共有が追加される。
+	ファイルシステム内の共有ポイントは<filename>/data</filename>というディレクトリ
+	である。この共有を追加するためのコマンドの実行例は以下の通り:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>share add</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc share add Bulge=/data -S MERLIN -Uroot%not24get
+</screen>
+	検証は重要なプロセスで、何もオプションを付けないで<command>net rpc share</command>
+	を実行することで、以下のように有効な共有のリストを得ることが出来る:
+<screen>
+&rootprompt; net rpc share -S MERLIN -Uroot%not24get
+profdata
+archive
+Bulge   &lt;--- This one was added
+print$
+netlogon
+profiles
+IPC$
+kyocera
+ADMIN$
+</screen>
+	</para>
+
+	<para>
+	コマンドラインツールを使って共有を削除することもしばしば好ましい。以下の手順では、
+	以前に作成した共有を削除する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>share delete</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc share delete Bulge -S MERLIN -Uroot%not24get
+</screen>
+	共有が削除された結果の簡単な検証は以下の通り:
+<screen>
+&rootprompt; net rpc share -S MERLIN -Uroot%not24get
+profdata
+archive
+print$
+netlogon
+profiles
+IPC$
+ADMIN$
+kyocera
+</screen>
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>共有のACLの作成と変更</title>
+
+	<para>
+	現時点で、<command>net</command>ツールはSamba共有上のACLを管理するのには使えない。
+	Microsoft Windowsの用語で、これは、共有のアクセス許可(訳注:Share Permissions)
+	と呼ばれる。
+	</para>
+
+	<para>
+	SRVTOOLの NT4ドメインサーバマネージャかコンピュータの管理のMMCスナップインの
+	どちらかを使うことでSamba共有上のACLを設定することが可能である。それらは
+	ここでは触れないので、<link linkend="AccessControls"/>を参照のこと。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>共有、ディレクトリとファイルのマイグレーション(移行)</title>
+
+	<para>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>vampire</tertiary></indexterm>
+	共有とファイルはユーザ、マシンとグループアカウントと同じように移行できる。移行
+	プロセスを通じて、セキュリティの設定と同様にアクセス制御(ACL)の設定を保持する
+	ことは可能である。<command>net rpc vampire</command>昨日は、Windows NT4(か
+	それ以降)からSambaサーバにアカウントを移行する時に使われる。このプロセスは
+	パスワードとアカウントセキュリティの設定を保持し、共有とファイルの移行のための
+	前身である。
+	</para>
+
+	<para>
+	<command>net rpc share</command>コマンドは共有、ディレクトリ、ファイルとその他の
+	該当するデータをWindowsサーバからSambaサーバに移行するのに使うことが出来る。
+	</para>
+
+	<para>
+	コマンドラインスイッチは、Windowsファイルサーバのほとんど直接のクローンを作成できる。
+	たとえば、ファイルサーバを移行するとき、WindowsサーバのファイルのACLとDOSファイル
+	属性は以降プロセスの中に含まれ、移行が完了したときにSambaサーバ上で、ほとんど同じ
+	ように現れる。
+	</para>
+
+	<para>
+	以降プロセスはSambaサーバが完全に動作可能な時にのみ完了できる。ユーザとグループ
+	アカウントは、データの共有、ファイルとプリンタを移行する前に移行されねばならない。
+	ファイルとプリンタ設定の移行は、SMBとMS DCE RPCサービスの両方を使用する。移行の
+	プロセスでの良い方法は、あるサーバから他へのデータの転送に影響する"中間者"
+	(訳注:man-in-middle)による移行としてSambaサーバを使うために現在存在するように
+	実装されている。たとえば、もしもSambaサーバがMESSERという名前で、移行元の
+	Windows NTサーバがPEPPYという名前で、移行先のSambaサーバがGONZALESであれば、
+	マシンMESSERはすべてのデータ(ファイルと共有)をPEPPYからGONZALESに移行を行う
+	のに使うことが出来る。もしも移行先が指定されていない場合、ローカルサーバが
+	既定値として、ネットワーク上での一般的な原則のように仮定される。
+	</para>
+
+	<para>
+	サーバ移行を成功裏に行うには、移行作業がとても依存するプロセスのように移行元の
+	サーバ(かドメイン)の構造をしっかり理解しておくことが要求される。
+	</para>
+
+	<para>
+	移行プロセスでは2つの制限が知られている:
+	</para>
+
+	<orderedlist>
+		<listitem><para>
+		<command>net</command>コマンドは移行元と移行先両方でユーザ資格証明が
+		存在することを必要とする。
+		</para></listitem>
+
+		<listitem><para>
+		プリンタの設定は完全に移行できないか不正になるかもしれない。これは、
+		Windows 2003 サーバをSambaに移行する際に特に発生するかもしれない。
+		</para></listitem>
+	</orderedlist>
+
+	<sect3>
+	<title>共有の移行</title>
+
+	<para>
+	<command>net rpc share migrate</command>コマンド操作は簡単な共有セクションの移行
+	ができる。セクションはファイル又はプリンタ共有が定義されているパラメータを含む。
+	この移行方法はパラメータとして、ファイルシステムディレクトリパス、オプション記述
+	と、ファイルへの書き込み許可を行う単純なセキュリティ設定を持つ共有セクションを
+	作成する。以下の移行で必要な最初のステップの1つは、共有セクションの設定が利用に
+	適しているかを確認することである。
+	</para>
+
+	<para>
+	共有は移行プロセスの一部として動的に作成される。<command>smbd</command>は、
+	&smb.conf;パラメータの<parameter>add share command</parameter>によって
+	指定されるスクリプトを実行するためにOSを呼び出すことでこのことを行う。
+	</para>
+
+	<para>
+	<filename>$SAMBA_SOURCES/examples/scripts</filename>ディレクトリ中に
+	<parameter>add share command</parameter>のための適切な例がある。移行を
+	行うときに使うアカウントは、必要に応じて、適切なファイルシステムへのアクセス
+	権とそれらに対するACL設定および共有の作成権限を持たねばならないことに注意。
+	そのような権限は、<parameter>SeAddUsersPrivilege</parameter>と
+	<parameter>SeDiskOperatorPrivilege</parameter>という権限である。
+	権限と権利についてのより詳細な情報は、<link linkend="rights"/>を参照のこと。
+	</para>
+
+	<para>
+	共有の移行のためのコマンドの文法は以下の通り:
+<screen>
+net rpc share MIGRATE SHARES &lt;share-name&gt; -S &lt;source&gt;
+        [--destination=localhost] [--exclude=share1,share2] [-v]
+</screen>
+	When the parameter &lt;share-name&gt; is omitted, all shares will be migrated. The potentially
+	large list of available shares on the system that is being migrated can be limited using the
+	<parameter>--exclude</parameter> switch. For example:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>share migrate</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc share migrate shares myshare\
+         -S win2k -U administrator%secret"
+</screen>
+	これは、パスワードが<constant>secret</constant>であるアカウント
+	<constant>administrator</constant>に結びついたパーミッションを使ったSambaサーバに
+	<constant>win2k</constant>というサーバから共有<constant>myshare</constant>を
+	移行する。使用するアカウントは移行元と移行先のSambaサーバで同じでなければ
+	ならない。共有の移行に先だって<command>net rpc vampire</command>を使用する
+	には、両方のシステムでアカウントが同じにしておく必要がある。共有の移行開始の
+	前に行う価値があることは、移行するアカウント(Sambaサーバ上)が必要とする権利と
+	権限について確認しておくことである。これは以下のように行う:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>right list accounts</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc right list accounts -Uroot%not24get
+</screen>
+	ここまでの手順で実行されることは、共有の移行だけである。ディレクトリと
+	ディレクトリ中に含まれるものは、この時点で、今までの手順では移行されない。
+	</para>
+
+	</sect3>
+
+	<sect3>
+	<title>ファイルとディレクトリの移行</title>
+
+	<para>
+	この時点でカバーされてきたすべてのことは、ファイルとディレクトリデータの移行の
+	準備である。多くの人にとって、準備作業は退屈であり、ファイルとデータを使える
+	時になってやっと感激が得られる。次の手順は、<command>net</command>コマンドを
+	使ってデータファイルを転送(移行)するのに使えるテクニックを示す:
+	</para>
+
+	<para>
+	1つのサーバから他にファイルを転送することは、Windows NTと200xサーバが、いつでも
+	必要とされるツールを含んでいないために、Microsoft Windows管理者にとって挑戦的な
+	作業である。Windows NTからの<command>xcopy</command>コマンドはファイルと
+	ディレクトリのACLを保存する能力がなく、Windows 200xのみができる。Microsoftは
+	<command>scopy</command>と呼ばれる、ACL(セキュリティの設定)をコピーできる
+	ユーティリティを提供していないが、それは、Windows NT か 200xのサーバリソース
+	キットの一部として提供している。
+	</para>
+
+	<para>
+	商用またはフリーウェアでWindowsサーバから、完全なセキュリティ設定の維持をしながら
+	ファイルとディレクトリのコピーを行うのに使えるツールがある。よく知られている
+	フリーなツールで一番よいものは、<command>robocopy</command>というものである。
+	</para>
+
+	<para>
+	<command>net</command>ユーティリティは、DOSファイル属性と同じように、完全にACLを
+	保持しながらファイルとディレクトリのコピーを行うのに使える。注意すべきは、
+	ACLを含むことは、移行先のシステムが、移行元のシステムと同じセキュリティ
+	コンテキストの範囲内で	操作できるときにのみ意味をなすと言うことである。これは、
+	vawpireコマンドを使われたドメインからの結果のDMSとドメインコントローラの両方に
+	適用される。ファイルとディレクトリの移行の前にすべての共有はすでに存在しなければ
+	ならない。
+	</para>
+
+	<para>
+	移行コマンドの文法は以下の通りである:
+<screen>
+net rpc share MIGRATE FILES &lt;share-name&gt; -S &lt;source&gt;
+    [--destination=localhost] [--exclude=share1,share2]
+    [--acls] [--attrs] [--timestamps] [-v]
+</screen>
+	もしも、&lt;share-name&gt;パラメータが省略された場合、すべての共有が移行される。
+	移行元システム上での、潜在的にある大量の共有の一覧は、
+	<parameter>--exclude</parameter>コマンドスイッチで制限できる。
+	</para>
+
+	<para>
+	すべてのファイルのACLを保存することが必要な場合、<parameter>--acls</parameter>
+	スイッチは上記のコマンドラインに追加すべきである。オリジナルのファイルの
+	タイムスタンプは<parameter>--timestamps</parameter>スイッチを指定することで
+	保存でき、DOSファイル属性(すなわち hidden,archiveなど)は
+	<parameter>--attrs</parameter>スイッチを指定することで保存できる。
+	</para>
+
+	<note><para>
+	ACLの保存の能力は、移行先のサーバ上のホストOSの一般的なファイルシステムの機能と
+	同じように適切なACLのサポートに依存する。Windowsファイルサーバから他への
+	移行は、すべてのファイル属性を完全に保存する。WindowsのACLをPOSIX ACLをサポート
+	しているシステム上へのマッピングが困難なため、Windows ACLをSambaサーバへ
+	完全に移行することはできない。
+	</para></note>
+
+	<para>
+	Sambaサーバ上でのACLの結果はオリジナルのACLには、おおかた一致しない。Windowsは
+	グループのみで所有されるファイルをサポートしている。グループのみが所有する
+	ファイルはUNIX/Linuxでは不可能である。移行におけるエラーは、&smb.conf;ファイル
+	中に<smbconfoption name="force unknown acl user">yes</smbconfoption>
+	パラメータを使うことで防ぐことが出来る。この機能は自動的に、グループのみが所有
+	するファイルを、Windows上でユーザが所有するファイルに修正する。
+	</para>
+
+	<para>
+	<constant>nt4box</constant>というマシンから、Sambaサーバへのファイルの移行の
+	手続きの例は以下の通り:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>share migrate files</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc share migrate files -S nt4box --acls \
+    --attrs -U administrator%secret
+</screen>
+	</para>
+
+	<para>
+	このコマンドは、<constant>nt4box</constant>というWindowsサーバから、移行作業を
+	始めるSambaサーバに、すべての共有の、すべてのファイルとディレクトリを移行する。
+	グループのみが所有するファイルは <constant>administrator</constant>という
+	ユーザアカウントが所有するようになる。
+	</para>
+
+	</sect3>
+	
+	<sect3>
+	<title>共有のアクセス許可の移行</title>
+	<para>
+	Administratorであっても、その中に任意のファイルやディレクトリをコピー
+	できない、共有のアクセス許可(セキュリティ記述子)を設定することは可能である。
+	そのため、共有のアクセス許可は、独立した機能で用意されている:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>share migrate security</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc share migrate security -S nt4box -U administrator%secret
+</screen>
+	</para>
+
+	<para>
+	このコマンドは、ローカルのSambaシステムへ、nt4box上の各共有のにおける、共有の
+	アクセス許可のみをコピーする。
+	</para>
+	</sect3>
+
+	<sect3>
+	<title>共有とファイルの同時移行</title>
+
+	<para>
+	以下で示される動作モードは今まで示したものを組み合わせたものである。これは
+	最初に共有の定義を移行し、次にすべての共有されているファイルとディレクトリを、
+	最後に共有のアクセス許可を移行する:
+<screen>
+net rpc share MIGRATE ALL &lt;share-name&gt; -S &lt;source&gt;
+    [--exclude=share1, share2] [--acls] [--attrs] [--timestamps] [-v]
+</screen>
+	</para>
+
+	<para>
+	組み合わせ移行の例は以下の通り:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>share migrate all</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc share migrate all -S w2k3server -U administrator%secret
+</screen>
+	これは、<parameter>w2k3server</parameter>サーバの完全な複製を生成する。
+	</para>
+
+	</sect3>
+
+	</sect2>
+
+	<sect2>
+	<title>プリンタの移行</title>
+
+	<para>
+	新しいネットワーク環境への移行と同様、新しいサーバをインストールすることは、
+	しばしば家を建てることと類似している。基礎を作るところから家の構造部分の
+	完成までのステージは進歩がとても早いが、建築作業が完成に近づくにつれ、
+	仕上げ作業はより長くかかるように見える。
+	</para>
+
+	<para>
+	印刷の必要性は、ネットワーク環境にとても大きく依存し、とても簡単かもしれないが、
+	複雑かもしれない。もし必要性がとても単純ならば、印刷サポートを実装する最も良い
+	解決法は、古い設定から移行する代わりに、白紙の状態からすべてを再インストール
+	することである。別の言い方をすると、たくさんの国際オフィスとたくさんある
+	ローカルな支店が、印刷機能の拠点間で複雑怪奇になっているように統合された複雑な
+	ネットワークのプリンタ設定を移行することは、とてつもなく有望である。手動で
+	複雑な印刷ネットワークを再インストールするのは、とても時間がかかり、
+	フラストレーションが溜まる。しばしば、今使っているドライバファイルを見つける
+	のが困難で、より新しいバージョンのドライバのインストールが必要となる。新しい
+	ドライバはしばしばプリンタの使用方法の変更を必要とする印刷機能を実装している。
+	更に追加で、非常に複雑な印刷設定は、それがどんなに広範囲に文書化されたとしても、
+	同じ環境を再作成することはほとんど不可能になる。&smbmdash;、
+	</para>
+
+	<para>
+	既存の印刷構成の移行は以下のように行う:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>印刷キューを確立する。</para></listitem>
+
+		<listitem><para>プリンタドライバをインストールする(プリントサーバとWindowsクライアント上両方)。</para></listitem>
+
+		<listitem><para>印刷フォームを設定する。</para></listitem>
+
+		<listitem><para>セキュリティの設定を行う。</para></listitem>
+
+		<listitem><para>プリンタの設定を行う。</para></listitem>
+	</itemizedlist>
+
+	<para>
+	Sambaの<command>net</command>ユーティリティは1つのWindowsプリントサーバから
+	他への移行ができる。このツールをSambaサーバ<command>smbd</command>に対して
+	プリンタを移行するのに使った時、必要なサービスを作成するためにネットワーク
+	リクエストを受け取るアプリケーションは、配下のプリンタを作成するためにOS
+	を呼び出さなければならない。OS呼び出しは、&smb.conf;ファイル中のパラメータ
+	<smbconfoption id="add printer script"/>で指定することが出来るインタフェース
+	パラメータを経由して行われる。このスクリプトは移行プロセスで必須である。
+	適切なスクリプトの例は、
+	<filename>$SAMBA_SOURCES/examples/scripts</filename>から得られる。
+	このスクリプトはOS環境に適するようにカスタマイズせねばならず、また、プリント
+	キューを作成するためにこのツールを使うことも出来る。
+	</para>
+
+	<para>
+	上記で説明した各コンポーネントは、個別に完了することが出来、また、自動操作の
+	一部として完了することができる。多くのネットワーク管理者は、特に事がうまく
+	行かない時、移行の問題を最も手慣れた手法で対処することを好む。各操作の
+	文法を簡単に以下で説明する。
+	</para>
+
+	<para>
+	Windows サーバ(NT4または200x)からのプリンタ移行は以下である。この手順は、
+	プリンタ共有を、ベースとなるプリントキューとともに作成する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>printer migrate printers</tertiary></indexterm>
+<screen>
+net rpc printer MIGRATE PRINTERS [printer] [misc. options] [targets]
+</screen>
+	プリンタドライバをWindowsプリントサーバからSambaサーバに移行するのには、この
+	コマンドライン操作を使用する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>printer migrate drivers</tertiary></indexterm>
+<screen>
+net rpc printer MIGRATE DRIVERS [printer] [misc. options] [targets]
+</screen>
+	以下の操作でプリンタフォームを移行できる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>printer migrate forms</tertiary></indexterm>
+<screen>
+net rpc printer MIGRATE FORMS [printer] [misc. options] [targets]
+</screen>
+	プリンタのセキュリティ設定(ACL)は以下のコマンドを使うことでWindowsサーバからSambaサーバに移行できる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>printer migrate security</tertiary></indexterm>
+<screen>
+net rpc printer MIGRATE SECURITY [printer] [misc. options] [targets]
+</screen>
+	プリンタ構成の設定は、紙のサイズや既定値の紙の方向のような要素を含む。
+	これらは以下のコマンドを使うことでWindowsサーバからSambaサーバに移行できる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>printer migrate settings</tertiary></indexterm>
+<screen>
+net rpc printer MIGRATE SETTINGS [printer] [misc. options] [targets]
+</screen>
+	</para>
+
+	<para>
+	上記で説明した情報を含むプリンタの移行は、以下の文法を使う単一のコマンドで完了しても良い:
+<screen>
+net rpc printer MIGRATE ALL [printer] [misc. options] [targets]
+</screen>
+	</para>
+
+	</sect2>
+
+	</sect1>
+
+	<sect1>
+	<title>オープンしているファイルの制御</title>
+
+	<para>
+	マニュアルページには、RAPかRPC機能呼び出しのどちらかを使うオープンしている
+	ファイルをクローズするためのツールを提供する、<command>net file</command>
+	コマンドの機能について説明がある。特定なし用法の情報についてのマニュアル
+	ページを参照してほしい。
+	</para>
+
+	</sect1>
+
+	<sect1>
+	<title>セッションとコネクションの管理</title>
+
+	<para>
+	<command>net session</command>コマンドのセッション管理インタフェースは、以下の
+	ようにSambaサーバへの接続の一覧を示すための古いRAPメソッドを使う:
+<indexterm><primary>net</primary><secondary>rap</secondary><tertiary>session</tertiary></indexterm>
+<screen>
+&rootprompt; net rap session -S MERLIN -Uroot%not24get
+Computer             User name            Client Type        Opens Idle time
+------------------------------------------------------------------------------
+\\merlin             root                 Unknown Client         0 00:00:00
+\\marvel             jht                  Unknown Client         0 00:00:00
+\\maggot             jht                  Unknown Client         0 00:00:00
+\\marvel             jht                  Unknown Client         0 00:00:00
+</screen>
+	</para>
+
+	<para>
+	セッションは以下のコマンドを実行することでクローズできる:
+<screen>
+&rootprompt; net rap session close marvel -Uroot%not24get
+</screen>
+	</para>
+
+	</sect1>
+
+	<sect1>
+	<title>プリンタとADS</title>
+
+	<para>
+	Samba-3がMicrosoft Windows ADS環境で使われる場合、Samba経由で共有されるプリンタは
+	ADSドメインに対して公開されるまではブラウズできない。公開されたプリンタに関する
+	情報は以下の文法で、<command>net ads print info</command>コマンドを実行する
+	ことで、ADSから入手できる:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>printer info</tertiary></indexterm>
+<screen>
+net ads printer info &lt;printer_name&gt; &lt;server_name&gt; -Uadministrator%secret
+</screen>
+	もしも星印(*)がプリンタ名引数の場所で使われた場合、すべてのプリンタの一覧が返る。
+	</para>
+
+	<para>
+	ADSに対してプリンタを公開する(有効にする)には、以下のコマンドを実行する:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>printer publish</tertiary></indexterm>
+<screen>
+net ads printer publish &lt;printer_name&gt; -Uadministrator%secret
+</screen>
+	これはローカルSambaサーバのプリンタをADSに公開する。
+	</para>
+
+	<para>
+	ADSからSambaプリンタを削除するには、以下のコマンドを実行する:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>printer remove</tertiary></indexterm>
+<screen>
+net ads printer remove &lt;printer_name&gt; -Uadministrator%secret
+</screen>
+	</para>
+
+	<para>
+	ADSドメイン全体に渡ってプリンタの場所を調べる一般的な検索(問い合わせ)も、以下を使うことで出来る:
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>printer search</tertiary></indexterm>
+<screen>
+net ads printer search &lt;printer_name&gt; -Uadministrator%secret
+</screen>
+	</para>
+
+	</sect1>
+
+	<sect1>
+	<title>Sambaキャッシュの操作</title>
+
+	<para>
+	キャッシュ管理についての情報は、<command>net</command>マニュアルページを参照のこと。
+	</para>
+
+	</sect1>
+
+	<sect1>
+	<title>IDMAP UID/SIDマッピングの管理</title>
+
+	<para>
+	<command>winbindd</command>によって、IDMAP UIDからSIDとSIDからUIDへのマッピング
+	は、テキストファイルにバックアップできる。テキストファイルは、手動で編集
+	できるが、自分自身が正確に何をやっているのかを知っている時にのみ、それを行う
+	ことを強く推奨する。
+	</para>
+
+	<para>
+	IDMAP テキストダンプファイルはリストア(再ロード)できる。この動作が必要とされる
+	2つの状況は次の通り: a) 存在するIDMAPファイルが壊れたか、b)編集されたマッピング
+	情報をインストールする必要がある場合。
+	</para>
+
+	<para>
+	WinbindはIDMAPファイルをダンプするためには停止しなければならない。ダンプファイルを
+	リストアする前に、<command>winbindd</command>を停止し、古い
+	<filename>winbindd_idmap.tdb</filename>ファイルを削除する。
+	</para>
+
+	<sect2>
+	<title>IDMAPデータベースダンプファイルの作成</title>
+
+	<para>
+	IDMAPデータベースは以下の方法でテキストファイルにダンプできる:
+<screen>
+net idmap dump &lt;full_path_and_tdb_filename&gt; &gt; dumpfile.txt
+</screen>
+	ここで、特定のSambaのビルドのランタイムtdbファイルが、ダンプファイルを
+	作成するための以下のコマンドで、<filename>/var/lib/samba</filename>
+	ディレクトリに格納される:
+<screen>
+net idmap dump /var/lib/samba/winbindd_idmap.tdb &gt; idmap_dump.txt
+</screen>
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>IDMAPデータベースダンプファイルのリストア</title>
+
+	<para>
+	IDMAPダンプファイルは以下のコマンドを実行することでリストアできる:
+<screen>
+net idmap restore idmap_dump.txt
+</screen>
+	ここで、データをtdbファイルにリストアするために使える以下のコマンドで、
+	<filename>/var/lib/samba</filename>ディレクトリ中にSambaのランタイムtdb
+	ファイルが格納される:
+<screen>
+net idmap restore /var/lib/samba/winbindd_idmap.tdb &lt; idmap_dump.txt
+</screen>
+	</para>
+
+	</sect2>
+
+	</sect1>
+
+	<sect1 id="netmisc1">
+	<title>その他の雑多な操作</title>
+
+	<para>
+	以下のコマンドは、Sambaドメインに関して基本的な統計を取るのに便利である。
+	このコマンドは現在のWindows XP Professionalクライアントでは動作しない。
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>info</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc info
+Domain Name: RAPIDFLY
+Domain SID: S-1-5-21-399034208-633907489-3292421255
+Sequence number: 1116312355
+Num users: 720
+Num domain groups: 27
+Num local groups: 6
+</screen>
+	</para>
+
+	<para>
+	そのほかの便利なツールは、<command>net time</command>サブコマンド群である。この
+	サブコマンド群は以下のように、対象のサーバ上の現在の時刻を問い合わせるのに使える:
+<indexterm><primary>net</primary><secondary>time</secondary></indexterm>
+<screen>
+&rootprompt; net time -S SAURON
+Tue May 17 00:50:43 2005
+</screen>
+	UNIXの<command>/bin/time</command>から得られる時刻情報を渡すことが目的の場合は、
+	渡すために準備されたフォーマットで対象のサーバから時刻を得るのはよい方法である。
+	これは、以下を実行することで行える:
+<indexterm><primary>net</primary><secondary>time</secondary><tertiary>system</tertiary></indexterm>
+<screen>
+&rootprompt; net time system -S FRODO
+051700532005.16
+</screen>
+	対象のサーバ上で時刻を設定するためには以下のようにする:
+<indexterm><primary>net</primary><secondary>time</secondary><tertiary>set</tertiary></indexterm>
+<screen>
+&rootprompt; net time set -S MAGGOT -U Administrator%not24get
+Tue May 17 00:55:30 MDT 2005
+</screen>
+	以下のコマンドを実行することで、サーバのタイムゾーンを得ることが出来る:
+<indexterm><primary>net</primary><secondary>time</secondary><tertiary>zone</tertiary></indexterm>
+<screen>
+&rootprompt; net time zone -S SAURON
+-0600
+</screen>
+	</para>
+
+	</sect1>
+
+</chapter>

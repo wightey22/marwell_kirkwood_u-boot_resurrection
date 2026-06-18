@@ -1,0 +1,42 @@
+<samba:parameter name="set quota command"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para><command>set quota command</command> は Samba が実行されている OS 上で、API が提供されていない場合に限り使用すべきである。
+	</para>
+
+	<para>このオプションは、必ず <command>./configure --with-sys-quotas</command> が指定されているときのみ有効である。
+	もしくは Linux において <command>./configure --with-quotas</command> が指定され、システムにクオータの API が存在し、機能する場合にのみ使用できる。
+	ほとんどのパッケージでは、これらのオプションを指定して構成されている。</para>
+
+	<para>このパラメータは、引数を指定することで、クオータの設定を行なうスクリプトへのパスを指定する。
+	</para>
+
+	<para>このスクリプトは以下の引数をとる:</para>
+
+	<itemizedlist>
+		<listitem><para>1 - クオータのタイプ
+			<itemizedlist>
+				<listitem><para>1 - ユーザのクオータ</para></listitem>
+				<listitem><para>2 - ユーザのデフォルトのクオータ (uid = -1)</para></listitem>
+				<listitem><para>3 - グループのクオータ</para></listitem>
+				<listitem><para>4 - グループのデフォルトのクオータ (gid = -1)</para></listitem>
+			</itemizedlist>
+			</para></listitem>
+		<listitem><para>2 - id (ユーザの uid もしくはグループの gid 。 -1 を指定した場合はどちらともみなされない)</para></listitem>
+		<listitem><para>3 - クオータの状態 (0 = 無効, 1 = 有効, 2 = 有効かつ強制)</para></listitem>
+		<listitem><para>4 - ブロック数のソフトウェア的な上限</para></listitem>
+		<listitem><para>5 - ブロック数のハードウェア的な上限</para></listitem>
+		<listitem><para>6 - inode 数のソフトウェア的な上限</para></listitem>
+		<listitem><para>7 - inode 数のハードウェア的な上限</para></listitem>
+		<listitem><para>8(オプション) - ブロックサイズ、デフォルトは 1024</para></listitem>
+	</itemizedlist>
+
+	<para>このスクリプトは少なくとも1行のデータ行を出力する必要がある。ただし処理が成功しなかった場合は何も出力されない。</para>
+</description>
+<related>get quota command</related>
+<value type="default"></value>
+<value type="example">/usr/local/sbin/set_quota</value>
+</samba:parameter>

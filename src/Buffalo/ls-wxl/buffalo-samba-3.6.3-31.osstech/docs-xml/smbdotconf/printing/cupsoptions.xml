@@ -1,0 +1,32 @@
+<samba:parameter name="cups options"
+                 context="S"
+		 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    このパラメータは <smbconfoption name="printing"/> が
+    <constant>cups</constant> に設定されている場合のみ有効である。
+    この値は、 CUPS ライブラリに直接渡されるオプションを記述した任意の形式の文字列である。
+    </para>
+
+    <para>
+    CUPS で有効な一般の印刷オプション ( CUPS の「Spftware Users'
+   Manual」に記載されているもの ) はすべて設定できる。
+   また、設定対象のキューで有効な ( 「lpoptions -d printername -l」で表示される ) 
+   任意のプリンタ固有のオプションも設定できる。
+    複数のパラメータは、ABNF指定のPAPIテキストオプションに準じた、空白で
+    分離された名前/値ペアでなければならない。複数の値を持つ場合
+    ("name={a=... b=... c=...}")は、中括弧がそのままで格納される。
+   </para>
+
+   <para>
+    Windows クライアントが Samba を経由して印刷を行なう際に CUPS サーバの <filename>error_log</filename> ファイルに
+    「Unsupported format 'application/octet-stream'」といったメッセージが含まれている場合、
+    このパラメータを <constant>raw</constant> に設定するとよい。
+    現在では <filename>/etc/cups/mime.{convs,types}</filename> において、
+    システム全体で raw 印刷を有効にする必要はない。</para>
+</description>
+<value type="default">""</value>
+<value type="example">"raw,media=a4</value>
+</samba:parameter>

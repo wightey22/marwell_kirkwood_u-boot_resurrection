@@ -1,0 +1,339 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="problems">
+
+<chapterinfo>
+	&author.jerry;
+	&author.jelmer;
+	&author.dbannon;
+	&author.danshearer;
+	<pubdate>8 Apr 2003</pubdate>
+</chapterinfo>
+
+<title>Sambaの問題の調査と解決方法</title>
+
+<para>
+<indexterm><primary>RFCs</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>documentation</primary></indexterm>
+メーリングリスト、RFCやドキュメントのような形で、数多くの情報源が存在している。Sambaの
+配布物に由来するドキュメントには、ブラウジングのような一般的なSMBのトピックについての
+良い説明が含まれている。
+</para> 
+	
+<sect1>
+<title>診断ツール</title>
+
+<para>
+<indexterm><primary>sniffer</primary></indexterm>
+<indexterm><primary>LAN</primary></indexterm>
+<indexterm><primary>データの解析</primary></indexterm>
+<indexterm><primary>SMB ネットワーキング</primary></indexterm>
+<indexterm><primary>ネットワークアナライザ</primary></indexterm>
+SMBネットワーキングにおいて、特定の問題について、何が原因かと言うことが、簡単に
+分からないことがよくある。Sambaそれ自身はむしろ役立つ情報を提供するが、いくつかの
+例では、<emphasis>sniffer</emphasis>を使った方がよいかもしれない。snifferは
+LANをモニタし、そこに送信されているデータを解析し、画面上に表示するプログラムである。
+</para>
+
+<sect2>
+<title>Sambaそれ自身によるデバッグ</title>
+
+<para>
+<indexterm><primary>診断ツール</primary></indexterm>
+<indexterm><primary>問題のデバッグ</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>パスワードのデバッグ</primary></indexterm>
+<indexterm><primary>debug level</primary></indexterm>
+<indexterm><primary>log level</primary></indexterm>
+問題をデバッグするための最も良い診断ツールの1つは、Sambaそれ自身である。動作するときの、
+<smbconfoption name="debug level"/>を、&smbd;と&nmbd;両方に指定する、
+<option>-d オプション</option>が使える。<command>smbd, nmbd</command>と&smb.conf;の
+マニュアルページに、デバッギングオプションに関連するより詳細な情報があるので参照すること。
+debug level(log level)は1(既定値)から10までを指定できる(100はパスワードデバッグ用)。
+</para>
+	
+<para>
+<indexterm><primary>デバッギング</primary></indexterm>
+<indexterm><primary>gcc</primary></indexterm>
+<indexterm><primary>gdb</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>LsaEnumTrustedDomains</primary></indexterm>
+<indexterm><primary>attach gdb</primary></indexterm>
+別の、デバッギングに便利な方法は、<command>gcc -g </command>フラグ付きでSambaをコンパイル
+することである。これは、バイナリ中にデバッグ情報を埋め込み、動作中の
+<command>smbd/nmbd</command>プロセスに<command>gdb</command>がアタッチできるようにする。
+NTワークステーション向けに、ある<command>smbd</command>プロセスに<command>gdb</command>を
+アタッチするためには、最初にワークステーションとの接続を確立する。
+<parameter>LsaEnumTrustedDomains</parameter>を生成するのに、ctrl-alt-deleteを
+押し、ドメインログオン画面を表示すれば(少なくとも、最初にドメインに参加しておく)
+十分である。その後、ワークステーションは開いているコネクションを維持し、smbdプロセスが
+走り出す(短い、smbdのアイドルタイムアウトを設定していないと仮定する)。
+<command>ctrl-alt-delete</command>を押してからパスワードを実際に入力するまでの間に、
+<command>gdb</command>をアタッチでき、そのあと継続できる。
+</para>
+
+<para>
+調べてみる価値のある便利なSambaのコマンドのいくつかは以下の通り:
+<indexterm><primary>testparm</primary></indexterm>
+<indexterm><primary>smbclient</primary></indexterm>
+<screen>
+&prompt;<userinput>testparm | more</userinput>
+&prompt;<userinput>smbclient -L //{サーバのnetbios名}</userinput>
+</screen>
+</para>
+
+</sect2>
+
+<sect2>
+	<title>Tcpdump</title>
+  
+<para>
+<indexterm><primary>tcpdump</primary></indexterm>
+<indexterm><primary>tethereal</primary></indexterm>
+<indexterm><primary>ethereal</primary></indexterm>
+<ulink url="http://www.tcpdump.org/">Tcpdump</ulink>はSMBをサポートした最初の
+UNIX上でのsnifferである。これはコマンドラインユーティリティで、現在、そのSMB
+サポートは、<command>ethereal</command>や<command>tethereal</command>よりは
+若干遅れている。
+</para>
+
+</sect2>
+
+<sect2>
+	<title>Ethereal</title>
+
+<para>
+<indexterm><primary>ethereal</primary></indexterm>
+<ulink url="http://www.ethereal.com/">Ethereal</ulink>は、GUIのsnifferで、UNIX(Gtk)
+とWindows両方で使える。EtherealのSMBサポートはとても良い。<command>ethereal</command>の
+使用法の詳細は、良くできているEthereal User Guideを読むこと。
+</para>
+
+<figure id="ethereal1"><title>キャプチャの開始</title><imagefile>ethereal1</imagefile></figure>
+
+<para>
+<indexterm><primary>ports</primary></indexterm>
+ポート137,138,139,445をリッスン。例えば、<link linkend="ethereal1">キャプチャの開始</link>
+画面であるように、<userinput>port 137, port 138,port 139,か port 445</userinput>を
+フィルタとして使う。
+</para>
+
+<para>
+<command>tethereal</command>という名前のコンソールバージョンのecherealもある。
+</para>
+
+<figure id="ethereal2"><title>Etherealメインデータウィンドウ</title><imagefile>ethereal2</imagefile></figure>
+
+</sect2>
+
+<sect2>
+<title>Windowsのネットワークモニタ</title>
+	
+<para>
+<indexterm><primary>ネットワークモニタ</primary></indexterm>
+<indexterm><primary>Netmon</primary></indexterm>
+<indexterm><primary>Microsoft Developer Network CD</primary></indexterm>
+<indexterm><primary>SMS</primary></indexterm>
+<indexterm><primary>promiscuous mode</primary></indexterm>
+<indexterm><primary>ethereal</primary></indexterm>
+Microsoft Windows NT上での同等品は、ネットワークモニタ(Netmonとして知られる)が、
+Microsoft Developer Network CD、Windows NTサーバインストールCDとSMSのCD中ににある。
+SMSに同梱されているnetmonは任意の2つのコンピュータ間のパケットをダンプできる(すなわち、
+ネットワークインタフェースをpromiscuousモードにする)。NTサーバインストールCDに同梱
+されているものは、ローカルのNTマシンに直接来るネットワークトラフィックとローカルな
+サブネットのブロードキャストのみモニタできる。etherealはnetmon形式のファイルを読み書き
+出来る事に注意。
+</para>
+
+<sect3>
+<title>NTワークステーション上へのネットワークモニタのインストール</title>
+
+<para>
+<indexterm><primary>Netmon.</primary></indexterm>
+NTワークステーション上へのインストールには、多くの手順が必要である。以下は、
+Microsoft Windows Workstation 4.0上にMicrosoft Windows NT Server 4.0から持ってきた
+Netmon V4.00.349をインストールする手順である。この手順はNetmonの、他の
+Windows NTバージョンからのものと同等である。Microsoft Windows NT Server 4.0
+インストールCDとWorkstation 4.0のインストールCDの両方が必要である。
+</para> 
+
+<para>
+<indexterm><primary>ネットワークモニタツールとエージェント</primary></indexterm>
+最初に、以下のようにして、NTサーバ上に<application>ネットワークモニタツールとエージェント</application>
+をインストールする必要がある:
+</para>
+
+<itemizedlist>
+	<listitem><para><guibutton>スタート</guibutton>-><guibutton>設定</guibutton>-><guibutton>コントロールパネル</guibutton>->
+	<guibutton>ネットワーク</guibutton>-><guibutton>サービス</guibutton>-><guibutton>追加</guibutton>
+	を表示する。</para></listitem>
+
+	<listitem><para><guilabel>ネットワークモニタツールとエージェント</guilabel>を選択し、<guibutton>OK</guibutton>を
+	クリックする。</para></listitem>
+	
+	<listitem><para>ネットワークコントロールパネル上の<guibutton>OK</guibutton>をクリックする。</para></listitem> 
+	
+	<listitem><para>要求されたならば、Microsoft NT Server 4.0のインストールCDを挿入する。</para></listitem> 
+</itemizedlist>
+
+<para>
+この時点で、Netmonファイルは<filename>%SYSTEMROOT%\System32\netmon\*.*</filename>に
+存在すべきである。Netmonがパケットダンプを解析するために必要なDLLを含む
+<filename>parsers\</filename>と、<filename>captures\</filename>という2つのサブ
+ディレクトリも同様に存在する。
+</para>
+
+<para>
+NT ワークステーション上にNetmonをインストールするためには、ワークステーションインストール
+CDかr、ネットワークモニタエージェントを最初にインストールする必要がある。
+</para>
+
+<itemizedlist>
+	<listitem><para><guibutton>スタート</guibutton>-><guibutton>設定</guibutton>->
+	<guibutton>コントロールパネル</guibutton>-><guibutton>ネットワーク</guibutton>->
+	<guibutton>サービス</guibutton>-><guibutton>追加</guibutton>を表示する。</para></listitem>
+
+	<listitem><para><guilabel>ネットワークモニタエージェント</guilabel>を選択し、
+	<guibutton>OK</guibutton>をクリックする。</para></listitem> 
+	
+	<listitem><para>ネットワークコントロールパネル上の<guibutton>OK</guibutton>を
+	クリックする。</para></listitem> 
+	
+	<listitem><para>要求されたならば、Windows NT Workstation 4.0インストールCDを挿入する。</para></listitem> 
+</itemizedlist>
+
+<para>
+そうすると、ワークステーション上の<filename>%SYSTEMROOT%\System32\netmon</filename>に、
+NTサーバ上の<filename>%SYSTEMROOT%\System32\netmon</filename>からファイルをコピーし、
+使用しているサイトに適切と見なされるアクセス許可を設定する。NetmonをNTマシン上で
+動作させるには、管理者権限が必要である。
+</para>
+
+</sect3>
+<sect3>
+<title>Windows 9x/Meへのネットワークモニタのインストール</title>
+<para>
+NetmonをWindows 9x/Meにインストールするためには、Windows 9x/Me CD
+(<filename>\admin\nettools\netmon</filename>)からネットワークモニタエージェントを
+インストールする。どのようにこれを行うかについて情報が必要であれば、CD上のNetmon
+ドライバファイルと一緒にreadmeファイルが用意されている。Netmonインストール先から
+ファイルをコピーする。
+</para>
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>参考となる外部情報(URL)</title>
+<itemizedlist>
+
+<listitem><para>BDCの動作をScott Merrillがシミュレートしたかについては
+       <ulink noescape="1" url="http://www.skippy.net/linux/smb-howto.html">
+       http://www.skippy.net/linux/smb-howto.html</ulink>を参照(訳注:現存せず)。</para></listitem>
+
+<listitem><para>古いSMBの仕様については
+       <ulink noescape="1" url="ftp://ftp.microsoft.com/developr/drg/CIFS/">
+       ftp://ftp.microsoft.com/developr/drg/CIFS/</ulink>というFTPサイトにある(訳注:現存せず)。</para></listitem>
+
+</itemizedlist>
+
+</sect1>
+
+<sect1>
+<title>メーリングリストにからの助言</title>
+
+<para>
+Sambaに関連した数多くのメーリングリストがある。
+<ulink noescape="1" url="http://samba.org">http://samba.org</ulink>に移動し、
+最も近いミラーサーバを選択し、<command>Support</command>をクリックする。次に、
+<command>Samba-related mailing lists</command>をクリックする。
+</para>
+
+<para>
+Samba TNGに関連する質問は、
+<ulink noescape="1" url="http://www.samba-tng.org/">http://www.samba-tng.org/</ulink>にある。
+メインストリームのSambaメーリングリストには、Samba-TNGに関連する質問を投稿しない
+こと。</para>
+
+<para>
+メーリングリストのどれかに投稿したいのであれば、以下のガイドラインをよく読んでほしい:
+</para>
+
+<itemizedlist>
+
+	<listitem><para>
+<indexterm><primary>ボランティア</primary></indexterm>
+	いつも覚えておいてほしいのは、開発者はボランティアであるということである。
+	ある時点までに特定の機能を作る事について、開発者はお金をもらっているわけでも、
+	保証しているわけでもない。どの予定も<quote>希望的観測</quote>であり、それ以上の
+	ものではない。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>PDC</primary></indexterm>
+	常時、どのバージョンのSambaを使っていて、それが動いているOSが何かと言うことを
+	説明すること。使用している&smb.conf;の適切なセクションを、少なくともPDCサポートに
+	影響する<smbconfsection name="[global]"/>中のオプションは提示すること。
+	</para></listitem>
+
+	<listitem><para>バージョンについては、もしもCVS(訳注:現在はgit)経由でSambaを
+	入手したならば、最後にチェックアウトした日付を提示すること。</para></listitem>
+
+	<listitem><para>質問を明確に、手短にするよう心がけること。とても長い、複雑な
+	質問は、それが完全に読まれる前に捨てられてしまう!HTMLエンコードして投稿しないこと。
+	メーリングリストを購読しているほとんどの人は、それを読まないで捨ててしまう。
+	</para></listitem>
+
+	<listitem><para>もしも、不在時に、<quote>ただいま留守にしております</quote>
+	 というような気の利いたメッセージを返しているのであれば、メーリングリストに
+	 返信しないように設定すること。メーリングリストへの自動応答は、このような
+	 ネット上での好まれない対応に応対しなければならない、何千もの人々をいらつかせて
+	 しまう。
+	</para></listitem> 
+
+	<listitem><para>
+<indexterm><primary>クロスポスト</primary></indexterm>
+	クロスポストしないこと。どのメーリングリストが最適かを調べて投稿し、何が
+	起きたかを確かめてみること。samba-ntdomとsamba-technical両方に投稿しないこと。
+	多くの人は、1つ以上のメーリングリストに参加していて、2回以上同じ記事を
+	見るといらだってくる。他のメーリングリストで、記事を取り扱った方がよいと
+	考えている誰かは、しばしばその投稿記事を転送してくれている。
+	</para></listitem>
+
+	<listitem><para>おおよそ20でログレベルが設定されて記録されたログファイルを
+	<emphasis>部分的に</emphasis>含めても良い。ログ全体を送ってはならないが、
+	エラーメッセージが分かるためのひとまとまりの部分ならばよい。
+	</para></listitem>
+
+	<listitem><para>もしも、完全なNetmonトレース(開始からエラー時点まで)が
+	あるならば、同じように*.CAPファイルを投稿しても良いだろう。</para></listitem> 
+	    
+	<listitem><para>メールにドキュメントを添付する前に熟考すること。投稿記事
+	本体中に適切な部分を貼り付けることを考えること。Sambaメーリングリストは
+	とても多くの人に配信している。使用している&smb.conf;のコピーが、すべての
+	人に必要だろうか?</para></listitem>
+
+</itemizedlist>
+
+</sect1>
+
+<sect1>
+<title>メーリングリストからの脱退方法</title>
+
+<para>Sambaメーリングリストから脱退するには、参加申し込みをしたと同じページ、
+<ulink noescape="1" url="http://lists.samba.org/">http://lists.samba.org</ulink>
+の最も近いミラーに行き、<command>Support</command>をクリックし、
+<command>Samba-related mailing lists</command>をクリックする。
+</para>
+
+<para>
+脱退方法についてメーリングリストに投稿しないこと。(何らかの理由で処理がうまく
+行かなかった場合を除いて)上記のアドレスのみを参照すべきである。
+</para>
+
+</sect1>
+
+</chapter>

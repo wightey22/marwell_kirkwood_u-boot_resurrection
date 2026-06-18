@@ -1,0 +1,1554 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="samba-pdc">
+
+<chapterinfo>
+	&author.jht;
+	&author.jerry;
+	&author.dbannon;
+	<author>&person.gd; <contrib>LDAP updates</contrib></author>
+</chapterinfo>
+
+<title>ドメイン制御</title>
+
+<para>
+Microsoft Windows のネットワークの世界に考えられないような誤解をしている人が
+たくさんいる。それは私たちが支援を提供できる機会が増えるということですからそれはそれでいいのだが、
+この分野で本当にヘルプを必要とする人は、まず、既に一般向けに出されている情報に親しむことを
+推奨する。
+</para>
+
+<para>
+<indexterm><primary>ドメイン</primary><secondary>コントローラ</secondary></indexterm>
+ある程度の基本を理解・修得されてからこの章を読み進めることを推奨する。Microsoft Windowsネットワーク
+では、誤った設定の影響がはっきりと現れる。Microsoft Windows ネットワークのユーザーから、
+ネットワーク設定の誤りに起因すると思われる細かなトラブルにしつこく悩まされるという
+苦情が出ることがよくある。ところが、多くの人々にとって Microsoft Windowsネットワークの
+世界というのはドメインコントローラーを知るところから始まり、それはネットワーク操作の障害を
+魔法のように、すべて解決してくれそうに思えるてくるものである。
+</para>
+
+<para>
+<link linkend="domain-example">ドメインの例の図解</link>は典型的な、Microsoft 
+Windows ネットワーク ドメインセキュリティネットワーク環境を図示している。
+ワークステーションA、BとCは多くの物理的なMicrosoft Windowsネットワーククライアント
+を代表していると考えられたい。
+</para>
+
+<figure id="domain-example">
+	<title>ドメインの例</title>
+	<imagefile scale="40">domain</imagefile>
+</figure>
+
+<para>
+Sambaメーリングリストから、よくあるネットワークに関する問題の多くを容易に特定できる。
+もしも以下の話題についてよく分からないのであれば、それについて取り扱っている、
+このHOWTO文書の節を読むことを強く勧める。以下は、最も一般的なMicrosoft Windows
+ネットワークの問題である:
+</para>
+
+<itemizedlist>
+	<listitem><para>基本的なTCP/IPの設定</para></listitem>
+	<listitem><para>NetBIOS名の解決方法</para></listitem>
+	<listitem><para>認証の設定</para></listitem>
+	<listitem><para>ユーザとグループの設定</para></listitem>
+	<listitem><para>UNIX/Linux上での基本的なファイルとディレクトリのアクセス制御</para></listitem>
+	<listitem><para>ネットワーク環境中でMicrosoft Windowsクライアントがどのようにやりとりをするかの理解</para></listitem>
+</itemizedlist>
+
+<para>
+がっくりする必要はない。Microsoft Windowsのネットワーク機能は、一見、大変シンプルで
+誰でもできそうに見える。実際には、適切な研修と準備をしないで Microsoft Windows ネットワーク
+を設定するのは、あまりよい考えとは言えない。とはいえ、なかなか払拭できない思い込みをちょっと
+脇にどけることにしよう。<emphasis>ミスを犯すのもいいことです!</emphasis>時と場合によっては
+失敗も教訓となる。しかし、生産性のロスを招き、組織に不可避の財政負担を強いるようなミスを
+犯してもよいわけではない。
+</para>
+
+<para>
+それでは、ミスを犯してもよい場所とはどこであろうか? それは実害のない場所である。ミスを犯すなら、
+テストネットワーク上で、ユーザーから遠く離れた場所で、他の人に苦痛を与えない状況でやってほしい。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+<emphasis>Microsoftドメインセキュリティの最も重要な利便性は何か?</emphasis>
+</para>
+
+<para>
+<indexterm>シングルサインオン<primary></primary><see>SSO</see></indexterm>
+<indexterm><primary>trust</primary></indexterm>
+<indexterm><primary>アカウント</primary></indexterm>
+<indexterm><primary>ドメイン</primary><secondary>セキュリティ</secondary><tertiary>プロトコル</tertiary></indexterm>
+要するに、<emphasis>シングルサインオン</emphasis>、あるいは短く言えばSSO
+である。これは多くの人にとって、Microsoft Windows NT 以後のネットワーキング
+における聖杯である。SSOは、ユーザーのユーザーアカウントが存在するドメインの
+メンバであるワークステーション(あるいは、アクセスするドメインとの間に適切な
+信頼関係があるドメインに属するワークステーション)のいずれからも、ネットワーク
+にログオンできるという優れた設計を可能にする。ユーザは、自分のホームの(個人の)
+ワークステーションの前に座っているかのように、ネットワークにログオンでき、
+リソース(共有、ファイル、プリンタ)にアクセスできる。これはドメインセキュリティ
+プロトコルの一つの特長である。
+</para>
+
+<para>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>RID</primary></indexterm>
+<indexterm><primary>relative identifier</primary><see>RID</see></indexterm>
+<indexterm><primary>セキュリティ識別子</primary><see>SID</see></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+Samba PDCを実装するサイトは、ドメインセキュリティの利便性を享受できる。ドメイン
+は、固有のネットワーク・セキュリティ識別子(SID)を提供する。ドメインユーザと
+グループセキュリティの識別子は、ネットワーク SID に、アカウント毎に一意の
+相対識別子(RID)を付け足したものである。ユーザとグループのSID(ネットワークSID
++RID)は、ネットワークリソースに付けられるアクセス制御リスト(ACL)を作成するのに
+使用され、組織内のアクセス制御を可能にする。UNIXシステムは、ローカル
+セキュリティ識別子のみ認識する。
+</para>
+
+<para>
+<indexterm><primary>SID</primary></indexterm>
+SIDはセキュリティコンテキストを表す。例をあげると、おのおののWindows
+マシンは固有のSIDを持つローカルマシンのセキュリティコンテキストでの
+ローカルアカウントを持つ。すべてのドメイン(NT4、ADS、Samba)は
+ドメインSIDによって定義されるセキュリティドメインセキュリティコン
+テキストで存在するアカウントを含む。
+</para>
+
+<para>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>RID</primary></indexterm>
+ドメインメンバサーバはドメインSIDとは異なるSIDを持つ。ドメインメンバ
+サーバはすべてのドメインユーザをローカルユーザとして見なすように
+設定できる。SIDは持続的である。標準的なドメインのユーザSIDは以下の
+ようなものである:
+<screen>
+S-1-5-21-726309263-4128913605-1168186429
+</screen>
+すべてのアカウント(ユーザ、グループ、マシン、信頼関係など)はRIDが割り当てられる。
+これは、アカウントが作成された時に自動的に行われる。UNIX OSはユーザとグループ
+識別子に別々の名前空間を使う(UIDとGID)が、Windowsは同じ名前空間からRIDを
+割り当てる。WindowsユーザとWindowsグループは同じRIDを持てない。ちょうどUNIX
+ユーザ<literal>root</literal>がUID=0であるように、Windows Administrator
+は、よく知られたRID=500を持つ。RIDはWindowsドメインRIDに連結され、そのため、
+上記のSIDを持つドメインのAdministratorアカウントは下記のユーザSIDを持つ。
+<screen>
+S-1-5-21-726309263-4128913605-1168186429-500
+</screen>
+Windowsネットワーク領域中での残りのすべてのアカウントは全体で一意なセキュリティ
+識別子を持つ。
+</para>
+
+<note><para>
+<indexterm><primary>ドメイン</primary><secondary>メンバ</secondary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+<indexterm><primary>domain</primary><secondary>trust account</secondary></indexterm>
+Microsoft Windows ドメインセキュリティ環境でのネットワーククライアントは提供される
+高度な機能にアクセス出来るためには、ドメインメンバでなければならない。ドメイン
+メンバシップはワークグループ名をドメイン名に設定するだけではない。ワーク
+ステーションに対する(マシンアカウントと呼ばれる)ドメイン信頼アカウントの作成
+が必要である。より詳細については
+<link linkend="domain-member">ドメインメンバシップ</link>を参照のこと。
+</para></note>
+
+<para>
+以下の機能はSamba-3リリースで新規に追加された:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	<indexterm><primary>アカウント</primary><secondary>バックエンド</secondary></indexterm>
+	Samba-3はユーザ、グループとマシンアカウントが格納される時に使われる
+	バックエンドの選択を行う事をサポートしている。複数のパスワードバックエンド
+	を、付加的なデータセット、あるいはフェールオーバデータセットのどちらでも、
+	組み合わせて使うことが出来る(訳注:今は使えない)。
+	</para>
+
+	<para>
+	<indexterm><primary>LDAP</primary></indexterm>
+	<indexterm><primary>replicated</primary></indexterm>
+	<indexterm><primary>distributed</primary></indexterm>
+	<indexterm><primary>拡張性</primary></indexterm>
+	<indexterm><primary>信頼性</primary></indexterm>
+	LDAP passdbバックエンドは、拡張性と高いレベルでの信頼性を
+	提供するという理由で、とても価値のある、アカウントバックエンドが
+	分散かつ複製が出来るメリットを享受できる。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>ドメイン間</primary><secondary>信頼</secondary><tertiary>アカウント</tertiary></indexterm>
+	<indexterm><primary>信頼アカウント</primary><secondary>ドメイン間</secondary></indexterm>
+	<indexterm><primary>相互運用性</primary></indexterm>
+	Windows NT4のドメイン信頼関係である。Samba-3はワークステーションと
+	サーバ(マシン)信頼アカウントをサポートする。これは、ネットワークの
+	スケーラビリティと相互運用性をさらに支援する、NT4スタイルのドメイン
+	間信頼アカウントをサポートする。
+	</para></listitem>
+	
+	<listitem><para>
+	<indexterm><primary>NetBIOS</primary></indexterm>
+	<indexterm><primary>raw SMB</primary></indexterm>
+	<indexterm><primary>active directory</primary></indexterm>
+	<indexterm><primary>ドメイン</primary><secondary>メンバサーバ</secondary></indexterm>
+	<indexterm><primary>ドメイン</primary><secondary>コントローラ</secondary></indexterm>
+	<indexterm><primary>ネットワーク</primary><secondary>ブラウジング</secondary></indexterm>
+	
+	NetBIOS over TCP/IPなしの操作は、むしろraw SMB over TCP/IPを使うことである。注意:
+	これはMicrosoft active directoryドメインメンバサーバとして操作する時にのみ
+	実行可能である。Sambaドメインコントローラとして動作する時、NetBIOSの使用は、
+	ネットワークブラウジングのサポートを提供するために必要である。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>WINS</primary></indexterm>
+	<indexterm><primary>TCPポート</primary></indexterm>
+	<indexterm><primary>セッションサービス</primary></indexterm>
+	Samba-3はNetBIOSネームサービス(WINS)、NetBIOS ever TCP/IP(TCPポート139)、
+	SMB over TCP(TCP port 445)セッションサービスとMicrosoft互換のONC DCE 
+	RPCサービス(TCPポート135)を提供する。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>Nexus.exe</primary></indexterm>
+	ドメインにユーザーマネージャ経由でユーザとグループを管理する機能。
+	これは、Windows 9x/Meでは<filename>Nexus.exe</filename>を使い、
+	Windows NT4/200x/XPプラットフォームではSRVTOOLS.EXEを使って任意の
+	Microsoft Windows クライアントで行える(訳注:Windows Vista/7では
+	使えない)。
+	</para></listitem>
+
+	<listitem><para>
+	Unicodeの完全な実装。これは、ロケール間での国際化サポートを容易にする。
+	また、Unicode を完全にサポートしなければならないという理由でSamba-2.2.x
+	がサポートできなかったプロトコルの活用の道を開く。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+以下の機能はSamba-3では提供されていない:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	<indexterm><primary>SAM</primary></indexterm>
+	<indexterm><primary>複製</primary></indexterm>
+	NT4ドメインコントローラ間でのSAMの複製(すなわちSamba PDCとWindows NT BDCまたはその逆)。
+	これは、Sambaが、PDCがMicrosoftベースのWindows NT PDCである時にBDCと
+	して動作出来ないことを意味する。Samba-3はWindows PDCとBDCでのアカウント
+	データの複製に参加できない。
+	</para></listitem>
+	
+	<listitem><para>
+	<indexterm><primary>kerberos</primary></indexterm>
+	<indexterm><primary>active directory</primary></indexterm>
+	Windows 2000 Active Directoryドメインコントローラとして動作する
+	(すなわち、KerberosとActive Directory)。実際の所、Samba-3は
+	現時点では若干の、実験的なActive Directory ドメイン制御の機能を
+	有している。Active Directoryドメイン制御は次世代のSambaリリース
+	である、Samba-4で現在開発中の機能である。現時点ではSamba-3ライフ
+	サイクル中でActive Directoryドメイン制御を有効にする計画はない。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>MMC</primary></indexterm>
+	<indexterm><primary>SVRTOOLS.EXE</primary></indexterm>
+	<indexterm><primary>Microsoft management console</primary><see>MMC</see></indexterm>
+	Windows 200x/XPのMicrosoft管理コンソール(MMC)はSamba-3サーバの管理に
+	は使えない。この目的にはMicrosoft Windows NT4ドメインサーバマネージャと
+	Microsoft Windows NT4ドメインユーザマネージャのみが使える。両者は
+	この後説明するSVRTOOLS.EXEパッケージ中の一部である。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>Windows XP Home エディション</primary></indexterm>
+<indexterm><primary>LanMan</primary></indexterm>
+この章の中で説明されている理由により、Windows 9x/Me/XP Homeクライアントは
+ドメインの真のメンバになれない。Windows9x/Meスタイルのネットワーク(ドメイン)
+ログオンプロトコルはNT4/Windows 200xスタイルのドメインログオンとは完全に異なり、
+しばらくの間公式にサポートされてきた。これらのクライアントはおおよそ
+Samba-1.9.15シリーズからサポートされた旧LanManネットワークログイン機能を使う。
+</para>
+
+<para>
+<indexterm><primary>グループ</primary><secondary>マッピング</secondary></indexterm>
+Samba-3ではWindows NT グループとUNIXグループ間でのグループマッピングを実装
+している(これは、限られたスペースでは説明できないくらい非常に複雑で
+ある)。これについての詳細については
+<link linkend="groupmapping">グループマッピング:Microsoft WindowsとUNIX</link>
+を参照のこと。
+</para>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>信頼アカウント</primary><secondary>マシン</secondary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+Samba-3はMicrosoft Windows NT4 PDCまたはWindows200x Active Directory
+と同様に、適切なバックエンドデータベースにユーザとマシン
+信頼アカウント情報を格納することを必要とする。これについては、
+<link linkend="machine-trust-accounts">
+Microsoft Windows ワークステーション/サーバ マシン信頼アカウント</link>
+を参照のこと。Samba-3では複数のバックエンドが用意されている。
+完全なアカウントデータベースバックエンドについての解説は
+<link linkend="passdb">アカウント情報データベース</link>を参照のこと。
+</para>
+
+</sect1>
+
+<sect1>
+<title>シングルサインオンとドメインセキュリティ</title>
+
+<para>
+<indexterm><primary>シングルサインオン</primary><see>SSO</see></indexterm>
+<indexterm><primary>SSO</primary></indexterm>
+<indexterm><primary>active directory</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>validation</primary></indexterm>
+<indexterm><primary>パスワードの一意性</primary></indexterm>
+<indexterm><primary>パスワード履歴</primary></indexterm>
+ネットワーク管理者が、Windows NT4とactive directoryネットワークの利点に
+ついて説明を求められるとき、しばしば言及するのが、シングルサインオン
+(SSO)を実装しているということである。多くの会社がSSOを実装している。
+シングルサインオンソリューション実装のモードは、一般的に、ネットワーク
+業務における重要な要因であり、Windowsネットワークに関してとても重要で
+ある。会社には多くの種類の情報システムがあり、それぞれはユーザ認証と認可
+(訳注:authentication and validation)を要求し、そのため、一般的
+ではないが、ユーザは10以上のログインIDとパスワードを記憶する必要が
+あるかもしれない。この問題は、おのおののシステムのパスワードが
+一定期間で更新が必定で、パスワードの複雑さとパスワード履歴が
+適用されるときには特に顕著となる。
+</para>
+
+<para>
+<indexterm><primary>管理のオーバヘッド</primary></indexterm>
+非常に数多くの情報システムに対するアクセス権限(ユーザ名/パスワードペア)
+を扱うユーザの問題に対する回答がSSOであるという認識を包括的に
+持っている。多くの巧妙な案が、ユーザフレンドリーなSSOのソリューション
+を提供可能にするために考案された。問題は、この導入がうまく終わって
+いない場合、サイトは複雑さによるたくさんの費用と管理上のオーバヘッド
+が起きるかもしれないということである。簡単に言って、多くのSSOソリュー
+ションは管理上の悪夢である。
+</para>
+
+<para>
+<indexterm><primary>identity management</primary></indexterm>
+<indexterm><primary>認証システム</primary></indexterm>
+<indexterm><primary>SSO</primary></indexterm>
+SSOを使うことですべてのユーザアカウント情報を集中管理できる。
+環境の複雑さと、SSOを導入したシステムの稼働期間に依存して、
+新しいアイデンティティ管理とユーザ認証システムを受け入れること
+は可能ではないかもしれない。多くのSSOソリューションは、
+ユーザのための認証を処理する新しい上位の構造から成り立つ
+レガシーシステムを改良する。これは、SSOの追加は全体的な情報
+システムの複雑さを増大することを意味する。理想的には、SSOの
+導入は複雑さの低減と管理オーバヘッドの削減をすべきである。
+</para>
+
+<para>
+<indexterm><primary>集中化したアイデンティティ管理</primary></indexterm>
+<indexterm><primary>アイデンティティ管理</primary><secondary>集中化</secondary></indexterm>
+<indexterm><primary>集中化</primary><secondary>認証</secondary></indexterm>
+<indexterm><primary>レガシーシステム</primary></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+たくさんのネットワーク管理の最初のゴールは、しばしば集中管理した
+アイデンティティ管理システムを作り、使うことである。これは、
+そのような集中化したシステムは、すべての情報システムによって
+使うことが出来る単一の認証基盤を使うことをしばしば仮定している。
+Microsoft Windows NT4セキュリティドメインアーキテクチャとMicrosoft
+Active Directoryサービスは、そのようなシステムに対しての理想的な
+基盤としてしばしば提供される。ユーザの認証とアクセス制御のために
+Microsoft(NT4ドメインかadsサービス)を使うことが出来る単一の
+認証基盤を使う、そのような集中化したシステムがしばしば仮定される。
+単一の集中化した認証サービスのすばらしい幻想は一般的に、現実を
+理解するときに一般的に壊れている。レガシーシステムを使うときの問題
+は、その導入がリエンジニアリングの観点から、過度に侵略的になるか、
+アプリケーションソフトが、設計されて実装されたユーザ認証の特定の
+要素に依存して組み込まれているという理由により、認証とアクセス制御
+を具体化する能力がしばしばないということである。
+</para>
+
+<para>
+<indexterm><primary>メタディレクトリ</primary></indexterm>
+<indexterm><primary>credentials</primary></indexterm>
+<indexterm><primary>disparate information systems</primary></indexterm>
+<indexterm><primary>管理手続き</primary></indexterm>
+<indexterm><primary>ワークフロープロトコル</primary></indexterm>
+<indexterm><primary>rights</primary></indexterm>
+<indexterm><primary>privileges</primary></indexterm>
+<indexterm><primary>provisioned</primary></indexterm>
+これまでの10年間、産業が、レガシー名情報テクノロジーシステムの
+制限の鍵となる点を回避するために作られた、いろいろな方法が開発
+されてきた。しばしば使われるその1つの方法はメタディレクトリを
+使うことである。メタディレクトリには、それぞれのシステムに固有な
+形式で、すべての異なる情報システムのためにユーザ認証情報を保存
+する。単一のユーザ認証情報を使うすべてのシステムのために、新しい
+基盤がユーザアクセスを可能にさせることが提供されるシステムの
+迷宮の中で、ユーザ権限と権利(rights and privileges)を管理する
+ための厳格に実施されるワークフロープロトコルに、管理手続き
+の巧妙なセットが結合される。
+</para>
+
+<para>
+<indexterm><primary>Organization for the Advancement of Structured Information Standards</primary><see>OASIS</see></indexterm>
+<indexterm><primary>Security Assertion Markup Language</primary><see>SAML</see></indexterm>
+<indexterm><primary>Federated Identity Management</primary><see>FIM</see></indexterm>
+<indexterm><primary>安全なアクセス</primary></indexterm>
+Organization for the Advancement of Structured Information Standards (OASIS)
+は、認証情報の通信のための構造化情報であるSecurity Assertion Markup Language (SAML)
+を開発している。SAMLを配置するための全体的な技術と手法の包括的名称(訳注:umbrella name)は
+Federated Identity Management (FIM)と呼ばれる。FIMはそれぞれのユーザを認証
+するための異なった情報システムの複雑な迷宮中で、かつおのおのが提供するサービス
+の安全なアクセスを請け負うために、おのおののシステムに依存する。
+</para>
+
+<para>
+<indexterm><primary>Simple Object Access Protocol</primary><see>SOAP</see></indexterm>
+<indexterm><primary>federated organizations</primary></indexterm>
+<indexterm><primary>Liberty Alliance</primary></indexterm>
+<indexterm><primary>federated-identity</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+<indexterm><primary></primary></indexterm>
+SAML文書はWebサービスのために必要なコンピュータ間通信のための
+Simple Object Access Protocol (SOAP)メッセージ中に包むことが出来る。
+あるいは、ライブサービスを共有する集合化したWebサービス間で渡される
+かもしれない。リバティ・アライアンスは、SAML1.1をアプリケーション
+フレームワークとして適用した、連携型アイデンティティ標準
+(訳注:federated-identity standards)を普及させるために作られた
+コンソーシアム(訳注:industry group)である。MicrosoftとIBMは
+WS-Securityと呼ばれる別の方式を提案していた。ある人は、競合して
+いる技術と手法がSAML 2.0標準が世に出るときにまとまるのではないか
+と信じていた。現在ではごく少数のWebアクセス管理製品のみがSAMLを
+サポートしているが、技術の実装は、アプリケーション統合のための
+カスタマイズとユーザインタフェースの開発のために、主に必要と
+される。要するに、それがなぜFIMが大木つて成長している産業である
+かの理由である。
+</para>
+
+<para>
+<indexterm><primary>相互運用性</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>GSSAPI</primary></indexterm>
+<indexterm><primary>general security service application programming interface</primary><see>GSSAPI</see></indexterm>
+この本の向こうの範囲の大きな絵を無視し、集中したシステムへのすべての
+ユーザとグループのマイグレーション管理は、正しい方向への第一歩である。
+Microsoft Active Directoryサービス(ADS)やその他のプロプライエティな
+ものか、general security service application programming interface
+(GSSAPI)サービスによって定義されているプロトコルを使う数々の認証
+メカニズム(kerberosのような)の柔軟な組み合わせができる情報アクセス
+(LDAPのような)のための、標準プロトコルを提供するオープンソースシステム
+のような、ディレクトリ中にアイデンティティ管理システムデータを位置づける
+のは、相互運用性のための基本である。
+</para>
+
+<para>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>認証エージェント</primary></indexterm>
+ますます多くの会社がLDAPシステムを使うことを許可するための異なったレガシー
+プラットフォームのために認証エージェントを提供する。OpenLDAPの使用で、
+LDAP標準のオープンソース実装が支配的である。実際、LDAPとMicrosoft
+ADSを使うためにSambaで提供することは、Sambaが、高度な拡張性と
+Sambaは、組織のネットワーク技術に届くように前進することを意味する。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>認証アーキテクチャ</primary></indexterm>
+<indexterm><primary>ntlm_auth</primary></indexterm>
+<indexterm><primary>SQUID</primary></indexterm>
+<indexterm><primary>FIM</primary></indexterm>
+Microsoft ADSは、集中化した認証基盤を提供するために拡張できる、
+制限付きの完全に商用なサービスを提供する。SambaとLDAPは、集中化した
+認証基盤の拡張のための同様な機会を提供するが、実際、Sambaチームは、
+LDAPあるいは他のものを使って、認証サービスの拡張の導入中で、
+、持続可能な選択とFIMマーケットプレイス中での競合をより多く作成する、
+<command>ntlm_auth</command>ユーティリティのような完全なツールを
+SQUID(OSSのプロキシサーバ)のようなアプリケーションのために
+先を見越している。
+</para>
+
+<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>identity information</primary></indexterm>
+もしも、プライマリドメインコントロールが大きなサイトに適合した拡張性
+があれば、LDAPを使うことが出来るに違いない。それを使うためのすばやい
+OpenLDAPとSambaの設定は、ディレクトリの時代が始まったことの十分な
+証明である。Samba-3はLDAPの使用を要求しないが、分散可能なユーザと
+グループのイデンティティ情報のメカニズムのための要求は、それを不可避の
+選択としている。
+</para>
+
+<para>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>e-Directory</primary></indexterm>
+この時点で、SambaベースのBDCの使用は、LDAPアクセスありの使用を必要と
+する。最も一般的な、Sambaサイトによって使われるLDAP実装はOpenLDAP
+である。標準準拠の任意のLDAPサーバを使うことも可能である。それらは、
+IBM、CA、Novell(e-Directory)とその他で知られている。
+</para>
+
+</sect1>
+
+<sect1>
+<title>ドメイン制御の基礎</title>
+
+<para>
+<indexterm><primary>ドメイン制御</primary></indexterm>
+長年の間に、ドメイン管理に関する一般の理解はほとんど神話の世界になってきた。
+ドメイン制御についての基本を概観する前に、
+ドメインコントローラの3つのタイプについて説明する。
+</para>
+
+<sect2>
+<title>ドメインコントローラの種類</title>
+
+<itemizedlist>
+	<listitem><para>NT4スタイルプライマリドメインコントローラ</para></listitem>
+	<listitem><para>NT4スタイルバックアップドメインコントローラ</para></listitem>
+	<listitem><para>ADSドメインコントローラ</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>powerful</primary></indexterm>
+<indexterm><primary>ネットワーク</primary><secondary>パフォーマンス</secondary></indexterm>
+<indexterm><primary>ドメイン</primary><secondary>メンバ</secondary><secondary>サーバ</secondary></indexterm>
+<emphasis>プライマリドメインコントローラ</emphasis>あるいはPDCはMicrosoft
+Windows NTで重要な役割を演じる。Windows 200xドメインアーキテクチャ中では
+この役割はドメインコントローラが担う。Microsoft Windowsネットワークにおける
+ドメインコントローラーの役割は、ドメインコントローラーがネットワークの中で
+最も強力で最も能力のあるマシンでなければならないことを示す、ということになって
+いる。ところが、おかしなことを言うと思われるかも知れないが、ネットワークの
+全体的な性能を高めるためには、インフラストラクチャー全体がバランスのとれた
+ものでなければならない。ドメインコントローラよりもスタンドアロン
+(ドメインメンバ)サーバに投資する方が賢明である。
+</para>
+
+<para>
+<indexterm><primary>SAM</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>同期</primary></indexterm>
+<indexterm><primary>Security Account Manager</primary><see>SAM</see></indexterm>
+Microsoft Windows NT4スタイルドメインの場合、新しいドメイン制御データベースを
+初期化するのはPDCである。これにより、Security Account Manager (SAM)と呼ばれる
+Windowsレジストリの一部分が形成される。これは、NT4スタイルのドメインユーザの認証と
+BDCのドメイン認証データベースとの同期で鍵となる役割を果たす。
+</para>
+
+<para>
+<indexterm><primary>ドメイン</primary><secondary>コントローラ</secondary><tertiary>階層</tertiary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm>アカウント<primary></primary><secondary>バックエンド</secondary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+Microsoft Windows 200xサーバベースのActive Directoryドメインでは、一つのドメイン
+コントローラが、複数のドメイン・コントローラーの階層関係を初期化し、一つ一つの
+コントローラーが管理権限を代行する領域を与えられる。
+マスタドメインコントローラは下位のいずれかのドメインコントローラの
+決定を上書きする能力を持っているが、下位のコントローラはその下位の
+コントローラのみ制御する。Samba-3では、この機能はLDAPベースのユーザとマシン
+アカウントバックエンドを使うことで実現できる。
+</para>
+
+<para>
+<indexterm><primary>バックエンドデータベース</primary></indexterm>
+<indexterm><primary>レジストリ</primary></indexterm>
+Samba-3では、新たにNT4スタイルのSAMデータベース(レジストリファイルの1つ)と
+同じタイプのデータを保持するバックエンドデータベースを使う機能が入った。
+<footnote><para><link linkend="passdb">アカウント情報データベース</link>
+を参照のこと。</para></footnote>
+</para>
+
+<para>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>authentication</primary></indexterm>
+<indexterm><primary>netlogon</primary></indexterm>
+<indexterm><primary>name lookup</primary></indexterm>
+<emphasis>バックアップドメインコントローラ</emphasis>またはBDCはネットワーク
+認証リクエストの処理に重要な役割を演じる。BDCはPDCに優先してログオン要求に答える
+ようになっている。BDCとPDCの両方があるネットワークセグメント上では、
+ネットワークログオン要求はおおむねBDCが処理する。PDCはBDCが高負荷
+(ロードアベレージが大きい)ときにログオン要求に応える。ユーザがWindows
+ドメインメンバクライアントにログオンした時、ワークステーションは最も近い
+ネットワークログオンサーバを探すために、ネットワークに問い合わせを
+行う。WINSサーバが使われている時は、WINSサーバへの問い合わせ
+で行われる。もしもネットログオンサーバがWINS問い合わせでは見つからないか、
+WINSサーバがない場合、ワークステーションはUDPブロードキャストプロトコル
+上でmailslotブロードキャスト経由でNetBIOS名前検索を実行する。これは、
+Windowsクライアントが使うことが出来るネットログオンサーバがたくさんの
+変数によって影響され、それゆえ、PDCまたはBDCが特定のログオン認証要求
+を処理する単純な決定要素はない。
+</para>
+
+<para>
+<indexterm><primary>昇格</primary></indexterm>
+<indexterm><primary>降格</primary></indexterm>
+Windows NT4 BDCはPDCに昇格することが出来る。BDCがPDCに昇格する時にPDC
+がオンラインならば、以前のPDCは自動的にBDCに降格する。Samba-3では
+これは自動的には行われない。PDCとBDCは手動で設定し、その他適切な
+変更を行う必要がある。
+</para>
+
+<para>
+<indexterm><primary>ドメイン</primary><secondary>コントローラ</secondary><tertiary>変換</tertiary></indexterm>
+Microsoft Windows NT4では、インストール時に、サーバのマシンタイプが
+何になるかを決める。BDCからPDCへの昇格やその逆も
+可能である。Windows NT4ドメインコントローラからドメインメンバサーバ
+かスタンドアロンサーバへの変換のためにMicrosoftが提供している唯一の
+手法は、再インストールである。インストール時に提供されている選択肢
+は以下の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para><emphasis>プライマリドメインコントローラ</emphasis>&smbmdash; ドメインSAMを生成するサーバ。</para></listitem>
+	<listitem><para><emphasis>バックアップドメインコントローラ</emphasis>&smbmdash; ドメインSAMのコピーを受け取るサーバ。</para></listitem>
+	<listitem><para><emphasis>ドメインメンバサーバ</emphasis> &smbmdash; ドメインSAMのコピーを持たない。すべてのアクセス制御についてドメインコントローラから認証を受け取るサーバ。</para></listitem>
+	<listitem><para><emphasis>スタンドアロンサーバ</emphasis> &smbmdash;SAM同期を行わず、固有の認証データベースを持ち、ドメインセキュリティでは何の役割も担わないサーバ。</para></listitem>
+</itemizedlist>
+
+<note><para>
+<indexterm><primary>昇格</primary></indexterm>
+Algin Technology LLC はWindows NT4スタンドアロンサーバをPDCまたはBDCに昇格
+することとその逆ができるが可能な商用ツールを提供している。さらなる情報は
+<ulink url="http://utools.com/UPromote.asp">Algin</ulink>のWebサイトを参照
+のこと。
+</para></note>
+
+<para>
+<indexterm><primary>ドメイン</primary><secondary>制御</secondary><tertiary>役割</tertiary></indexterm>
+<indexterm><primary>native member</primary></indexterm>
+Samba-3サーバは&smb.conf;ファイルに簡単な変更をすることで、ドメイン
+コントローラへ、あるいはドメインコントローラから容易に変換できる。
+Samba-3はWindows200xサーバのActive Directoryドメインでのネイティブ
+なメンバとして完全に振る舞える。
+</para>
+
+<para>
+<indexterm><primary>変換</primary><secondary>ドメインメンバサーバ</secondary></indexterm>
+完全な図を提供するために、Microsoft Windows 2000 ドメイン制御の設定は
+サーバがインストールされた後に行われる。ドメインメンバサーバへの変換、
+あるいはドメイン制御からの変換を行うための手順と、Active Directory
+サービスのサポートのインストール、あるいはActive Directoryから抜ける
+ための方法については、Microsoftの資料を参照してほしい。
+</para>
+
+<para>
+<indexterm><primary>複製</primary><secondary>SAM</secondary></indexterm>
+<indexterm><primary>SAM</primary><secondary>複製</secondary></indexterm>
+Samba-3での新機能として、SAM複製コンポーネントを除く、Microsoft Windows
+NT4スタイルのドメインコントローラ機能の実装が上げられる。しかし、Samba-3
+はMicrosoft Windows 200xドメイン制御プロトコルについてもサポートすることも
+注目してほしい。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+現時点で、Samba-3はネイティブADSモード中での<emphasis>ドメインコントローラ</emphasis>
+として機能することが出来るように見えるが、これは限定的で実験的なもの
+でしかない。この機能はSambaチームがそれに対する公式のサポートを提供する
+まで使うべきでない。その時期になれば、すべての設定上・管理上の要件を
+正当に反映するためにドキュメント類は改訂されるだろう。SambaはWindows 2000/XP環境中
+ではNT4スタイルのドメインコントローラとして振る舞うことが出来る。しかし、
+以下のように一定の短所(訳注:未実装の機能)がある:
+</para>
+
+<itemizedlist>
+	<listitem><para>マシンポリシーファイルがない</para></listitem>
+	<listitem><para>グループポリシーオブジェクトがない。</para></listitem>
+	<listitem><para>同期して実行されるActive Directoryログオンスクリプトがない。</para></listitem>
+	<listitem><para>ユーザとマシンを管理するためのActive directory管理ツールが使えない。</para></listitem>
+	<listitem><para>レジストリの変更でメインのレジストリに恒久的な変更が残るが、Active Directoryを使うときには、結果が残らない。</para></listitem>
+	<listitem><para>Active Directoryなしでは、特定のアプリケーションを特定のユーザとグループにエクスポートできない。</para></listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2>
+<title>ドメイン制御の準備</title>
+
+<para>
+<indexterm><primary>スタンドアロン</primary></indexterm>
+<indexterm><primary>ワークグループ</primary></indexterm>
+<indexterm><primary>メンバ</primary></indexterm>
+<indexterm><primary>セキュリティ</primary></indexterm>
+Microsoft Windows のマシンが、お互いに他のサーバやドメインコントローラ
+とやりとりするのには2つの方法がある:そのうちの1つは、一般的に
+<emphasis>ワークグループ</emphasis>メンバとして呼ばれている
+<emphasis>スタンドアロン</emphasis>システムであり、もう1つは、
+一般的に<emphasis>ドメイン</emphasis>メンバと呼ばれている、
+セキュリティシステム中で全面的に参加するものである。
+</para>
+
+<para>
+<indexterm><primary>ワークグループ</primary></indexterm>
+<indexterm><primary>ワークグループ</primary><secondary>メンバシップ</secondary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+ワークグループのメンバであるために、特別な設定は必要ないということに注意してほ
+しい。ただ、ネットワーク設定に、ワークグループのエントリーについて共通に使う
+単一の名前を持つようにマシンを設定するだけである。この時WORKGROUPという名前を使
+うのが一般的である。この設定モードでは、マシン信頼アカウントはなく、メンバシッ
+プの概念は、すべてのマシンがネットワーク環境の中で、論理的に一緒のグループに
+まとめられているという以上のものではない。繰り返すが、明確言うと、
+<emphasis>ワークグループモードは、セキュリティの確保されたマシンアカウントを含まない</emphasis>。
+</para>
+
+<para>
+<indexterm><primary>ドメインメンバシップ</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>パスワード</secondary></indexterm>
+<indexterm><primary>トリガ</primary></indexterm>
+ドメインメンバのマシンは、ドメインアカウントデータベース中にマシン信頼
+アカウントを持つ。ドメインメンバシップを有効にするには、おのおののマシン上で
+以下の特別な手続きが必要である。この手続きは、ローカルマシンのAdministrator
+アカウントによってのみ行うことが出来、これにより、ドメインマシンアカウント(もしも
+存在しなければ)を作成し、そのアカウントを初期化する。クライアントが
+最初にドメインにログオンすると、それがマシンアカウントのパスワード変更処理
+のトリガとなり自動的に起動される。
+</para>
+
+<note><para>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+Sambaがドメインコントローラとして設定されるとき、セキュアなネットワーク操作は
+Microsoft Windows NT4/200x/XP Professionalクライアントがすべてドメインメンバ
+として設定されることを要求する。もしもマシンがドメインのメンバでなければ、
+それはワークグループ(スタンドアロン)マシンとして操作される。ドメインメンバシップ
+に関係する情報は <link linkend="domain-member">ドメインメンバシップ</link>
+を参照してほしい。
+</para></note>
+
+<para>
+以下はMicrosoft Windows NT4/200x/XPクライアントのための、Microsoft Windows
+NT4スタイルとしてSamba-3を設定するために必要な手順である:
+</para>
+
+<itemizedlist>
+	<listitem><para>基本的なTCP/IPとMicrosoft Windows ネットワークの設定。</para></listitem>
+	<listitem><para>正しいサーバの役割の指定(<smbconfoption name="security">user</smbconfoption>)。</para></listitem>
+	<listitem><para>一貫性のある名前解決の設定。<footnote><para><link linkend="NetworkBrowsing">ネットワークブラウジングNetwork Browsing</link>と 
+		<link linkend="integrate-ms-networks">Microsoft Windows ネットワークとSambaの統合</link>を参照。</para></footnote></para></listitem>
+	<listitem><para>Windows NT4/200x/XP Professionalクライアントのためのドメインログオン。</para></listitem>
+	<listitem><para>移動プロファイルの設定か、明示的にローカルプロファイルを強制使用する設定。</para></listitem>
+	<listitem><para>network/systemポリシーの設定。</para></listitem>
+	<listitem><para>ドメインユーザアカウントの追加と管理。</para></listitem>
+	<listitem><para>Microsoft Windows NT4/2000 ProfessionalとWindows XP Professionalクライアントマシンがドメインメンバになるような設定。</para></listitem>
+</itemizedlist>
+
+<para>
+以下の準備はMicrosoft 9x/Meクライアントに機能を提供するために必要な手順である:
+</para>
+
+<itemizedlist>
+	<listitem><para>基本的なTCP/IPとMicrosoft Windowsネットワークの設定。</para></listitem>
+	<listitem><para>正しいサーバの役割の指定(<smbconfoption name="security">user</smbconfoption>)。</para></listitem>
+	<listitem><para>ネットワークログイン設定(Windows 9x/Me/XP Homeは技術的にドメインメンバに
+	なれないため、ドメインログオンにおけるセキュリティ面には実際には参加しない)。</para></listitem>
+	<listitem><para>移動プロファイルの設定</para></listitem>
+	<listitem><para>システムポリシーの取り扱いの設定。</para></listitem>
+	<listitem><para><quote>Microsoft Windowsネットワーク用のクライアント</quote>ネットワークドライバのインストール
+	とドメインにログオンするための設定。</para></listitem>
+	<listitem><para>もしもすべてのクライアント共有アクセスがドメインユーザ/グループ識別子に従って制御され
+ることが望ましいならば、Windows 9x/Meクライアントをユーザレベルのセキュリティに設定 &smbmdash;。</para></listitem>
+	<listitem><para>ドメインユーザアカウントの追加と管理。</para></listitem>
+</itemizedlist>
+
+<note><para>
+<indexterm><primary>移動プロファイル</primary></indexterm>
+<indexterm><primary>アカウントポリシー</primary></indexterm>
+移動プロファイルとシステム/ネットワークポリシーは、高度なネットワーク管理の話題で、
+このドキュメントの
+<link linkend="ProfileMgmt">デスクトッププロファイル管理</link>と
+<link linkend="PolicyMgmt">システムとアカウントポリシー</link>で触れられている。
+しかしながら、それらはWindows NT ネットワーク
+のコンセプトに関連するので、必ずしもSamba PDCに固有の説明ではない。
+</para></note>
+
+<para>
+ドメインコントローラはSMB/CIFSサーバであって以下を行う:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	<indexterm><primary>NetBIOS</primary><secondary>brooadcast</secondary></indexterm>
+	<indexterm><primary>WINS</primary></indexterm>
+	<indexterm><primary>UDP</primary></indexterm>
+	<indexterm><primary>DNS</primary></indexterm>
+	<indexterm><primary>active directory</primary></indexterm>
+	自分自身をドメインコントローラとして登録し、公告する(NetBIOSブロードキャストに
+	加え、UDPブロードキャスト上でのMailslotブロードキャスト、WINSサーバへのUDPユニキャスト、
+	DNSとActive Directory経由での名前登録によって)。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>NETLOGON</primary></indexterm>
+	<indexterm><primary>LanMan logon サービス</primary></indexterm>
+	NETLOGON サービスの提供(これは実際、複数のプロトコル上で動くサービスの集合体である。
+	それらにはLanManログオンサービス、Netlogonサービス、ローカルセキュリティアカウント
+	サービスとそれらのバリエーションを含む。)。
+	</para></listitem>
+
+	<listitem><para>
+	NETLOGONという共有が提供される。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>ドメイン</primary><secondary>マスタ</secondary><tertiary>ブラウザ</tertiary></indexterm>
+<indexterm><primary>ローカル</primary><secondary>マスタ</secondary><tertiary>ブラウザ</tertiary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+それらを提供するためにSambaを設定することはむしろ容易である。おのおののSamba
+ドメインコントローラは Sambaが<smbconfoption name="domain logons"/>機能(&smb.conf;
+ファイル中のパラメータから取って)と呼ぶNETLOGONサービスを提供しなければな
+らない。さらに、Samba-3ドメイン中の1つのサーバはドメインマスタブラウザとして
+それ自身を公告しなければならない。<footnote><para><link linkend="NetworkBrowsing">
+ネットワークのブラウジング</link>を参照。</para></footnote>これにより、与えられた
+ドメインまたはワークグループにDMB識別されるようなドメイン固有のNetBIOS名
+をPDCが取得することになる。ブロードキャストで分離されたサブネットの、同じドメイン
+またはワークグループ上の複数のローカルマスタブラウザ(LMB)は、WAN全体の
+ブラウズリストの完全なコピーのために問い合わせを行う。
+ブラウザクライアントは次にそれらのLMBに接続し、ブロードキャストで分離
+されたサブネットのためのリストだけではなく、ドメイン全体のブラウズリストを受け取る。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>ドメイン制御: 設定例</title>
+
+<para>
+Samba PDCを作成するための作業の第一歩は&smb.conf;中で必要なパラメータの
+理解である。PDCとして機能するための&smb.conf;の例は以下の<link linkend="pdc-example">
+PDC用のsmb.confの例</link>である。
+</para>
+
+<example id="pdc-example">
+<title>PDC用のsmb.confの例</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="netbios name"><replaceable>BELERIAND</replaceable></smbconfoption>
+<smbconfoption name="workgroup"><replaceable>&example.workgroup;</replaceable></smbconfoption>
+<smbconfoption name="passdb backend">tdbsam</smbconfoption>
+<smbconfoption name="os level">33</smbconfoption>
+<smbconfoption name="preferred master">auto</smbconfoption>
+<smbconfoption name="domain master">yes</smbconfoption>
+<smbconfoption name="local master">yes</smbconfoption>
+<smbconfoption name="security">user</smbconfoption>
+<smbconfoption name="domain logons">yes</smbconfoption>
+<smbconfoption name="logon path">\\%N\profiles\%U</smbconfoption>
+<smbconfoption name="logon drive">H:</smbconfoption>
+<smbconfoption name="logon home">\\homeserver\%U\winprofile</smbconfoption>
+<smbconfoption name="logon script">logon.cmd</smbconfoption>
+
+<smbconfsection name="[netlogon]"/>
+<smbconfoption name="path">/var/lib/samba/netlogon</smbconfoption>
+<smbconfoption name="read only">yes</smbconfoption>
+<smbconfoption name="write list"><replaceable>ntadmin</replaceable></smbconfoption>
+
+<smbconfsection name="[profiles]"/>
+<smbconfoption name="path">/var/lib/samba/profiles</smbconfoption>
+<smbconfoption name="read only">no</smbconfoption>
+<smbconfoption name="create mask">0600</smbconfoption>
+<smbconfoption name="directory mask">0700</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<link linkend="pdc-example">上記の例</link>中で示される基本的なオプションの説明は以下の通り:
+</para>
+
+<variablelist>
+	<varlistentry><term>passdb backend </term>
+		<listitem><para>
+		<indexterm><primary>グループ</primary><secondary>アカウント</secondary></indexterm>
+		<indexterm><primary>smbpasswd</primary></indexterm>
+		<indexterm><primary>tdbsam</primary></indexterm>
+		<indexterm><primary>ldapsam</primary></indexterm>
+		<indexterm><primary>guest</primary></indexterm>
+		<indexterm><primary>default accounts</primary></indexterm>
+		ここにすべてのユーザとグループアカウント情報が含まれている。PDCで使える値は:
+		<emphasis>smbpasswd, tdbsamとldapsam</emphasis>である。<quote>guest</quote>
+		エントリは既定値のアカウントを提供し、それは既定値で含まれている;明示的に
+		追加する必要はない。
+		</para>
+
+		<para>
+		<indexterm><primary>passdb backend</primary></indexterm>
+		<indexterm><primary>distributed</primary></indexterm>
+		<indexterm><primary>smbpasswd</primary></indexterm>
+		<indexterm><primary>tdbsam</primary></indexterm>
+		BDCを使う場合、passdb backendを配信するために論理的な唯一の選択肢は
+		LDAPを使うことである。tdbsamとsmbpasswdファイルは効果的に配信できないため、それを
+		使うべきではない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>ドメイン管理パラメータ</term>
+		<listitem><para>
+		<indexterm><primary>os level</primary></indexterm>
+		<indexterm><primary>preferred master</primary></indexterm>
+		<indexterm><primary>domain master</primary></indexterm>
+		<indexterm><primary>network</primary><secondary>logon</secondary></indexterm>
+		パラメータ<emphasis>os level, preferred master, domain master, security, 
+		encrypt passwords</emphasis>と<emphasis>domain logons</emphasis>はドメイン
+		管理とネットワークログオンのサポートを確実にするために中心的な役割を演じる。
+		</para>
+
+		<para>
+		<indexterm><primary>DMB</primary></indexterm>
+		<indexterm><primary>encryped password</primary></indexterm>
+		<emphasis>os level</emphasis>は32以上にし、<emphasis>user</emphasis>
+		モードセキュリティ、Microsoft互換の暗号化パスワードサポート、
+		ネットワークログオンサービス(ドメインログオン)を提供するように
+		設定しなければ	ならない。暗号化パスワードは有効にしなければならない。
+		この設定についての詳細は、
+		<link linkend="passdb">アカウント情報データベース</link>を参照のこと。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>環境パラメータ</term>
+		<listitem><para>
+		<indexterm><primary>logon path</primary></indexterm>
+		<indexterm><primary>logon home</primary></indexterm>
+		<indexterm><primary>logon drive</primary></indexterm>
+		<indexterm><primary>logon script</primary></indexterm>
+		パラメータ<emphasis>logon path, logon home, logon drive</emphasis>と<emphasis>logon script</emphasis>
+		は環境サポートの設定で、クライアントログオン操作機能を支援し、ネットワーク管理の
+		間接費用を軽減するための、自動コントロール機能の提供するものである。
+		それらのパラメータに関しては、マニュアルページの情報を参照してほしい。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>NETLOGON共有</term>
+		<listitem><para>
+		<indexterm><primary>NETLOGON</primary></indexterm>
+		<indexterm><primary>logon処理</primary></indexterm>
+		<indexterm><primary>ドメインログオン</primary></indexterm>
+		<indexterm><primary>ドメインメンバシップ</primary></indexterm>
+		<indexterm><primary>グループポリシー</primary></indexterm>
+		<indexterm><primary>NTConfig.POL</primary></indexterm>
+		NETLOGON共有はドメインログオンとドメインメンバシップサポートで中心的な役割を演じる。
+		この共有はすべてのMicrosoftドメインコントローラ上で提供される。これは、ログオン処理のために
+		必要となるかもしれない他の共通ツールを見つけるのと同じように、ログオンスクリプト
+		の提供と、グループポリシーファイル(NTConfig.POL)の格納のために使われる。これは、
+		ドメインコントローラ上で不可欠な共有である。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>PROFILE共有</term>
+		<listitem><para>
+		<indexterm><primary>デスクトッププロファイル</primary></indexterm>
+		<indexterm><primary>VFS</primary></indexterm>
+		<indexterm><primary>fake_permissions</primary></indexterm>
+		<indexterm><primary>プロファイル</primary></indexterm>
+		<indexterm><primary></primary></indexterm>
+		この共有はユーザのデスクトッププロファイルを格納するために使われる。各ユーザ
+		はディレクトリのrootにこの共有を持たねばならない。このディレクトリはユーザが
+		書き込み可能で、グローバルに読み込み可能でなければならない。Samba-3は
+		<quote>fake_permissions</quote>と呼ばれる、この共有上にインストール可能な
+		VFSモジュールを用意している。これはSambaの管理者が、全員に対してこのディレクトリを
+		読み込みのみにすることを許可する。もちろん、これはプロファイルが適した形で作成された
+		後に行ってこそ有用である。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+
+<note><para>
+上記のパラメータが、サーバの動作モードを決めるパラメータの一式であると思って良い。
+&smb.conf;パラメータのうち必須のものを以下に列挙する:
+</para>
+
+<para>
+<smbconfblock>
+<smbconfoption name="netbios name">BELERIAND</smbconfoption>
+<smbconfoption name="workgroup">&example.workgroup;</smbconfoption>
+<smbconfoption name="domain logons">Yes</smbconfoption>
+<smbconfoption name="domain master">Yes</smbconfoption>
+<smbconfoption name="security">User</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+この節中にある、長いリスト中で示されている追加のパラメータは、より完全な
+説明のためのものである。
+</para></note>
+
+</sect1>
+
+<sect1>
+<title>SambaによるADSドメイン制御</title>
+
+<para>
+<indexterm><primary>active directory</primary></indexterm>
+Samba-3はActive Directoryサーバとしては機能しない。真のActive Directoryの
+PDCとして機能することもできない。いくつかのActive Directoryドメインコントローラの機能用の
+プロトコルが実験的なものとして部分的に実装されてはいる。しかし、Samba-3がそれらのプロ
+トコルをサポートするとは思わないでほしい。現在または将来にわたって、そのような
+任意の機能に依存しないでほしい。Sambaチームは将来これらの機能を取り除いたり
+機能を変更するかもしれない。このことをここに言及するのは、これらの秘密の機能を
+すでに発見し、この機能が完成されるのはいつかという質問を寄せられた方々のためである。
+その答えは、「出来るかもしれないし出来ないかもしれない!」である。
+</para>
+
+<para>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>active directory</primary></indexterm>
+たしかに、Samba-3はMicrosoft Windows NT4スタイルのドメインコントローラが持つ
+大部分の機能を提供するように設計されている。Samba-3にはWindows NT4の全ての
+機能があるわけではないが、一方Windows NT4 ドメインコントローラにはない
+多くのの特徴を持っている。要するに、Samba-3はNT4でもWindows Server 200xでもない。
+もちろんActive Directoryサーバでもない。この言い方で全ての人に簡単にシンプルに
+理解していただけると期待している。
+</para>
+
+</sect1>
+
+<sect1>
+<title>ドメインとネットワークログインの設定</title>
+
+<para>
+<indexterm><primary>ドメインログオン</primary></indexterm>
+ネットワークとドメインのログオンについて、ここで言及するのは、ドメインコントローラ
+が提供する本質的な機能の欠かせない部分だからである。
+</para>
+
+<sect2>
+<title>ドメインネットワークログオンサービス</title>
+
+<para>
+<indexterm><primary>ドメインログオン</primary></indexterm>
+すべてのドメインコントローラはネットログオンサービスを動かさなければ
+ならない(Samba中での<emphasis>ドメインログオン</emphasis>)。
+1つのドメインコントローラが
+<smbconfoption name="domain master">Yes</smbconfoption>(PDC)と設定
+しなければならない;すべてのBDCではパラメータを
+<smbconfoption name="domain master">No</smbconfoption>と設定しなければならない。
+</para>
+
+<sect3>
+<title>設定例</title>
+
+<example id="PDC-config">
+<title>PDCにするためのsmb.conf</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="domain logons">Yes</smbconfoption>
+<smbconfoption name="domain master">(PDCならYes, BDCならNo)</smbconfoption>
+
+<smbconfsection name="[netlogon]"/>
+<smbconfoption name="comment">Network Logon Service</smbconfoption>
+<smbconfoption name="path">/var/lib/samba/netlogon</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+</smbconfblock>
+</example>
+
+</sect3>
+<sect3>
+<title>Windows XP Home Editionにおける特別な例</title>
+
+<para>
+<indexterm><primary>Windows XP Home edition</primary></indexterm>
+次のことを完全に理解してほしい:Microsoft Windows XP Home Editionを Microsoft 
+Windows NT4またはActive Directoryドメインセキュリティに統合したいと思っても
+それが出来ない。これを解決する唯一のオプションは、Microsoft 
+Windows XP Home EditionからMicrosoft Windows XP Professional への
+アップグレードを購入することである。
+</para>
+
+<note><para>
+Microsoft Windows XP Home Editionはどのようなタイプのドメインセキュリティ
+機能に参加する能力は持っていない。Microsoft Windows 9x/Meと異なり、
+Microsoft Windows XP Home Edition はネットワークにログオンする機能を
+完全に欠いている。
+</para></note>
+
+<para>
+このことは前にも説明したが、この事について、Sambaチームの誰かに
+質問を問い合わせたり、メーリングリストに質問を投げないでほしい。なぜなら
+「出来ないから」である。それが出来るとなると、それはMicrosoftとの間のライセンス
+に違反することになるので、それをしないことを推奨する。
+</para>
+
+</sect3>
+
+<sect3>
+<title>Windows 9x/Meにおける特別な例</title>
+
+<para>
+<indexterm><primary>ドメイン</primary></indexterm>
+<indexterm><primary>ワークグループ</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>ブラウジング</primary></indexterm>
+<indexterm><primary>rights</primary></indexterm>
+ドメインとワークグループはネットワークブラウジングという言葉において
+全く同等である。2つの違いは、ネットワークへの安全なログインのための、
+分散認証データベースはドメインに関連づけられることである。
+また、ドメインログオンサーバに対して認証が成功したユーザに対して
+異なるアクセス権を付与できる。Samba-3はこの機能をMicrosoft 
+Windows NT/200xと同じ方法で行う。
+</para>
+
+<para>
+<indexterm><primary>ブラウジング</primary></indexterm>
+ドメインへのログオンするSMBクライアントは、ドメイン内のすべての他のサーバが
+同じ認証情報を受け取ることを期待している。ドメインとワークグループ
+のネットワークブラウズ機能は同一であり、この文書内の、ブラウジングに関する節
+の中で説明される。ブラウジングはログインサポートとは直交する(互いに他方への影響
+を考慮する必要のない)概念であることに留意してほしい。
+</para>
+
+<para>
+<indexterm><primary>シングルログオン</primary></indexterm>
+<indexterm><primary>ドメインログオン</primary></indexterm>
+<indexterm><primary>ネットワークログオン</primary></indexterm>
+シングルログオン(訳注:シングルサインオンか?)ネットワークモデルに関連する課題は
+この節で扱う。Sambaはドメインログオン、ネットワークログオンスクリプト、
+ユーザプロファイルを、この節で扱う、Microsoft Windows for Workgrops
+とMicrosoft Windows 9x/Meクライアントに対してサポートする。
+</para>
+
+<para>
+<indexterm><primary>ブロードキャストリクエスト</primary></indexterm>
+ドメイン中のSMBクライアントがログオンしようとした時、ログオンサーバを探す
+要求をブロードキャストする。最初にリプライするものが処理を行い、Samba
+管理者がインストールした何らかの機構を使ってパスワードを認証する。
+サーバ間でユーザデータベースが共有されていないドメイン(つまり、サーバが、本質
+的にはワークグループサーバーでありながら、しかも自分はドメインに参加している
+と他に周知するようなドメイン)を作成することも可能である(お勧めはしないが)。
+これは認証機構がドメインとはかなり異なるものでありながら、ドメインと密接に関係して
+いるということを示している。
+</para>
+
+<para>
+これらの機能を使うことで、Sambaサーバ経由でクライアントのログオンの確認
+させることができる。すなわち、ネットワークにログオンした時にクライアント側でバッチファイルを実行させ、
+クライアントの個人設定、デスクトップおよびスタートメニューをダウンロードさせる。
+</para>
+
+<para><emphasis>
+Microsoft Windows XP Home edition はドメインに参加できず、ドメインログオン
+の使用が許可されない。
+</emphasis></para>
+
+<para>
+設定手続きの話に入る前に、Windows 9x/Meクライアントがログオンをどのように
+実行するかを見ておくことにしよう:
+</para>
+
+<orderedlist>
+<listitem>
+	<para>
+	<indexterm><primary>DOMAIN&lt;1C&gt;</primary></indexterm>
+	<indexterm><primary>ログオンサーバ</primary></indexterm>
+	クライアントは(それがいるサブネットのIPブロードキャストアドレスに
+	対して)NetLogon要求をブロードキャストする。これは、NetBIOSレイヤ
+	でのNetBIOS名 DOMAIN&lt;1C&gt; に送られる。クライアントは、最初に受け取った回答を選ぶ。
+	その回答には<filename>\\SERVER</filename>という形式で、ログオンサーバのNetBIOS
+	名を含む。<literal>1C</literal>という
+	名前はドメインコントローラ(netlogonサービスを提供するSMB/CIFSサーバ)
+	によって登録された名前のタイプである。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	<indexterm><primary>IPC$</primary></indexterm>
+	<indexterm><primary>SMBsessetupX</primary></indexterm>
+	<indexterm><primary>SMBtconX</primary></indexterm>
+	クライアントがそのサーバに接続し、ログオンし(SMBsessetupXを実行)
+	し、次にIPC$共有に接続する(SMBtconXを使って)。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	<indexterm><primary>NetWkstaUserLogon</primary></indexterm>
+	クライアントは、ユーザのログオンスクリプト名を検索する
+	NetWkstaUserLogon要求を送る。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	クライアントは次にNetLogon共有に接続し、そのスクリプトを検索する。
+	もしも見つかり、読み出しできるならば、クライアントはそれを取り出し
+	実行する。その後、クライアントはNetLogon共有の接続を切る。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	<indexterm><primary>NetUserGetInfo</primary></indexterm>
+	<indexterm><primary>profile</primary></indexterm>
+	クライアントは、サーバにNetUserGetInfo要求を送り、プロファイル検索の
+	ために使うユーザのホーム共有を検索する。NetUserGetInfo要求の
+	応答はユーザのホーム共有以外のものは含まれていないので、Windows 9x用のプロファイルは
+	ユーザのホームディレクトリ内になければならない。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	<indexterm><primary>profiles</primary></indexterm>
+	クライアントはユーザのプロファイルを検索するために
+	ホーム共有に接続する。その時、共有名とパスでユーザのホーム共有を指定する
+	こともできる。例をあげると、<filename>\\server\fred\.winprofile</filename>
+	である。もしもプロファイルが見つかれば、それを適用する。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	<indexterm><primary>CONFIG.POL</primary></indexterm>
+	クライアントは次にユーザのホーム共有を切断し、NetLogon共有に再接続し、
+	ポリシーファイル<filename>CONFIG.POL</filename>を探す。もしも見つかれば、
+	それを読み、適用する。
+	</para>
+</listitem>
+</orderedlist>
+
+<para>
+PDCとWindows 9x/Me ログオンサーバ設定の主要な違いは以下の通り:
+</para>
+
+<itemizedlist>
+<listitem><para>
+	<indexterm><primary>パスワード</primary><secondary>平文</secondary></indexterm>
+	<indexterm><primary>平文パスワード</primary></indexterm>
+	Windows 9x/Me ログオンサーバでは、パスワード暗号化は不要である。しかし、
+	Microsoft Windows 98 以降、既定値では平文パスワードサポートが無効化され
+	ていることに注意。<link linkend="PolicyMgmt">システムとアカウントポリシー</link>
+	で記述されているレジストリの変更で再度有効に出来る。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>machine trust account</primary></indexterm>
+	Windows 9x/Me クライアントはマシン信頼アカウントを必要とせず、かつ使わない。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>ネットワークログオンサービス</primary></indexterm>
+Samba PDCは Windows 9x/Meログオンサーバとしてどうさする。すなわち、
+Windows 9x/Meが期待するネットワークログオンサービスを提供するということである。
+</para>
+
+<note><para>
+<indexterm><primary>sniffer</primary></indexterm>
+平文パスワードの使用は避けることを強く推奨する。それを使うと、
+ネットワークトラフィックを解析するネットワークようなツールを使うことで、
+容易にパスワードを検出できてしまうからである。
+</para></note>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>セキュリティモードとマスタブラウザ</title>
+
+<para>
+<indexterm><primary>security mode</primary></indexterm>
+<indexterm><primary>user-mode security</primary></indexterm>
+<indexterm><primary>share-mode security</primary></indexterm>
+わかりにくい点が残らないように、最後に幾つかコメントを記述する。
+userモード以外でのセキュリティモードの時に、Sambaをドメインコントローラと
+して設定してもよいかについては、さまざまな議論があった。技術的な理由で
+うまくいかないセキュリティモードは、share モードのセキュリティのみである。
+domainモードとserver モードのセキュリティは、実際にはSMBのuserレベルの
+セキュリティの変形のようなものである。
+</para>
+
+<para>
+<indexterm><primary>DOMAIN&lt;1C&gt;</primary></indexterm>
+<indexterm><primary>DOMAIN&lt;1B&gt;</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>election</primary></indexterm>
+この問題は、Samba がドメインコントローラとして機能しているときに、
+そのワークグループのドメインマスタブラウザでなければならないかという
+議論と密接に関連している。
+純粋なMicrosoft Windows NTドメイン中では、PDCはDMBになるために選択に勝ち、
+次に、DOMAIN&lt;1B&gt;というNetBIOS名を登録する。これはWindowsクライアントが
+DOMAIN&lt;1C&gt;名を探すためにネットワークログオンサーバ見つけるときに使う
+名前である。DMBはドメインマスタブラウザである。&smbmdash;
+<link linkend="NetworkBrowsing">ネットワークブラウジングの章</link>、
+<link linkend="DMB">WORKGROUPブラウジングの設定</link>を参照のこと。
+この問題も議論に密接に結びついている。
+Microsoft PDC はDMBになるためにelectionに勝つことを期待するが、もしも
+勝てない場合、electionはDMBになるためのelectionに負けたという内容を
+Windowsイベントロガー(訳注:イベントビューワ?)に、警告メッセージを
+短い間隔で連続して出力する。この理由のため、SambaサーバがPDCである
+ネットワーク中では、SambaドメインコントローラをDMBとして設定するのが
+賢いやり方である。
+</para>
+
+<note><para>
+<indexterm><primary>DOMAIN&lt;1D&gt;</primary></indexterm>
+<indexterm><primary>動機</primary></indexterm>
+<indexterm><primary>ドメイン制御</primary></indexterm>
+<indexterm><primary>ブラウズリスト管理</primary></indexterm>
+<indexterm><primary>ネットワーク</primary><secondary>ログオン</secondary><tertiary></tertiary></indexterm>
+DOMAIN&lt;1C&gt;名を登録するSMB/CIFSサーバは、ネットワークログオン
+サービスを提供するのでそのように処理する。DOMAIN&lt;1B&gt;名を
+登録するサーバはDMBである&smbmdash;すなわち、DOMAIN&lt;1D&gt;名
+を登録されたすべてのマシンを含んでのブラウズリスト同期の責任を
+持つと言うことである。後者は、存在しているローカルネットワーク
+セグメントで、すべてのNetBIOS名の登録監視に責任があるLMBである。
+ネットワークログオンサービス(NETLOGON)はドメイン制御に関連して
+いているが、ネットワークブラウジングとブラウズリスト管理には関係
+していない。1Cと1B/1Dの名前サービスはお互いに無関係である。
+</para></note>
+
+<para>
+<smbconfoption name="security">user</smbconfoption>以外のモードで
+Sambaドメインコントローラを使うための設定の問題に戻ろう。
+ユーザからの接続要求を検証するためにSambaホストが他のSMBサーバかドメイン
+コントローラを使うように設定した場合、ネットワーク上の他のマシン
+(<smbconfoption name="password server"/>)は、Sambaホストよりもより
+詳しくユーザについて知っているという状況になる。99％のケースで、
+この別のホストはドメインコントローラである。ドメインモードセキュリティ
+で動作している場合、<smbconfoption name="workgroup"/>パラメータ
+は(すでにドメインコントローラが持っている)Windows NTドメインの名前に
+設定しれなければならない。もしもそのドメインがドメインコントローラ
+をまだ持っていない場合、ドメイン自体がないのと同じである。
+</para>
+
+<para>
+すでに定義上PDCを持つドメイン用にSambaサーバをドメインコントローラとして
+設定することは問題を発生させる。それゆえ、そのドメインに対してDMBになるようにと
+<smbconfoption name="security">user</smbconfoption>を設定するようにSamba
+ドメインコントローラをいつでも設定すべきである。この方法のみが公式にサポート
+される操作モードである。
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<sect2>
+<title><quote>$</quote>マシン名中に$を含められない</title>
+
+<para>
+<indexterm><primary>BSD</primary></indexterm>
+<indexterm><primary>FreeBSD</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+通常<filename>/etc/passwd</filename>に格納されるマシンアカウントは、マシン名に
+<quote>$</quote>を追加した形である。いくつかのBSDシステムはユーザ名
+に<quote>$</quote>を使うものが作成できない。最近のFreeBSDのバージョンはこの
+制限が取り払われたが、それより古いものはまだ使われている。
+</para>
+
+<para>
+<indexterm><primary>vipw</primary></indexterm>
+問題はエントリを作る時に使われるプログラム中のみである。一度作成されると
+問題なく動作する。まず<quote>$</quote>なしでユーザ名を作る。次に、エントリを
+編集するために <command>vipw</command>を使い<quote>$</quote>を追加する。
+あるいは、最初からエントリをvipwで作っても良い。その際には固有のユーザログインIDを使うように
+すること。
+</para>
+
+<note><para>マシンアカウントはワークステーションが持つ名前と同じ名前でなければならない。</para></note>
+
+<note><para>
+UNIXのツール<command>vipw</command>は直接<filename>/etc/passwd</filename>を修正
+する共通的なツールである。vipwを使うと(もしも使われているならば)shadowファイルが
+パスワードファイルと同じになることを保証する。これはセキュリティの観点から重要
+である。
+</para></note>
+
+</sect2>
+
+<sect2>
+<title>存在するマシンアカウントがあるためにドメイン参加に失敗する</title>
+		
+<para>
+<indexterm><primary>ドメインへの参加</primary></indexterm>
+<quote>I get told,マシン信頼アカウント作成時に `You already have a connection to the Domain....'
+(既にドメインへの接続があります。) か
+`Cannot join domain, the credentials supplied conflict with an existing set...'
+(ドメインに参加できません。信用情報が既存のものと一致しません)
+が出ることについては以前に話した。</quote>
+</para>
+
+<para>
+これは、そのマシン自身からマシン信頼アカウントの作成を使用としたとき、
+Samba PDC上の共有(かIPC$)にすでに接続している(つまりマップされたドライブ)
+がある時に起きる。以下のコマンドはすべてのネットワークドライブ接続を切断する:
+<screen>
+&dosprompt;<userinput>net use * /d</userinput>
+</screen>
+これはすべてのネットワーク接続を切る。
+</para>
+
+<para>
+さらに、もしもマシンがすでに参加済みのドメインと同じ名前の
+<quote>workgroupのメンバ</quote>ならば(これはやってはいけない)、このメッセージが出る。
+ワークグループを何か別の名前に変えて&smbmdash;再起動し、&smbmdash;
+もう一度やってみる。
+</para>
+
+</sect2>
+
+<sect2>
+<title>システムにログオンできない(C000019B)</title>
+
+<para><quote>
+ドメイン参加に成功したが、Sambaのバージョンを新しくした後、ログオン時に
+<errorname>`The system cannot log you on (C000019B). Please try again or consult your system
+administrator
+(システムはあなたのログオンを許可できません(C000019B)。後ほど再試行するか、システム管理者に相談してログオンしてください)
+</errorname>というメッセージが出た。'</quote>
+</para>
+
+<para>
+<indexterm><primary>SID</primary></indexterm>
+これはsecrets.tdbに格納されているドメインSIDが変わったことによって引き
+起こされるものである。ドメインSIDが変わるよくある理由は、ドメイン名
+かサーバ名(NetBIOS名)が変わったことである。問題を解決する唯一の方法は
+オリジナルのドメインSIDに戻すか、クライアントをいったんドメインから
+削除して再参加することである。ドメインSIDは、netまたはrpcclient
+ユーティリティによってリセットすることも出来る。
+</para>
+
+<para>
+ドメインSIDをリセットしたり、変更するには、以下のようにnetコマンドを
+使用する:
+
+<screen>
+&rootprompt;<userinput>net getlocalsid 'OLDNAME'</userinput>
+&rootprompt;<userinput>net setlocalsid 'SID'</userinput>
+</screen>
+</para>
+
+<para>
+ワークステーションのマシン信頼アカウントはドメイン(またはネットワーク)
+SIDでのみ動作する。このSIDが変更されると、ドメイン
+メンバ(ワークステーション)はドメインにログオンできない。オリジナルの
+ドメインSIDはsecrets.tdbファイルから復元できる。別の解は、おのおのの
+ワークステーションが再度ドメインに参加することである。
+</para>
+
+</sect2>
+
+<sect2>
+<title>マシン信頼アカウントがアクセスできない</title>
+
+<para>
+<quote>ドメインに参加しようとした時 <errorname>"The machine account 
+for this computer either does not exist or is not accessible
+(このコンピューターのマシン・アカウントは存在しないか、アクセスできません) 
+</errorname>."
+というメッセージが出た。何が悪い?</quote>
+</para>
+
+<para>
+この問題は、PDCが適切なマシン信頼アカウントを持っていないことに起因
+する。アカウント作成時に
+<smbconfoption name="add machine script"/>という方法を使った場合、
+このメッセージは、アカウント作成に失敗したことを示している。ドメイン管理ユーザ
+のシステムが
+動作しているかを確認して正常動作するようにすること。
+</para>
+
+<para>
+かわりに、手動でアカウントエントリを作成していた場合、正しく作られていない
+ということである。Samba PDC上で<filename>smbpasswd</filename>ファイル
+中のマシン信頼アカウントのエントリが正しく出来たかどうかを確認する。もしも、
+smbpasswd ユーティリティを使わないでアカウントをエディタで追加した場合、
+アカウント名をマシンのNetBIOS名に<quote>$</quote>を追加して(すなわち、
+computer_name$)おくこと。これはSambaSAMAccountバックエンドと同じように
+POSIX UNIXシステムアカウントバックエンドの両方の中に存在する必要がある。
+Samba-3の既定値のバックエンド(すなわち、パラメータ
+<parameter>passdb backend</parameter>)は&smb.conf;ファイル中で指定されて
+おらず、また、もしも指定されているものが<literal>smbpasswd</literal>
+だった場合、それらはそれぞれ<filename>/etc/passwd</filename>と
+<filename>/etc/samba/smbpasswd</filename>(あるいはもしもSambaチームの
+既定値の設定を使ってコンパイルした場合は
+<filename>/usr/local/samba/lib/private/smbpasswd</filename>)である。
+<filename>/etc/passwd</filename>の使用はNSS <filename>/etc/nsswitch.conf</filename>
+ファイル中の別の設定で上書きすることが出来る。
+</para>
+
+<para>
+SambaサーバとNTクライアントの間のサブネットマスクの不一致により、この問題が起こると
+いう報告も一部から上がっている。クライアントとサーバ両方で整合性
+を取るようにすること。
+</para>
+</sect2>
+
+<sect2>
+<title>アカウントが無効</title>
+
+<para><quote>NT4/W200xワークステーションからSambaドメインにログオンしようとした
+とき、アカウントが無効になっているメッセージが出た。</quote></para>
+
+<para>
+<userinput>smbpasswd -e <replaceable>username</replaceable>でユーザアカウントを有効化する
+</userinput>。これは通常アカウント作成時に行われる。
+</para>
+
+</sect2>
+
+<sect2>
+<title>ドメインコントローラが無効</title>
+		
+<para><quote>Sambaが開始してから数分間、クライアントがエラー`Domain Controller Unavailable'
+(ドメイン・コントローラーが使えません。)を表示する。</quote></para>
+
+<para>
+ドメインコントローラはネットワーク上にその役割をアナウンスする。これは通常しばらくかかる。最低15分は待ち、
+再度試してみること。
+</para>
+</sect2>
+
+<sect2>
+<title>ドメイン参加後ドメインメンバワークステーションにログオンできない</title>
+
+<para>
+<indexterm><primary>schannel</primary></indexterm>
+<indexterm><primary>signing</primary></indexterm>
+ドメイン参加成功後、2つのメッセージのうちの1つが出てユーザログオンに失敗する:
+1つはドメインコントローラが見つからないというもので、もう1つはアカウントが
+ドメインにないか、パスワードが違うというものである。これは、<emphasis>schannel</emphasis>
+(セキュアchannel)の設定か、<emphasis>smb 署名</emphasis>の設定について、
+WindowsクライアントとSamba-3サーバにおいて設定の不一致によるものと考えられる。
+以下を実行して、Sambaの
+<emphasis>client schannel</emphasis>、<emphasis>server schannel</emphasis>、
+<emphasis>client signing</emphasis>、<emphasis>server signing</emphasis>の設定と
+それらの値について確認すること:
+<screen>
+<command>testparm -v | grep channel</command>
+</screen>
+</para>
+
+<para>
+また、MMC &smbmdash; ローカルセキュリティの設定を使うこと。このツールはコントロール
+パネルにある。ポリシーの設定は、ローカルポリシー/セキュリティオプション領域にあり、
+<emphasis>Secure Channel:..., and Digitally sign...(セキュリティチャネル、 デジタル的に署名)</emphasis>
+という言葉を含んだ項目で設定する。
+
+</para>
+
+<para>
+これらが Samba-3 サーバー設定と一致した設定になっていることが大切である。
+</para>
+
+</sect2>
+
+</sect1>
+</chapter>

@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbcquotas.1">
+
+<refmeta>
+	<refentrytitle>smbcquotas</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbcquotas</refname>
+	<refpurpose>NTFS 5 共有の Quota 情報を取得・設定する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbcquotas</command>
+		<arg choice="req">//server/share</arg>
+		<arg choice="opt">-u user</arg>
+		<arg choice="opt">-L</arg>
+		<arg choice="opt">-F</arg>
+		<arg choice="opt">-S QUOTA_SET_COMMAND</arg>
+		<arg choice="opt">-n</arg>
+		<arg choice="opt">-t</arg>
+		<arg choice="opt">-v</arg>
+
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">-s configfile</arg>
+		<arg choice="opt">-l logdir</arg>
+		<arg choice="opt">-V</arg>
+
+		<arg choice="opt">-U username</arg>
+		<arg choice="opt">-N</arg>
+		<arg choice="opt">-k</arg>
+		<arg choice="opt">-A</arg>
+
+
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このプログラムは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である.</para>
+
+	<para><command>smbcquotas</command> プログラムは SMB ファイル共有に対して
+	NT Quota の操作を行う。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<para><command>smbcquotas</command> プログラムは下記のオプションを提供する
+	:</para>
+
+
+	<variablelist>
+		<varlistentry>
+		<term>-u user</term>
+		<listitem><para> Quota の情報の取得や設定を行うユーザを指定する。
+		デフォルトでは、カレントユーザが使用される。</para></listitem>
+		</varlistentry>
+		
+		
+		
+		<varlistentry>
+		<term>-L</term>
+		<listitem><para>共有の Quota のレコードを全て表示する。
+		</para></listitem>
+		</varlistentry>
+
+		
+		
+		<varlistentry>
+		<term>-F</term>
+		<listitem><para>共有の Quota のステータスとデフォルトの制限を表示する。
+		</para></listitem>
+		</varlistentry>
+		
+		
+		
+		<varlistentry>
+		<term>-S QUOTA_SET_COMMAND</term>
+		<listitem><para>このコマンドはユーザか共有の Quota の設定や変更を行う。
+		ユーザか共有かどちらに対して操作が行われるかは、後述される
+		QUOTA_SET_COMMAND により決まる。</para></listitem>
+		</varlistentry>
+
+		
+		<varlistentry>
+		<term>-n</term>
+		<listitem><para>このオプションは全ての Quota 情報を数値化した値で
+		表示する。デフォルトでは SID を名前に、Quota の上限を文字列に変換する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-t</term>
+		<listitem><para>
+		実際に処理は行わず、指定した引数の正当性を検証する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-v</term>
+		<listitem><para>
+		冗長モードにする。
+		</para></listitem>
+		</varlistentry>
+				
+		&stdarg.help;
+		&stdarg.server.debug;
+		&popt.common.samba;
+		&popt.common.credentials;
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>QUOTA_SET_COMAND</title>
+
+	<para>QUOTA_SET_COMMANDの形式は、その操作に固有の一連のパラメータが伴う
+	操作名である。
+	</para>
+
+	<para>
+	-u で指定されたユーザかカレントユーザ特有の Quota 制限を設定する :
+	</para>
+
+	<para><userinput>
+	UQLIM:&lt;username&gt;:&lt;softlimit&gt;/&lt;hardlimit&gt;
+	</userinput></para>
+
+	<para>
+	共有のデフォルトの Quota 制限を設定する :
+	</para>
+
+	<para><userinput>
+	FSQLIM:&lt;softlimit&gt;/&lt;hardlimit&gt;
+	</userinput></para>
+
+	<para>
+	共有の Quota 設定を変更する :
+	</para>
+
+	<para><userinput>
+	FSQFLAGS:QUOTA_ENABLED/DENY_DISK/LOG_SOFTLIMIT/LOG_HARD_LIMIT
+	</userinput></para>
+	<para>すべての制限はバイト数によって指定される。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>終了ステータス</title>
+
+	<para><command>smbcquotas</command> コマンドは操作の成功か、それ以外かにより
+	exit status をセットする。exit status は以下のうちのいずれかである :
+	</para>
+
+	<para>操作が成功した場合、smbcquotas は exit status として 0 を返す。
+	もし <command>smbcquotas</command> が指定されたサーバに接続できなかった場合や、
+	Quota の情報を取得やセットしようとしてエラーが出た場合、exit status の 1
+	が返される。もしコマンドラインの引数の構文解析に対してエラーがあった場合、
+	exit status の 2 が返される。</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>この man page は version 3 の Samba システム用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連ユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は、Samba Team によって Linux
+	カーネルの開発と同様に、オープンソースプロジェクトとして開発されている。
+	</para>
+
+	<para><command>smbcquotas</command> は Stefan Metzmacher によって書かれた。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+       <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	    <itemizedlist>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+		<listitem><para>太田俊哉 (ribbon@samba.gr.jp)</para></listitem>
+	    </itemizedlist>
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>
+

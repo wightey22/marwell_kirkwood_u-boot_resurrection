@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="Other-Clients">
+<chapterinfo>
+	&author.jelmer;
+	&author.jht;
+	&author.danshearer;
+	<author>&person.jmcd;<contrib>OS/2</contrib></author>
+	<pubdate>5 Mar 2001</pubdate>
+</chapterinfo>
+
+<title>Samba と他の CIFS クライアント</title>
+
+<para>この章では、クライアント固有の情報について記述している。</para>
+
+<sect1>
+<title>Macintoshクライアント</title>
+
+<para>
+<indexterm><primary>DAVE</primary></indexterm>
+もちろん対応している。<ulink url="http://www.thursby.com/">Thursby</ulink>は、
+<ulink url="http://www.thursby.com/products/dave.html">DAVE</ulink>という
+CIFS client/serverを提供している。これはWindows 95、Windows NT/200x/XPとSambaに対して、
+互換性についてテストされている。これを書いている時点で、DAVEはバージョン 5.1である。
+この製品についての情報はThursbyのWebサイトを参照してほしい。
+</para>
+
+<para> 
+<indexterm><primary>Netatalk</primary></indexterm>
+<indexterm><primary>CAP</primary></indexterm>
+ある種のUNIXといくつかの商用のものに対する、2つのAppleTalkの自由な実装を含む代替品が
+ある。これらの製品はMacintocth上で追加のサポートなしに、Macintoshユーザにネイティブな
+ファイルサービスと印刷サービスを動かすことが出来る。2つの自由な実装は、
+<ulink url="http://www.umich.edu/~rsug/netatalk/">Netatalk</ulink>と
+<ulink url="http://www.cs.mu.oz.au/appletalk/atalk.html">CAP</ulink>である。
+SambaがMicrosoft Windows ユーザに対してサービスを提供するのに対し、それらの
+パッケージははMacのユーザにサービスを提供する。これらのパッケージ、Sambaと
+Linux(と他のUNIXベースのシステム)についての詳細は、
+<ulink noescape="1" url="http://www.eats.com/linux_mac_win.html">http://www.eats.com/linux_mac_win.html.</ulink>
+を参照のこと。
+</para>
+
+<para>Macintoshの新しいバージョン (Mac OS X) はSambaが含まれる</para>
+
+</sect1>
+
+<sect1>
+<title>OS2 Client</title>
+
+	<sect2>
+		<title>OS/2 Warp Connect または OS/2 Warp 4の設定</title>
+
+		<para>基本的に以下の3つのコンポーネントが必要である:</para>
+		
+		<itemizedlist>
+			<listitem><para>The File and Print Client (IBM peer)</para></listitem>
+			<listitem><para>TCP/IP (Internet support) </para></listitem>
+			<listitem><para>The <quote>NetBIOS over TCP/IP</quote> driver (TCPBEUI)</para></listitem>
+		</itemizedlist>
+		
+		<para>Warpマニュアル中で説明されているblankシステム上に、ベースOSと共に
+		最初の2つを一緒にインストールする。もしもWarpがすでにインストールされて
+		いるが、ネットワークサポートを使いたいならば、<quote>System Setup</quote>
+		フォルダ中の<quote>Selective Install for Networking</quote>オブジェクトを
+		使うこと。</para>
+
+		<para>マニュアルに書いていない、オンラインのドキュメントにもほとんど
+		書いていない、<quote>NetBIOS over TCP/IP</quote>を追加する。
+		<command>MPTS.EXE</command>を開始し、<guiicon>OK</guiicon>をクリックし、
+		<guimenu>Configure LAPS</guimenu>をクリックし、
+		<guilabel>Protocols</guilabel>中の
+		<guimenu>IBM OS/2 NETBIOS OVER TCP/IP</guimenu>をクリックする。
+		この行は次に<guilabel>Current Configuration</guilabel>に移動する。
+		この行を選択し、<guimenuitem>Change number</guimenuitem>をクリックし、
+		値を0から1に増やす。この設定を保存する。</para>
+
+		<para>もしも、Sambaサーバがローカルサブネット上にない場合、
+		<guimenu>Names List</guimenu>にそれらのサーバのIP名とアドレスを
+		追加するか、WINSサーバ(IBMとRFCの用語ではNetBIOS Nameserver)を指定する
+		事も可能である。Warp Connectでは、Warp 4と同じレベルにするために、
+		<constant>IBM Peer</constant>に対するアップデートをダウンロードする
+		必要があるかもしれない。IBM OS/2 Warp Webページを参照のこと。</para>
+	</sect2>
+	
+	<sect2>
+		<title>他のOS/2バージョンでの設定</title>
+	
+		<para>この節では、OS/2 Warp 3(Connectでない)、OS/2 1.2、1.3、
+		  あるいは2.xの設定について記述する。</para>
+		
+		<para>
+		<ulink noescape="1" url="ftp://ftp.microsoft.com/BusSys/Clients/LANMAN.OS2/">
+                ftp://ftp.microsoft.com/BusSys/Clients/LANMAN.OS2/</ulink>にある、
+		OS/2用の、自由に使えるMicrosoft LAN Manager 2.2cクライアントを使うことが
+		できる。nutshellで、OS/2 ブートパーティションのrootディレクトリ中にある
+		<filename>\OS2VER</filename>ファイルを編集し、クライアントインストールの
+		前に、以下の行を追加する:</para>
+		
+		<para><programlisting>
+		20=setup.exe
+		20=netwksta.sys
+		20=netvdd.sys
+		</programlisting></para>
+		
+		<para>また、バグだらけなので同梱されているNE2000ドライバを使ってはならない。
+		その代わりに、
+		<ulink noescape="1" url="ftp://ftp.cdrom.com/pub/os2/network/ndis/">
+                ftp://ftp.cdrom.com/pub/os2/network/ndis/</ulink>からNE2000かNS2000
+		ドライバをダウンロードする。
+		</para>
+	</sect2>
+	
+	<sect2>
+		<title>OS/2クライアント用のプリンタドライバのダウンロード</title>
+
+		<para>誰でもが書き込み可能な、<smbconfsection name="[PRINTDRV]"/>という
+		共有を作成する。そこに使用しているOS/2ドライバファイルをコピーする。
+		<filename>.EA_</filename>ファイルは引き続き分離しなければならないので、
+		オリジナルのインストールファイルを使う必要があり、OS/2システムからの
+		インストールされたドライバをコピーしてはいけない。</para>
+		
+		<para>そのプリンタに対し、NTドライバを最初にインストールする。次に、
+		使用している&smb.conf;に、パラメータ
+		<smbconfoption name="os2 driver map"><replaceable>filename</replaceable></smbconfoption>
+		を追加する。次に、<replaceable>filename</replaceable>で指定されるファイル中に、
+		以下のようにNTドライバ名をOS/2ドライバ名にマップするように記述する:</para>
+		
+		<para><parameter><replaceable>nt driver name</replaceable> = <replaceable>os2 driver name</replaceable>.<replaceable>device name</replaceable></parameter>, e.g.,</para>
+
+		<para><parameter>
+		HP LaserJet 5L = LASERJET.HP LaserJet 5L</parameter></para>
+
+		<para>このファイル中にマップされた複数のドライバを定義できる。</para>
+	
+		<para>もしも、OS/2ドライバ名のみを指定し、デバイス名を指定しない場合、
+		ドライバを最初にダウンロードするときには、実際にファイルをダウンロード
+		するが、OS/2クライアントは、ドライバが有効でないと表示する。2回目に
+		ダウンロードするときには動く。これは、マッピングにデバイス名を追加する
+		ことにより簡単に解決し、その後、最初のダウンロード要求で動くようになる。
+		</para>
+	</sect2>
+</sect1>
+
+<sect1>
+<title>Windows for Workgroups</title>
+
+<sect2>
+<title>Microsoftからの最新版 TCP/IPスタック</title>
+
+<para>もしもWindows for Workgroupsを使うのであれば、Microsoftから最新のTCP/IPスタックを
+使う。古いTCP/IPスタックにはたくさんのバグがある。</para>
+
+<para> 
+MicrosoftはそのTCP/IP 32ビットVxDドライバの増分更新を公開している。最新のリリースは、
+ftp.microsoft.comの<filename>/Softlib/MSLFILES/TCP32B.EXE</filename>にある。そこには
+修正された問題について説明してあるupdate.txtがある。そこには更新された
+<filename>WINSOCK.DLL</filename>, <filename>TELNET.EXE</filename>, <filename>WSOCK.386</filename>,
+<filename>VNBT.386</filename>, <filename>WSTCP.386</filename>, <filename>TRACERT.EXE</filename>,
+<filename>NETSTAT.EXE</filename>,<filename>NBTSTAT.EXE</filename>ファイルがある。
+</para>
+
+<para>
+このパッチについての詳細情報は、
+<ulink url="http://support.microsoft.com/kb/q99891/">Knowledge Base article 99891</ulink>
+にある。
+</para>
+
+</sect2>
+
+<sect2>
+<title>パスワード変更後に.pwlファイルの削除</title>
+
+<para>
+Windows for Workgroupsは、パスワード管理の出来が悪い。UNIXマシンかPCのどちらかで
+パスワードを変更した時、最も安全にするにはWindowsディレクトリ中の.pwlファイルを
+削除することである。PCはそのファイルが見つからないと警告を出すが、間もなく、
+新しいパスワードが入力できるようになる。
+</para>
+
+<para> 
+もしもこれをしないと、新しいものを入れても、Windows for Workgroupsは古いパスワードを
+記憶してそれを使うようになるかもしれない。
+</para>
+
+<para> 
+しばしばWindows for Workgroupsはダイアログボックス中で入力したパスワードを完全に無視する。
+</para>
+
+</sect2>
+
+<sect2>
+<title>Windows for Workgroupsにおけるパスワードの取り扱い方法の設定</title>
+
+<para>
+<indexterm><primary>admincfg.exe</primary></indexterm>
+WFS 3.11ディスクセットの最後のディスク(8枚目)に、<filename>admincfg.exe</filename>という
+プログラムがある。これをインストールするためには、
+<userinput>EXPAND A:\ADMINCFG.EX_ C:\WINDOWS\ADMINCFG.EXE</userinput>と入力する。
+次に、<application>Program Manager</application>の<guimenu>New</guimenu>経由でアイコンを
+追加する。このプログラムは、どのようにWFWがパスワードを扱うか、パスワードのキャッシュを
+無効にするなどを、<smbconfoption name="security">user</smbconfoption>用に制御する。
+</para>
+
+</sect2>
+
+<sect2>
+<title>パスワードにおける大文字小文字の区別</title>
+
+<para>Windows for Workgroupsはサーバに送る前にパスワードをすべて大文字にする。しかし、
+UNIXのパスワードは大文字小文字を区別する。チェックするときにどの文字をSambaが大文字と
+して試すべきかを指定するための、<smbconfoption name="password level"/>上の
+&smb.conf;情報をチェックすること。</para>
+
+</sect2>
+
+<sect2>
+<title>既定値のプロトコルとしてTCP/IPの使用</title>
+
+<para>印刷キューの通知をサポートするために、Windows for Workgroups下でTCP/IPを
+既定値のプロトコルとして使う事が必要である。もしもNetBEUIを既定値のままにすると、
+あるシステム上では印刷キューの通知がうまくいかない。これはおそらく
+Windows for Workgroupsのバグであろう。</para>
+
+</sect2>
+
+<sect2 id="speedimpr">
+<title>処理速度の改善</title>
+
+<para>
+ある人によると、Windows for Workgroupsの中にある<filename>SYSTEM.INI</filename>ファイルの
+<smbconfsection name="[MSTCP]"/>セクション中に<parameter>DefaultRcvWindow</parameter>の
+設定を3072にすると、速度が大幅に改善したと報告している。
+</para>
+
+<para>
+実際にDefaultRcvWindowについて実験してみたら、より大きな値(16384かそれ以上)の値を使うと
+より処理速度が改善した。他の人は、3072より大きな値は、かえって大幅にスピードが落ちると
+報告している。ある人の報告では、3072から8192間での間で、30の倍数の時にスピードが落ちる
+というものもあった。
+</para>
+</sect2>
+</sect1>
+
+<sect1>
+<title>Windows 95/98</title>
+
+<para>
+Windows 95 OEM SR2を使う場合、以下のアップデートはSambaを使う時に推奨される。
+<link linkend="speedimpr">処理速度の改善</link>中で説明した変更は、アップデートを
+インストールした後に影響するだろう。
+</para>
+
+<para> 
+ここで説明しているものよりもたくさんのアップデートがある。Windows 95の特定のバージョン
+用に現在用意されているアップデートについて、MicrosoftのWebサイトを参照すること。
+</para>
+
+<simplelist>
+<member>Kernel Update: KRNLUPD.EXE</member>
+<member>Ping Fix: PINGUPD.EXE</member>
+<member>RPC Update: RPCRTUPD.EXE</member>
+<member>TCP/IP Update: VIPUPD.EXE</member>
+<member>Redirector Update: VRDRUPD.EXE</member>
+</simplelist>
+
+<para>
+また、もしも<application>MS Outlook</application>を使っている場合、
+<command>OLEUPD.EXE</command>の修正をインストールする事が望ましい。この修正は、
+Outlookを終了する時に長い時間かかっていることを改善するかもしれず、ネットワーク
+コンピュータサービスにアクセスする時に目に見える改善がわかるかもしれない。
+</para>
+
+<sect2>
+<title>処理速度の改善</title>
+
+<para>
+Windows 95 TCP/IPレジストリの設定を修正するとより良いパフォーマンスが得られる。
+インターネットから入手した<command>MTUSPEED.exe</command>というプログラムを
+使っている。自由に使えるこの手のタイプのユーティリティは数多くある。
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>Windows 2000 サービスパック 2</title>
+
+<para> 
+Windows 2000 SP2には数多くの不満な点があり、その1つは、Windowsドメイン中で
+Windows 2000 SP2クライアントに対してユーザプロファイルをホスティングするために、
+Sambaサーバを使う時にのみ現れる。これは、Sambaがドメインのメンバであることを
+仮定するが、もしもそうでない場合にたぶんおそらく現れるだろう。
+</para>
+
+<para> 
+Windows 2000 SP2クライアントに正しくプロファイルを提供するために(PDCとして
+動作していない場合)、Sambaはローミングプロファイルを格納するファイル共有のために、
+<smbconfoption name="nt acl support">no</smbconfoption>を設定しなければならない。
+もしもこれが行われていない場合、Windows 2000 SP2クライアントはプロファイルにアクセス
+出来ないと、警告を出し(Access Denied)、その複数のコピーをディスク上に作成する
+(DOMAIN.user.001,DOMAIN.user.002など)。このオプションについては、&smb.conf;の
+マニュアルページを参照のこと。また、<smbconfoption name="nt acl support"/>
+パラメータが、Samba 2.2.2より前のリリースでは、正式にはグローバルパラメータであった
+事にも注意。
+</para>
+
+<para> 
+<link linkend="minimalprofile">以下の例</link>は、最低限のプロファイル共有を提供する。
+</para>
+
+<example id="minimalprofile">
+<title>最低限のプロファイル共有</title>
+<smbconfblock>
+<smbconfsection name="[profile]"/>
+<smbconfoption name="path">/export/profile</smbconfoption>
+<smbconfoption name="create mask">0600</smbconfoption>
+<smbconfoption name="directory mask">0700</smbconfoption>
+<smbconfoption name="nt acl support">no</smbconfoption>
+<smbconfoption name="read only">no</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+このバグの原因は、Windows 200x SP2クライアントが、SambaサーバのSIDを含むプロファイルの
+ためのセキュリティディスクリプタをコピーする事によるものである。クライアントは、
+Samba\userのSIDを比較し、DOMAIN\userに割り当てられたものと違うと理解する。そのため、
+<errorname>access denied</errorname>メッセージが表示される。
+</para>
+
+<para>
+<smbconfoption name="nt acl support"/>が無効になっている場合、SambaはWindows 200x
+クライアントに、プロファイルに対する既定値のACLを設定させる、
+QuerySecurityDescriptor trans2呼び出しのレスポンスを送信する。この既定値の
+ACLは以下を含む:
+</para>
+
+<para><emphasis>DOMAIN\user 	<quote>フルコントロール</quote></emphasis>></para>
+
+<note><para>このバグはドメインユーザ用に、Sambaホスト上でアカウントを作成するために、
+Winbindを使う時には起こらない。</para></note>
+
+</sect1>
+
+<sect1>
+<title>Windows NT 3.1</title>
+
+<para>もしも、Windows NT 3.1ワークステーションでルータ越しに通信をする時に
+問題が起きたならば、
+<ulink url="http://support.microsoft.com/default.aspx?scid=kb;Q103765">this\
+ Microsoft Knowledge Base article:</ulink>を読むこと。
+</para>
+
+</sect1>
+
+</chapter>

@@ -1,0 +1,10 @@
+<samba:parameter name="enable spoolss"
+                 context="G"
+		 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para><smbconfoption name="disable spoolss"/>の逆の意味を持つ別名。</para>
+</description>
+
+<value type="default">yes</value>
+</samba:parameter>

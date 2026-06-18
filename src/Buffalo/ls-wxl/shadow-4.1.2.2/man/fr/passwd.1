@@ -1,0 +1,316 @@
+.\"     Title: passwd
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes utilisateur
+.\"    Source: Commandes utilisateur
+.\"
+.TH "PASSWD" "1" "23/11/2008" "Commandes utilisateur" "Commandes utilisateur"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+passwd \- Modifier le mot de passe d'un utilisateur
+.SH "SYNOPSIS"
+.HP 7
+\fBpasswd\fR [\fIoptions\fR] [\fILOGIN\fR]
+.SH "DESCRIPTION"
+.PP
+The
+\fBpasswd\fR
+command changes passwords for user accounts\&. A normal user may only change the password for his/her own account, while the superuser may change the password for any account\&.
+\fBpasswd\fR
+also changes account information, such as the full name of the user, the user\'s login shell, or his/her password expiry date and interval\&.
+.SS "Modifications du mot de passe"
+.PP
+The user is first prompted for his/her old password, if one is present\&. This password is then encrypted and compared against the stored password\&. The user has only one chance to enter the correct password\&. The superuser is permitted to bypass this step so that forgotten passwords may be changed\&.
+.PP
+Une fois que le mot de passe a été entré, les informations de limite de validité du mot de passe sont vérifiées pour s\'assurer que l\'utilisateur est autorisé à modifier son mot de passe à cet instant\&. Dans le cas contraire,
+\fBpasswd\fR
+refuse de changer le mot de passe, et quitte\&.
+.PP
+Le nouveau mot de passe sera demandé deux fois à l\'utilisateur\&. Le second mot de passe est comparé avec le premier\&. Ces deux mots de passe devront être identiques pour que le mot de passe soit changé\&.
+.PP
+La complexité de ce mot de passe est alors testée\&. Comme ligne de conduite générale, un mot de passe doit toujours être constitué de 6 à 8 caractères en en choisissant un ou plus parmi chacun des ensembles suivants\ \&:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'caractères alphabétiques minuscules
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'chiffres de 0 à 9
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'marques de ponctuation
+.RE
+.PP
+Il faudra faire attention à ne pas utiliser les caractères de suppression ou d\'effacement\&.
+\fBPasswd\fR
+rejettera tout mot de passe dont la complexité ne sera pas suffisante\&.
+.SS "Astuces pour les mots de passe"
+.PP
+La sécurité d\'un mot de passe repose sur la force de l\'algorithme de chiffrement et sur la taille de l\'espace de clés utilisé\&. La méthode de chiffrement des systèmes
+\fIUNIX\fR
+est basée sur l\'algorithme NBS DES, elle est très sûre\&. La taille de l\'espace de clés dépend de l\'aléa du mot de passe utilisé\&.
+.PP
+Les compromissions de la sécurité des mots de passe résultent le plus souvent d\'une négligence dans le choix du mot de passe, ou lors de son utilisation\&. Pour cette raison, vous ne devez pas sélectionner de mot de passe apparaissant dans un dictionnaire ou devant être écrit\&. Le mot de passe ne doit pas non plus être un nom propre, un numéro minéralogique, une date de naissance, ou une adresse\&. En effet ceux\-ci pourraient être devinés pour violer la sécurité du système\&.
+.PP
+You can find advices on how to choose a strong password on http://en\&.wikipedia\&.org/wiki/Password_strength
+.SH "OPTIONS"
+.PP
+Les options disponibles pour la commande
+\fBpasswd\fR
+sont\ \&:
+.PP
+\fB\-a\fR, \fB\-\-all\fR
+.RS 4
+Cette option ne peut être utilisée qu\'avec
+\fB\-S\fR
+et permet d\'afficher l\'état des mots de passe pour tous les utilisateurs\&.
+.RE
+.PP
+\fB\-d\fR, \fB\-\-delete\fR
+.RS 4
+Supprime le mot de passe (le rend vide) d\'un utilisateur\&. C\'est une façon rapide de supprimer l\'authentification par mot de passe pour un compte\&. Il rend le compte indiqué sans mot de passe\&.
+.RE
+.PP
+\fB\-e\fR, \fB\-\-expire\fR
+.RS 4
+Annule immédiatement la validité du mot de passe d\'un compte\&. Ceci permet d\'obliger un utilisateur à changer son mot de passe lors de sa prochaine connexion\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Afficher un message d\'aide et quitter\&.
+.RE
+.PP
+\fB\-i\fR, \fB\-\-inactive\fR \fIDURÉE_INACTIVITÉ\fR
+.RS 4
+Cette option permet de désactiver un compte un certain nombre de jours après que son mot de passe soit arrivé en fin de validité\&. Après qu\'un mot de passe soit arrivé en fin de validité depuis plus de
+\fIDURÉE_INACTIVITÉ\fR
+jours, l\'utilisateur ne pourra plus se connecter avec ce compte\&.
+.RE
+.PP
+\fB\-k\fR, \fB\-\-keep\-tokens\fR
+.RS 4
+Indicate password change should be performed only for expired authentication tokens (passwords)\&. The user wishes to keep their non\-expired tokens as before\&.
+.RE
+.PP
+\fB\-l\fR, \fB\-\-lock\fR
+.RS 4
+Lock the named account\&. This option disables an account by changing the password to a value which matches no possible encrypted value, and by setting the account expiry field to 1\&.
+.RE
+.PP
+\fB\-m\fR, \fB\-\-mindays\fR \fIJOURS_MIN\fR
+.RS 4
+Définit le nombre minimum de jours entre chaque changement de mot de passe à
+\fIMIN_DAYS\fR\&. Une valeur de zéro pour ce champ indique que l\'utilisateur peut changer son mot de passe quand il le souhaite\&.
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+Mode silencieux\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-repository\fR \fIREPOSITORY\fR
+.RS 4
+change password in
+\fIREPOSITORY\fR
+repository
+.RE
+.PP
+\fB\-S\fR, \fB\-\-status\fR
+.RS 4
+Afficher l\'état d\'un compte\&. Cet état est constitué de 7 champs\&. Le premier champ est le nom du compte\&. Le second champ indique si le compte est bloqué (L), n\'a pas de mot de passe (NP) ou a un mot de passe utilisable (P)\&. Le troisième champ donne la date de dernière modification du mot de passe\&. Les quatre champs suivants sont\ \&: la durée minimum avant modification, la durée maximum de validité, la durée d\'avertissement, et la durée d\'inactivité autorisée pour le mot de passe\&. Les durées sont exprimées en jours\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-unlock\fR
+.RS 4
+Unlock the named account\&. This option re\-enables an account by changing the password back to its previous value (to value before using
+\fB\-l\fR
+option), and by resetting the account expiry field\&.
+.RE
+.PP
+\fB\-w\fR, \fB\-\-warndays\fR \fIDURÉE_AVERTISSEMENT\fR
+.RS 4
+Fixe le nombre de jours d\'avertissement avant que le changement de mot de passe ne soit obligatoire\&. La valeur
+\fIDURÉE_AVERTISSEMENT\fR
+est le nombre de jours précédant la fin de validité pendant lesquels un utilisateur sera prévenu que son mot de passe est sur le point d\'arriver en fin de validité\&.
+.RE
+.PP
+\fB\-x\fR, \fB\-\-maxdays\fR \fIJOURS_MAX\fR
+.RS 4
+Fixe le nombre maximum de jours pendant lesquels un mot de passe reste valable\&. Après
+\fIJOURS_MAX\fR, le mot de passe devra être modifié\&.
+.RE
+.SH "AVERTISSEMENTS"
+.PP
+Toutes les options ne sont pas forcément gérées\&. La vérification de la complexité des mots de passe peut varier d\'un site à l\'autre\&. Il est vivement conseillé aux utilisateurs de choisir un mot de passe aussi complexe que possible dans la limite de ce qu\'il est capable de mémoriser\&. Il se peut que les utilisateurs ne puisse pas changer leur mot de passe sur un système si NIS est activé et qu\'ils ne sont pas connectés au serveur NIS\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBENCRYPT_METHOD\fR (string)
+.RS 4
+This defines the system default encryption algorithm for encrypting passwords (if no algorithm are specified on the command line)\&.
+.sp
+It can take one of these values:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fIDES\fR
+(default)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fIMD5\fR
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fISHA256\fR
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fISHA512\fR
+.RE
+.IP "" 4
+.sp
+Note: this parameter overrides the
+\fBMD5_CRYPT_ENAB\fR
+variable\&.
+.sp
+Note: if you use PAM, it is recommended to set this variable consistently with the PAM modules configuration\&.
+.RE
+.PP
+\fBMD5_CRYPT_ENAB\fR (boolean)
+.RS 4
+Indicate if passwords must be encrypted using the MD5\-based algorithm\&. If set to
+\fIyes\fR, new passwords will be encrypted using the MD5\-based algorithm compatible with the one used by recent releases of FreeBSD\&. It supports passwords of unlimited length and longer salt strings\&. Set to
+\fIno\fR
+if you need to copy encrypted passwords to other systems which don\'t understand the new algorithm\&. Default is
+\fIno\fR\&.
+.sp
+This variable is superceded by the
+\fBENCRYPT_METHOD\fR
+variable or by any command line option used to configure the encryption algorithm\&.
+.sp
+This variable is deprecated\&. You should use
+\fBENCRYPT_METHOD\fR\&.
+.sp
+Note: if you use PAM, it is recommended to set this variable consistently with the PAM modules configuration\&.
+.RE
+.PP
+\fBOBSCURE_CHECKS_ENAB\fR (boolean)
+.RS 4
+Enable additional checks upon password changes\&.
+.RE
+.PP
+\fBPASS_ALWAYS_WARN\fR (boolean)
+.RS 4
+Warn about weak passwords (but still allow them) if you are root\&.
+.RE
+.PP
+\fBPASS_CHANGE_TRIES\fR (number)
+.RS 4
+Maximum number of attempts to change password if rejected (too easy)\&.
+.RE
+.PP
+\fBPASS_MAX_LEN\fR (number), \fBPASS_MIN_LEN\fR (number)
+.RS 4
+Number of significant characters in the password for crypt()\&.
+\fBPASS_MAX_LEN\fR
+is 8 by default\&. Don\'t change unless your crypt() is better\&. This is ignored if
+\fBMD5_CRYPT_ENAB\fR
+set to
+\fIyes\fR\&.
+.RE
+.PP
+\fBSHA_CRYPT_MIN_ROUNDS\fR (number), \fBSHA_CRYPT_MAX_ROUNDS\fR (number)
+.RS 4
+When
+\fBENCRYPT_METHOD\fR
+is set to
+\fISHA256\fR
+or
+\fISHA512\fR, this defines the number of SHA rounds used by the encryption algorithm by default (when the number of rounds is not specified on the command line)\&.
+.sp
+With a lot of rounds, it is more difficult to brute forcing the password\&. But note also that more CPU resources will be needed to authenticate users\&.
+.sp
+If not specified, the libc will choose the default number of rounds (5000)\&.
+.sp
+The values must be inside the 1000\-999999999 range\&.
+.sp
+If only one of the
+\fBSHA_CRYPT_MIN_ROUNDS\fR
+or
+\fBSHA_CRYPT_MAX_ROUNDS\fR
+values is set, then this value will be used\&.
+.sp
+If
+\fBSHA_CRYPT_MIN_ROUNDS\fR
+>
+\fBSHA_CRYPT_MAX_ROUNDS\fR, the highest value will be used\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informations sécurisées sur les comptes utilisateurs\&.
+.RE
+.SH "VALEURS DE RETOUR"
+.PP
+La commande
+\fBpasswd\fR
+retourne les valeurs suivantes en quittant\ \&:
+.PP
+\fI0\fR
+.RS 4
+succès
+.RE
+.PP
+\fI1\fR
+.RS 4
+permission refusée
+.RE
+.PP
+\fI2\fR
+.RS 4
+combinaison d\'options non valable
+.RE
+.PP
+\fI3\fR
+.RS 4
+échec inattendu, rien n\'a été fait
+.RE
+.PP
+\fI4\fR
+.RS 4
+échec inattendu, le fichier
+\fIpasswd\fR
+est manquant
+.RE
+.PP
+\fI5\fR
+.RS 4
+fichier
+\fIpasswd\fR
+en cours d\'utilisation, veuillez réessayer plus tard
+.RE
+.PP
+\fI6\fR
+.RS 4
+paramètre non valable pour l\'option
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBgroup\fR(5),
+\fBpasswd\fR(5),
+\fBshadow\fR(5)\&.

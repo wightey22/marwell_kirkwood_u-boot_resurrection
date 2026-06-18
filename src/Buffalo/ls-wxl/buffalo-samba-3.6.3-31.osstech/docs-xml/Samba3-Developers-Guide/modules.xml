@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="modules">
+<chapterinfo>
+	<author>
+		<firstname>Jelmer</firstname><surname>Vernooij</surname>
+		<affiliation>
+			<orgname>Samba Team</orgname>
+			<address><email>jelmer@samba.org</email></address>
+		</affiliation>
+	</author>
+	<pubdate> 19 March 2003 </pubdate>
+</chapterinfo>
+
+<title>モジュール</title>
+
+<sect1>
+<title>利点</title>
+
+<para>
+新しいモジュールシステムは以下の利点を有する:
+</para>
+
+<simplelist>
+<member>透過的な、静的および動的モジュールのローディング(サブシステムがモジュールについて
+知る必要がない)</member>
+<member>構成時に、静的および動的モジュールを簡単に選べる</member>
+<member>安定モジューのパフォーマンスを向上するための"preload modules"オプション</member>
+<member>ややこしい#define stuff anymoreが不要</member>
+<member>すべてのバックエンドがプラグインとして提供されている(pdb_ldapとpdp_tdbを含む)</member>
+</simplelist>
+</sect1>
+
+<sect1>
+<title>モジュールのロード</title>
+
+<para>
+Samba内のいくつかのサブシステムは、異なったバックエンドを使う。それらのバックエンドは、
+Sambaに静的にリンクするか、プラグインとして提供されているかのどちらかである。
+サブシステムは、モジュールそれ自身を登録する事を許可する関数をもっている。例えば、
+passdbサブシステムでは以下の通り:
+</para>
+
+<para><programlisting>
+NTSTATUS smb_register_passdb(int version, const char *name, pdb_init_function init);
+</programlisting></para>
+
+<para>
+この関数は、モジュールそれ自身を登録するために初期化関数によって呼ばれる。
+</para>
+
+<sect2>
+<title>静的モジュール</title>
+
+<para>
+モジュールシステムは、各サブシステムの静的モジュールのための初期化関数の一覧に従う。
+例えば、(<filename>include/config.h</filename>から)現在は以下のようになっている:
+</para>
+
+<para><programlisting>
+/* Static init functions */
+#define static_init_pdb { pdb_mysql_init(); pdb_ldap_init(); pdb_smbpasswd_init(); pdb_tdbsam_init(); pdb_guest_init();}
+</programlisting></para>
+
+<para>
+これらの関数はサブシステムが使われる前に呼ばれるべきである。それは、
+サブシステムが初期化されるか、最初に使われるときに終了すべきである。
+</para>
+
+</sect2>
+
+<sect2>
+<title>動的モジュール</title>
+
+<para>
+サブシステムが特定のバックエンドを必要とする場合、それがすでに登録されているかを
+調べるべきである。もしもバックエンドがまだ登録されていなかった場合、サブシステムは、
+smb_probe_module(char *subsystem, char *backend)を呼び出すべきである。
+この関数は、指定されたパス($LIBDIR/subsystem/backend.so)から正しいモジュールを
+ロードしようとする。もしも'backend'の最初の文字がスラッシュの場合には、
+smb_probe_module()は'backend'で指定された絶対パスからモジュールをロードしようとする。
+</para>
+
+<para>smb_probe_module()の実行後、サブシステムは、モジュールがすでに登録されたか
+どうかをチェックすべきである。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>モジュールを書く</title>
+
+<para>
+各モジュールは初期化関数をもっている。Sambaに含まれるモジュールでは、
+この名前は
+'<replaceable>subsystem</replaceable>_<replaceable>backend</replaceable>_init'
+である。(決して組み込まれないが、モジュールとしてのみ提供される)外部モジュールでは、
+この名前は常時init_module'である(モジュールがSambaに含まれる場合、
+configureシステムは#define subsystem_backend_init() init_module()を追加する)。
+これらの関数のプロトタイプは以下の通り:
+</para>
+
+<para><programlisting>
+NTSTATUS init_module(void);
+</programlisting></para>
+
+<para>この関数は1回またはそれ以上登録関数を呼び出すべきである。関数は
+成功時にはNT_STATUS_OKか、NT_STATUS_UNSUCCESSFULか、失敗時に便利に使える
+nt error codeを返すべきである。</para>
+
+<para>たとえばpdb_ldap_init()は以下を含む: </para>
+
+<para><programlisting>
+NTSTATUS pdb_ldap_init(void)
+{
+smb_register_passdb(PASSDB_INTERFACE_VERSION, "ldapsam", pdb_init_ldapsam);
+smb_register_passdb(PASSDB_INTERFACE_VERSION, "ldapsam_nua", pdb_init_ldapsam_nua);
+	return NT_STATUS_OK;
+}
+</programlisting></para>
+
+<sect2>
+<title>configure.inにおける静的/動的の選択</title>
+
+<para>
+configure.in中のいくつかのマクロは、システムが正しく動くために必要な、種々の
+define文とsubstを生成する。既定値によって構築されるべきすべてのモジュールは、
+既定値で'default_modules'変数に追加されなければならない。例えば、もしもldap
+が見つかった場合、pdb_ldapはこの変数に追加される。
+</para>
+
+<para>
+condigure.inの最下部に、各モジュールのためにSMB_MODULE()が、各サブシステム用に
+SMB_SUBSYSTEM()が呼ばれなければならない。
+</para>
+
+<para>文法:</para>
+
+<para><programlisting>
+SMB_MODULE(<replaceable>subsystem</replaceable>_<replaceable>backend</replaceable>, <replaceable>object files</replaceable>, <replaceable>plugin name</replaceable>, <replaceable>subsystem name</replaceable>, <replaceable>static_action</replaceable>, <replaceable>shared_action</replaceable>)
+SMB_SUBSYSTEM(<replaceable>subsystem</replaceable>,<replaceable>depfile</replaceable>)
+</programlisting></para>
+
+<para>特定のサブシステム用のdepfileは、モジュール中に静的に構築されるための
+初期化モジュールを呼び出すファイルである。</para>
+
+<para>
+Makefile.in中の<replaceable>@SUBSYSTEM_MODULES@</replaceable>
+は構築されるプラグインの名前に置き換わる。
+</para>
+
+<para>
+すべての.cファイルに対し、'modules_clean'というmakeのターゲット中に./configureが
+再構築されることで変更できるdefineを含むようにしておくこと。実際に、これは、
+<command>static_init_subsystem;</command>コールを含むすべてのcファイルは、
+再構築する必要がある。
+</para>
+
+<note>
+<para>
+現在、configure.in中に、SMB_MODULE_PROVIVES()と呼ばれるコマンドがある。
+これは複数のものを登録するモジュールのために使われる。これは将来なくなる予定
+なので、調査(probe)のために使うべきではない。</para>
+</note>
+
+</sect2>
+</sect1>
+</chapter>

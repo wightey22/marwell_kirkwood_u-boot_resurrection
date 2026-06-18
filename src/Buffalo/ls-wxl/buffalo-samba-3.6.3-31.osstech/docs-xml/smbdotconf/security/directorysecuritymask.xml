@@ -1,0 +1,40 @@
+<samba:parameter name="directory security mask"
+                 context="S"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、
+    Windows NT クライアント上のセキュリティダイアログボックスを使って、
+    UNIX ディレクトリのパーミッションを操作する時に、
+    設定可能な UNIX 側のパーミッションを指定する。</para>
+
+    <para> このパラメータは、変更されるパーミッションビットに対して、
+    マスクとして適用され (AND 操作が適用され)るため、
+    このマスクにないビットは変更操作から保護される。
+    このパラメータを、AND ではなく OR 操作を実行するパラメータである
+    <smbconfoption name="force directory security mode"/> と混同しないように。
+    基本的に、マスク中で 0 と指定されたビットは、常時0であるビットと見なされる。</para>
+
+    <para>
+      基本的に、このマスク中ですべてのビットを0に設定することは、ファイル上の、
+      このビットの以前のステータスにかかわらず、ファイルのパーミッション上の
+      対応するビットを0に設定する結果となる。
+    </para>
+
+    <para>このパラメータが明示的に指定されなかった場合は、
+    0777 に設定される。これにより、ディレクトリに対する全ての
+    user/group/world パーミッションが変更可能となる。</para>
+
+    <para><emphasis>注意</emphasis> : 他の方法を使って Samba 
+    サーバにアクセスすることが可能なユーザは、この制限を簡単に回避できてしまう。
+    そのため、このパラメータの主な用途はスタンドアロンで動作する&quot;アプライアンス&quot;
+    システムになるだろう。通常のシステムの管理者のほとんどは、
+    このパラメータを規定値の <constant>0777</constant> のままにしておきたいと考えるだろう。</para>
+</description>
+
+<related>force directory security mode</related>
+<related>security mask</related>
+<related>force security mode</related>
+<value type="default">0777</value>
+<value type="example">0700</value>
+</samba:parameter>

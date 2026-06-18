@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<refentry id="ldbdel.1">
+
+<refmeta>
+	<refentrytitle>ldbdel</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザーコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>ldbdel</refname>
+	<refpurpose>LDB レコードを削除するためのコマンドラインプログラム</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>ldbdel</command>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-H LDB-URL</arg>
+		<arg choice="opt">dn</arg>
+		<arg choice="opt">...</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>
+ldbdel は ldb(7) データベースからレコードを削除する。
+ldbdel はコマンドラインで指定された dn により特定されるレコードを削除する。
+	</para>
+
+	<para>
+ldbdel が使用するデータベースは、-H オプションかまたは LDB_URL 環境変数に
+より指定する。
+	</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-h</term>
+		<listitem><para>
+		使用可能なオプションの一覧を表示する</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>-H &lt;ldb-url&gt;</term>
+			<listitem><para>
+				接続先 LDB の URL。詳細は ldb(7) を参照のこと。
+			</para></listitem>
+		</varlistentry>
+		
+	</variablelist>
+	
+</refsect1>
+
+<refsect1>
+	<title>環境変数</title>
+
+	<variablelist>
+		<varlistentry><term>LDB_URL</term>
+			<listitem><para>接続先 LDB の URL（ -H コマンドラインオプションで上書きできる）
+			</para></listitem>
+		</varlistentry>
+	</variablelist>
+	
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルは Samba スイートのバージョン 4.0 に適合する。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+
+	<para>ldb(7), ldbmodify, ldbadd, ldif(5)</para>
+
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+		ldb は
+		 <ulink url="http://samba.org/~tridge/">Andrew Tridgell</ulink>
+		によって書かれた。
+	</para>
+
+	<para>
+問題を報告したり何らかの提案をしたい場合は、
+<ulink url="http://ldb.samba.org/"/> Web サイトで現在の連絡先と
+メンテナー情報を確認してほしい。
+	</para>
+
+	<para>ldbdel は Andrew Tridgell により書かれた。</para>
+
+	<para>このマニュアルページは Jelmer Vernooij により書かれた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+		によって行なわれた。</para>
+</refsect1>
+
+</refentry>

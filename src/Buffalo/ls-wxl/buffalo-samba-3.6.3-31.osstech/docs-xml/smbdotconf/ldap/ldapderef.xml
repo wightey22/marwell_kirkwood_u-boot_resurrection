@@ -1,0 +1,21 @@
+<samba:parameter name="ldap deref" context="G" type="enum"
+	advanced="1" developer="1"
+	xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+
+<description>
+
+	<para>このオプションは、Sambaが、LDAPライブラリに、ある alias dereferencing方法を
+	  使う事を指定するかどうかを制御する。この既定値は<emphasis>auto</emphasis>
+	  であり、これは、ldapクライアントライブラリの既定値の設定がそのまま保持される
+	  事を意味する。これ以外に取り得る値は、
+	  <emphasis>never</emphasis>, <emphasis>finding</emphasis>,
+        <emphasis>searching</emphasis> と <emphasis>always</emphasis>である。
+	より詳細な情報は、使用しているLDAPのマニュアルで探してみること。
+	</para>
+
+</description>
+
+<value type="default">auto</value>
+<value type="example">searching</value>
+
+</samba:parameter>

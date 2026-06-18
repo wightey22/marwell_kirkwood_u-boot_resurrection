@@ -1,0 +1,20 @@
+<samba:parameter name="deadtime"
+                 context="G"
+                 developer="1"
+		 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータの値(10進の整数)は、接続が利用されなくなったとみなされて切断が行なわれるまでの経過時間(分)を表す。 deadtime はオープンされているファイルが存在しない時のみ有効である。
+    </para>
+		
+    <para>このパラメータは、多数の利用されていない接続によって、サーバ上のリソースが枯渇するのを防ぐのに有効である。</para>
+
+    <para>多くのクライアントは、このパラメータをユーザに意識させないように、接続が切断されていた際に、自動で再接続を行なう機能を持っている。</para>
+
+    <para>ほとんどのシステムにおいて、このパラメータを利用して、数分でタイムアウトが発生するようにすることを推奨する。</para>
+
+    <para>deadtime が 0 の場合、タイムアウトによる自動的な切断は行なわれない。</para>
+</description>
+<value type="default">0</value>
+<value type="example">15</value>
+</samba:parameter>

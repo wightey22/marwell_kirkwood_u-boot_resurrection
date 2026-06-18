@@ -1,0 +1,26 @@
+<samba:parameter name="ldap debug level"
+		 type="integer"
+		context="G"
+		developer="1" advanced="1"
+		xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+このパラメータは LDAP ライブラリコールのデバッグレベルをコントロールする。
+OpenLDAP の場合、これはサーバで解釈されるビットフィールドと同じものであり、
+		 <citerefentry>
+			<refentrytitle>slapd.conf</refentrytitle>
+			<manvolnum>5</manvolnum>
+		</citerefentry>
+のマニュアルにその解説がある。よく使われる有用な値として、
+		 <emphasis>1</emphasis> がある。これは関数コールをトレースする。
+	</para>
+	<para>
+LDAP ライブラリからのデバッグ出力は、Samba のログ出力の中で頭に [LDAP]
+がついたものである。LDAP がログ出力をするレベルは
+<parameter>ldap debug threshold</parameter> パラメータでコントロール
+できる。
+	</para>
+</description>
+<value type="default">0</value>
+<value type="example">1</value>
+</samba:parameter>

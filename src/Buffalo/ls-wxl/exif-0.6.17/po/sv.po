@@ -1,0 +1,310 @@
+# Swedish translation for exif
+# Copyright (C) 2007, 2008 Free Software Foundation, Inc.
+# This file is distributed under the same license as the exif package.
+# Daniel Nylander <po@danielnylander.se>, 2007, 2008.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: exif 0.6.16-pre1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-11-06 01:03-0800\n"
+"PO-Revision-Date: 2008-02-09 20:51+0100\n"
+"Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
+"Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: exif/actions.c:56
+#, c-format
+msgid "Not enough memory."
+msgstr "Inte tillräckligt mycket minne."
+
+#: exif/actions.c:74
+#, c-format
+msgid "Setting a value for this tag is unsupported!"
+msgstr ""
+
+#: exif/actions.c:91
+#, c-format
+msgid "Too few components specified!"
+msgstr "För få komponenter angivna!"
+
+#: exif/actions.c:106
+#, c-format
+msgid "Internal error. Please contact <%s>."
+msgstr "Internt fel. Kontakta <%s>."
+
+#: exif/actions.c:143
+#, c-format
+msgid "Not yet implemented!"
+msgstr "Ännu inte implementerat!"
+
+#: exif/actions.c:150
+#, fuzzy, c-format
+msgid "Warning; Too many components specified!"
+msgstr "För få komponenter angivna!"
+
+#: exif/actions.c:172
+#, c-format
+msgid "Too much EXIF data (%i bytes). Only %i bytes are allowed."
+msgstr "För mycket EXIF-data (%i byte). Endast %i byte tillåts."
+
+#: exif/actions.c:183 exif/actions.c:358
+#, c-format
+msgid "Wrote file '%s'."
+msgstr "Skrev filen \"%s\"."
+
+#: exif/actions.c:203
+#, c-format
+msgid "EXIF entry '%s' "
+msgstr "EXIF-post \"%s\" "
+
+#: exif/actions.c:205
+#, c-format
+msgid "(0x%x, '%s') "
+msgstr "(0x%x, \"%s\") "
+
+#: exif/actions.c:208
+#, c-format
+msgid "exists in IFD '%s':\n"
+msgstr "finns i IFD \"%s\":\n"
+
+#: exif/actions.c:251
+#, c-format
+msgid "IFD '%s' does not contain a tag '%s'!"
+msgstr "IFD:n \"%s\" innehåller inte taggen \"%s\"!"
+
+#: exif/actions.c:282
+#, c-format
+msgid "Could not open '%s' (%m)!"
+msgstr "Kunde inte öppna \"%s\" (%m)!"
+
+#: exif/actions.c:285
+#, c-format
+msgid "Could not open '%s' (%s)!"
+msgstr "Kunde inte öppna \"%s\" (%s)!"
+
+#: exif/actions.c:295
+#, c-format
+msgid "Could not read '%s' (%m)."
+msgstr "Kunde inte läsa \"%s\" (%m)."
+
+#: exif/actions.c:298
+#, c-format
+msgid "Could not read '%s' (%s)."
+msgstr "Kunde inte läsa \"%s\" (%s)."
+
+#: exif/actions.c:317
+#, c-format
+msgid "IFD '%s' does not contain tag '%s'."
+msgstr "IFD:n \"%s\" innehåller inte taggen \"%s\"."
+
+#: exif/actions.c:323
+#, fuzzy, c-format
+msgid "'%s' does not contain tag '%s'."
+msgstr "IFD:n \"%s\" innehåller inte taggen \"%s\"."
+
+#: exif/actions.c:341
+#, c-format
+msgid "'%s' does not contain a thumbnail!"
+msgstr "\"%s\" innehåller inte en miniatyrbild!"
+
+#: exif/actions.c:350
+#, c-format
+msgid "Could not open '%s' for writing (%m)!"
+msgstr "Kunde inte öppna \"%s\" för skrivning (%m)!"
+
+#: exif/actions.c:353
+#, c-format
+msgid "Could not open '%s' for writing (%s)!"
+msgstr "Kunde inte öppna \"%s\" för skrivning (%s)!"
+
+#: exif/actions.c:371
+#, c-format
+msgid "EXIF tags in '%s':"
+msgstr "EXIF-taggar i \"%s\":"
+
+#: exif/actions.c:440
+#, c-format
+msgid "Unknown MakerNote format.\n"
+msgstr "Okänt MakerNote-format.\n"
+
+#: exif/actions.c:447
+#, c-format
+msgid "MakerNote does not contain any value.\n"
+msgstr "MakerNote innehåller inget värde.\n"
+
+#: exif/actions.c:450
+#, c-format
+msgid "MakerNote contains %i value:\n"
+msgid_plural "MakerNote contains %i values:\n"
+msgstr[0] "MakerNote innehåller %i värde:\n"
+msgstr[1] "MakerNote innehåller %i värden:\n"
+
+#: exif/actions.c:460
+msgid "Unknown tag"
+msgstr "Okänd tagg"
+
+#: exif/actions.c:464
+msgid "Unknown value"
+msgstr "Okänt värde"
+
+#: exif/actions.c:490
+#, c-format
+msgid "EXIF tags in '%s' ('%s' byte order):"
+msgstr "EXIF-taggar i \"%s\" (\"%s\" byteordning):"
+
+#: exif/actions.c:495 exif/actions.c:497
+msgid "Tag"
+msgstr "Tagg"
+
+#: exif/actions.c:501 exif/actions.c:503 exif/main.c:199
+msgid "Value"
+msgstr "Värde"
+
+#: exif/actions.c:509
+#, c-format
+msgid "EXIF data contains a thumbnail (%i bytes)."
+msgstr "EXIF-data innehåller en miniatyrbild (%i byte)."
+
+#: exif/actions.c:545
+#, c-format
+msgid "ThumbnailSize\t%i\n"
+msgstr "Miniatyrbildsstorlek\t%i\n"
+
+#: exif/main.c:175
+msgid "Display software version"
+msgstr "Visa programvaruversion"
+
+#: exif/main.c:177
+msgid "Show IDs instead of tag names"
+msgstr "Visa id:n istället för taggnamn"
+
+#: exif/main.c:179
+msgid "Select tag"
+msgstr "Välj tagg"
+
+#: exif/main.c:179
+msgid "tag"
+msgstr "tagg"
+
+#: exif/main.c:181
+msgid "Select IFD"
+msgstr "Välj IFD"
+
+#: exif/main.c:181
+msgid "IFD"
+msgstr "IFD"
+
+#: exif/main.c:183
+msgid "List all EXIF tags"
+msgstr "Lista alla EXIF-taggar"
+
+#: exif/main.c:185
+msgid "Show contents of tag MakerNote"
+msgstr "Visa innehållet i taggen MakerNote"
+
+#: exif/main.c:187
+msgid "Remove tag or ifd"
+msgstr "Ta bort tagg eller ifd"
+
+#: exif/main.c:189
+msgid "Show description of tag"
+msgstr "Visa beskrivning av tagg"
+
+#: exif/main.c:191
+msgid "Extract thumbnail"
+msgstr "Extrahera miniatyrbild"
+
+#: exif/main.c:193
+msgid "Remove thumbnail"
+msgstr "Ta bort miniatyrbild"
+
+#: exif/main.c:195
+msgid "Insert FILE as thumbnail"
+msgstr "Infoga FIL som miniatyrbild"
+
+#: exif/main.c:195 exif/main.c:197
+msgid "FILE"
+msgstr "FIL"
+
+#: exif/main.c:197
+msgid "Write data to FILE"
+msgstr "Skriv data till FIL"
+
+#: exif/main.c:201
+msgid "Create EXIF data if not existing"
+msgstr ""
+
+#: exif/main.c:203
+msgid "Output in a machine-readable (tab delimited) format"
+msgstr "Skriv ut i ett läsbart format (tabulatoravgränsat)"
+
+#: exif/main.c:206
+msgid "Output in a XML format"
+msgstr "Skriv ut i ett XML-format"
+
+#: exif/main.c:209
+msgid "Show debugging messages"
+msgstr "Visa felsökningsmeddelanden"
+
+#: exif/main.c:229
+msgid "[OPTION...] file"
+msgstr "[FLAGGA...] fil"
+
+#: exif/main.c:241
+#, c-format
+msgid ""
+"Invalid IFD '%s'. Valid IFDs are '0', '1', 'EXIF', 'GPS', and "
+"'Interoperability'."
+msgstr ""
+"Ogiltig IFD \"%s\". Giltiga IFD:er är \"0\", \"1\", \"EXIF\", \"GPS\" och "
+"\"Interoperability\"."
+
+#: exif/main.c:250
+#, c-format
+msgid "Invalid tag '%s'!"
+msgstr "Ogiltig tagg \"%s\"!"
+
+#: exif/main.c:258
+msgid "You need to specify a tag!"
+msgstr "Du måste ange en tagg!"
+
+#: exif/main.c:263
+msgid "You need to specify an IFD!"
+msgstr "Du måste ange en IFD!"
+
+#: exif/main.c:286
+#, c-format
+msgid "Tag '%s' "
+msgstr "Tagg \"%s\" "
+
+#: exif/main.c:288
+#, c-format
+msgid "(0x%04x, '%s'): "
+msgstr "(0x%04x, \"%s\"): "
+
+#: exif/main.c:338
+#, c-format
+msgid "'%s' does not contain EXIF data!"
+msgstr "\"%s\" innehåller inget EXIF-data!"
+
+#~ msgid "Please specify a tag!"
+#~ msgstr "Ange en tagg!"
+
+#~ msgid "MakerNote contains 1 value:\n"
+#~ msgstr "MakerNote innehåller ett värde:\n"
+
+#~ msgid "EXIF entry '%s' (0x%x, '%s') exists in IFD '%s':"
+#~ msgstr "EXIF-posten \"%s\" (0x%x, \"%s\") finns i IFD \"%s\":"
+
+#~ msgid "Data does not follow JPEG specification."
+#~ msgstr "Data följer inte JPEG-specifikationen."
+
+#~ msgid "Path '%s' invalid."
+#~ msgstr "Sökvägen \"%s\" är ogiltig."
+
+#~ msgid "Could not read '%s'."
+#~ msgstr "Kunde inte läsa \"%s\"."

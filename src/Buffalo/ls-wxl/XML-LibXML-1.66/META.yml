@@ -1,0 +1,16 @@
+--- #YAML:1.0
+name:                XML-LibXML
+version:             1.66
+abstract:            Interface to Gnome libxml2 xml parsing and DOM library
+license:             ~
+author:              
+    - Christian Glahn
+generated_by:        ExtUtils::MakeMaker version 6.42
+distribution_type:   module
+requires:     
+    XML::LibXML::Common:           0.13
+    XML::NamespaceSupport:         1.07
+    XML::SAX:                      0.11
+meta-spec:
+    url:     http://module-build.sourceforge.net/META-spec-v1.3.html
+    version: 1.3

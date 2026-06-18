@@ -1,0 +1,14 @@
+<samba:parameter name="time offset"
+	         context="G"
+			 type="integer"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、GMT
+	からローカル時間への変換時に追加する時間(分単位)を設定する。
+	夏時間処理に問題があるPCを多数管理している際に有効である。
+	</para>
+</description>
+<value type="default">0</value>
+<value type="example">60</value>
+</samba:parameter>

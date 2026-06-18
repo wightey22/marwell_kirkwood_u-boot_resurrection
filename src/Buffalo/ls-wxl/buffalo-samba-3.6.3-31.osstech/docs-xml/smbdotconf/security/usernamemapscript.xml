@@ -1,0 +1,18 @@
+<samba:parameter name="username map script"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    このパラメータは <smbconfoption name="username map"/> パラメータと排他的な関係にある。
+    このパラメータは、（認証要求で渡されたユーザ名を示す）コマンドライン引数を1つだけとり、
+    標準出力に（マッピングされたアカウント名を示す）文字列を1行返却する
+    外部プログラム、もしくはスクリプトを指定する。    
+    これにより、ユーザ名のマッピング表を LDAP や NIS
+    などのディレクトリサービス上に格納することが可能となる。
+    </para>
+</description>
+<value type="default"/>
+<value type="example">/etc/samba/scripts/mapusers.sh</value>
+</samba:parameter>

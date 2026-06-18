@@ -1,0 +1,34 @@
+<samba:parameter name="inherit permissions"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>通常、新規作成したファイルやディレクトリのパーミッションは、
+    <smbconfoption name="create mask"/> 、<smbconfoption name="directory mask"/> 、 <smbconfoption name="force create mode"/> 、 <smbconfoption
+    name="force directory mode"/> パラメータによって決定されるが、
+    真偽値パラメータである inherit permissions は、それらに優先される。</para>
+		
+    <para>新しいディレクトリはsetgid のようなビットも含め、
+    親ディレクトリのパーミッションを引き継ぐようになる。</para>
+
+    <para>新しく作成されたファイルは、read/write ビットの設定を親ディレクトリから引き継ぐようになる。
+    execute ビットについては、従来どおり
+    <smbconfoption name="map archive"/> 、 <smbconfoption name="map hidden"/> 、<smbconfoption
+    name="map system"/> などにより制御される。
+    </para>
+
+    <para>setuid ビットが引き継がれることは、<emphasis>決して
+    </emphasis>ない(コード上で明示的に禁止している)。</para>
+
+    <para>このパラメータは、数千人レベルの多くのユーザが存在する大規模なシステムで、
+    単一の [homes] 共有を各ユーザが柔軟に利用できるようにさせる際に、
+    特に有用であろう。</para>
+</description>
+
+<related>create mask</related>
+<related>directory mask</related>
+<related>force create mode</related>
+<related>force directory mode</related>
+
+<value type="default">no</value>
+</samba:parameter>

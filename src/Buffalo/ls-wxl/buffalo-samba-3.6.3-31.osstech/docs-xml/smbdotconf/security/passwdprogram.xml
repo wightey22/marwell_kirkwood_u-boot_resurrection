@@ -1,0 +1,36 @@
+<samba:parameter name="passwd program"
+                 context="G"
+                 type="string"
+                 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+    <para> ユーザの UNIX 上のパスワードを設定するために使用するプログラムの名前を指定する。
+    <parameter moreinfo="none">%u</parameter> はユーザ名に置換される。
+    パスワード変更プログラムを呼び出す前に、
+    指定されたユーザ名が存在するかのチェックが行なわれる。</para>
+
+    <para> 多くのパスワード変更プログラムは、
+    パスワードの最小字数や大文字と小文字併用や、数字の混在などの
+    <emphasis>適切な</emphasis>パスワードを要求することに注意して欲しい。
+    一部のクライアント(Windows for Workgroups など)は、
+    パスワードを送信する前に大文字化してしまうため、問題が発生する。</para>
+
+    <para><emphasis>注意:</emphasis><parameter moreinfo="none">unix
+    password sync</parameter> パラメータを <constant>yes</constant>
+    に設定すると、 smbpasswd 
+    ファイル中の SMBパスワードが変更される前に、
+    このプログラムが <emphasis>ROOT権限で</emphasis> 呼び出される。
+    UNIX 側のパスワード変更が失敗すると、
+    <command moreinfo="none">smbd</command> は SMBパスワードの変更も失敗させる(これは仕様である)。</para>
+
+    <para> <parameter moreinfo="none">unix password sync</parameter>
+    パラメータが <constant>yes</constant> に設定されている場合は、
+    このパラメータで指定する <emphasis>すべての</emphasis> プログラムを <emphasis>必ず絶対パスで設定し</emphasis>、
+    セキュリティ上の問題が発生しないようにしておくこと。
+    デフォルトでは <parameter>unix password sync</parameter> は <constant>no</constant> になっているので注意。</para>
+
+</description>
+<related>unix password symc</related>
+<value type="default"></value>
+<value type="example">/bin/passwd %u</value>
+</samba:parameter>

@@ -1,0 +1,18 @@
+<samba:parameter name="add group script"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、新しいグループの作成が要求された際に、 <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> によって <emphasis>ROOT 権限で</emphasis> 実行されるスクリプトのフルパス名である。
+	<parameter moreinfo="none">%g</parameter> はグループ名に展開される。
+	スクリプトは Windows NT のドメイン管理ツールを使用して設定を行なう際にのみ有効である。
+	このスクリプトでは、UNIX側のグループ名の制約に捕らわれず、任意の名前のグループを作成することができる。
+	ただし、その場合スクリプトは標準出力に作成されたグループの gid の数値を表示する必要がある。
+	</para>
+</description>
+
+<value type="default"/>
+<value type="example">/usr/sbin/groupadd %g</value>
+</samba:parameter>

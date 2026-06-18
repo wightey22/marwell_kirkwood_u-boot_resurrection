@@ -1,0 +1,13 @@
+<samba:parameter name="netbios aliases"
+                 context="G"
+				 type="list"
+                 advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+        <para>これは、nmbdが Samba サーバの別名としてアナウンスする NetBIOS 名のリストである。これにより、ブラウズリスト中で単一のマシンを複数の名前で表示させることが可能になる。
+マシンがブラウズサーバやログオンサーバとして動作している場合、別名はブラウズサーバやログオンサーバとしてはアナウンスされない。マシン本来の名前だけがそれらの機能をもつ名前としてアナウンスされる。</para>
+</description>
+<related>netbios name</related>
+<value type="default"><comment>空文字列 (別名なし)</comment></value>
+<value type="example">TEST TEST1 TEST2</value>
+</samba:parameter>

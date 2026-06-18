@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="pam_winbind.conf.5">
+
+<refmeta>
+	<refentrytitle>pam_winbind.conf</refentrytitle>
+	<manvolnum>5</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">5</refmiscinfo>
+	<refmiscinfo class="version">3.6</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>pam_winbind.conf</refname>
+	<refpurpose>Winbindのための、PAMモジュール設定ファイル</refpurpose>
+</refnamediv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>この設定ファイルは、<citerefentry><refentrytitle>samba</refentrytitle>
+        <manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para>
+	pam_winbind.conf は、pam_winbind PAMモジュールのための設定ファイルである。
+	詳細については、
+	<citerefentry><refentrytitle>pam_winbind</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+	を参照。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>概要</title>
+
+	<para>
+	  pam_winbind.conf設定ファイルは昔ながらのini形式の設定ファイルである。
+	  ここには、種々のオプションが定義される、1つのセクション(global)のみがある。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+	<para>
+
+		pam_winbindは、PAM設定ファイル中で設定されるか、
+		<filename>/etc/security/pam_winbind.conf</filename>に設定される、
+		いくつかのオプションをサポートする。PAM設定ファイルで定義した
+		オプションは、pam_winbind.conf設定ファイルのものよりも優先される。
+
+		<variablelist>
+
+		<varlistentry>
+		<term>debug = yes|no</term>
+		<listitem><para>syslogにデバッグ出力を行う。既定値は"no"である。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>debug_state = yes|no</term>
+		<listitem><para>syslogに詳細なPAMステートデバッグ情報を出力する。既定値は"no"である。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>require_membership_of = [SID or NAME]</term>
+		<listitem><para>
+		    もしも、このオプションが設定された場合、pam_winbindは、もしもユーザが
+		    与えられたSIDかNAMEのメンバである場合のみ成功する。SIDはグループSID、
+		    aliasSIDかユーザSIDのどれかである。また、SIDの代わりにNAMEを与える
+		    事も可能である。その名前は<parameter>MYDOMAIN\\mygroup</parameter>か
+		    <parameter>MYDOMAIN\\myuser</parameter>という形式でなければならない。
+		    pam_winbindはこの場合、内部的にSIDを検索する。NAMEは空白を含んでは
+		    ならないことに注意。そのため、SIDのみを使うことを推奨する。
+		    <command>wbinfo --user-sids=SID</command>を使うことでSIDの一覧から
+		    ユーザがどのメンバかを確認することが出来る。この設定は、既定値では
+		    空である。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>try_first_pass = yes|no</term>
+		<listitem><para>
+		    既定値では、pam_winbindは以前のモジュールから認証トークンを得ようと
+		    する。もしもトークンがなければ、ユーザに対して古いパスワードを
+		    問い合わせする。このオプションを使うと、pam_winbindは、もしも以前の
+		    モジュールからの認証トークンがない場合にエラーとして異常終了する。
+		    もしも最初のパスワードが無効であれば、PAMはパスワード要求を出す。
+		    既定値は"no"である。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>krb5_auth = yes|no</term>
+		<listitem><para>
+
+		    pam_winbindは、winbinddがActive Directoryドメインコントローラと
+		    通信している時にKerberosを認証に使うことが出来る。Kerberos認証は
+		    成功しない(例えば、クロックのずれ)場合があり、その場合はwinbindd
+		    はMSRPCを使ったsamlogon認証に切り替える。このパラメータが、
+		    <parameter>winbind refresh tickets</parameter>と一緒に使われた
+		    場合、winbindは必要に応じてTicket Granting Ticket(TGT)をリフレッシュ
+		    することによって最新の状態に更新する。
+
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>krb5_ccache_type = [type]</term>
+		<listitem><para>
+
+		    pam_winbindが、<parameter>krb5_auth</parameter>オプションを有効に
+		    することでkerberos認証を使うとするように設定されている場合、
+		    認証キャッシュ中に、受け取ったTicket Granting Ticket(TGT)を格納
+		    することが出来る。現在サポートされている値は、
+		    <parameter>FILE</parameter>のみである。この場合、UIDがユーザの
+		    IDに変更された、/tmp/krb5cc_UID形式での認証キャッシュが作成される。
+		    ログオンが成功した後に、チケットキャッシュなしでKerberos認証を行う
+		    ために、空のままにしておくこと。この設定は既定値では空である。
+
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>cached_login = yes|no</term>
+		<listitem><para>
+		    Winbindは、<parameter>winbind offline logon</parameter>が有効な
+		    時に、キャッシュされた認証情報を使ってログオンすることを許可する。
+		    PAMモジュールからこの機能を使うために、このオプションは設定されねば
+		    ならない。既定値は"no"である。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>silent = yes|no</term>
+		<listitem><para>
+		    どんなメッセージも出さない。既定値は"no"である。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>mkhomedir = yes|no</term>
+		<listitem><para>
+		    動的にユーザのホームディレクトリを作成する。オプションはPAM session
+		    ブロックで有効である。既定値は"no"である。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>warn_pwd_expire = days</term>
+		<listitem><para>
+		    パスワードが満了する前にpam_passwordが警告を発する時刻を日単位で
+		    指定する。既定値は14日である。
+		</para></listitem>
+		</varlistentry>
+
+		</variablelist>
+
+	</para>
+
+</refsect1>
+
+<refsect1>
+	<title>参照</title>
+	<para><citerefentry>
+	<refentrytitle>pam_winbind</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry>
+	<refentrytitle>wbinfo</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>, <citerefentry>
+	<refentrytitle>winbindd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry>
+	<refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry></para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページはSambaバージョン3用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作られた。 Samba は現在、Linux
+	カーネルが開発されているような方法でのオープンソースプロジェクトである
+	Samba Team によって開発されている。</para>
+
+	<para>このマニュアルページは Jelmer Vernooij と Guenther Deschner によって作られた。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.5.0 - 3.5.3 対応のものである。</para>
+	<para>Samba 3.5.0 - 3.5.3 対応の翻訳は、太田俊哉 (ribbon@samba.gr.jp) によって行なわれた。</para>
+</refsect1>
+
+</refentry>

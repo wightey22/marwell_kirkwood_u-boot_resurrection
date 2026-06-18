@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="testparm.1">
+
+<refmeta>
+	<refentrytitle>testparm</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>testparm</refname>
+	<refpurpose>smb.conf ファイル内部の設定の正当性を検証</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>testparm</command>
+		<arg choice="opt">-s</arg>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-v</arg>
+		<arg choice="opt">-L &lt;servername&gt;</arg>
+		<arg choice="opt">-t &lt;encoding&gt;</arg>
+		<arg choice="req">config filename</arg>
+		<arg choice="opt">hostname hostIP</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このプログラムは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para><command>testparm</command> は <citerefentry><refentrytitle>smbd
+	</refentrytitle><manvolnum>8</manvolnum></citerefentry> 設定ファイル内部の
+	正当性を検査するための非常に簡単なテストプログラムである。
+	このプログラムが問題なしと報告した場合、<command>smbd</command>
+	による設定ファイルのロードが成功することが確実な形で、
+	設定ファイルを使用することができる。</para>
+
+
+	<para>ただし、設定ファイルに指定されたサービスが期待通りに動作するか、
+	有効になるかということは保証<emphasis>されない</emphasis>ことに注意されたい。</para>
+
+	<para> コマンドラインのオプションでホスト名と IP アドレスが指定されると、
+	テストプログラムはサービスエントリに対して動作し、
+	指定したホストが各サービスを利用する権利を持つかどうかを報告する。
+	</para>
+
+	<para><command>testparm</command> は <filename>smb.conf</filename>
+	にエラーを見つけると呼び出したプログラムに 1 を、エラーがなければ 0
+	の終了コードを返す。これにより、シェル・スクリプトは <command>testparm
+	</command> からの出力をテストできる。</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-s</term>
+		<listitem><para>このオプションが指定されない場合、<command>testparm
+		</command> はサービス名を表示した後でプロンプトを表示し、
+		リターンキーが押されると、サービスの定義をダンプする。
+		</para></listitem>
+		</varlistentry>
+
+		&stdarg.help;
+		&stdarg.version;
+		
+		<varlistentry>
+		<term>-L servername</term>
+		<listitem><para>%L マクロの値を <replaceable>servername</replaceable>
+		に設定する。これは、%L マクロによって指定される include file
+		を試験するのに有効である。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-v</term>
+		<listitem><para>このオプションが指定されると、<citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry> の中で指定されていないパラメータのデフォルト値を
+ 		表示する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-t encoding</term>
+		<listitem><para>
+		指定された encoding でデータを出力する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>--parameter-name parametername</term>
+		<listitem><para>
+		指定されたパラメータをダンプする。セクション名がしていされない場合、表示は
+		既定値で、グローバルセクションに制限される。
+		パラメータオプションをダンプすることも可能である。それゆえ、パラメータ名から、
+		コロンによって、オプションは分離しなければならない。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>--section-name sectionname</term>
+		<listitem><para>
+		指定されたセクションをダンプする。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>configfilename</term>
+		<listitem><para>これはチェックする設定ファイルの名前である。
+		このパラメータを指定しないと、デフォルトの <citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry>	ファイルがチェックされる。
+		</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>hostname</term>
+		<listitem><para>このパラメータとそれに続くパラメータが指定されると、
+		<command>testparm</command> は <citerefentry><refentrytitle>smb.conf
+		</refentrytitle><manvolnum>5</manvolnum></citerefentry> 中の
+		<parameter>hosts allow</parameter> と <parameter>hosts deny</parameter>
+		パタメータを使って、指定された IP アドレス の hostname が <command>
+		smbd</command> サーバにアクセス可能を許可されているかを判断する。
+		このパラメータを指定した場合、次の hostIP パラメータも指定すること。
+		</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>hostIP</term>
+		<listitem><para>これは前のパラメータで指定したホストの IP
+		アドレスである。このアドレスは、hostname パラメータを指定した場合
+		必ず指定すること。</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>関連ファイル</title>
+
+	<variablelist>
+		<varlistentry>
+		<term><citerefentry><refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry></term>
+		<listitem><para>これは通常 <citerefentry><refentrytitle>smbd
+		</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+		が使用する設定ファイルの名前である。 
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>診断</title>
+
+	<para>このプログラムは設定ファイルのロードが正常に完了したか否かを報告する。
+	ファイルがロードされなかった場合、エラーと警告の出力が優先される。
+	ファイルのロードが完了したら、プログラムは設定されているすべてのサービスの
+	詳細を標準出力に出力する。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページSambaバージョン3用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry>, <citerefentry>
+		<refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum>
+		</citerefentry></para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連ユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は、Samba Team によって Linux
+	カーネルの開発と同様に、オープンソースプロジェクトとして開発されている。
+	</para>
+	
+	<para>オリジナルのSambaマニュアルは、Karl Auer によって執筆された。
+	マニュアルのソースは Jeremy Allison によって YODL 形式に変換され、
+	Samba 2.0 リリース用に更新された。(YODL はオープンソース・ソフトウエアの
+	優れた作品である <ulink noescape="1" url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink>より入手可能。) Samba 2.2 における
+	DocBook 形式への変換は Gerald Carterによって 行なわれた。Samba 3.0 における
+	DocBook XML 4.2 形式への変換は Alexander Bokovoy によって行われた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>はせがわようすけ</para></listitem>
+		<listitem><para>高橋 基信 (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>佐藤 文優</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+	によって行なわれた。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は 太田俊哉(ribbon@samba.gr.jp)によって行われた。</para>
+</refsect1>
+
+</refentry>
+

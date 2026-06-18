@@ -1,0 +1,17 @@
+<samba:parameter name="abort shutdown script"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータは、 <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> が呼び出すことで、
+	<smbconfoption name="shutdown script"/> によって実行されたシャットダウン処理を停止させるスクリプトのフルパス名である。</para>
+		
+	<para>接続しているユーザが <constant>SeRemoteShutdownPrivilege</constant>
+	権限を保持している場合、このコマンドはroot権限で呼び出される。</para>
+</description>
+<value type="default">&quot;&quot;</value>
+<value type="example">/sbin/shutdown -c</value>
+</samba:parameter>

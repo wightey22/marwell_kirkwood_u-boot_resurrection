@@ -1,0 +1,201 @@
+.\"     Title: groupadd
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "GROUPADD" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+groupadd \- Créer un nouveau groupe
+.SH "SYNOPSIS"
+.HP 9
+\fBgroupadd\fR [\-g\ \fIGID\fR\ [\-o]] [\-f] [\-K\ \fICLÉ\fR=\fIVALEUR\fR] \fIgroupe\fR
+.SH "DESCRIPTION"
+.PP
+The
+\fBgroupadd\fR
+command creates a new group account using the values specified on the command line plus the default values from the system\&. The new group will be entered into the system files as needed\&.
+.SH "OPTIONS"
+.PP
+Les options disponibles pour la commande
+\fBgroupadd\fR
+sont\ \&:
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+This option causes the command to simply exit with success status if the specified group already exists\&. When used with
+\fB\-g\fR, and the specified GID already exists, another (unique) GID is chosen (i\&.e\&.
+\fB\-g\fR
+is turned off)\&.
+.RE
+.PP
+\fB\-g\fR, \fB\-\-gid\fR \fIGID\fR
+.RS 4
+La valeur numérique de l\'identifiant du groupe (\(Fo\ \&group ID\ \&\(Fc ou GID)\&. Cette valeur doit être unique, à moins que l\'option
+\fB\-o\fR
+ne soit utilisée\&. La valeur ne doit pas être négative\&. Par défaut le plus petit identifiant plus grand que 999 et que les identifiants des groupes existants est utilisé\&. Les valeurs comprises entre 0 et 999 sont généralement réservées aux comptes système\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Afficher un message d\'aide et quitter\&.
+.RE
+.PP
+\fB\-K\fR, \fB\-\-key\fR \fICLÉ\fR=\fIVALEUR\fR
+.RS 4
+Surcharger les valeurs par défaut du fichier
+\fI/etc/login\&.defs\fR
+(GID_MIN, GID_MAX et autres)\&. L\'option
+\fB\-K\fR
+peut être indiquée plusieurs fois\&.
+.sp
+Exemple\ \&:
+\fB\-K\fR
+\fIGID_MIN\fR=\fI10\fR
+\fB\-K\fR
+\fIGID_MAX\fR=\fI499\fR
+.sp
+Note\ \&:
+\fB\-K\fR
+\fIGID_MIN\fR=\fI10\fR,\fIGID_MAX\fR=\fI499\fR
+ne fonctionne pas pour l\'instant\&.
+.RE
+.PP
+\fB\-o\fR, \fB\-\-non\-unique\fR
+.RS 4
+This option permits to add a group with a non\-unique GID\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-password\fR \fIMOT_DE_PASSE\fR
+.RS 4
+The encrypted password, as returned by
+\fBcrypt\fR(3)\&. The default is to disable the password\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-system\fR
+.RS 4
+Create a system group\&.
+.sp
+The numeric identifiers of new system groups are choosen in the
+\fBSYS_GID_MIN\fR\-\fBSYS_GID_MAX\fR
+range, defined in
+\fIlogin\&.defs\fR, instead of
+\fBGID_MIN\fR\-\fBGID_MAX\fR\&.
+.RE
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBGID_MAX\fR (number), \fBGID_MIN\fR (number)
+.RS 4
+Range of group IDs used for the creation of regular groups by
+\fBuseradd\fR,
+\fBuseradd\fR, or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.PP
+\fBSYS_GID_MAX\fR (number), \fBSYS_GID_MIN\fR (number)
+.RS 4
+Range of group IDs used for the creation of system groups by
+\fBuseradd\fR,
+\fBgroupadd\fR, or
+\fBnewusers\fR\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.PP
+\fI/etc/login\&.defs\fR
+.RS 4
+Configuration de la suite des mots de passe cachés \(Fo\ \&shadow password\ \&\(Fc\&.
+.RE
+.SH "AVERTISSEMENTS"
+.PP
+Les noms de groupe doivent commencer par une lettre minuscule ou un tiret bas (\(Fo\ \&underscore\ \&\(Fc), et seuls des lettres minuscules, des chiffres, des \(Fo\ \&underscore\ \&\(Fc, des tirets ou un dollar peuvent suivre\&. Soit, sous la forme d\'une expression rationnelle\ \&: [a\-z_][a\-z0\-9_\-]*[$]
+.PP
+Les noms de groupe sont limités à 16 caractères\&.
+.PP
+You may not add a NIS or LDAP group\&. This must be performed on the corresponding server\&.
+.PP
+If the groupname already exists in an external group database such as NIS or LDAP,
+\fBgroupadd\fR
+will deny the group creation request\&.
+.SH "VALEURS DE RETOUR"
+.PP
+La commande
+\fBgroupadd\fR
+retourne les valeurs suivantes en quittant\ \&:
+.PP
+\fI0\fR
+.RS 4
+succès
+.RE
+.PP
+\fI2\fR
+.RS 4
+erreur de syntaxe
+.RE
+.PP
+\fI3\fR
+.RS 4
+paramètre non valable pour l\'option
+.RE
+.PP
+\fI4\fR
+.RS 4
+GID déjà utilisé (et
+\fB\-o\fR
+n\'est pas utilisé)
+.RE
+.PP
+\fI9\fR
+.RS 4
+nom de groupe déjà utilisé
+.RE
+.PP
+\fI10\fR
+.RS 4
+impossible de mettre à jour le fichier des groupes
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBchfn\fR(1),
+\fBchsh\fR(1),
+\fBpasswd\fR(1),
+\fBgpasswd\fR(8),
+\fBgroupdel\fR(8),
+\fBgroupmod\fR(8),
+\fBlogin.defs\fR(5),
+\fBuseradd\fR(8),
+\fBuserdel\fR(8),
+\fBusermod\fR(8)\&.

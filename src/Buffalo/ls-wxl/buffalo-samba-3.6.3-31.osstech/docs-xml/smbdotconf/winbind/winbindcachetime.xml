@@ -1,0 +1,21 @@
+<samba:parameter name="winbind cache time"
+                 context="G"
+				 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  このパラメータにより、 <citerefentry><refentrytitle>winbindd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> デーモンが Windows NT Server 
+	  に問い合わせを行なう代わりに、キャッシュしたユーザとグループの情報を
+	  使用する時間を秒単位で指定する。
+	</para>
+        <para>
+	  この設定は認証要求には適用されない。認証要求は
+	  <smbconfoption name="winbind offline logon"/>オプションが有効に
+	  されない限り、常にその度ごとに処理される。
+	</para>
+</description>
+
+<value type="default">300</value>
+</samba:parameter>

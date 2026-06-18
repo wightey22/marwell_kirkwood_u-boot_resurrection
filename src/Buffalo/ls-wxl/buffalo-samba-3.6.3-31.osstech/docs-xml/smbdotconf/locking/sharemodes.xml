@@ -1,0 +1,32 @@
+<samba:parameter name="share modes"
+	type="boolean"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、ファイルオープン中の <parameter moreinfo="none">share modes</parameter> の制御を有効にするかどうかを設定する。
+	このモードは、ファイルへの排他的な読み出し又は書き込みアクセスを得るために、クライアントによって利用されるものである。
+	</para>
+
+	<para>以前のSambaとの互換性のために存在するが、次のメジャー
+	アップグレードで廃止される予定である。
+	</para>
+	
+	<para>
+	これらのモードは、UNIX では提供されていないため、
+	共有メモリで疑似的に実現されている。
+	</para>
+
+	<para>このパラメータによって、Windowsの標準的な共有モードが
+	実現される。
+	</para>
+
+	<para>このオプションは共有機能の互換性を保つため、
+	デフォルトで有効になっている。</para>
+
+	<para>このパラメータは、
+	<emphasis>絶対に</emphasis> off にしてはならない。
+	off にした場合、多くの Windows アプリケーションが誤動作するであろう。
+	</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

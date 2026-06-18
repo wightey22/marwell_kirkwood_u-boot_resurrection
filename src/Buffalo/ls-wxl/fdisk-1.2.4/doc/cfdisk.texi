@@ -1,0 +1,376 @@
+\input texinfo   @c -*-texinfo-*-
+@setfilename cfdisk.info
+@settitle GNU cfdisk User's Manual
+
+@set UPDATED 19 August 2006
+@set UPDATED-MONTH August 2006
+@set EDITION 0.0.1
+@set VERSION 0.0.1
+
+@comment @documentencoding ISO-8859-1
+
+@set lq ``
+@set rq ''
+
+@ifnottex @c texi2pdf don't understand copying and insertcopying ???
+@c modifications must also be done in the titlepage
+@copying
+Copyright @copyright{} 2006
+Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+@end copying
+@c WTF does the info get the copying output and the plaintext output not ????
+@ifplaintext
+@insertcopying
+@end ifplaintext
+@end ifnottex
+
+
+@titlepage
+@title GNU cfdisk User Manual
+@subtitle GNU cfdisk, version @value{VERSION}, @value{UPDATED}
+@author Milko Krasnomirov Krachounov @email{exabyte@@3mhz.net}
+
+@c @page
+@c @vskip 0pt plus 1filll
+
+@c modifications must also be done in the copying block
+Copyright @copyright{} 2006
+Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+@end titlepage
+
+
+@dircategory GNU partitioning software
+@direntry
+* cfdisk: (cfdisk).                         GNU cfdisk User Manual
+@end direntry
+
+@ifnottex
+@node Top
+@top GNU cfdisk User Manual
+@c WTF doesn't texi2html include the titlepage?
+@ifhtml
+@insertcopying 
+@end ifhtml
+
+This document describes the use of GNU Cfdisk, a curses-based program
+for creating, destroying, resizing, checking and copying hard drive
+partitions, and the file systems on them.
+@end ifnottex
+
+@shortcontents
+
+@menu
+* About::
+* Using cfdisk::
+* Bugs::
+* See also::
+* Copying this manual::
+@end menu
+
+
+@node About
+@chapter About
+@menu
+* Name::
+@end menu
+
+@node Name
+@section Name
+
+GNU cfdisk @minus{} curses-based partition table manipulator (clone of Linux cfdisk)
+
+@node Using cfdisk
+@chapter Using cfdisk
+
+@menu
+* Invoking cfdisk::
+* Overview::
+* Options::
+* Units::
+* Usage::
+* Flags::
+@end menu
+
+@node Invoking cfdisk
+@section Invoking cfdisk
+
+@b{cfdisk [options] [device]}
+
+@node Overview
+
+@section Overview
+
+Hard disks can be divided into logical disks called @i{partitions}
+(or @i{disk slices} in the BSD world), which are described in a @i{partition table}, 
+which is also called a @i{disklabel}.
+
+For ordinary use, like file storage or operation system installation, you
+will most likely need at least one partition, although with most modern operating system,
+you might also want to create several partitions, including one for swap space. For example,
+you usually create a seperate partition for home directories. For more information on what
+partitions you need for your operating system, look at its installation manual.
+
+@b{GNU cfdisk} is a menu-driven program for creating and editing partition tables. It has support
+for DOS and MAC type partition tables, BSD and SUN type disklabels and others.
+
+If you don't specify the device of the disk, cfdisk tries to look for devices and opens the first
+device available. On most GNU/Linux distributions @i{device} is usually one of the following:
+
+@c ---------------------------------------------------------------------
+@display
+@c ---------------------------------------------------------------------
+@quotation
+/dev/hda
+/dev/hdb
+/dev/sda
+/dev/sdb
+
+@end quotation
+@end display
+
+IDE disks are usually using /dev/hd[a-h] for device names, SCSI disks - /dev/sd[a-p]. The partitions will
+take the device name followed by the partition number, e.g. /dev/hda1. If you are using a GNU/Linux
+operating system, you can see @i{/usr/src/linux/Documentation/devices.txt} for more infomation on
+device naming.
+
+A DOS type partition table can have up to four `primary' partitions, which get numbers 1-4. One of the 
+primary partitions may be used as an `extended' partition, which is used as a container for more partitions,
+which are called `logical' and take numbers starting from 5.
+
+A BSD/SUN type disklabel can hold up to 8 partitions, and an IRIX/SGI type disk label, called `dvh'
+in cfdisk can hold up to 16.
+
+@node Options
+
+@section Options
+
+@table @code
+@item @b{@minus{}h, @minus{}@minus{}help}
+Displays a help message.
+
+@item @b{@minus{}v, @minus{}@minus{}version}
+Displays the program's version.
+
+@item @b{@minus{}a, @minus{}@minus{}arrow-cursor}
+Use an arrow cursor, instead of reverse video highlighting, in 
+case your terminal doesn't support it.
+
+@item @b{@minus{}z, @minus{}@minus{}new-table}
+Create a new partition table on the disk. This is useful if  you
+want  to  change the partition table type or want to repartition
+you entire drive. Note that this does not delete the  old  table
+on the disk until you commit the changes.
+
+
+@item @b{@minus{}u, @minus{}@minus{}units=}@i{UNIT}
+Sets the default display units to @i{UNIT}. A list of possible units
+is given below.
+
+@item @b{@minus{}t, @minus{}@minus{}list-partition-types}
+Displays a list of supported partition types and features.
+
+@end table
+
+@node Units
+
+@section Units
+
+You can choose in what unit cfdisk should display quantities like partition sizes. You can choose from sectors, percents, bytes, kilobytes, etc. Note that one kilobyte is equal to 1,000 bytes, as this is consistent with the SI prefixes and is used by hard disk manufacturers. If you prefer to see the sizes in units with binary prefixes, you should instead select one kilo binary byte (kibibyte), which is equal to 1,024 bytes. Whatever display unit you have chosen, you can always enter the quantities in the unit of your choice, for example 1000000B or 1000kB.
+
+@table @code
+
+@item @b{compact}
+Display each size in the most suitable unit from B, kB, MB, GB and TB.
+
+@item @b{B}
+One byte
+
+@item @b{kB }
+One kilobyte (1,000 bytes)
+
+@item @b{MB}
+One megabyte (1,000,000 bytes)
+
+@item @b{GB}
+One gigabyte (1,000,000,000 bytes)
+
+@item @b{TB}
+One terabyte (1,000,000,000,000 bytes)
+
+@item @b{KiB}
+One kilo binary byte (1,024 bytes)
+
+@item @b{MiB}
+One mega binary byte (1,048,576 bytes)
+
+@item @b{GiB}
+One giga binary byte (1,073,741,824 bytes)
+
+@item @b{TiB}
+One tera binary byte (1,099,511,627,776 bytes)
+
+@item @b{s}
+One sector. It depends on the sector size of the disk. You can use it if you want to see or choose the exact size in sectors.
+
+@item @b{%}
+One percent from the size of the disk
+
+@item @b{cyl}
+One cylinder. It depends on the cylinder size.
+
+@item @b{chs}
+Use CHS display units.
+
+@end table
+
+@node Usage
+
+@section Usage
+
+@b{GNU cfdisk} uses a simple menu driven interface, which attempts to be clear and easy to use. It shows a list of the partitions, showing basic information about them, such as number, size, type and filesystem. If the partition contains no filesystem, on certain partition table types the partition system type is displayed in brackets. You to navigate through the partitions using the up and down arrow keys on your keyboard. You can perform actions on the selected partition either by pressing their shortcut key, or by navigating through the menu of actions with the left and right arrow and launching it by pressing the enter key. Other choice menus are also usable with both shortcut keys and direct selection, and the Esc key is usually used to cancel the choice. The actions are not performed immediately, but only after you decide to commit the changes to the disk. Here is a list of the possible actions and their shortcut keys.
+
+@table @code
+@item @b{n}
+If you have selected a free space, creates a new partition residing on it. The possible types of the new partition, such as @i{Primary}, @i{Extended} and @i{Logical} are shown in the type column in the partition list. For example if the free space is part of the extended partition, its type will be displayed as Logical. If multiple types are possible, a choice menu will appear. You can select primary partition with the `p' key and extended partition with `e', or alternatively you can cancel the creation with `c'. You will be asked in which part of the free space you want to place the partition. You can place it in the beginning with `s', at the end with `e'. If you want to select a custom region and specify exact start and end of the partition, you should press `c'. You will then prompted about the size of the partition, the default choice creates a partition on the entire free space. Please note that you can enter the size in any of the units given above. If you don't specify a unit after the number, the default unit is used. At this point, you will be asked about the filesystem type. If you don't know what partition type suits you, check operating system documentation about supported filesystems, ext3 is usually a safe choice. The partition will be created at the close as possible to your choice and you will be warned if it is too small or too large for the filesystem you have selected.
+
+@item @b{d}
+Delete the selected partition so you can use it to create another partition on the free space left by it.
+
+@item @b{f}
+Creates a new file system on the selected partition. You will be asked to choose from a list of the filesystem types that are supported for creation. Please note that this requires that all changes you made so far are commited to the disk. If there is already a filesystem on the partition, it is destroyed.
+
+@item @b{c}
+Checks the consistency of the filesystem.  It is useful to see whether it is safe to perform operations like resize on the partitions. It performs a very basic check on the filesystem, so if you want to make a more thorough test or fix the errors on the filesystem, you should an external utility like e2fsck for ext2 or reiserfsck for reiserfs. Please note that the check is limited on some filesystem types (ext2, ext3 and reiserfs at the time of writing of the manual), but if the partition contains errors resize will gracefully fail without destroying the filesystem.
+
+@item @b{r}
+Resizes the partition without destroying the data on it, or just changes the partition size. The latter is useful if you want to resize the partition with external utilities or if you want to create a new filesystem on it. Don't use it if you don't know what you are doing. If resizing of the filesystem on the partition is supported you will be asked what to do. Pressing `r' resizes, while pressing `c' just changes the partition size. Then like when creating a new partition you will be asked to choose among the possible places and sizes to place the partition. The choices are between placing it at the beginning of the free space before it with `b', leaving its starting point fixed with `s' and placing it at end of the free space after it with `e'. You are adviced to check the partition before performing resize, and backup the data if possible. Resizing requires that all changes you made so far are commited to the disk.
+
+@item @b{o}
+Moves the partition to another place on the hard disk. You will be asked to select on which free space to put the partition and then prompted for a position and size, in the same manner as when creating a new partition. The new place of the partition can't overlap with the old one. If this is what you need, you should try using the resize function, instead. Moving the partition requires that all changes you made so far are commited to the disk.
+
+@item @b{y}
+Copies another partition over the selected one. This destroys all data on the current partition and requires all changes to be commited to the disk. You are not limited to select a partition only from the device you are currently editing. You will be asked about device and partition. You can't copy an extended partition.
+
+@item @b{s}
+Run a filesystem rescue by looking for deleted partitions within a free space. It requires that everything is commited to the disk immediately. Looking for partitions over the existing partitions is not supported and doesn't seem much meaningful, but if you need it, you can try deleting the partitions. You can select the range where to look for partitions by pressing `c', or if you want to check the whole free space, you should press `g'.
+
+@item @b{b}
+Shows a list of the flags allowing you to change them. You will most likely need this to make the partition bootable. It is not recommended to touch any flags other than the bootable flag. Do not do it, unless you know what they are for, and have in mind that changing certain flags is known not to work. You change the flag by pressing space or enter, and you leave the list with Esc. See the next section a description of all possible flags.
+
+@item @b{t}
+Changes the system type on the partition. This does not convert the filesystem, it just changes the information stored in the partition. This is useful for cases where the system type on the partition doesn't match the filesystem type, for example you have an fat32 partition on an DOS type partition table, having an ext2 filesystem on it. Changing the system type is not really meaningful on all partition table types. The default is to automatically determine the system type from the current filesystem with `a'. You can also select a custom filesystem by pressing `c', but this is not recommended. Direct choosing a specific system type is not supported.
+
+@item @b{m}
+If the partition table type supports partition names, this allows you to change it. This is not working on all partition table types, as the partition names could be used for other purposes, like identifying the partition type or filesystem.
+
+@item @b{x}
+If you have selected the extended partition, this makes it as big as possible, so you have more place for partitions inside it. It should expand the partition up to the beginning of the first partition after it.
+
+@item @b{z}
+If you have selected the extended partition, this makes it as small as possible. You should need this, if you want to create more primary partitions after the logical partitions contained in the extended. If the extended partition contains no partitions, this deletes it.
+
+@item @b{u}
+This allows you to select the display units. This changes the units used to display the sizes in the partition list and the default unit that is used on size prompts, though you are not limited to it when entering sizes. See the ``Units'' section for more information. The shortcuts are `b', `k', `m', `g', `t' for bytes, decimal kilobytes, megabytes, etc., `K', `M', `G' and `T' for the binary equivalents, `c' for percents, `a' to automatically choose the most suitable (`Compact'), `s' for sectors, `y' for cylinders, `C' for C/H/S values.
+
+@item @b{i}
+Displays a short info about the partition, like its device (or at least what cfdisk believes that should be its device), the system type of the partition in the partition table (most useful if you are editing a DOS type partition table), the exact start and end of the partition.
+
+@item @b{w}
+Writes the changes in the partition to the disk and notifies the operating system to reread it. Do this after you have completed editing your partition table. This might destroy data on your disk, if you have deleted partitions, and so on, so be careful. If the partition table is not re-read correctly by the operating system, you should reboot your computer.
+
+@item @b{q}
+Quits the program. If you have made changes and you haven't commited them to the disk, they will be lost.
+
+@item @b{h}
+Displays a short help. If you have reached this point, it is highly unlikely
+that you need it.
+
+
+@end table
+
+@node Flags
+
+@section Flags
+
+@table @samp
+@item boot
+(Mac, MS-DOS, PC98) - should be enabled if you want to boot off the
+partition.  The semantics vary between disk labels.  For MS-DOS disk
+labels, only one partition can be bootable.  If you are installing LILO
+on a partition that partition must be bootable.
+For PC98 disk labels, all ext2 partitions must be bootable (this is
+enforced by Parted).
+
+@item lba
+(MS-DOS) - this flag can be enabled to tell MS DOS, MS Windows 9x and
+MS Windows ME based operating systems to use Linear (LBA) mode.
+
+@item root
+(Mac) - this flag should be enabled if the partition is the root device
+to be used by Linux.
+
+@item swap
+(Mac) - this flag should be enabled if the partition is the swap
+device to be used by Linux.
+
+@item hidden
+(MS-DOS, PC98) - this flag can be enabled to hide partitions from
+Microsoft operating systems.
+
+@item raid
+(MS-DOS) - this flag can be enabled to tell linux the partition is a
+software RAID partition. 
+
+@item LVM
+(MS-DOS) - this flag can be enabled to tell linux the partition is a
+physical volume.
+
+@item PALO
+(MS-DOS) - this flag can be enabled so that the partition can be used
+by the Linux/PA-RISC boot loader, palo.
+
+@item PREP
+(MS-DOS) - this flag can be enabled so that the partition can be used
+as a PReP boot partition on PowerPC PReP or IBM RS6K/CHRP hardware.
+
+@end table
+
+@node Bugs
+
+@chapter Bugs
+
+There are no known bugs. We are in early stages for development, so be careful.
+
+@node See also
+
+@chapter See also
+
+@b{fdisk}@r{(8),}
+@b{mkfs}@r{(8),}
+@b{parted}@r{(8)}
+
+@node Copying this manual
+@appendix Copying this manual
+
+@menu
+* GNU Free Documentation License::  License for copying this manual
+@end menu
+
+@include fdl.texi
+
+@bye
+

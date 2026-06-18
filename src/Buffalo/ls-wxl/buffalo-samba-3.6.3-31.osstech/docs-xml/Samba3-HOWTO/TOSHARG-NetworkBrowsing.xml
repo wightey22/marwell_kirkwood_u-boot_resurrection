@@ -1,0 +1,2334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="NetworkBrowsing">
+<chapterinfo>
+	&author.jht;
+	&author.jelmer;
+	<author>
+		<firstname>Jonathan</firstname><surname>Johnson</surname>
+		<affiliation>
+			<orgname>Sutinen Consulting, Inc.</orgname>
+                        <address><email>jon@sutinen.com</email></address>
+		</affiliation>
+	</author>
+	<pubdate>July 5, 1998</pubdate>
+	<pubdate>Updated: September 20, 2006</pubdate>
+</chapterinfo>
+
+<title>ネットワークブラウジング</title>
+
+<para>
+<indexterm><primary>サブネット越しのブラウジング</primary></indexterm>
+<indexterm><primary>NetBIOS名の解決</primary></indexterm>
+<indexterm><primary>ブラウズリストのハンドリング</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+この章にはサブネット越しあるいはワークグループ(ドメイン)越しのブラウジング
+を実行するための早わかりと、さらに詳細な情報を含んでいる。WINSはNetBIOS名
+からIPアドレスへの名前解決のために最適のツールである。しかし、WINSは
+名前->アドレス解決方法を除いてブラウズリストの扱いを改善するわけではない。
+</para>
+
+<note><para>
+<indexterm><primary>WINS</primary></indexterm>
+WINSとは何か?
+</para>
+<para>
+WINSはNetBIOS名をそのIPアドレスに名前解決する機能を提供する。WINSはNetBIOS
+ネットワーク名のための動的DNSサービスに似ている。
+</para></note>
+
+<note><para>
+<indexterm><primary>Windows 2000</primary></indexterm>
+<indexterm><primary>NetBIOS over TCP/IP</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+Microsoft Windows 2000とそれ以降のバージョンでは、NetBIOS over TCP/IPなしで
+操作するように設定できる。Samba-3とそれ以降のバージョンもこの操作モードを
+サポートしている。NetBIOS over TCP/IPが無効になっている場合、Microsoft Windows
+マシン名の解決を行う主要な手段はDNSとActive Directory経由である。
+以下の情報は使用するサイトでNetBIOS over TCP/IPが動いていることを仮定している。
+</para></note>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+Charles Dickensはかつて次のような名言を言った:
+<quote><emphasis>それはすべての時世の中で最もよい時世でもあれば、
+すべての時世の中で最も悪い時世でもあった。</emphasis></quote>
+(訳注:二都物語の冒頭部分:佐々木 直次郎訳、青空文庫より)
+振り返れば振り返るほど、あったことをより切望するが、それが決して
+戻らないことを望む。(訳注:かなり怪しい)
+</para>
+
+<para>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>NetBIOS ネットワーキング</primary></indexterm>
+<indexterm><primary>fickle</primary></indexterm>
+多くのMicrosoft Windowsネットワーク管理者に対し、その一節はNetBIOSネットワーキングに
+ついて感じていることを要約している。NetBIOSネットワーキングをマスタした人にとって、
+その気まぐれな性質はよくあることである。そのやんちゃな性質を押さえ込むことが全く
+管理できない人にとって、NetBIOSはパターソンののろいのようである。
+</para>
+
+<para>
+オーストラリアの植物問題をよく知らない人のために、パターソンののろい、すなわち
+<emphasis>エキウム・プランタギネウム</emphasis>は19世紀の中頃、ヨーロッパから
+オーストラリアに導入された。それ以来、急激に広まった。種がたくさん出来、
+平方メートルあたり何千の密度で、種の寿命は7年以上もあり、年中発芽する能力があり、
+正常な条件がそろえば、持続的に雑草として生える能力がある。
+</para>
+
+<para>
+<indexterm><primary>Network Basic Input/Output System</primary><see>NetBIOS</see></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>TCP/IP</primary></indexterm>
+<indexterm><primary>Windowsネットワーククライアント</primary></indexterm>
+この章では、動いているNetBIOS(Network Basic Input/Output System) over TCP/IP
+を通して実装されているSMBに注目するServer Message Block (SMB)ネットワーキング
+の不可欠な側面を探求する。Sambaは他のプロトコル上でSMBまたはNetBIOSを実装
+していないので、ネットワーク環境で、どのように設定をするかを知る必要があり、
+また、すべてのMicrosoft ネットワーククライアント上でTCP/IP以外のものを使う
+ことはないことを単に覚えておけばよい。
+</para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>MS WINS</primary></indexterm>
+SambaはWINS(Windows Internetworking Name Server)を実現することと、Microsoft
+のWINS拡張を実現する能力を提供する。これらの拡張は、通常の範囲のMicrosoft WINS
+を超えて安定したWINS動作を提供することを支援する。
+</para>
+
+<para>
+<indexterm><primary>NetBIOS over TCP/IP</primary></indexterm>
+<indexterm><primary>NetBIOSが無効</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+WINSはNetBIOS overTCP/IPが動作しているシステムにのみ適用される
+サービスである。Microsoft Windows 200x/XPはNetBIOSが無効でも
+動作することが出来る。そのような場合、WINSは無関係となる。Sambaは
+これもサポートする。
+</para>
+
+<para>
+<indexterm><primary>NetBIOSが無効</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+NetBIOSが無効になったこれらのネットワークでは(すなわち、WINSを必要としない)、
+ホスト名の解決のためにDNSを使うことが必要である。
+</para>
+
+</sect1>
+
+<sect1>
+<title>ブラウジングとは何か?</title>
+
+<para>
+<indexterm><primary>ブラウジング</primary></indexterm>
+<indexterm><primary>マイネットワーク</primary></indexterm>
+<indexterm><primary>共有</primary></indexterm>
+<indexterm><primary>有効なプリンタ</primary></indexterm>
+一般的には、ブラウジングとは、Microsoft WindowsとSambaサーバがマイネットワーク中に
+見える事を意味し、特定のサーバのコンピュータアイコンをクリックすると、その
+サーバ上の共有と有効なプリンタを表示するウィンドウが開いて表示される。
+</para>
+
+<para>
+とても単純に見えるが、これは実際には、異なった技術の複雑な相互作用によるもの
+である。これらのすべてを行うために使われる技術(か方式)は以下を含む:
+</para>
+
+<itemizedlist>
+	<listitem><para>ネットワークへのMicrosoft Windowsマシンの存在を登録。</para></listitem>
+	<listitem><para>ネットワーク上の他のマシンにそれ自身を通知。</para></listitem>
+	<listitem><para>ネットワーク上の複数の1つ以上のマシンはローカルアナウンスメントをまとめる。</para></listitem>
+	<listitem><para>クライアントマシンはマシンのリストをまとめたマシンを見つける。</para></listitem>
+	<listitem><para>クライアントマシンはマシン名をIPアドレスに変換する。</para></listitem>
+	<listitem><para>クライアントマシンはターゲットマシンに接続する。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>ブラウズリストの管理</primary></indexterm>
+<indexterm><primary>名前解決</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+ブラウズリスト管理と名前解決を制御するSambaアプリは<filename>nmbd</filename>である。
+nmbdの動作に関連する設定パラメータは以下の通り:
+</para>
+
+<para>
+ブラウジング動作:
+</para>
+<itemizedlist>
+	<listitem><smbconfoption name="os level"/></listitem>
+	<listitem><smbconfoption name="lm announce"/></listitem>
+	<listitem><smbconfoption name="lm interval"/></listitem>
+	<listitem><smbconfoption name="preferred master"/>(*)</listitem>
+	<listitem><smbconfoption name="local master"/>(*)</listitem>
+	<listitem><smbconfoption name="domain master"/>(*)</listitem>
+	<listitem><smbconfoption name="browse list"/></listitem>
+	<listitem><smbconfoption name="enhanced browsing"/></listitem>
+</itemizedlist>
+
+<para>
+名前解決方法:
+</para>
+<itemizedlist>
+	<listitem><smbconfoption name="name resolve order"/>(*)</listitem>
+</itemizedlist>
+
+<para>
+WINS動作:
+</para>
+<itemizedlist>
+	<listitem><smbconfoption name="dns proxy"/></listitem>
+	<listitem><smbconfoption name="wins proxy"/></listitem>
+	<listitem><smbconfoption name="wins server"/>(*)</listitem>
+	<listitem><smbconfoption name="wins support"/>(*)</listitem>
+	<listitem><smbconfoption name="wins hook"/></listitem>
+</itemizedlist>
+
+<para>
+(*)というマークが付いたものは通常変更が必要なオプションである。これらのパラメータが
+設定されていなくても、<filename>nmbd</filename>は動作することが出来る。
+</para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>WINS Server</primary></indexterm>
+<indexterm><primary>WINS Support</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>相互に排他なオプション</primary></indexterm>
+Sambaでは、wins server と wins support は相互に排他的なオプションである。
+<command>nmbd</command>が起動するとき、&smb.conf;ファイル中に両方の
+オプションが設定されていると、起動に失敗する。<command>nmbd</command>
+は、それ自身のWINSサーバを使わなければならないWINSサーバとして動作する
+ために、それ自身のインスタンスをフォークする。
+</para>
+
+</sect1>
+
+<sect1 id="netdiscuss">
+<title>議論</title>
+
+<para>
+<indexterm><primary>SMBベースのメッセージング</primary></indexterm>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>NetBIOS の段階的な廃止</primary></indexterm>
+すべてのMicrosoft Windows ネットワークは SMBベースのメッセージングを使う。
+SMBメッセージングはNetBIOSがあってもなくてもよい。Microsoft Windows 200x
+は下位互換のために、NetBIOS over TCP/IPをサポートする。Microsoftは段階的に
+NetBIOSサポートを打ち切っているように見える。
+</para>
+
+<sect2>
+<title>NetBIOS over TCP/IP</title>
+
+<para>
+<indexterm><primary>encapsulating</primary></indexterm>
+<indexterm><primary>ブロードキャスト</primary></indexterm>
+<indexterm><primary>ユニキャスト</primary></indexterm>
+<indexterm><primary>UDP</primary></indexterm>
+Sambaは、TCP/IP上でカプセル化することによって、Microsoft Windows NT/200x/XPが
+するようなNetBIOSを実装している。NetBIOSベースのネットワークはブラウズリストの
+管理を行うために、ブロードキャストメッセージングを使う。NetBIOS over TCP/IP
+が動いている時、これはUDPベースのメッセージングを使う。UDPメッセージは
+ブロードキャストかユニキャストのどちらも使える。
+</para>
+
+<para>
+<indexterm><primary>UDP</primary></indexterm>
+通常、ユニキャストUDPメッセージングのみがルータによって転送される。
+smb.confの<smbconfoption name="remote announce"/>パラメータはユニキャストUDB
+を通じて、リモートネットワークセグメントにブラウズアナウンスメントを公開する
+ことを支援する。同様に、&smb.conf;の<smbconfoption name="remote browse sync"/>
+パラメータはユニキャストUDPを使ってブラウズリストの収集を実現する。
+</para>
+
+<para>
+名前検索要求(名前解決)を実行するためにMicrosoft Windowsによって使われる方法
+はNetBIOSノードタイプと呼ばれる設定パラメータによって決まる。基本的なNetBIOS
+ノードタイプは4つある:
+</para>
+
+<indexterm><primary>b-node</primary></indexterm>
+<indexterm><primary>p-node</primary></indexterm>
+<indexterm><primary>m-node</primary></indexterm>
+<indexterm><primary>h-node</primary></indexterm>
+<indexterm><primary>ノードタイプ</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>ブロードキャスト</primary></indexterm>
+<indexterm><primary>ユニキャスト</primary></indexterm>
+<itemizedlist>
+	<listitem><para><emphasis>b-node (type 0x01):</emphasis>UDPブロードキャストを
+	    使ってNetBIOSブロードキャスト要求のみを使うWindowsクライアント。</para></listitem>
+	<listitem><para><emphasis>p-node (type 0x02):</emphasis>WINSサーバに直接UDP
+	    ユニキャストを行う、ポイントツーポイント(NetBIOSユニキャスト)要求を使う
+	    Windowsクライアント。</para></listitem>
+	<listitem><para><emphasis>m-node (type 0x04):</emphasis>、最初にUDPブロード
+	    キャストを使ってNetBIOSブロードキャストを行い、次に(NetBIOSユニキャストで)
+	    WINSサーバに直接UDPユニキャストを行うWindowsクライアント。</para></listitem>
+	<listitem><para><emphasis>h-node (type 0x08):</emphasis>UDPユニキャスト
+	    (NetBIOSユニキャスト)を使ってWINSサーバに直接要求し、次にUDPブロードキャストを
+	    使ってNetBIOSブロードキャスト要求をするWindowsクライアント。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>h-node</primary></indexterm>
+<indexterm><primary>hybrid</primary></indexterm>
+<indexterm><primary>NetBIOS over TCP/IPを有効</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>ブロードキャストベース</primary></indexterm>
+<indexterm><primary>名前解決</primary></indexterm>
+既定値のWindowsネットワーククライアント(あるいはサーバ)のネットワーク設定は、
+NetBIOS over TCP/IPを有効にしていて、b-ノードになっている。WINSを使うと、
+WINSが故障か有効になっていない場合、クライアントがブロードキャストベースの
+名前解決を使えるように、h-ノード(ハイブリッドノード)動作が意味をなすようになる。
+</para>
+
+<para>
+<indexterm><primary>LMB</primary><see>ローカルマスタブラウザ</see></indexterm>
+<indexterm><primary>Local Master Browser</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>セグメント間のブラウジング</primary></indexterm>
+<indexterm><primary>ネットワークセグメント</primary></indexterm>
+SambaがSMBサーバ技術のみのネットワーク中では<filename>nmbd</filename>
+のうち少なくとも1台はWINSサーバとして設定する必要がある。これは、
+ブラウジング環境の管理を簡単にする。もしもおのおののネットワークセグメントが
+固有のSamba WINSサーバを設定している場合、セグメント間のブラウジングを動作させ
+る唯一の方法は<smbconfoption name="remote announce"/>と
+<smbconfoption name="remote browse sync"/>パラメータを&smb.conf;ファイルで
+使うことである。
+</para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+もしも全体の複数ネットワークで1つだけのWINSサーバを使う場合、
+<smbconfoption name="remote announce"/>と
+<smbconfoption name="remote browse sync"/>パラメータの使用は必須ではない。
+</para>
+
+<para>
+<indexterm><primary>複製</primary><secondary>WINS</secondary></indexterm>
+Samba-3では、WINS複製は作業中である。大量のコードがコミットされていたが、
+まだ改良が必要である。Samba-3.0.20のリリース時点ではまだサポートされた機能では
+ない。希望としては、Samba-3のどこかのリリース時点でサポートされた機能になること
+を予定している。開発者がこれを完了させようと思うほどの、十分な重要性がないとい
+う理由で、これは遅れている。
+</para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>MS-WINS 複製</primary></indexterm>
+<indexterm><primary>redundancy</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>NetBIOSなしの SMB over TCP/IP</primary></indexterm>
+<indexterm><primary>local names</primary></indexterm>
+<indexterm><primary>サブネット</primary></indexterm>
+<indexterm><primary>複数のWINSサーバ</primary></indexterm>
+現時点で、SambaのWINSはMS-WINS複製をサポートしていない。これは、SambaをWINSサー
+バとして設定しても、ネットワーク上で、1つだけ<filename>nmbd</filename>をWINSサーバとして
+設定する必要がある。あるサイトでは(サブネット単位に1つのサーバを)冗長性のために、
+複数のSamba WINSサーバを使っていて、セグメントをまたいですべてのセグメントの
+ブラウズリストを集めるために、<smbconfoption name="remote browse sync"/>と
+<smbconfoption name="remote announce"/>を使っている。
+この設定では、クライアントがローカル名の解決のみが出来るので、他のサブネット上
+を見ることができる、サーバのIPアドレスを解決するために他のサブネット上の名前を
+解決するためのDNSを使うように設定しなければならない。この設定は推奨されないが、
+実用的なやり方として(すなわち、<quote>もしも他の場合がすべて失敗の場合</quote>
+というシナリオ)、記述されている。NetBIOS over TCP/IPはとてもひどくて管理しにく
+いプロトコルである。この置き換えとして、NetBIOSless SMB over TCP/IP is not
+without its own manageability concerns.
+NetBIOSベースのネットワークは妥協とトレードオフの固まりである。WINSは
+DNSに格納出来ない情報を格納する。従って、DNSはNetBIOS over TCP/IPが
+使われている時にWINSから得られるものよりも貧弱な代わりにしかならない。
+WindowsクライアントはWINSを使うように設計されている。
+</para>
+
+<para>
+<indexterm><primary>ブロードキャストメッセージ</primary></indexterm>
+<indexterm><primary>repeated intervals</primary></indexterm>
+<indexterm><primary>across network segments</primary></indexterm>
+最後に、ブラウズリストは15分間よりも短い間隔で繰り返される信頼性のない
+ブロードキャストメッセージの集合から校正されていることに注意。これは、
+ブラウズリストを作成するために時間がかかると言うことであり、特に、
+ネットワークセグメントをまたぐ場合は、安定するまでには45分かかる可能性が
+あるということである。
+</para>
+
+<para>
+<indexterm><primary>Windows 200x/XP</primary></indexterm>
+Microsoft Windows 200x/XPシステムでホスト名をIPアドレスに解決しようとする場合、
+以下の手順で行う:
+</para>
+
+<orderedlist>
+	<listitem><para>
+	<filename>hosts</filename>ファイルを調べる。これは<filename>%SystemRoot%\System32\Drivers\etc</filename>にある。
+	</para></listitem>
+
+	<listitem><para>
+	DNS 検索を実行する。
+	</para></listitem>
+
+	<listitem><para>
+	NetBIOSネームキャッシュを調べる。
+	</para></listitem>
+
+	<listitem><para>
+	WINSサーバに問い合わせる。
+	</para></listitem>
+
+	<listitem><para>
+	UDPでブロードキャストの名前検索を行う。
+	</para></listitem>
+
+	<listitem><para>
+	<filename>%SystemRoot%\System32\Drivers\etc</filename>にあるLMHOSTSファイルのエントリを調べる。
+	</para></listitem>
+</orderedlist>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>NetBIOS over TCP/IP</primary></indexterm>
+<indexterm><primary>名前検索</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+どのようにNetBIOS over TCP/IPプロトコルが実装されているを考えた上で、WINSのみが、
+TEMPTATION&lt;1C&gt; &smbmdash;というネットワークログオンサーバを探すための
+NetBIOS名前問い合わせのようなサービス指向の名前の、信頼性のある名前検索を解決す
+る能力を持つ。実際、Microsoft ADSでの実装は特に拡張されたサービス指向のDNSエン
+トリ全体を管理するようになっている。このタイプの機能はNetBIOS over TCP/IPプロト
+コルの名前空間では実装も、サポートもされていない。
+</para>
+
+</sect2>
+
+<sect2>
+<title>TCP/IPなしのNetBIOS</title>
+
+<para>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>NetBIOSなし</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+すべてのTCP/IPが有効なシステムは、いろいろなホスト名解決方法を使う。TCP/IPの
+ホスト名解決で最初に使う方法は固定のファイル(<filename>/etc/hosts</filename>)
+かDNSである。DNSはインターネットを使えるようにする技術である。DNSベースのホスト
+名解決はほとんどすべてのTCP/IPが有効なシステムでサポートされている。ごくわずか
+の組み込みシステムのみがDNSのサポートをしていない。
+</para>
+
+<para>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>DDNS</primary></indexterm>
+<indexterm><primary>ipconfig</primary></indexterm>
+<indexterm><primary>ダイナミックDNS</primary><see>DDNS</see></indexterm>
+Windows 200x/XPはダイナミックDNSサーバ(DDNS)にそのホスト名を登録できる。
+Windows 200x/XP上で <command>ipconfig /registerdns</command>を使うことで、
+ダイナミックDNSサーバに強制的に登録できる。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>severely impaired</primary></indexterm>
+Active Directoyでは、正確に動作しているDNSサーバが確実に必要である。正しく設定
+されていて動作しているDNSサーバがない場合、Microsoft Windows クライアントとサー
+バはお互いを認識できず、そのためネットワークサービスはひどく使い物にならないだ
+ろう。
+</para>
+
+<para>
+<indexterm><primary>raw SMB over TCP/IP</primary></indexterm>
+<indexterm><primary>No NetBIOS layer</primary></indexterm>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+raw SMB over TCP/IP(NetBIOSレイヤなし)の使用は、Active Directoryドメインのみで
+行える。SambaはActive Directory ドメインコントローラではない:故に、NetBIOSを
+<emphasis>使わないで</emphasis>同じ時にSambaをドメインコントローラとして動かす
+のは不可能である。SambaをActive Directoryのメンバサーバ(DMS)として動かしているとき、
+NetBIOS over TCP/IPを使わないでSambaを設定することは可能である。Samba DMSは
+Active Directoyドメインに完全に統合できるが、もしも、NetBIOS over TCP/IPが無効
+の場合、SambaまたはADS環境のどちらかで自動的に生成されないという理由で、Samba
+DMS用に適切なDNSエントリを手動で作成する必要がある。
+</para>
+
+</sect2>
+
+<sect2 id="adsdnstech">
+<title>DNSとActive Directory</title>
+
+<para>
+<indexterm><primary>DNS</primary><secondary>Active Directory</secondary></indexterm>
+<indexterm><primary>DDNS</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>SRV レコード</primary></indexterm>
+<indexterm><primary>DNS</primary><secondary>SRV レコード</secondary></indexterm>
+時折、Microsoft DNSサーバの代わりにUNIXベースのDDNSサーバを使いたいというUNIXネッ
+トワーク管理者の要望を聞くことがある。これが誰かにとって都合がよい間、Microsoft
+Windows 200x DNSサーバはActive Directoryと共に動作するように自動的に設定される。
+BIND 8または9を使うのは可能だが、Microsoft Active Directoryクライアントが基本的
+なネットワークサービスを確実に使えるために、ホスト名を解決できるために、サービ
+スレコード(SRVレコード)を確実に作成することがほとんど必要となる。以下は、
+Active Directoryが要求する既定値のサービスレコードのいくつかである:
+</para>
+
+<para>
+<indexterm><primary>DDNS</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>BIND9</primary></indexterm>
+Active Directoryで必要とされるSRV(サービス)レコードを十分にサポートする能力を
+BIND9を使うときに望まれるため、Active DirectoryでDDNSを使うことは強く推奨される。
+もちろん、ADSが動いているとき、ADSとMicrosoft DNSの間で自然な類似性があるという
+理由で、Microsoft固有のDDNSサーバを使うことは意味があることである。
+</para>
+
+<variablelist>
+<varlistentry>
+	<term>_ldap._tcp.pdc._msdcs.<emphasis>Domain</emphasis></term>
+	<listitem>
+	<para>
+	これは、ドメイン内のWindows NT PDCアドレスを提供する。
+	</para>
+	</listitem>
+</varlistentry>
+<varlistentry>
+	<term>_ldap._tcp.pdc._msdcs.<emphasis>DomainTree</emphasis></term>
+	<listitem>
+        <para>
+	ドメイン内のグローバルカタログのアドレスを解決する。
+        </para>
+	</listitem>
+</varlistentry>
+<varlistentry>
+        <term>_ldap._tcp.<emphasis>site</emphasis>.sites.writable._msdcs.<emphasis>Domain</emphasis></term>
+	<listitem>
+        <para>
+	サイト上のドメインコントローラの一覧を提供する。
+        </para>
+	</listitem>
+</varlistentry>
+<varlistentry>
+        <term>_ldap._tcp.writable._msdcs.<emphasis>Domain</emphasis></term>
+	<listitem>
+        <para>
+	Enumerates list of domain controllers that have the writable copies of the Active Directory data store.
+        </para>
+	</listitem>
+</varlistentry>
+<varlistentry>
+	<term>_ldap._tcp.<emphasis>GUID</emphasis>.domains._msdcs.<emphasis>DomainTree</emphasis></term>
+	<listitem>
+	<para>
+	グローバルな一意の識別子を使うマシンをクライアントが認識するためにMicrosoft Windowsによって使われるエントリ。
+	</para>
+	</listitem>
+</varlistentry>
+<varlistentry>
+	<term>_ldap._tcp.<emphasis>Site</emphasis>.gc._msdcs.<emphasis>DomainTree</emphasis></term>
+	<listitem>
+	<para>
+	サイト設定に依存するグローバルカタログサーバをクライアントが認識するためにMicrosoft Windowsによって使われる。
+	</para>
+	</listitem>
+</varlistentry>
+</variablelist>
+
+	<para>
+	サンプルのドメイン<constant>quenya.org</constant>のために基本的なサービスを
+	Microsoftクライアントが認識するために使われる特定のエントリは以下を含む:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>
+		_kerberos._udp.quenya.org &smbmdash; UDP経由でKDCサーバに接続す
+		るために使われる。のエントリはおのおののKDC向けにポート88にしな
+		ければならない。
+		</para></listitem>
+
+		<listitem><para>
+		_kpasswd._udp.quenya.org &smbmdash;ユーザのパスワード変更処理を
+		行わなければならない時に<constant>kpasswd</constant>サーバを見つけるときに使う。
+		このレコードはマスタKDCのポート464でなければならない。
+		</para></listitem>
+
+		<listitem><para>
+		_kerberos._tcp.quenya.org &smbmdash; TCP経由でKDCサーバを見つけ
+		るときに使う。このエントリはおのおののKDCでポート88でなければならない。
+		</para></listitem>
+
+		<listitem><para>
+		_ldap._tcp.quenya.org &smbmdash; PDC上でLDAPサービスを見つける
+		のに使う。このレコードはPDCのためにポート389でなければならない。
+		</para></listitem>
+
+		<listitem><para>
+		_kpasswd._tcp.quenya.org &smbmdash; ユーザパスワード変更を行う
+		ことを許可するために<constant>kpasswd</constant>を探すときに使う。これはポート
+		464でなければならない。
+		</para></listitem>
+
+		<listitem><para>
+		_gc._tcp.quenya.org &smbmdash; グローバル型ログサーバを探すとき
+		に使う。これはポート3268でなければならない。
+		</para></listitem>
+	</itemizedlist>
+
+	<para>
+	以下のレコードも、Windows ADS ドメインコントローラ上の重要なサービスを
+	探すために、Windowsドメインクライアントによって使われる。
+	</para>
+
+	<itemizedlist>
+		<listitem><para>
+		_ldap._tcp.pdc._msdcs.quenya.org
+		</para></listitem>
+
+		<listitem><para>
+		_ldap.gc._msdcs.quenya.org
+		</para></listitem>
+
+		<listitem><para>
+		_ldap.default-first-site-name._sites.gc._msdcs.quenya.org
+		</para></listitem>
+
+		<listitem><para>
+		_ldap.{SecID}.domains._msdcs.quenya.org
+		</para></listitem>
+
+		<listitem><para>
+		_ldap._tcp.dc._msdcs.quenya.org
+		</para></listitem>
+
+		<listitem><para>
+		_kerberos._tcp.dc._msdcs.quenya.org
+		</para></listitem>
+
+		<listitem><para>
+		_ldap.default-first-site-name._sites.dc._msdcs.quenya.org
+		</para></listitem>
+
+		<listitem><para>
+		_kerberos.default-first-site-name._sites.dc._msdcs.queyna.org
+		</para></listitem>
+
+		<listitem><para>
+		SecID._msdcs.quenya.org
+		</para></listitem>
+	</itemizedlist>
+
+	<para>
+	正しいDNSエントリの存在は以下を実行することによって検証できる:
+<screen>
+&rootprompt; dig @frodo -t any _ldap._tcp.dc._msdcs.quenya.org
+
+; &lt;lt;&gt;&gt; DiG 9.2.2 &lt;lt;&gt;&gt; @frodo -t any _ldap._tcp.dc._msdcs.quenya.org
+;; global options:  printcmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 3072
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 2
+
+
+;; QUESTION SECTION:
+;_ldap._tcp.dc._msdcs.quenya.org. IN        ANY
+
+
+;; ANSWER SECTION:
+_ldap._tcp.dc._msdcs.quenya.org. 600 IN SRV 0 100 389 frodo.quenya.org.
+_ldap._tcp.dc._msdcs.quenya.org. 600 IN SRV 0 100 389 noldor.quenya.org.
+
+
+;; ADDITIONAL SECTION:
+frodo.quenya.org.  3600  IN      A       10.1.1.16
+noldor.quenya.org. 1200  IN      A       10.1.1.17
+
+
+;; Query time: 0 msec
+;; SERVER: frodo#53(10.1.1.16)
+;; WHEN: Wed Oct  7 14:39:31 2004
+;; MSG SIZE  rcvd: 171
+</screen>
+	</para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>どのようにブラウジングは機能するか</title>
+
+<para>
+<indexterm><primary>NetBIOS名の登録</primary></indexterm>
+<indexterm><primary>LMHOSTS</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>WINSサーバアドレス</primary></indexterm>
+Microsoft WindowsマシンはそのNetBIOS名を起動時に登録する(すなわち、動作に対する
+おのおののサービスタイプのためのマシン名)。この名前登録の正確な方法は、
+Microsoft Windowsクライアント/サーバにWINSサーバアドレスが与えられているか否か
+か、LMHOSTS検索が有効になっているか否か、NetBIOS名の名前解決にDNSを使うかどうか
+か否か、あるいはその他によって決まる。
+</para>
+
+<para>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+<indexterm><primary>名前検索</primary></indexterm>
+<indexterm><primary>UDP</primary></indexterm>
+WINSサーバがない場合、名前検索と同様、すべての名前登録は、UDPブロードキャストに
+よって行われる。これは、すべての名前とIPアドレスの一覧を用意するLMHOST
+を使う以外、ローカルサブネット単位で分割した名前解決を行う。このような状態で、
+リモートのMicrosoft Windowsネットワークのブラウズリスト中にSambaサーバの名前を
+強制的に入れ込むことによる方法を提供する
+(<smbconfoption name="remote announce"/>を使って)。
+</para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>UDPユニキャスト</primary></indexterm>
+<indexterm><primary>ルーティングされたネットワークを超えた名前解決</primary></indexterm>
+WINSサーバを使う場合、Microsoft Windows蔵案とはWINSサーバにUDPユニキャストで名
+前を登録する。このようなパケットはルーティング出来、WINSはルーティングされたネッ
+トワークを超えて名前解決が出来る。
+</para>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>ローカルマスタブラウザ</primary><see>LMB</see></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>LMHOSTS</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+<indexterm><primary>election</primary></indexterm>
+<indexterm><primary>election criteria</primary></indexterm>
+スタートアップ処理中、すでに存在していなければ、ローカルマスタブラウザ(LMB)の
+選定が起こる。おのおののNetBIOSネットワークで、ある1つのマシンがドメインマスタ
+ブラウザ(DMB)として機能するように選択される。このドメインブラウジングは、
+Microsoftセキュリティドメインコントロールとは何らの関係もない。その代わり、DMB
+は(WINSまたはLMHOSTを使って見つけた)おのおののLMBに接続する役割を行い、ブラウズ
+リストの内容を交換する。このようにして、すべてのマスタブラウザは、結果として、ネットワーク
+上にあるすべてのマシンの完全な一覧を得ることになる。毎11から15分ごとに、どのマ
+シンがマスタブラウザになるかという選択が行われる。使用される選択基準の性質によ
+り、最も大きなuptime、あるいは最も上位のプロトコルバージョン、あるいは、そのた
+の基準を持つものがDMBとして選択される。
+</para>
+
+<para>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>NetBIOS名前タイプ</primary></indexterm>
+<indexterm><primary>n security context</primary></indexterm>
+<indexterm><primary>network segment</primary></indexterm>
+<indexterm><primary>authoritive</primary></indexterm>
+<indexterm><primary>ブラウズリストメンテナ</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+WINSサーバが使われているとき、DMBはそのIPアドレスをドメインの名前とNetBIOS名前
+タイプ1B(すなわちDOMAIN&lt;1B&gt;)を使ってWINSサーバに登録する。WINSサーバを使
+うすべてのLMBも、ドメインの名前とNetBIOS名前タイプ1Dを使ってそのIPアドレスを登
+録する。タイプ1Bの名前はドメインセキュリティコンテキスト内であるサーバ1つだけに
+割り当てられ、たった1つのタイプ1Dの名前がおのおののネットワークセグメントで登録
+される。タイプ1Dの名前を登録したマシンは、そのマシンがいるネットワークセグメン
+トにおける、ブラウズリストメンテナの権限を持つ。DMBはLMBから得られたブラウズリ
+ストを同期させることに責任がある。
+</para>
+
+<para>
+<indexterm><primary>名前解決</primary></indexterm>
+ネットワークをブラウズしようとするクライアントは、このリストを使うが、有効なIP
+アドレスへの名前解決の有効性に依存する。
+</para>
+
+<para>
+<indexterm><primary>browsing intrinsics</primary></indexterm>
+Any configuration that breaks name resolution and/or browsing intrinsics will annoy users because they will
+have to put up with protracted inability to use the network services.
+</para>
+
+<para>
+<indexterm><primary>強制同期</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>bridges networks</primary></indexterm>
+<indexterm><primary>サブネット間でのブラウジング</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>/etc/hosts</primary></indexterm>
+Sambaは&smb.conf;ファイル中に<smbconfoption name="remote browse sync"/>
+パラメータを使うことで、ルーティングされたネットワーク越しにブラウズリストの
+同期を強制的に行う機能をサポートしている。この機能のためにSambaはリモートネットワーク上
+のLMBに接続し、ブラウズリストの同期を要求する。これはルータによって分離された2
+つのネットワークを効果的に接続する。2つのリモートネットワークはブロードキャスト
+ベースの名前解決か、WINSベースの名前解決のどちらを使っても良いが、
+<smbconfoption name="remote browse sync"/>パラメータがブラウズリストの同期を提
+供するが、&smbmdash;それは名前からアドレスへの解決とは異なることに注意する必要
+がある。別の言い方をすると、サブネット間のブラウジングをきちんと機能させるため
+には、名前解決メカニズムが提供されていることが基本であるということである。この
+メカニズムとはDNS、<filename>/etc/hosts</filename>、あるいはその他である。
+</para>
+
+<sect2 id="DMB">
+<title>ワークグループのブラウジングの設定</title>
+
+<para>
+<indexterm><primary>サブネット間のブラウジング</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>分離されたワークグループ</primary></indexterm>
+<indexterm><primary>ワークグループ</primary></indexterm>
+ネットワークが、NTドメインでない、ワークグループに属するマシンを含むサブネット
+間のブラウジングを設定するために、ある1つのSambaサーバをDMBにする必要がある(
+NTドメイン中では両方の役割を同じマシンが担うが、これはPDCとは違うと言うことに注
+意)。DMBの役割はワークグループ中に参加しているマシンがあるすべてのサブネット上
+のLMBからブラウズリストを収集することである。DMBとして設定されたマシンがないと、
+おのおののサブネットは分離された、他のサブネットのマシンを見ることができないワー
+クグループとなってしまう。これが、ワークグループに対してサブネット間ブラウジングをさせ
+るDMBの存在理由である。
+</para>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+ワークグループ環境で、DMBはSambaサーバでなければならず、ワークグループ名につき1
+つのDMBでなければならない。SambaサーバをDMBとして設定するためには、&smb.conf;
+ファイル中の<smbconfsection name="[global]"/>セクションに以下のオプションを記述
+する:
+</para>
+
+<para>
+<smbconfblock>
+<smbconfoption name="domain master">yes</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+DMBはそれがいるサブネット上でのLMBであるべきである。これを達成するためには、
+&smb.conf;ファイル中の<smbconfsection name="[global]"/>セクション中に、
+<link linkend="dmbexample">ドメインマスタブラウザのsmb.conf</link>
+で示されるオプションを設定する:
+</para>
+
+<example id="dmbexample">
+<title>ドメインマスタブラウザのsmb.conf</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="domain master">yes</smbconfoption>
+<smbconfoption name="local master">yes</smbconfoption>
+<smbconfoption name="preferred master">yes</smbconfoption>
+<smbconfoption name="os level">65</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+必要であれば、DMBはWINSサーバと同じマシンでも良い。
+</para>
+
+<para>
+<indexterm><primary>サブネット</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>rebooted</primary></indexterm>
+次に、ワークグループに対するLMBとして振る舞うことが出来るマシンを、おのおののサ
+ブネットごとに存在するようにする。任意のWindows NT/200x/XPマシンはこれが出来、
+Windows 9x/Meマシン(しばしばリブートの必要があるため、この目的に使うのには適さ
+ないが)もできる。SambaサーバをLMBにするには、以下の、
+<link linkend="lmbexample">ローカルマスタブラウザのsmb.conf</link>で示されているよ
+うに、&smb.conf;ファイルの<smbconfsection name="[global]"/>セクション中に以下の
+オプションを記述する。
+</para>
+
+<example id="lmbexample">
+<title>ローカルマスタブラウザのsmb.conf</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="domain master">no</smbconfoption>
+<smbconfoption name="local master">yes</smbconfoption>
+<smbconfoption name="preferred master">yes</smbconfoption>
+<smbconfoption name="os level">65</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+おのおののサブネットごとに1つ以上のSambaサーバに対してこれを行わないこと。そう
+しないと、LMBになるための競合が発生してしまう。
+</para>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>ブラウザ選択</primary></indexterm>
+<smbconfoption name="local master"/>パラメータはSambaに、LMBとして機能するように
+させる。<smbconfoption name="preferred master"/>は、<command>nmbd</command>に対
+して起動時にブラウザ選択を強制的に実行するようにさせ、
+<smbconfoption name="os level"/>パラメータは、Sambaが、ブラウザ選択に勝つために
+必要十分となる大きな値を設定する。
+</para>
+
+<para>
+<indexterm><primary>LMBを無効</primary></indexterm>
+もしもLMBにしたいNTマシンがサブネット上にある場合、以下の、
+<link linkend="nombexample">マスタブラウザにならないsmb.conf</link>で
+示されているように、&smb.conf;ファイル中の<smbconfsection name="[global]"/>
+セクション中に、以下のパラメータを設定して、SambaがLMBにならないようにする。
+</para>
+
+<para>
+<example id="nombexample">
+<title>マスタブラウザにならないsmb.conf</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="domain master">no</smbconfoption>
+<smbconfoption name="local master">no</smbconfoption>
+<smbconfoption name="preferred master">no</smbconfoption>
+<smbconfoption name="os level">0</smbconfoption>
+</smbconfblock>
+</example>
+</para>
+
+</sect2>
+
+<sect2>
+<title>ドメインブラウジングの設定</title>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>registers</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+もしも、Windows NTドメインにSambaサーバを追加する場合、SambaサーバをDMBとして設
+定してはならない。既定値では、ドメインに対するWindows NT PDCはそのドメインに対
+するDMBでもある。WINSを使って、DMB NetBIOS名
+(<replaceable>DOMAIN</replaceable>&lt;1B&gt;)をSambaサーバがPDCとして登録すると、
+ネットワークブラウジングは崩壊する。
+</para>
+
+<para>
+<indexterm><primary>ローカルマスタブラウザ</primary></indexterm>
+Windows NT PDCを含んでいる以外のサブネットでは、Sambaサーバを説明しているように
+LMBとして設定しても良い。SambaサーバをLMBにするためには、以下の
+<link linkend="remsmb">ローカルマスタブラウザにするためのsmb.conf</link>
+のように、&smb.conf;ファイル中の<smbconfsection name="[global]"/>セクション中に
+以下のオプションを設定する。
+</para>
+
+<example id="remsmb">
+<title>ローカルマスタブラウザにするためのsmb.conf</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="domain master">no</smbconfoption>
+<smbconfoption name="local master">yes</smbconfoption>
+<smbconfoption name="preferred master">yes</smbconfoption>
+<smbconfoption name="os level">65</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>選択</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+もしも、同じサブネット上のマシンとの間で選択作業を行いたいのであれば、
+<smbconfoption name="os level"/>パラメータをより小さな値に設定しても良い。
+これを行うことで、LMBになり得る、動いているマシンの順番を調整することができる。
+より詳細については
+<link linkend="browse-force-master">強制的にSambaをマスタにする</link>
+を参照のこと。
+</para>
+
+<para>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>ブラウザ選択</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+もしもすべてのサブネット上でのドメインのメンバであるWindows NTマシンがあり、
+それが常時確実に動いているならば、以下で示される、
+<link linkend="xremmb">マスタにブラウザにならない&smb.conf;</link>
+のように、&smb.conf;ファイル中の<smbconfsection name="[global]"/>
+セクション中で以下のオプションを指定することで、Sambaがブラウザ選択を
+しなくなり、LMBに絶対にならないようにすることができる。
+</para>
+
+<para>
+<example id="xremmb">
+<title>マスタブラウザにならない&smb.conf;</title>
+<smbconfsection name="[global]"/>
+<smbconfoption name="domain master">no</smbconfoption>
+<smbconfoption name="local master">no</smbconfoption>
+<smbconfoption name="preferred master">no</smbconfoption>
+<smbconfoption name="os level">0</smbconfoption>
+</example>
+</para>
+
+</sect2>
+
+<sect2 id="browse-force-master">
+<title>強制的にSambaをマスタにする</title>
+
+<para>
+<indexterm><primary>マスタブラウザ</primary></indexterm>
+<indexterm><primary>選択プロセス</primary></indexterm>
+<indexterm><primary>ブロードキャスト</primary></indexterm>
+<indexterm><primary>election packet</primary></indexterm>
+<indexterm><primary>bias</primary></indexterm>
+<indexterm><primary>選択</primary></indexterm>
+<indexterm><primary>precedence</primary></indexterm>
+マスタブラウズになるマシンはブロードキャストを使った選択プロセスで決められる。
+各選択パケットには選択作業において、ホストがどのような優先項目(バイアス)を持つ
+べきかを決定するための、たくさんのパラメータを含んでいる。既定値では、Sambaは、
+各Windowsサーバ又はクライアントについて、低い優先度を持ち結果として選択からは外
+れる。
+</para>
+
+<para>
+Sambaを選択したい場合には、&smb.conf;中の<smbconfoption name="os level"/>グロー
+バルオプションをより大きい数字に設定する。既定値では20である。34を使うと、他の
+すべてのシステム(他のSambaシステムを除く)との選択に勝つ。
+</para>
+
+<para>
+<smbconfoption name="os level"/>が2の場合はWindows for Workgroupsと
+Windows 9x/Meに勝つが、Microsoft NT/200x サーバには勝てない。Microsoft Windows NT/200x
+サーバのドメインコントローラはレベル32を使う。os levelの最大値は255である。
+</para>
+
+<para>
+<indexterm><primary>選択作業の強制</primary></indexterm>
+<indexterm><primary>ポテンシャルマスタブラウザ</primary></indexterm>
+<indexterm><primary>ローカルサブネット</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+もしも、起動時にSambaに選択を強制させたいならば、&smb.conf;中の
+<smbconfoption name="preferred master"/>グローバルオプションを
+<constant>yes</constant>に設定する。Sambaは優先マスタブラウザでない、他のポテン
+シャルマスタブラウザよりも若干の優位性を持つようになる。これは注意深く使うこと。
+そうしないと、同じローカルサブネット上で<smbconfoption name="preferred master"/>を
+<constant>yes</constant>に設定した2つのホスト(Windows 9x/MeかNT/200x/XPかSamba)
+があった場合、LMBになるための強制的な選択が、定期的かつ継続的に発生してしまう。
+</para>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>LAN</primary></indexterm>
+<indexterm><primary>WAN</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>ブロードキャストが届かないサブネット</primary></indexterm>
+もしも、Sambaを<emphasis>DMB</emphasis>にしたいならば、ブロードキャストが届かな
+い分離されたサブネット上のLMBでもない、LANまたはWAN全体のDMBにSambaがならないと
+いう理由で、
+<smbconfoption name="preferred master"/>も<constant>yes</constant>に設定するこ
+とを推奨する。
+</para>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>automatic redundancy</primary></indexterm>
+<indexterm><primary>UDP</primary></indexterm>
+<indexterm><primary>ネットワークバンド幅</primary></indexterm>
+<indexterm><primary>ブラウザ選択</primary></indexterm>
+2つのSambaサーバがドメイン用にDMBになるように試みることは出来る。最初のサーバは
+DMBになる。その他のすべてのサーバは5分ごとにDMBになるように試行する。それらは、
+すでに他のSambaサーバがDMBであることを見つけて失敗する。これは、現在動いている
+DMBが故障したときに、自動的な冗長性を提供する。ブラウザ選択のネットワークバンド
+幅のオーバヘッドは相対的に小さく、おおよそ1つの選択ごとかつ1つのマシンごとに4つのUDPパ
+ケットを要求する。最小のUDPパケットは576バイトである。
+</para>
+
+</sect2>
+
+<sect2>
+<title>Sambaをドメインマスタにする</title>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>collating</primary></indexterm>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+<indexterm><primary>ブラウジング</primary></indexterm>
+ドメインマスタブラウザは複数のサブネットのブラウザリストを集めることに責任があ
+り、それゆえ、サブネット間でのブラウジングが可能になる。&smb.conf;中に
+<smbconfoption name="domain master">yes</smbconfoption>を設定することで、Samba
+をドメインマスタブラウザにすることが出来る。既定値では、ドメインマスタになる設
+定ではない。
+</para>
+
+<para>
+<indexterm><primary>ワークグループ</primary></indexterm>
+<indexterm><primary>ネットワークブラウジングの問題</primary></indexterm>
+SambaをNT/200xドメインと同じ名前を持つワークグループ向けのドメインマスタに設定
+してはならない。もしも、同じネットワーク上で同じ名前を持つWindows NT/200xドメイ
+ンと同じワークグループ名用にドメインマスタとしてSambaを設定すると、ネットワーク
+ブラウジングの問題が確実に発生する。
+</para>
+
+<para>
+Sambaがドメインマスタでマスタブラウザの場合、他のサブネット上のLMBからのマスタ
+アナウンスをリッスンし(おおよそ12分間隔)、ブラウザリストの同期を行うために、そ
+のマシンに接続する。
+</para>
+
+<para>
+<indexterm><primary>選択に勝つ</primary></indexterm>
+<indexterm><primary>強制選択</primary></indexterm>
+Sambaをドメインマスタにしたい場合、選択に勝つために、
+<smbconfoption name="os level"/>を十分に大きな値にすべきであり、
+<smbconfoption name="preferred master"/>を<constant>yes</constant>にし、
+起動時にSambaに強制的に選択を行わせるようにする。
+</para>
+
+<para>
+<indexterm><primary>WINSサーバr</primary></indexterm>
+<indexterm><primary>NetBIOS名の解決</primary></indexterm>
+(Sambaを含む)すべてのサーバとクライアントは、NetBIOS名を解決するためにWINSサー
+バを使うべきである。もしもクライアントがNetBIOS名を解決するためにブロードキャス
+トのみを使うと、以下の2つが発生する:
+</para>
+
+<orderedlist>
+<listitem>
+	<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+	ローカルサブネットのみしか見えないため、LMBはDMBを見つけられなくなる。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+<indexterm><primary>ドメイン全体のブラウズリスト</primary></indexterm>
+	もしもクライアントがドメイン全体のブラウズリストを入手し、そのリストに
+	あるホストにアクセスしようとした場合、そのホストに対するNetBIOS名の解決
+	が出来なくなる。
+	</para>
+</listitem>
+</orderedlist>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+しかし、Sambaとクライアント両方がWINSを使う場合:
+</para>
+
+<orderedlist>
+<listitem>
+	<para>
+	LMBはWINSサーバに接続し、SambaがDMBである間はWINSサーバに登録を行い、
+	LMBはDMBとしてSambaのIPアドレスを受け取る。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	クライアントがドメイン全体のブラウズリストを入手し、ユーザがそのリスト
+	中のホストに接続しようとしたとき、そのホストに対するNetBIOS名を解決する
+	ために、WINSサーバに接続する。同じWINSサーバにホストのNetBIOS名が登録さ
+	れている間はそのホストを認識することが出来る。
+	</para>
+</listitem>
+</orderedlist>
+
+</sect2>
+
+<sect2>
+<title>ブロードキャストアドレスについての注意</title>
+
+<para>
+<indexterm><primary>ゼロベースのブロードキャスト</primary></indexterm>
+ゼロベースのブロードキャストアドレスをネットワークが使っている場合(たとえば、0
+で終わる)、問題が発生する。Windows fore Workgroupはゼロベースのブロードキャスト
+をサポートしていないようなので、ブラウジングと名前検索が動かないだろう。
+</para>
+</sect2>
+
+<sect2>
+<title>複数のインタフェース</title>
+
+<para>
+<indexterm><primary>multiple network interfaces</primary></indexterm>
+Sambaは複数のネットワークインタフェースをサポートする。もしも複数のインタフェー
+スがある場合、&smb.conf;中の<smbconfoption name="interfaces"/>オプションを使っ
+て設定を行う必要がある。たとえば、<literal>eth0</literal>,
+<literal>eth1</literal>,<literal>eth2</literal>, <literal>eth3</literal>
+という4つのネットワークインタフェースを持つマシンがあり、
+<literal>eth1</literal>と<literal>eth4</literal>のみSambaが使う場合があったとす
+る。この場合、この意図に合わせるようにするためには、&smb.conf;ファイル中に以下
+のエントリを記述する:
+<smbconfblock>
+<smbconfoption name="interfaces">eth1, eth4</smbconfoption>
+<smbconfoption name="bind interfaces only">Yes</smbconfoption>
+</smbconfblock>
+<indexterm><primary>port 135</primary></indexterm>
+<indexterm><primary>port 137</primary></indexterm>
+<indexterm><primary>port 138</primary></indexterm>
+<indexterm><primary>port 139</primary></indexterm>
+<indexterm><primary>port 445</primary></indexterm>
+<indexterm><primary>UDP</primary></indexterm>
+<indexterm><primary>TCP</primary></indexterm>
+<smbconfoption name="bind interfaces only">Yes</smbconfoption>は指定されていな
+いインタフェース上でTCP/IPセッションサービス(ポート135,139と445)を含めない時に
+必要である。<command>nmbd</command>はリストされていないポート上でのUDPポート137
+から来るパケットをリッスンするが、それには返答しないことに気がつくこと。しかし
+ながら、リストされていないインタフェース上でブロードキャストパケットは送信する。
+完全にイーサネットインタフェースを分離するには、Sambaサーバがアクセスできないよ
+うにしなければならないすべてのネットワークインタフェース上で、ポート137と
+138(UDP)、ポート135、139と445(TCP)をファイアウォール上でブロックすることが必要
+である。
+</para>
+
+</sect2>
+
+<sect2>
+<title>リモートアナウンスパラメータの使用</title>
+<para>
+&smb.conf;中の<smbconfoption name="remote announce"/>パラメータは
+ネットワーク上のすべてのNetBIOS名がリモートネットワークにアナウンス
+されることを保証するために使うことが出来る。
+<smbconfoption name="remote announce"/>パラメータの文法は以下の通り:
+<smbconfblock>
+<smbconfoption name="remote announce">192.168.12.23 [172.16.21.255] ...</smbconfoption>
+</smbconfblock>
+<emphasis>or</emphasis>
+<smbconfblock>
+<smbconfoption name="remote announce">192.168.12.23/MIDEARTH [172.16.21.255/ELVINDORF] ...</smbconfoption>
+</smbconfblock>
+
+ここで:
+<variablelist>
+	<varlistentry><term><replaceable>192.168.12.23</replaceable> and <replaceable>172.16.21.255</replaceable></term>
+		<listitem><para>
+<indexterm><primary>LMB</primary><see>ローカルマスタブラウザ</see></indexterm>
+<indexterm><primary>ローカルマスタブラウザ</primary></indexterm>
+		はリモートネットワークのLMBのIPアドレスか、ブロードキャストアド
+		レスである。これは、LMBが192.168.1.23か、ネットマスクが24ビット
+		(255.255.255.0)であるときに172.16.21.255として与えられる。
+		リモートアナウンスがリモートネットワークのブロードキャストに対
+		して行われるとき、各ホストはこのアナウンスを受け取る。これはノイズであり、
+		好ましくないが、もしもリモートLMBのIPアドレスが分からないときには必要である。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term><replaceable>ワークグループ</replaceable></term>
+		<listitem><para>はオプションで、自ワークグループかリモートネッ
+		トワークのワークグループを指定できる。リモートのネットワークの
+		ワークグループ名を使う場合、自マシンのNetBIOS名はそのネット
+		ワークに所属するように見えるようになる。これは名前解決問題
+		を引き起こしかねず、避けるべきである。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+</para>
+
+</sect2>
+
+<sect2>
+<title>Remote Browse Syncパラメータの使用</title>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>同期</primary></indexterm>
+&smb.conf;の<smbconfoption name="remote browse sync"/>パラメータは
+手元のSamba LMBとの間で同期を取らなければならない他のLMBへアナウンスを行うのに
+使用する。これは、そのネットワークセグメント上でSambaサーバがが同時にLMBの時に
+のみ動作する。
+</para>
+
+<para>
+<smbconfoption name="remote browse sync"/>パラメータの文法は以下の通り:
+
+<smbconfblock>
+<smbconfoption name="remote browse sync"><replaceable>192.168.10.40</replaceable></smbconfoption>
+</smbconfblock>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>リモートセグメント</primary></indexterm>
+ここで、<replaceable>192.168.10.40</replaceable>は、リモートのLMBのIP
+アドレスか、リモートセグメントのネットワークブロードキャストアドレスである。
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>WINS: The Windows Internetworking Name Server</title>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>名前タイプ</primary></indexterm>
+<indexterm><primary>LanManager互換</primary></indexterm>
+WINSの使用(Samba WINS又はWindows NTサーバWINS)は強く推奨する。
+各NetBIOSマシンは、有効なサービスのサービスタイプの名前タイプの値と共に、
+名前を登録する。ユニーク名(タイプ0x03)として名前を直接登録する。
+また、LanManager互換のサーバサービス(他のユーザに対してファイル共有と
+プリンタ共有を提供する)が動いているときには、サーバ名(タイプ0x20)
+を登録することによりその名前も登録する。
+</para>
+
+<para>
+<indexterm><primary>NetBIOS名の長さ</primary></indexterm>
+<indexterm><primary>名前タイプ</primary></indexterm>
+すべてのNetBIOS名は最大15文字である。名前タイプの値が名前の後に付加され、
+合計16文字となる。15文字より小さい名前は15文字になるように空白が埋め込まれる。
+そのため、すべてのNetBIOS名は16文字(名前タイプ情報を含め)である。
+</para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>registered</primary></indexterm>
+<indexterm><primary>NetLogonサービス</primary></indexterm>
+<indexterm><primary>lmhosts</primary></indexterm>
+WINは登録された16文字長の名前を格納できる。ネットワークにログオンしたい
+クライアントはNetLogonサービス名前タイプで登録されたすべての名前のリストを
+WINSサーバに問い合わせる。これはブロードキャストトラフィックを減少し、
+ログオン処理を高速化する。ネットワークセグメント越しにブロードキャスト
+による名前解決が出来ないため、このタイプの情報はWINSサーバがいないときに、
+すべてのクライアントが内包しなければならない<filename>lmhosts</filename>
+ファイルを固定的に設定するか、WINSサーバによってのみ提供される。
+</para>
+
+<para>
+<indexterm><primary>同期</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+WINSはすべてのLMBによってブラウズリストの同期を強制的に行う。LMBはDMB
+を使ってそのブラウズリストを同期し、WINSはそのDMBの識別をLMBに対して
+手助けする。定義によって、これは単一のワークグループ内でのみ動作する。
+DMBはMicrosoft NTドメインとして呼ばれているとは無関係であることに注意。
+DMBがブラウズリスト情報のみに関してマスタコントローラとしてDMBが言及する
+間、後者はセキュリティ環境について言及する。
+</para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>TCP/IPプロトコルスタック</primary></indexterm>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+<indexterm><primary>name-to-address</primary></indexterm>
+WINSは、WINSサーバのためにすべてのTCP/IPプロトコルスタックが設定されて
+いる時のみ正しく動作する。あるクライアントがWINSサーバを使うように設定
+されておらず、ブロードキャストでの名前登録のみを引き続き使うようになって
+いる場合、WINSはそれを認識できない。この場合、WINSサーバで名前登録を
+行わないマシンは、他のクライアントによる名前-アドレス変換が失敗し、
+それゆえ、ワークステーションへのアクセスエラーが発生する。
+</para>
+
+<para>
+SambaをWINSサーバとして設定するためには、
+&smb.conf;ファイルの[global]セクションで、
+<smbconfoption name="wins support">yes</smbconfoption>を追加する。
+</para>
+
+<para>
+SambaがWINSサーバに登録するためには、&smb.conf;ファイルの
+<smbconfsection name="[global]"/>セクションで
+<smbconfoption name="wins server">10.0.0.18</smbconfoption>を追加する。
+</para>
+
+<important><para>
+特にその固有IPアドレスを指定して、
+<smbconfoption name="wins support">yes</smbconfoption>と一緒に、
+<smbconfoption name="wins server">10.0.0.18</smbconfoption>
+を使わないこと。両者を同時に&smb.conf;で指定すると起動しなくなる!
+</para></important>
+
+<sect2>
+<title>WINSサーバの設定</title>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+SambaサーバまたはWindows NTサーバのどちらも、WINSサーバとして設定できる。
+SambaサーバをWINSサーバとして設定するためには、選択したサーバの&smb.conf;
+ファイルに以下を<smbconfsection name="[global]"/>セクションに追加しなけ
+ればならない:
+</para>
+
+<para>
+<smbconfblock>
+<smbconfoption name="wins support">yes</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+<indexterm><primary>Samba 1.9.17</primary></indexterm>
+Samba 1.9.17より前のバージョンでは、このパラメータは既定値でyesになって
+いる。もしも、ネットワーク上で古いバージョンのSambaを使っている場合、
+最新のバージョンへのアップグレードを強く推奨する。そうしないと、
+それらすべてのマシンでこのパラメータを<quote>no</quote>に設定しなければ
+ならなくなる。
+</para>
+
+<para>
+<smbconfoption name="wins support">yes</smbconfoption>を設定したマシンは、
+登録されたすべてのNetBIOS名を保持し、NetBIOS名のためのDNSとして機能する。
+</para>
+
+<para>
+<indexterm><primary>単一のWINSサーバ</primary></indexterm>
+単一のWINSサーバを設定することを強く推奨する。ネットワーク上で2つ以上の
+サーバに、<smbconfoption name="wins support">yes</smbconfoption>を
+指定しないこと。
+</para>
+
+<para>
+<indexterm><primary>複製</primary><secondary>WINS</secondary></indexterm>
+<indexterm><primary>Windows NT/200x</primary></indexterm>
+<indexterm><primary>WINSサービス</primary></indexterm>
+<indexterm><primary>複製プロトコル</primary></indexterm>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+Windows NT/200xサーバをWINSサーバとして設定するためにはWINSサービスを設定する。
+詳細は、Windows NT/200xの説明書を参照のこと。Windows NT/200xのWINSサーバは、
+お互いに複製が出来、複雑なサブネット環境で2つ以上設定できる。Microsoftが
+複製プロトコルの開示を行っていないため、Sambaは現在それらの複製機能に参加でき
+ない。Samba間同士のWINS複製プロトコルは将来作成する予定だが、その場合、2つ
+以上のSambaマシンがWINSサーバとして設定できるようになる。現在は、1台のみの
+Sambaサーバが<smbconfoption name="wins support">yes</smbconfoption>と設定
+できる。
+</para>
+
+<para>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+<indexterm><primary>プライマリWINSサーバ</primary></indexterm>
+WINSサーバを設定後、ネットワークに参加しているすべてのマシンはこのWINSサーバ
+のアドレスを設定するようにしなければならない。もしも、WINSサーバがSambaマシン
+ならば、<guilabel>コントロールパネル->ネットワーク接続->ローカルエリア接続等->
+プロパティ->インターネットプロトコル(TCP/IP)->プロパティ->詳細設定->
+WINS</guilabel>ダイアログ中の<guilabel>WINSアドレス</guilabel>フィールド
+にSambaマシンのIPアドレスを設定する(WindowsXPの場合)。SambaサーバにWINS
+サーバのIPアドレスを設定する場合には、すべての&smb.conf;ファイルの
+<smbconfsection name="[global]"/>セクションに以下を追加する:
+<smbconfblock>
+<smbconfoption name="wins server">&lt;名前またはIPアドレス&gt;</smbconfoption>
+</smbconfblock>
+ここで、&lt;名前またはIPアドレス&gt;は、WINSサーバのDNS名かそのIPアドレスである。
+</para>
+
+<para>
+この行はSambaサーバ自身がWINSサーバとして動作する場合に、&smb.conf;ファイル
+中に設定してはならない。もしも
+<smbconfoption name="wins support">yes</smbconfoption>オプションと
+<smbconfoption name="wins server">&lt;name&gt;</smbconfoption>オプションを
+同時に設定すると、<command>nmbd</command>は起動に失敗する。
+</para>
+
+<para>
+<indexterm><primary>サブネット間のブラウジング</primary></indexterm>
+<indexterm><primary>Windows 9x/Me</primary></indexterm>
+<indexterm><primary>Windows NT/200x</primary></indexterm>
+<indexterm><primary>ドメイン外</primary></indexterm>
+サブネット間のブラウジングを設定するためには2つの方法がある。
+最初のもの詳細は、Windows NTドメインの一部としては設定されていない、Windows9x/Me、
+SambaとWindows NT/200xを含むネットワーク上でのサブネット間ブラウジングを
+設定するものである。2番目のものの詳細は、NTドメインを含むネットワーク上
+でのサブネット間ブラウジングを設定するものである。
+</para>
+
+</sect2>
+
+<sect2>
+<title>WINS複製</title>
+
+<para>
+<indexterm><primary>複製</primary><secondary>WINS</secondary></indexterm>
+<indexterm><primary>WINS複製</primary></indexterm>
+Samba-3はWINS複製をサポートしていない。これを実装する試みはあり、
+<filename>wrepld</filename>と呼ばれていたが、すでに開発は停止している。
+</para>
+<para>
+一方、<filename>samba4WINS</filename>というプロジェクトがあり、これは、
+Samba-3バージョン3.0.21から、Samba-4のWINSサーバを並列に動かせるように
+するものである。<filename>samba4WINS</filename>に付いての詳細は、
+<ulink url="http://ftp.sernet.de/pub/samba4WINS">http://ftp.sernet.de/pub/samba4WINS</ulink>
+を参照のこと。
+
+</para>
+
+</sect2>
+<sect2>
+<title>静的なWINSエントリ</title>
+
+<para>
+<indexterm><primary>静的なWINSエントリ</primary></indexterm>
+<indexterm><primary>wins.dat</primary></indexterm>
+<indexterm><primary>/usr/local/samba/var/locks</primary></indexterm>
+<indexterm><primary>/var/run/samba</primary></indexterm>
+Samba WINSサーバに静的な円入折りを追加するのはとても簡単である。
+通常<filename class="directory">/usr/local/samba/var/locks</filename>
+か <filename>/var/run/samba</filename>にある
+<filename>wins.dat</filename>ファイルに行を追加するだけである。
+</para>
+
+<para>
+<filename>wins.dat</filename>中のエントリは以下の形式である:
+<programlisting>
+"NAME#TYPE" TTL ADDRESS+ FLAGS
+</programlisting>
+<indexterm><primary>TTL</primary></indexterm>
+<indexterm><primary>生存時間</primary><see>TTL</see></indexterm>
+ここでNAMEはNetBIOS名、TYPEはNetBIOS名前タイプ、TTLはそのエントリの、秒単位の
+生存時間、ADDRESS+は登録したい1つ以上のアドレス、FLAGは登録時に使うNetBIOS
+フラグである。
+</para>
+
+<note><para>
+&nmbd;を再起動するまで、<filename>wins.dat</filename>への変更は反映されない。
+<filename>wins.dat</filename>は動的に変更されるので、&nmbd;はこのファイルを
+変更する前に停止しておかなければならないことに注意。このファイルを編集後、
+&nmbd;を再起動するのを忘れないこと。
+</para></note>
+
+<para>
+通常の動的エントリは以下のようになる:
+<programlisting>
+"MADMAN#03" 1155298378 192.168.1.2 66R
+</programlisting>
+NetBIOS名を静的に(恒久的に)するためには、以下のように、単純にTTLを0にする:
+<programlisting>
+"MADMAN#03" 0 192.168.1.2 66R
+</programlisting>
+</para>
+
+<para>
+<indexterm><primary>NetBIOSフラグ</primary></indexterm>
+<indexterm><primary>Bノード</primary></indexterm>
+<indexterm><primary>Pノード</primary></indexterm>
+<indexterm><primary>Mノード</primary></indexterm>
+<indexterm><primary>Hノード</primary></indexterm>
+<indexterm><primary>恒久名</primary></indexterm>
+<indexterm><primary>nameserv.h</primary></indexterm>
+NetBIOSフラグは16進数で、ビット単位に意味を持つ: 00 - Bノードの登録、20 - Pノードの
+登録、40 - Mノードの登録、60 - Hノードの登録、02 - 恒久名、04 - アクティブ名、
+80 - グループ名 である。'R'は登録レコードであることを表示する。そのため、 66Rは
+ハイブリッドノードで、アクティブで、恒久的なNetBIOS名であることを意味する。これら
+の値は、Sambaソースコードリポジトリの<filename>nameserv.h</filename>で定義されて
+いる。それらはNBフラグのための値である。
+</para>
+
+<para>
+<indexterm><primary>WINS複製</primary></indexterm>
+初期のSamba-3バージョンから、この方法は動作するが、WINS複製機能が追加された、
+将来のバージョンでは変更の可能性がある。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>役に立つヒント</title>
+
+<para>
+多くのネットワーク管理者がつまずく点なので、以下のヒントは十分に検討する
+必要がある。
+</para>
+
+<sect2>
+<title>Windowsのネットワークプロトコル</title>
+
+<para>
+<indexterm><primary>ブラウジングの問題</primary></indexterm>
+<indexterm><primary>1つ以上のプロトコル</primary></indexterm>
+Microsoft Windowsマシン上で2つ以上のプロトコルをインストールした場合、
+よくあるブラウジングの問題が発生する。
+</para>
+
+<warning><para>
+2つ以上のプロトコルをMicrosoft Windowsクライアントでは使わない。
+</para></warning>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+すべてのNetBIOSマシンは15分間隔のLMB(とDMB)の選択プロセスに参加する。
+複数の選択基準がこの選択プロセスでの決定の順番を決めるのに使われる。
+動作しているSambaまたはWindows NTは優先順位が変更されていて、そのため、
+最も適したマシンが予想通り決定に勝ち、この役割を保持する。
+</para>
+
+<para>
+<indexterm><primary>NetBIOS ネットワークインタフェース</primary></indexterm>
+<indexterm><primary>TCP/IP</primary></indexterm>
+<indexterm><primary>IPX</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>Windows 9x/Me</primary></indexterm>
+<indexterm><primary>TCP/IPのみ</primary></indexterm>
+選択プロセスはすべてのNetBIOSネットワークインタフェースで、
+<emphasis>いわば、最後まで行われる。</emphasis>
+TCP/IPとIPXがインストールされ、NetBIOSが両方のプロトコルで有効な
+Windows 9x/Meマシンの場合、選択は両方のプロトコル上で行われる。しばしば
+発生するが、もし、Windows 9x/Meマシンが両方のプロトコルを持つ唯一のマシン
+ならば、LMBはIPXプロトコル上でのNetBIOSインタフェース上で勝つ。
+Sambaは、Windows 9x/Meが、LMBがどのマシンかということを知っていると
+主張することによって、LMBでなくなる。SambaはLMB機能をやめるため、
+すべてのTCP/IPのみで動くマシンのブラウズリスト操作はそのために失敗する。
+</para>
+
+<para>
+<indexterm><primary>Windows 9x/Me</primary></indexterm>
+<indexterm><primary>拡張プロトコル</primary></indexterm>
+Windows 95、98、98SEとMeは一般的に Windows9x/Meと言われる。Windows NT4、
+200xとXPは共通のプロトコルを使う。これらはざっとWindows NTファミリと言われるが、
+2000と XP/2003は、Microsoft Windows NT4とは異なる動作をする新しい
+拡張プロトコルを導入したと認識されねばならない。一般的に、サーバはより新しいか
+拡張プロトコルをサポートせず、NT4プロトコルで処理をするようになる。
+</para>
+
+<para>
+最も安全な、従うべきルールのすべては単一のプロトコルを使う! である。
+</para>
+
+</sect2>
+
+<sect2>
+<title>名前解決の順序</title>
+
+<para>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+<indexterm><primary>名前タイプ</primary></indexterm>
+NetBIOS名からIPアドレスへの名前解決は、いくつもの方式を使って行われる。
+NetBIOS名前タイプ情報を提供可能なものは以下の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para>WINS &smbmdash; 最適の方法。</para></listitem>
+	<listitem><para>LMHOSTS &smbmdash; 静的でメンテナンスしづらい。</para></listitem>
+	<listitem><para>Broadcast &smbmdash; UDPを使うが他セグメントの名前を解決できない。</para></listitem>
+</itemizedlist>
+
+<para>
+名前解決の別の意味は以下を含む:
+</para>
+<itemizedlist>
+<listitem><para>Static <filename>/etc/hosts</filename> &smbmdash;  メンテナンスしづらく、名前タイプ情報が欠落している。</para></listitem>
+<listitem><para>DNS &smbmdash; は良い選択肢だが、基本的なNetBIOS名前タイプ情報が欠落している。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>制限されたDNS</primary></indexterm>
+<indexterm><primary>名前解決の順序</primary></indexterm>
+ブロードキャスト名前解決のトラフィックを防ぐこととDNS検索の制限をしたい
+と考えているサイトが多数ある。<parameter>name resolve order</parameter>
+パラメータはこれをとても助ける。<parameter>name resolve order</parameter>
+パラメータの文法は以下の通り:
+<smbconfblock>
+<smbconfoption name="name resolve order">wins lmhosts bcast host</smbconfoption>
+</smbconfblock>
+<emphasis>or</emphasis>
+<smbconfblock>
+<smbconfoption name="name resolve order">wins lmhosts  	(bcastとhostを省略)</smbconfoption>
+</smbconfblock>
+既定値は:
+<smbconfblock>
+<smbconfoption name="name resolve order">host lmhost wins bcast</smbconfoption>で、
+</smbconfblock>
+<indexterm><primary>gethostbyname() 関数呼び出し</primary></indexterm>
+ここで、<quote>host</quote>は、UNIXシステムに実装されているgethostbyname()
+呼び出しを使う方法である。これは、通常<filename>/etc/host.conf</filename>、
+<filename>/etc/nsswitch.conf</filename>と<filename>/etc/resolv.conf</filename>
+によって制御される。
+</para>
+</sect2>
+</sect1>
+
+<sect1>
+<title>ブラウジングの技術的な概要</title>
+
+<para>
+<indexterm><primary>SMB</primary></indexterm>
+SMBネットワークは、<smbconfoption name="browse list"/>と呼ばれる
+ネットワーク中のマシンのリストにクライアントがアクセスできる機能を
+提供するメカニズムである。このリストには、ネットワーク中の他のマシンに
+対してファイルまたは印刷サービスを提供するマシンを含んでいる。サーバの
+機能を現在提供出来ない他のマシンは含んでいない。ブラウズリストはすべての
+SMBクライアントによって頻繁に使われる。SMBブラウジングの設定はある種の
+Sambaユーザには問題があり、そのためにこの文書?????
+Configuration of SMB
+browsing has been problematic for some Samba users, hence this
+document.
+</para>
+
+<para>
+<indexterm><primary>NetBIOS over TCP/IP</primary></indexterm>
+<indexterm><primary>DNS/LDAP/ADS</primary></indexterm>
+<indexterm><primary>名前解決</primary></indexterm>
+Microsoft Windows 2000とその後継バージョン、Samba-3とその後継バージョン
+は、NetBIOS over TCP/IPを使わないように構成できる。この方法で構成した
+場合、(DNS/LDAP/ADSでの)名前解決を正しく設定して動くようにしておくことは
+必定である。SMBマシン名からIPアドレスへの名前解決が正しく機能しない場合、
+ブラウジングは動作しない。
+</para>
+
+<para>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+NetBIOS over TCP/IPが有効な時、WINSサーバを使うことは、NetBIOS(SMB)
+名からIPアドレスへの名前解決を支援するために強く推奨される。
+名前解決の他のどの手段でも提供出来ない、リモートセグメントクライアントの
+NetBIOS名前タイプ情報を提供することがWINSでは出来る。
+</para>
+
+<sect2>
+<title>Sambaでのブラウジングサポート</title>
+
+<para>
+<indexterm><primary>ブラウジング</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>ドメインログオン</primary></indexterm>
+<indexterm><primary>スクリプト</primary></indexterm>
+Sambaはブラウジングを容易にする。ブラウジングは&nmbd;でサポートされて、
+&smb.conf;ファイル中のオプションで制御される。Sambaはワークグループの
+LMBとして動作でき、ドメインログオンとスクリプト機能をサポートする能力を
+現在持っている。
+</para>
+
+<para>
+<indexterm><primary>ワークグループのDMB</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+SambaはワークグループのDMBとしても動作する。これは、LMBからのリストを
+広範囲のネットワークサーバリストに集めることを意味する。このリスト中
+にある名前をブラウズクライアントが解決するために、Sambaとクライアント両方が
+WINSサーバを使うことを推奨する。
+</para>
+
+<para>
+<indexterm><primary>ドメインマスタ</primary></indexterm>
+NTドメインにおいて同じ名前を持つ、ワークグループのドメインマスタに設定
+してはならない。各ワイドエリアネットワークで、それがNTかSambaか、
+あるいはこのサービスを提供する他のタイプのドメインマスタに関わらず、
+ワークグループ毎に一つのみのDMBを設定するようにしなければならない。
+</para>
+
+<note><para>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+<command>nmbd</command>はWINSサーバとして設定できるが、特段、Sambaを
+WINSサーバとして使用することは必要ない。Microsoft Windows NT4、
+Microsoft Windows Server又は Advanced Server 200xをWINSサーバとして
+設定できる。WAN上でのNT/200xとSambaの混在環境では、Microsoft WINS
+サーバの能力を使うことを推奨する。Sambaのみの環境では、ある1つのSamba
+サーバをWINSサーバとして使うことを推奨する。
+</para></note>
+
+<para>
+<indexterm><primary>nmbd</primary></indexterm>
+ブラウジングを機能させるために、<command>nmbd</command>を通常どおり動作
+させるが、どのワークグループにSambaが属するかを制御する、&smb.conf;
+中の<smbconfoption name="workgroup"/>オプションを使わなければならない。
+</para>
+
+<para>
+<indexterm><primary>他のサブネットのブラウジング</primary></indexterm>
+Sambaは他のサブネット上のブラウジングのために、それ自身を提供するために
+便利なオプションも持っている。このオプションは<quote>通常でない</quote>
+使い方のためにのみ使うことを推奨する。例をあげると、インターネット越しの通知
+である。&smb.conf;マニュアルページの<smbconfoption name="remote announce"/>
+を参照のこと。
+</para>
+</sect2>
+
+<sect2>
+<title>問題の解決方法</title>
+
+<para>
+<indexterm><primary>log.nmbd</primary></indexterm>
+<indexterm><primary>browse.dat</primary></indexterm>
+もしもうまく動かない場合、問題を把握するために<filename>log.nmbd</filename>
+ファイルが役に立つ。問題を発見するために、<smbconfoption name="log level"></smbconfoption>
+を2または3にしてみる。現在のブラウズリストは<filename>browse.dat</filename>
+というファイル中に、テキスト形式で格納されていることにも注意。
+</para>
+
+<para>
+<indexterm><primary>\\SERVER</primary></indexterm>
+<indexterm><primary>ファイルマネージャ</primary></indexterm>
+もしもうまく動かない場合、<command>ファイルマネージャ</command>中で
+サーバ名を<filename>\\SERVER</filename>という形で入力することが出来、
+enterを入力すると、<command>ファイルマネージャ</command>は有効な共有の
+一覧を表示する。
+</para>
+
+<para>
+<indexterm><primary>IPC$</primary></indexterm>
+<indexterm><primary>guest account</primary></indexterm>
+[global]セクションで<smbconfoption name="guest account"/>を
+有効なアカウントとして設定していないと、何人かはブラウジングに失敗する。
+共有を表示するためのIPC$接続は、guestで行われ、そのため、有効なguest account
+を設定しておかなければならない。
+</para>
+
+<note><para>
+<indexterm><primary>IPC$</primary></indexterm>
+<indexterm><primary>Windowsエクスプローラ</primary></indexterm>
+<indexterm><primary>browse resources</primary></indexterm>
+<indexterm><primary>ネットワークコンピュータ</primary></indexterm>
+<indexterm><primary>マイネットワーク</primary></indexterm>
+<literal>IPC$</literal>共有はすべてのSMB/CIFSクライアントで、
+サーバ上で有効なリソースのリストを得るために使われる。
+これは、SMB/CIFSサーバが、Windowsサーバに対してマイネットワーク経由で
+Windowsエクスプローラがリソースを閲覧するために使われる時の、共有とプリンタの
+リストの元になるものである。この時点で、クライアントは
+<literal>\\server\IPC$</literal>リソースに接続を行う。共有をクリックすると、
+<literal>\\server\share</literal>に接続する。
+</para></note>
+
+<para>
+<indexterm><primary>guest account</primary></indexterm>
+<indexterm><primary>匿名アクセス</primary></indexterm>
+<indexterm><primary>IPC$</primary></indexterm>
+<indexterm><primary>サーバリソースのブラウズ</primary></indexterm>
+Microsoft Windows 2000とその後継(Sambaも)はIPC$共有に対する匿名(すなわち
+guest account)アクセスを無効に出来る。この場合、SMB/CIFSクライアントとして
+動作するMicrosoft Windows 2000/XP/2003マシンは、IPC$共有に問い合わせるために
+現在ログインしているユーザの名前を使う。Microsoft Windows 9x/Meはこれが
+できず、サーバリソースをブラウズできない。
+</para>
+
+<para>
+<indexterm><primary>ブロードキャストアドレス</primary></indexterm>
+他の大きな問題はブロードキャストアドレス、ネットマスク、あるいはIPアドレスが
+間違っている場合(&smb.conf;中で<smbconfoption name="interfaces"></smbconfoption>
+を指定した場合)である。
+</para>
+</sect2>
+
+<sect2>
+<title>サブネット間のブラウジング</title>
+
+<para>
+<indexterm><primary>複製</primary><secondary>ブラウズリスト</secondary></indexterm>
+<indexterm><primary>サブネット越しのブラウズ</primary></indexterm>
+Samba1.9.17(α1)のリリースから、Sambaはサブネット境界をまたがってのブラウズリスト
+の複製をサポートしてきた。この節ではどのようにこの機能を異なった設定中で設定
+するかを説明する。
+</para>
+
+<para>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+<indexterm><primary>ブロードキャストのトラフィック</primary></indexterm>
+<indexterm><primary>UDP</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>remote announce</primary></indexterm>
+<indexterm><primary>remote browse sync</primary></indexterm>
+TCP/IPサブネットをまたがったブラウズリストを見るために(すなわち、ブロードキャスト
+パケットが通らない、ルータによって分離されたネットワーク)、少なくとも1つのWINS
+サーバを設定する必要がある。WINSサーバはNetBIOS名のためのDNS都市的脳する。これは、
+WINSサーバに直接問い合わせを行う事によって、NetBIOS名からIPアドレスへの変換を
+可能にする。これは、WINSサーバマシンのポート137に直接UDPパケットを投げることで
+行われる。WINSサーバは、問い合わせたマシンからのUDPを使うことによって行われる、
+既定値のNetBIOSからIPアドレスへの変換の必要性を防ぐ。これは、ある1つのサブネット
+は、WINSサーバを使わないで他のサブネット上のマシンの名前を解決することができない
+ということである。Sambaのハック、すなわち<parameter>remote browse sync</parameter>
+と<parameter>remote announce</parameter>はUDPのブロードキャストによる伝搬を防ぐ
+普通の制限をうまく乗り越えるようにできている。ハックは一般的な解ではなく、
+WINSがあるところでは使うべきではなく、最後の手段として考えるべきである。
+</para>
+
+<para>
+<indexterm><primary>DHCP</primary></indexterm>
+<indexterm><primary>サブネット越えのブラウジング</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>ネットワークの設定</primary></indexterm>
+ネットワーク越えのブラウジングを正しく動かすために、すべてのマシン、すなわち、
+Windows95、WindowsNTあるいはSambaサーバはDHCPサーバ経由かあるいは手動で、
+WINSサーバのIPアドレスを設定する必要があることを思い出してほしい:
+Windows 9x/MeとWindows NT/200x/XPでは、これはネットワーク設定配下の
+TCP/IPプロパティ中にあり、Sambaでは&smb.conf;ファイル中にある。
+</para>
+
+<para>
+<indexterm><primary>NetBIOS over TCP/IP</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+NetBIOS over TCP/IPなしでSamba-3を動作させることは可能である。もしも、これを
+行う場合、Microsoft ADSの外側で使うと、これは、ネットワークブラウジングサポートを
+やめることになると警告される。ADSは、すべてのSambaサーバのために適切な
+DNSレコードが挿入されるDNSを経由してブラウジングをサポートしている。
+</para>
+
+<sect3>
+<title>サブネット間ブラウジングの動作</title>
+
+<para>
+<indexterm><primary>サブネット間のブラウジング</primary></indexterm>
+<indexterm><primary>複雑</primary></indexterm>
+サブネット間のブラウジングはとても複雑で、多数の動いている部分を含んでいる。
+正確に動くコードが出来るまで、Microsoftは数年掛けることになり、Sambaは
+それから数年遅れて追いついている。設定が正しければ、Sambaはサブネット間の
+ブラウジングが出来る機能がある。
+</para>
+
+<para>
+<link linkend="browsing1">サブネット間ブラウジングの例</link>のようなネット
+ワーク設定を考えてみることにする。
+</para>
+
+<figure id="browsing1">
+	<title>サブネット間のブラウジングの例</title>
+	<imagefile scale="40">browsing1</imagefile>
+</figure>
+
+<para>
+<indexterm><primary>ブロードキャスト</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+これは、2つのルータ(R1,R2)で接続されている3つのサブネット(1,2,3)から成り立ち、
+それらはブロードキャストが届かない。サブネット1はその中に5つのマシンがあり、
+サブネット2は4つ、サブネット3は4つマシンがある。すべてのマシンは同じワーク
+グループ名(単純にするために)に設定されている。サブネット1上のマシンN1-Cは
+DMB(すなわち、ワークグループのブラウズリストを集める)として設定されている。
+マシンN2_DはWINSサーバとして設定されていて、すべての他のマシンはそのNetBIOS名
+をそこに登録している。
+</para>
+
+<para>
+<indexterm><primary>マスタブラウザ</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+それらのマシンが起動するとき、3つのサブネット上それぞれで、マスタブラウザの
+選択作業が発生する。サブネット1上ではマシンN1_Cが選択され、サブネット2上で
+はN2_Bが、サブネット3上ではN3_Dが選択されると仮定する。それらのマシンはその
+マシンがいるサブネット上ではLMBとなる。N1_CはそれがDMBとして設定されている
+ために、サブネット1上のLMBとなる。
+</para>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+各3ネットワーク上で、共有サービスを提供するように設定されたマシンは、その
+サービスを提供していることをブロードキャストする。各サブネット上のLMBは
+そのブロードキャストを受け取り、マシンがサービスを提供していることを記録
+する。この記録のリストはブラウズリストの基礎となるものである。この場合、
+すべてのマシンがサービスを提供するように設定されていることを仮定しているので、
+すべてのマシンがブラウズリスト上に載る。
+</para>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>authoritative</primary></indexterm>
+<indexterm><primary>verifiable</primary></indexterm>
+<indexterm><primary>trusted</primary></indexterm>
+<indexterm><primary>non-authoritative</primary></indexterm>
+各ネットワークで、そのネットワークのLMBは、ローカルブロードキャスト
+経由で受け取ったすべての名前を<emphasis>信頼できる</emphasis>と
+考える。これは、ローカルブロードキャスト経由でのLMBで見えるマシンは
+ローカルマスタブラウザとして同じネットワーク上にいなければならない
+という理由であり、そのため、<emphasis>信頼された</emphasis>、かつ
+<emphasis>検証可能な</emphasis>リソースである。ブラウズリストを
+収集する時に学習した他のネットワーク上のマシンは、LMBからは直接見え
+ない。これらのレコードは<emphasis>信頼できない</emphasis>。
+</para>
+
+<para>
+<indexterm><primary>ネットワークコンピュータ</primary></indexterm>
+この時点で、ブラウズリストは
+<link linkend="browsubnet">ブラウズリストの例1</link>のようになる
+(それらはたった今特定のネットワーク上でネットワークコンピュータを
+見た時に見えるマシンである)。
+</para>
+
+<para>
+<table frame="all" id="browsubnet">
+	<title>ブラウズリストの例1</title>
+	<tgroup align="left" cols="3">
+	<thead>
+		<row><entry>サブネット</entry><entry>ブラウズマスタ</entry><entry>リスト</entry></row>
+	</thead>
+
+	<tbody>
+		<row><entry>サブネット1</entry><entry>N1_C</entry><entry>N1_A, N1_B, N1_C, N1_D, N1_E</entry></row>
+		<row><entry>サブネット2</entry><entry>N2_B</entry><entry>N2_A, N2_B, N2_C, N2_D</entry></row>
+		<row><entry>サブネット3</entry><entry>N3_D</entry><entry>N3_A, N3_B, N3_C, N3_D</entry></row>
+	</tbody>
+	</tgroup>
+</table>
+</para>
+
+<para>
+この時点で、すべてのサブネットは分離され、任意のサブネットをまたいで見える
+マシンはない。
+</para>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>同期</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+次に、<link linkend="brsbex">サブネットのブラウズの例2</link>中のサブネット2を
+眺めてみよう。NB_2がLMBになると同時に、そのブラウズリストを同期するDMBを探す。
+これは、NetBIOS名 WORKGROUP&lt;1B&gt;に関連づけられているIPアドレスをWINS
+サーバ(N2_D)に問い合わせることによって行われる。この名前は、WINSサーバが起動
+するとすぐにDMB(N1_C)によって登録される。
+</para>
+
+<para>
+<indexterm><primary>マスタアナウンス</primary></indexterm>
+<indexterm><primary>NetServerEnum2</primary></indexterm>
+<indexterm><primary>同期作業</primary></indexterm>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+N2_BがDMBのアドレスを知ると、DMBに対して、UDPのポート138を使って、
+<emphasis>マスタアナウンス</emphasis>パケットを送ることによって、サブネット2
+のLMBであることを告げる。次に、<emphasis>NetServerEnum2</emphasis>コールを
+行うことで、DMBとの同期作業を行う。これは、DMBが知っているすべてのサーバ名を
+送信元に送るようにさせる。DMBが<emphasis>マスタアナウンス</emphasis>パケットを
+受け取ると、そのパケットの送信者への同期要求をスケジュールする。両方の同期が
+終了すると、ブラウズリストは、
+<link linkend="brsbex">サブネットのブラウズの例2</link>中のようになる。
+</para>
+
+<table frame="all" id="brsbex">
+	<title>サブネットブラウズの例2</title>
+	<tgroup	cols="3">
+		<colspec align="left"/>
+		<colspec align="left"/>
+		<colspec align="justify" colwidth="1*"/>
+	<thead>
+		<row><entry>サブネット</entry><entry>ブラウズマスタ</entry><entry>リスト</entry></row>
+	</thead>
+
+	<tbody>
+		<row><entry>サブネット1</entry><entry>N1_C</entry><entry>N1_A, N1_B, N1_C, N1_D, N1_E,
+N2_A(*), N2_B(*), N2_C(*), N2_D(*)</entry></row>
+		<row><entry>サブネット2</entry><entry>N2_B</entry><entry>N2_A, N2_B, N2_C, N2_D, N1_A(*),
+N1_B(*), N1_C(*), N1_D(*), N1_E(*)</entry></row>
+		<row><entry>サブネット3</entry><entry>N3_D</entry><entry>N3_A, N3_B, N3_C, N3_D</entry></row>
+	</tbody>
+	</tgroup>
+</table>
+
+<para>
+<indexterm><primary>non-authoritative</primary></indexterm>
+サーバ名の後に(*)が付いたものは信頼されていない名前である。
+</para>
+
+<para>
+<indexterm><primary>ネットワークコンピュータ</primary></indexterm>
+この時点で、ユーザは、サブネット1または2上で両方のすべてのサーバを、ネット
+ワークコンピュータで見ることができる。サブネット3上のユーザは引き続き
+自分がいるサブネット上のもののみが見える。
+</para>
+
+<para>
+<indexterm><primary>DMB</primary></indexterm>
+N2_Bで起きた同じ手順のイベントがサブネット3のLMB(N3_D)に対して起こる。DMB(N1_A)
+とブラウズリストの同期を行うと、サブネット1とサブネット2のサーバエントリを得る。
+N3_DがN1_Cと同期を取るとvica versa、ブラウズリストは
+ <link linkend="brsex2">サブネットのブラウズの例3</link>
+のようになる。
+</para>
+
+<table frame="all" id="brsex2">
+	<title>サブネットのブラウズの例3</title>		
+	<tgroup cols="3" align="left">
+		<colspec align="left"/>
+		<colspec align="left"/>
+		<colspec align="justify" colwidth="1*"/>
+
+	<thead>
+		<row><entry>サブネット</entry><entry>ブラウズマスタ</entry><entry>リスト</entry></row>
+	</thead>
+
+	<tbody>
+		<row><entry>サブネット1</entry><entry>N1_C</entry><entry>N1_A, N1_B, N1_C, N1_D, N1_E,
+N2_A(*), N2_B(*), N2_C(*), N2_D(*), N3_A(*), N3_B(*), N3_C(*), N3_D(*)</entry></row>
+		<row><entry>サブネット2</entry><entry>N2_B</entry><entry>N2_A, N2_B, N2_C, N2_D, N1_A(*),
+N1_B(*), N1_C(*), N1_D(*), N1_E(*)</entry></row>
+		<row><entry>サブネット3</entry><entry>N3_D</entry><entry>N3_A, N3_B, N3_C, N3_D, N1_A(*),
+N1_B(*), N1_C(*), N1_D(*), N1_E(*), N2_A(*), N2_B(*), N2_C(*), N2_D(*)</entry></row>
+	</tbody>
+	</tgroup>
+</table>
+
+<para>
+サーバ名の後に(*)が付いたものは信頼されていない名前である。
+</para>
+
+<para>
+この時点で、サブネット1または3上でのネットワークコンピュータでは、
+サブネット2上のユーザが引き続きサブネット1と2上のサーバのみが見え、
+3が見えないのに対し、すべてのサブネット上のサーバを見る事ができる。
+</para>
+
+<para>
+<indexterm><primary>LMB</primary></indexterm>
+<indexterm><primary>DMB</primary></indexterm>
+<indexterm><primary>ブラウズリスト</primary></indexterm>
+最後に、サブネット2のLMB(N2_B)は再度DMB(N1_C)と同期をとり、抜けていた
+サーバエントリを受け取る。最終的に、定常状態(1台もマシンが削除されず、
+停止もしていない状態)になると、ブラウズリストは
+<link linkend="brsex3">サブネットのブラウズの例4</link>のようになる。
+</para>
+
+<table frame="all" id="brsex3">
+	<title>サブネットのブラウズの例4</title>
+	<tgroup cols="3" align="left">
+		<colspec align="left"/>
+		<colspec align="left"/>
+		<colspec align="justify" colwidth="1*"/>
+
+	<thead>
+		<row><entry>サブネット</entry><entry>ブラウズマスタ</entry><entry>リスト</entry></row>
+	</thead>
+
+	<tbody>
+		<row><entry>サブネット1</entry><entry>N1_C</entry><entry>N1_A, N1_B, N1_C, N1_D, N1_E,
+N2_A(*), N2_B(*), N2_C(*), N2_D(*), N3_A(*), N3_B(*),
+N3_C(*), N3_D(*)</entry></row>
+		<row><entry>サブネット2</entry><entry>N2_B</entry><entry>N2_A, N2_B, N2_C, N2_D, N1_A(*),
+N1_B(*), N1_C(*), N1_D(*), N1_E(*), N3_A(*), N3_B(*),
+N3_C(*), N3_D(*)</entry></row>
+		<row><entry>サブネット3</entry><entry>N3_D</entry><entry>N3_A, N3_B, N3_C, N3_D, N1_A(*),
+N1_B(*), N1_C(*), N1_D(*), N1_E(*), N2_A(*), N2_B(*),
+N2_C(*), N2_D(*)</entry></row>
+	</tbody>
+	</tgroup>
+</table>
+
+<para>
+サーバ名の後に(*)が付いたものは信頼されていない名前である。
+</para>
+
+<para>
+DMBとLMBの同期は引き続き行われるが、これは定常状態の操作として
+行われる。
+Synchronizations between the DMB and LMBs
+will continue to occur, but this should remain a
+steady-state operation.
+</para>
+
+<para>
+もしもルータR1かR2が故障した場合、以下のことが発生する:
+</para>
+
+<orderedlist>
+<listitem>
+	<para>
+<indexterm><primary>ネットワークコンピュータ</primary></indexterm>
+	アクセスできないネットワーク部分にある各コンピュータ名は、ネットワークコンピュータ
+	ネットワークコンピュータのリスト中に36分維持される。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	それらアクセスできないコンピュータへの接続は失敗するが、ネットワークコンピュータ
+	のリスト中からは消えない。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>NetBIOS名前解決</primary></indexterm>
+<indexterm><primary>DNSサーバ</primary></indexterm>
+	もしも、あるネットワーク部分からWINSサーバが見えなくなると、サブネットで
+	分割されたブロードキャストによるNetBIOS名前解決を使ったローカルサブネット
+	上のサーバにのみアクセスできる。この結果はDNSサーバへのアクセスが出来なく
+	なることと似ている。
+	</para>
+</listitem>
+</orderedlist>
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+<indexterm><primary>ブラウジングの問題</primary></indexterm>
+<indexterm><primary>名前解決</primary></indexterm>
+ブラウジングに関する質問は数多くメーリングリスト上に投稿される。
+ブラウジングに関する大多数の問題は、NetBIOS名前解決の間違った設定に
+起因するものである。ただ、いくつかは特に注目に値する。
+</para>
+
+<sect2>
+<title>SambaのNetBIOS名前キャッシュのフラッシュ</title>
+
+<para>
+Sambaを再起動しないでSambaのNetBIOS名前キャッシュをフラッシュする方法はあるか?
+</para>
+
+<para>
+<indexterm><primary>名前キャッシュのフラッシュ</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>NetBIOS名前キャッシュ</primary></indexterm>
+<indexterm><primary>rogue machine</primary></indexterm>
+Sambaの<command>nmbd</command>プロセスはすべてのブラウザリストハンドリングを
+制御する。通常の環境では、<command>nmbd</command>の再起動に問題はない。これは
+SambaのNetBIOS名キャッシュをフラッシュする効果があり、再構築を行う。
+これは、異常なマシン名は再度ブラウズリストに現れないということが確実になる
+わけではない。<command>nmbd</command>がサービスを停止後、ネットワーク上の他の
+マシンがブラウズマスタになる。この新しいリスト中には異常なエントリがそのまま
+含まれるかもしれない。もしもリストから異常なマシンを消したいのならば、ネットワーク
+上のすべてのマシンをシャットダウンし、すべてのマシンが停止後に再起動しなければ
+ならない。完全な再起動に失敗すると、唯一出来る他のことは、エントリがタイムアウト
+するまで待ち、その後リストからフラッシュされる。これは、ある種のネットワークでは
+長い時間(月単位)かかる。
+</para>
+
+</sect2>
+
+<sect2>
+	<title>サーバリソースがリスト出来ない</title>
+
+<para><quote>あるクライアントは"<quote>This server is not configured to list shared resources."と報告した。</quote></quote></para>
+
+
+<para>
+おそらく何らかの理由でゲストアカウントが無効になっている。Sambaは
+<command>smbd</command>でブラウジングするためにゲストアカウントを使う。
+ゲストアカウントが有効か確認する。
+</para>
+
+<para>&smb.conf; マニュアルページの<smbconfoption name="guest account"/>も参照
+のこと。</para>
+
+</sect2>
+
+<sect2>
+	<title>"<errorname>Unable to browse the network</errorname>"というエラーメッセージが出た。</title>
+
+	<para>このエラーは複数の原因が考えられる:
+<indexterm><primary>ブラウジングの問題</primary></indexterm>
+	</para>
+
+	<itemizedlist>
+		<listitem><para>LMBがない。&nmbd;を設定するか、他のマシンでLMBを立てる。
+			</para></listitem>
+		<listitem><para>LMBマシンにログオンできない。
+		        ゲストユーザでログオンできるか?</para></listitem>
+		<listitem><para>LMBに対してIPレベルで接続できない。
+		        ブロードキャストで到達可能か?</para></listitem>
+</itemizedlist>
+</sect2>
+
+<sect2>
+<title>共有とディレクトリのブラウジングが非常に遅い</title>
+
+<para><quote>
+<indexterm><primary>ブラウジングが遅い</primary></indexterm>
+テストネットワークに2台だけマシンがあったとする。1つはSambaサーバで他はWindows XPマシンである。
+認証とログオンは正常に動作するが、Sambaサーバ上の共有を表示させようとするとWindows XP
+クライアントは反応がなくなる。時々、数分反応がなくなる。最終的にはWindowsエクスプローラは
+反応して問題なくファイルとディレクトリを表示する。
+</quote>
+</para>
+
+<para><quote>
+<indexterm><primary>cmd</primary></indexterm>
+しかし、共有はコマンドシェル(<command>cmd</command>)でDOSコマンドを使うと
+すぐに使える。これはSambaの問題か、それともWindowsの問題か?この問題の解決
+方法は?
+</quote></para>
+
+<para>
+いくつかの可能性がある:
+</para>
+
+<variablelist>
+	<varlistentry>
+		<term>ネットワークハードウェアの不良</term>
+		<listitem><para>
+<indexterm><primary>ハードウェア不良</primary></indexterm>
+<indexterm><primary>WebClient</primary></indexterm>
+<indexterm><primary>不完全なハードウェア</primary></indexterm>
+<indexterm><primary>ネットワークハードウェアの不良</primary></indexterm>
+<indexterm><primary>データの破損</primary></indexterm>
+	最も一般的な、不完全なハードウェアの問題は、低コストまたは不完全なハブ、
+	ルータ、ネットワークインタフェース(NIC)と良くないケーブルに集中する。
+	もしも、ハードウェアの1部分が不良だと、ネットワーク全体が被害を受ける
+	かもしれない。悪いハードウェアはデータの喪失を引き起こす。ほとんどの
+	ネットワークハードウェアの不良問題は見た目のネットワークトラフィックの
+	増大をもたらすがそれだけではない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>Windows XPのWebClient</term>
+		<listitem><para>
+<indexterm><primary>ネットワークブラウジングの問題</primary></indexterm>
+		数多くのサイトで、同様のネットワークブラウジングが遅くなる問題が報告され、
+		WebClientサービスを停止すると、問題が出なくなることがわかっている。これは、
+		動けば簡単な解であるという理由で&smbmdash;、確かに探求されるべきことで
+		ある。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>矛盾しているWINSの設定</term>
+		<listitem><para>
+<indexterm><primary>WINSの設定</primary></indexterm>
+<indexterm><primary>WINSサーバ</primary></indexterm>
+		このタイプの問題は、あるクライアントがWINSサーバを使うように設定され
+		て(それはTCP/IP設定で)、ネットワーク上にWINSサーバがない場合である。
+		言い換えると、WINSサーバがあり、Sambaがそれを使うように設定されて
+		いない場合である。NetBIOS over TCP/IPを使う場合はWINSの使用は強く
+		推奨される。すべてのクライアントでNetBIOS over TCP/IPを無効にしている
+		ならば、SambaはWINSサーバとして設定されるべきでも、それを使うように
+		されるべきでもない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>不正なDNS設定</term>
+		<listitem><para>
+<indexterm><primary>DNS設定</primary></indexterm>
+<indexterm><primary>NetBIOS over TCP/IPが無効</primary></indexterm>
+		もしも、NetBIOS over TCP/IPが無効になっているならば、Active Directory
+		が使われ、DNSサーバが正しく設定されない。詳細な情報は、
+                <link linkend="adsdnstech">DNSとActive Directory</link>
+		を参照のこと。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+
+</sect2>
+<sect2>
+<title>不正なキャッシュされた共有参照はネットワークブラウジングに影響する</title>
+<para>
+<indexterm><primary>キャッシュされた参照</primary></indexterm>
+<indexterm><primary>stale network links</primary></indexterm>
+Microsoft Windowsクライアント(ワークステーションまたはサーバ)上での、存在しない
+共有あるいはサーバに対するキャッシュされた参照はそれらの共有に接続する際に、
+Microsoft Windowsエクスプローラが無反応になると言う現象を引き起こす。しばらく経つと
+(かなり長い時間だが)、タイムアウトになり、ブラウジングが通常通りになる。
+</para>
+
+<para>
+この現象を除くために、腐ったキャッシュされた参照は取り除かれるべきである。
+これは自動的には起こらず、手動での作業が必要である。これはMicrosoft Windows
+のデザインによるものであり、Sambaで変えることは出来ない。現時点で無効になって
+いる、<emphasis>マイネットワーク</emphasis>内の共有またはサーバへの無効な
+ショートカットを削除するためには、
+<literal>HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\</literal>
+配下にあるWindows レジストリを編集する必要がある。エントリ
+<literal>MountPoints2</literal>(Windows XP以降、またはWindows 2000以前では
+<literal>MountPoints</literal>)を編集する。
+<literal>\\server\share</literal>という名前(ここで'server'と'share'は
+存在しないサーバまたは共有を参照している)のすべてのキーを削除する。
+</para>
+
+<note><para>
+存在しないネットワークリンクの削除はユーザ単位で行う必要がある。言い換えると、
+Microsoft Windowsエクスプローラ内での<literal>マイネットワーク</literal>
+中のショートカットは、右クリックして<emphasis>削除</emphasis>を選択することで
+削除できる。
+</para></note>
+
+<para>
+<indexterm><primary>ネットワークブラウジングが遅い</primary></indexterm>
+Sambaのユーザは、Windows、SambaとNovellサーバのネットワークブラウジングに
+対して、これらの存在しない参照が、悪影響を及ぼすと報告している。これは
+Sambaサーバに関連しない一般的な問題であると思われる。Sambaユーザは、
+Sambaが、時として人柱ツールとして見られていることがあるために、しばしば
+これを経験するかもしれない。これは、異なった名前、異なった共有で何回かSamba
+サーバを再設定したり元に戻すことをユーザが行うことという事実の結果は、
+不完全(不正)なキャッシュされた共有参照が出来てしまうことを増大させてしまう。
+Windowsクライアントは、それらの参照を満了としないので、手動による削除を必要とする。
+</para>
+
+<para>
+現在アクセスするディレクトリにいなくても、すべてのキャッシュされた参照を見に
+いくことを試みるので、ダイアログボックスの<emphasis>オープン</emphasis>は
+(たとえばWordやExcel)、一般的に反応がとても遅くなる。
+</para>
+</sect2>
+</sect1>
+</chapter>

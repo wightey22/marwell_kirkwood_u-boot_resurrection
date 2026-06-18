@@ -1,0 +1,264 @@
+		Sambaドキュメントの日本語訳版について
+
+						2010/06/11
+
+						日本Sambaユーザー会
+
+
+1. はじめに
+1.1 概要
+
+　ここにあるファイルは、Sambaのドキュメントを日本語訳したファイルです。
+訳していないものについては、英語版をそのまま取り込んでいます。
+Samba-JP MLとsugj-tech MLのメンバのご協力のもとに、多くの修正を行ない
+ましたが、訳についてはまだまだ不十分なところが多数あります。そのことを
+ご理解の上、ご利用ください。
+
+1.2 リリース形式
+
+3.4系列までは、man形式およびHTML形式を1つのアーカイブとして提供しています。
+3.5系列からは、man形式、HTML形式およびSamba3-HOWTO、Samba3-Developers-Guideを
+1つのアーカイブとして提供するほか、man形式のみのファイルも提供します。
+man形式のみのアーカイブでは、再構築は出来ません。
+
+2. バク
+
+ かなり見直しましたが、まだまだ潜んでいるはずです。細かな検証を行なって
+おりません。誤訳等がありましたら、日本Sambaユーザー会のメーリングリスト
+(samba-jp@samba.gr.jp)かスタッフまでご連絡ください。
+
+3. 利用にあたって
+3.1 配布について
+
+　配布については、Sambaの配布条件と同じです(GPLv3)。同梱している
+COPYINGファイルを参照してください。また、ドキュメントを作成(XMLから
+の変換)するための補助スクリプト setupjp(xx).sh も同梱しています。
+
+3.2 更新条件
+
+　Sambaのバージョンが変更になってもドキュメントの修正がない場合には、
+日本語訳は変更しません。その場合にはSambaの旧バージョンに対応した
+日本語マニュアルをそのままお使いください。更新状況については、
+日本Sambaユーザ会のWebページか、メーリングリストを参照してください。
+
+3.3 文字コード
+
+　HTML形式、およびman形式のファイル両方ともUTF-8でエンコードしています。
+必要に応じて他の文字コードに変換してください。
+
+4. setupjp3x.sh/setupjp.sh の使い方
+
+  svnからまずこれだけダウンロードしてください。次に、オリジナルのSamba-
+3.x.y のベースディレクトリに移してください。その後、この
+スクリプトを実行すると、soucreforge.jpのsvnからデータをダウンロードし、
+必要なファイルをコピーして初期セットアップを行います。
+次に、docs-xmlディレクトリに移動し、
+
+export  XML_CATALOG_FILES="file:///etc/xml/catalog file://$(pwd)/build/catalog.xml"
+
+を実行してください。その後、make htmlman3,make manpages3を実行してください。
+OpenSUSE 11.2でしかテストしていません。
+
+5. 変更履歴
+
+3.2系列から3.5系列を一緒に管理しています。そのため、バージョン番号と
+変更日付が前後する場合があります。
+
+2008/11/08 ver 0.1	3.2.4対応版を初期リリース
+
+2008/11/12 Ver 0.1.1	smbclient.1.htmlの文字コード指定がおかし
+			かったので修正。
+
+2008/11/22 Ver 0.1.2	この日までに出来上がったところを纏めてリリース。
+
+2008/12/01 Ver 0.2	この日までに出来上がったところを纏めてリリース。
+			smb.conf以外は一通り訳出。
+
+2008/12/08 Ver 0.3	3.2.5対応、全マニュアル訳出。
+
+2008/12/17 Ver 0.4	3.2.6対応、若干の修正。
+
+2009/01/10 Ver 0.4.1	3.2.7対応、若干の修正。
+
+2009/02/24 Ver 0.4.2	3.2.8対応、若干の修正。
+
+2009/04/01 Ver 0.4.3	3.2.9対応、若干の追加と修正。
+			manpages-3/cifs.upcall.8.xml 字句修正
+			manpages-3/vfs_smb_traffic_analyzer.8.xml 記述追加
+                        smbdotconf/browse/enhancedbrowsing.xml typo修正なので変更せず
+			smbdotconf/locking/strictlocking.xml typo修正なので変更せず
+			smbdotconf/misc/remoteannounce.xml typo修正なので変更せず
+			smbdotconf/misc/usershareallowguests.xml typo修正なので変更せず
+			smbdotconf/misc/usersharetemplateshare.xml typo修正なので変更せず
+			smbdotconf/printing/useclientdriver.xml typo修正なので変更せず
+			smbdotconf/protocol/aclcheckpermissions.xml typo修正なので変更せず
+			smbdotconf/protocol/enableasusupport.xml typo修正なので変更せず
+			smbdotconf/security/clientlanmanauth.xml typo修正なので変更せず
+			smbdotconf/security/lanmanauth.xml typo修正なので変更せず
+			smbdotconf/security/passwordserver.xml typo修正なので変更せず
+			smbdotconf/security/security.xml typo修正なので変更せず
+			smbdotconf/security/serverschannel.xml typo修正なので変更せず
+			smbdotconf/security/serversigning.xml typo修正なので変更せず
+			smbdotconf/security/smbencrypt.xml typo修正なので変更せず
+			smbdotconf/security/updateencrypted.xml typo修正なので変更せず
+
+2009/04/16 Ver 0.4.4	3.2.10対応、用語の統一、若干の修正。
+	       		setupjp32.shを追加。
+			manpages-3/cifs.upcall.8.xml 用語の統一。
+			manpages-3/eventlogadm.8.xml 用語の統一。
+			manpages-3/findsmb.1.xml 用語の統一。
+			manpages-3/idmap_ldap.8.xml 用語の統一。
+			manpages-3/idmap_nss.8.xml 用語の統一。
+			manpages-3/idmap_tdb.8.xml 用語の統一。
+			manpages-3/ldb.3.xml 用語の統一。
+			manpages-3/ldbadd.1.xml 用語の統一。
+			manpages-3/ldbdel.1.xml 用語の統一。
+			manpages-3/ldbedit.1.xml 用語の統一。
+			manpages-3/ldbmodify.1.xml 用語の統一。
+			manpages-3/ldbsearch.1.xml 用語の統一。
+			manpages-3/libsmbclient.7.xml 用語の統一。
+			manpages-3/lmhosts.5.xml 用語の統一。
+			manpages-3/log2pcap.1.xml 用語の統一。
+			manpages-3/mount.cifs.8.xml 用語の統一。
+			manpages-3/net.8.xml 用語の統一。
+			manpages-3/nmbd.8.xml 用語の統一。
+			manpages-3/nmblookup.8.xml 用語の統一。
+			manpages-3/pam_winbind.7.xml 用語の統一。
+			manpages-3/pdbedit.8.xml 用語の統一。
+			manpages-3/profiles.1.xml 用語の統一。
+			manpages-3/rpcclient.1.xml 用語の統一。
+			manpages-3/samba.7.xml 用語の統一。
+			manpages-3/smb.conf.5.xml 用語の統一。
+			manpages-3/smbcacls.1.xml 用語の統一。
+			manpages-3/smbclient.1.xml 用語の統一。
+			manpages-3/smbcontrol.1.xml 用語の統一。
+			manpages-3/smbcquotas.1.xml 用語の統一。
+			manpages-3/smbd.8.xml 用語の統一。
+			manpages-3/smbget.1.xml 用語の統一。
+			manpages-3/smbgetrc.5.xml 用語の統一。
+			manpages-3/smbpasswd.5.xml 用語の統一。
+			manpages-3/smbpasswd.8.xml 用語の統一。
+			manpages-3/smbspool.8.xml 用語の統一。
+			manpages-3/smbstatus.1.xml 用語の統一。
+			manpages-3/smbtar.1.xml 用語の統一。
+			manpages-3/smbtree.1.xml 用語の統一。
+			manpages-3/swat.8.xml 用語の統一。
+			manpages-3/tdbbackup.8.xml 用語の統一。
+			manpages-3/tdbdump.8.xml 用語の統一。
+			manpages-3/tdbdump.8.xml 用語の統一。
+			manpages-3/tdbtool.8.xml 用語の統一。
+			manpages-3/testparm.1.xml 用語の統一。
+			manpages-3/vfs_fileid.8.xml 用語の統一。
+			manpages-3/vfs_prealloc.8.xml 用語の統一。
+			manpages-3/vfs_recycle.8.xml 用語の統一。
+			manpages-3/vfs_shadow_copy.8.xml 用語の統一。
+			manpages-3/wbinfo.1.xml 用語の統一。
+			manpages-3/winbind.8.xml 用語の統一。
+			smbdotconf/winbind/idmapallocbackend.xml 訳修正。
+
+2009/04/20 Ver 0.5	3.3.2対応、用語の統一、若干の修正。
+	       		setup.shを追加。
+
+2009/05/06 Ver 0.5.1	3.3.4対応、若干の追加と修正。
+
+2009/07/15 Ver 0.5.2	3.3.6対応、若干の追加と修正。 抜けていたファイルを追加。
+
+2009/07/18 Ver 0.4.5    3.2.13対応、若干の追加と修正。抜けていたファイルを追加。
+
+2009/07/30 Ver 0.5.3 	3.3.7対応、若干の修正。
+	       		manpages-3/idmap_tdb2.8.xml 用語の統一。
+			manpages-3/net.8.xml 訳追加。
+			manpages-3winbind_krb5_locator.7.xml 訳修正。
+			smbdotconf/security/checkpasswordscript.xml 訳変更。
+
+2009/08/01 Ver 3.4.0-1	3.4.0対応、若干の追加と修正。バージョン番号体系を
+	       		変更。
+
+2009/08/13 Ver 0.4.6    3.2.14対応、若干の修正。
+
+2009/11/03 Ver 3.4.3-1  3.4.3対応。若干の追加と修正。		
+
+2010/01/16 Ver 0.5.4	3.3.10対応。若干の追加と修正。
+	       		manpages-3/cifs.upcall.8.xml 訳変更。
+			smbdotconf/base/enablecorefiles.xml 訳追加。
+			smbdotconf/locking/posixlocking.xml 訳変更。
+			smbdotconf/tuning/aiowritebehind.xml 訳追加。
+
+2010/02/25 Ver 3.4.6-1  3.4.6対応。若干の追加と修正。
+	       		manpages-3/mount.cifs.8.xml 訳修正。
+			manpages-3/pdbedit.8.xml 訳修正。
+			smbdotconf/base/enablecorefiles.xml 訳追加。
+			smbdotconf/filename/manglednames.xml 訳修正。
+			smbdotconf/locking/oplocks.xml 訳修正。
+			smbdotconf/locking/posixlocking.xml 訳修正。
+			smbdotconf/misc/cachedirectory.xml 訳追加。
+			smbdotconf/misc/directorynamecachesize.xml 訳追加。
+			smbdotconf/misc/statedirectory.xml 訳追加。
+			smbdotconf/misc/widelinks.xml 訳修正。
+			smbdotconf/printing/enablespoolss.xml 訳追加。
+			smbdotconf/protocol/unixextensions.xml 訳修正。
+			smbdotconf/tuning/aiowritebehind.xml 訳追加。
+
+2010/02/27 Ver 0.5.5	3.3.11対応。若干の追加と修正。
+	       		manpages-3/mount.cifs.8.xml 訳修正。
+	       		smbdotconf/misc/widelinks.xml 訳変更。
+			smbdotconf/protocol/unixextensions.xml 訳変更。
+
+2010/03/26 Ver 0.4.7    3.2.15対応。
+	       		smbdotconf/printing/printing.xml 訳追加。
+			html形式のテキストをutf-8に変更。
+			xslt/html.xsl修正。
+			READMEを大幅に変更。
+
+2010/03/26 Ver 0.5.6	3.3.12対応。
+	       		欠損していた翻訳の追加。
+	       		smbdotconf/printing/printing.xml 訳追加。
+	       		smbdotconf/tuning/aiowritebehind.xml 訳追加。
+			html形式のテキストをutf-8に変更。
+			xslt/html.xsl修正。
+			READMEを大幅に変更。
+
+2010/03/26 Ver 3.4.7-1  3.4.7対応。
+	       		欠損していた翻訳の追加。
+	       		smbdotconf/printing/printing.xml 訳追加。
+			html形式のテキストをutf-8に変更。
+			xslt/html.xsl修正。
+			READMEを大幅に変更。
+
+2010/03/26 Ver 3.5.1-1  3.5.1対応(3.5系列新規)。
+	       		smbdotconf/printing/printing.xml 訳追加。
+			html形式のテキストをutf-8に変更。
+			xslt/html.xsl修正。
+			Samba3-HOWTO追加。
+			リリース形式を変更。
+			READMEを大幅に変更。
+
+2010/06/11 Ver 3.5.3-1	3.5.3対応
+	       		manpages/pam_winbind.conf.5.xml 訳追加
+			manpages/vfs_scanreadonly.8.xml 訳追加
+			smbdotconf/tuning/changenotifytimeout.xml 訳削除(trunc/3.4,3.3,3.2)
+			smbdotconf/protocol/readbmpx.xml 訳削除(trunc/3.4,3.3,3.2)
+			smbdotconf/misc/famchangenotify.xml 訳削除(trunc/3.4,3.3,3.2)
+			smbdotconf/filename/mangledmap.xml 訳削除(trunc/3.4,3.3,3.2)
+			Samba3-HOWTO/TOSHARG-Support.xml 訳変更
+			Samba3-Developers-Guide 訳追加
+
+2010/06/11 Ver 3.4.8-1  3.4.8対応
+                        smbdotconf/tuning/changenotifytimeout.xml 訳削除(trunc/3.4,3.3,3.2)
+                        smbdotconf/protocol/readbmpx.xml 訳削除(trunc/3.4,3.3,3.2)
+                        smbdotconf/misc/famchangenotify.xml 訳削除(trunc/3.4,3.3,3.2)
+                        smbdotconf/filename/mangledmap.xml 訳削除(trunc/3.4,3.3,3.2)
+
+
+6.責任の放棄
+
+　翻訳者は、当訳文の正当性、信頼性、先進性、妥当性、可読性、その他いかなるこ
+とについて責任を負いません。
+ 
+7.ご協力いただいた方々(順不同)
+
+  佐藤文優,太田俊哉,千秋広幸,山口一郎,中野武雄,細川達己,たかはしもとのぶ、
+  堀田倫英,武田保真,でん,山田史朗,はせがわようすけ,ちかましゅうへい,
+  しらいたかし,平田祥司、海老澤
+  Samba-JP/sugj-tech メーリングリストのメンバー
+  (有)トップスタジオ/(株)翔泳社

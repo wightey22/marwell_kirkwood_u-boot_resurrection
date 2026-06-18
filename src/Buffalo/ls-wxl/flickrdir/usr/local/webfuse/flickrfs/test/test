@@ -1,0 +1,184 @@
+#!/bin/env python
+# -*- coding: utf8 -*-
+
+from sys import argv
+from os import environ, system, fork, execl, kill, getcwd, chdir, listdir, mkdir
+from os.path import exists, isfile
+from signal import SIGHUP
+from time import sleep
+from commands import getstatusoutput as cmd
+from traceback import format_exc
+
+initialsleep = 20
+
+def error(expected, got):
+    print "Error!  Expected:"
+    print "  ", expected
+    print "but got"
+    print "  ", got
+
+def listEQ(a, b, tag=None):
+    print tag
+    a.sort(); b.sort()
+    if a==b: return
+    error(b, a)
+
+def strEQ(a, b, tag=None):
+    print tag
+    if a==b: return
+    error(b, a)
+
+def cleanup():
+    chdir(environ['HOME'])
+    if testset: system('rm -r mnt/sets/test')
+    if pid!=0: system('fusermount -u ./mnt')
+    kill(pid, SIGHUP)
+    
+#20080130 What it was in 2006:
+#testls ="""total 0
+#--wxr-x--T  1 rdmurray rdmurray 0 Feb 10 19:46 IMG_9137.png
+#-rwxr-xr-x  1 rdmurray rdmurray 0 Feb 10 19:46 IMG_9138.png
+#--wxr-x--T  1 rdmurray rdmurray 0 Feb 10 20:50 IMG_9139.png"""
+#rscls = """total 0
+#-rwxr-xr-x  1 rdmurray rdmurray 0 Jun  4 2007 Now That's A Radio.jpg
+#-rwxr-xr-x  1 rdmurray rdmurray 0 Jun  4 2007 Whatever You Want To Hear.jpg"""
+#20080130 Current reality:
+testls ="""total 0
+-rwxr--r-- 1 rdmurray rdmurray 0 Aug 14 06:32 IMG_9137.jpg
+-rwxr--r-- 1 rdmurray rdmurray 0 Aug 14 06:32 IMG_9138.jpg
+-rwxr--r-- 1 rdmurray rdmurray 0 Aug 14 06:32 IMG_9139.jpg"""
+rscls = """total 0
+-rw-r--r-- 1 rdmurray rdmurray 0 Jun  4  2007 Now That's A Radio.jpg
+-rw-r--r-- 1 rdmurray rdmurray 0 Jun  4  2007 Whatever You Want To Hear.jpg"""
+tratls = """total 0
+-rw-r--r-- 1 rdmurray rdmurray 0 Jan 10 12:40 P\xc5\x93nit\xc3\xa8ntem.jpg"""
+#End 20080130
+
+extended = False
+if len(argv)>1:
+    if argv[1]=='extended': extended = True
+    elif argv[1].isdigit(): initialsleep = int(argv[1])
+
+try:
+    testset = False
+    environ['HOME'] = getcwd()
+    if not exists('mnt'): mkdir('mnt')
+    pid = fork()
+    if not pid: execl('../flickrfs/flickrfs.py','../flickrfs.py', './mnt')
+    for i in range(10000):
+        if listdir('mnt'): break
+        sleep(0.01)
+    else: print "timeout before mnt became non-empty"
+    listEQ(listdir('mnt'), ['sets', 'tags'], 'check that base dirs exist')
+    for i in range(10000):
+        if listdir('mnt/sets'): break
+        sleep(0.01)
+    else: print "timeout before sets became non-empty"
+    listEQ(listdir('mnt/sets'), ['flickrfstesttest'], 'check that existing test set shows up in sets')
+    for i in range(10000):
+        if len(listdir('mnt/sets/flickrfstesttest'))>=6: break
+        sleep(0.01)
+    else: print "timeout before flickrfstesttest filled"
+    # 20080130: 2006 version:
+    #listEQ(listdir('mnt/sets/flickrfstesttest'), [ '.IMG_9137.meta', '.IMG_9138.meta', '.IMG_9139.meta',
+    #    'IMG_9137.png', 'IMG_9138.png', 'IMG_9139.png'], 'check existing image set contents')
+    # 20080130: current reality:
+    listEQ(listdir('mnt/sets/flickrfstesttest'), [ '.IMG_9137.jpg.meta', '.IMG_9138.jpg.meta', '.IMG_9139.jpg.meta',
+        'IMG_9137.jpg', 'IMG_9138.jpg', 'IMG_9139.jpg'], 'check existing image set contents')
+    #End 20080130
+    strEQ(cmd('ls -l mnt/sets/flickrfstesttest')[1], testls, 'ls on existing set')
+    mkdir('mnt/sets/test')
+    testset = True
+    listEQ(listdir('mnt/sets'), ['test', 'flickrfstesttest'], 'add a new test set')
+    listEQ(listdir('mnt/sets/test'), [], 'check sets/test contents initially empty')
+    #If we use utf8 chars in the upload, we get a UnicdeDecodeError when we try to encode to utf8.
+    #system('cp screenshot_thumb.jpg mnt/sets/test:flickrfstesttest:flickrfstest/screenshot\xc3\xa8thumb.jpg')
+    system('cp screenshot_thumb.jpg mnt/sets/test:flickrfstesttest:flickrfstest/screenshot_thumb.jpg')
+    listEQ(listdir('mnt/sets/test'), ['.screenshot_thumb.jpg.meta', 'screenshot_thumb.jpg'], 'look for uploaded test pic')
+    listEQ(listdir('mnt/tags'), ['personal', 'public'], 'check for base tags dirs')
+    listEQ(listdir('mnt/tags/public'), [], 'initially no public dirs')
+    listEQ(listdir('mnt/tags/personal'), [], 'initially no personal dirs')
+    mkdir('mnt/tags/personal/flickrfstesttest')
+    for i in range(1000):
+        if listdir('mnt/tags/personal/flickrfstesttest'): break
+        sleep(0.01)
+    else: print "timeout before flickrfstesttest directory became non-empty"
+    mkdir('mnt/tags/personal/flickrfstesttest:flickrfstest')
+    for i in range(1000):
+        if listdir('mnt/tags/personal/flickrfstesttest:flickrfstest'): break
+        sleep(0.01)
+    else: print "timeout before flickrfstesttest:flickrfstest directory became non-empty"
+    mkdir('mnt/stream')
+    for i in range(1000):
+        if listdir('mnt/stream'): break
+        sleep(0.01)
+    else: print "timeout before stream directory became non-empty"
+    mkdir('mnt/tags/public/radio:station:college:ca')
+    for i in range(1000):
+        if listdir('mnt/tags/public/radio:station:college:ca'): break
+        sleep(0.01)
+    else: print "timeout before college tag directory became non-empty"
+    mkdir('mnt/tags/public/mortificazioniafflittivedisensoedispirito')
+    for i in range(1000):
+        if listdir('mnt/tags/public/mortificazioniafflittivedisensoedispirito'): break
+        sleep(0.01)
+    else: print "timeout before international tag directory became non-empty"
+    # 20080130: 2007 version:
+    ##The uploaded pic does _not_ appear, and I don't know why.  I suspect it's not a flickerfs bug, but some
+    ## sort of delay on the flickr side, since the image does show up in our stream.
+    ## 20060214: the pic is appearing now, and I don't know what changed.
+    #listEQ(listdir('mnt/tags/personal/flickrfstesttest'), ['.IMG_9138.meta', '.IMG_9139.meta', 'IMG_9138.png',
+    #        'IMG_9139.png', '.screenshot_thumb.meta', 'screenshot_thumb.jpg'], 'personal/flickrfstesttest should have some of our images')
+    ##listEQ(listdir('mnt/tags/personal/flickrfstesttest'), ['.IMG_9138.meta', '.IMG_9139.meta', 'IMG_9138.png',
+    ##        'IMG_9139.png'], 'personal/flickrfstesttest should have some of our images')
+    #listEQ(listdir('mnt/tags/personal/flickrfstesttest:flickrfstest'), ['.IMG_9139.meta', 'IMG_9139.png',
+    #        '.screenshot_thumb.meta', 'screenshot_thumb.jpg'], 'personal/flickrfstesttest:flickrfstest should have fewer images')
+    ##listEQ(listdir('mnt/tags/personal/flickrfstesttest:flickrfstest'), ['.IMG_9139.meta', 'IMG_9139.png'],
+    ##        'personal/flickrfstesttest:flickrfstest should have fewer images')
+    #dirlist = listdir('mnt/stream')
+    #listEQ(listdir('mnt/stream'), ['.IMG_9137.meta', '.IMG_9138.meta', '.IMG_9139.meta', 'IMG_9137.png', 'IMG_9138.png', 'IMG_9139.png',
+    #    '.screenshot_thumb.meta', 'screenshot_thumb.jpg'], 'check our image stream contents')
+    # 20080130: current reality:
+    listEQ(listdir('mnt/tags/personal/flickrfstesttest'), ['.IMG_9138.jpg.meta', '.IMG_9139.jpg.meta', 'IMG_9138.jpg',
+            'IMG_9139.jpg', '.screenshot_thumb.jpg.meta', 'screenshot_thumb.jpg'], 'personal/flickrfstesttest should have some of our images')
+    # Not sure if screenshot should appear here or not...may be timing issue
+    listEQ(listdir('mnt/tags/personal/flickrfstesttest:flickrfstest'), ['.IMG_9139.jpg.meta', 'IMG_9139.jpg',
+            ], 'personal/flickrfstesttest:flickrfstest should have fewer images')
+    dirlist = listdir('mnt/stream')
+    listEQ(listdir('mnt/stream'), ['.IMG_9137.jpg.meta', '.IMG_9138.jpg.meta', '.IMG_9139.jpg.meta', 'IMG_9137.jpg', 'IMG_9138.jpg', 'IMG_9139.jpg',
+        '.screenshot_thumb.jpg.meta', 'screenshot_thumb.jpg'], 'check our image stream contents')
+    #End 20080130
+    listEQ(listdir('mnt/tags/public/radio:station:college:ca'), [".Now That's A Radio.jpg.meta", '.Whatever You Want To Hear.jpg.meta',
+        "Now That's A Radio.jpg", 'Whatever You Want To Hear.jpg'], 'check example public tag set')
+    strEQ(cmd('ls -l mnt/tags/public/radio:station:college:ca')[1], rscls, 'ls on example public tag set')
+    listEQ(listdir('mnt/tags/public/mortificazioniafflittivedisensoedispirito'),
+        ['.P\xc5\x93nit\xc3\xa8ntem.jpg.meta', 'P\xc5\x93nit\xc3\xa8ntem.jpg'],
+        'public tag set with international characters')
+    strEQ(
+        cmd(('ls -l '
+            'mnt/tags/public/mortificazioniafflittivedisensoedispirito'))[1],
+        tratls,
+        'ls on international char public tag set')
+    if extended:
+        system('fusermount -u ./mnt')
+        sleep(2)
+        pid2 = fork()
+        if not pid2: execl('../flickrfs.py','../flickrfs.py', './mnt')
+        sleep(20)
+        listEQ(listdir('mnt/sets/test'), ['.screenshot_thumb.meta', 'screenshot_thumb.jpg'], 'look for uploaded test pic after restart')
+        mkdir('mnt/tags/personal/flickrfstesttest')
+        sleep(10)
+        #See above.
+        listEQ(listdir('mnt/tags/personal/flickrfstesttest'), ['.IMG_9138.meta', '.IMG_9139.meta', 'IMG_9138.png',
+            'IMG_9139.png', '.screenshot_thumb.meta', 'screenshot_thumb.jpg'], 'personal/flickrfstesttest should have uploaded image')
+        #listEQ(listdir('mnt/tags/personal/flickrfstesttest'), ['.IMG_9138.meta', '.IMG_9139.meta', 'IMG_9138.png',
+        #    'IMG_9139.png'], 'personal/flickrfstesttest should have uploaded image (but does not)')
+    else: print "NOTE: Skipped extended tests."
+    
+
+except:
+    if pid==0: print format_exc()
+    cleanup()
+    raise
+
+cleanup()

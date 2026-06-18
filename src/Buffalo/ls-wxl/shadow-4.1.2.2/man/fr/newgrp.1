@@ -1,0 +1,82 @@
+.\"     Title: newgrp
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes utilisateur
+.\"    Source: Commandes utilisateur
+.\"
+.TH "NEWGRP" "1" "23/11/2008" "Commandes utilisateur" "Commandes utilisateur"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+newgrp \- se connecter avec un nouveau groupe
+.SH "SYNOPSIS"
+.HP 7
+\fBnewgrp\fR [\-] [\fIgroupe\fR]
+.SH "DESCRIPTION"
+.PP
+The
+\fBnewgrp\fR
+command is used to change the current group ID during a login session\&. If the optional
+\fB\-\fR
+flag is given, the user\'s environment will be reinitialized as though the user had logged in, otherwise the current environment, including current working directory, remains unchanged\&.
+.PP
+\fBNewgrp\fR
+change l\'identifiant de groupe réel actuel à la valeur du groupe indiqué, ou au groupe par défaut défini dans
+\fI/etc/passwd\fR
+si aucun nom de groupe n\'est fourni\&.
+\fBNewgrp\fR
+essaiera également d\'ajouter le groupe à l\'ensemble des groupes de l\'utilisateur\&. Si l\'utilisateur n\'est pas superutilisateur, un mot de passe lui sera demandé s\'il n\'utilise pas de mot de passe (dans
+\fI/etc/shadow\fR, si cet utilisateur a une entrée dans le fichier des mots de passe cachés, ou dans
+\fI/etc/passwd\fR
+sinon), mais que le groupe en a un, ou si l\'utilisateur n\'est pas dans la liste des membres de ce groupe et que ce groupe utilise un mot de passe\&. L\'accès sera refusé si le mot de passe du groupe est vide et que l\'utilisateur ne fait pas partie de ses membres\&.
+.PP
+S\'il y a une entrée pour ce groupe dans
+\fI/etc/gshadow\fR, alors la liste des membres et le mot de passe de ce groupe seront pris dans ce fichier, sinon, l\'entrée du fichier
+\fI/etc/group\fR
+est utilisée\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBSYSLOG_SG_ENAB\fR (boolean)
+.RS 4
+Enable "syslog" logging of
+\fBsg\fR
+activity\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informations sécurisées sur les comptes utilisateurs\&.
+.RE
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.SH "VOIR AUSSI"
+.PP
+
+\fBid\fR(1),
+\fBlogin\fR(1),
+\fBsu\fR(1),
+\fBsg\fR(1),
+\fBgpasswd\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)\&.

@@ -1,0 +1,75 @@
+<samba:parameter name="map to guest"
+				 type="enum"
+                 context="G"
+                 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、<smbconfoption name="SECURITY">
+    security</smbconfoption> モードが
+    <parameter moreinfo="none">security = share</parameter> 以外の時、すなわち
+    <constant>user</constant>、<constant>server</constant>、
+    <constant>domain</constant> のときにのみ有用である。</para>
+
+    <para> このパラメータの値には、
+    <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が
+    何らかの方法で有効なUNIXユーザとして認証されなかったユーザのログイン要求をどのように扱うかを指定するための
+    4 つの値のいずれかを設定することが可能である。</para>
+
+    <para>4 つの値を以下に示す:</para>
+
+    <itemizedlist>
+	<listitem><para><constant>Never</constant> - 
+            不正なパスワードによるユーザのログイン要求を拒否する。
+            これがデフォルトである。</para>
+	</listitem>
+
+	<listitem><para><constant>Bad User</constant> - 
+        存在するユーザに対する不正なパスワードによるログイン要求は拒否する。
+        指定されたユーザが存在しなかった場合はゲストログインとして扱い、
+        <smbconfoption name="guest account"/>
+        で指定されたアカウントにマッピングする。</para>
+        </listitem>
+
+	<listitem>
+	    <para><constant>Bad Password</constant> -
+            不正なパスワードによるユーザのログイン要求は、ゲストログインとして扱い、
+	    <smbconfoption name="guest account"/> 
+            で指定されたアカウントにマッピングする。
+            この場合、パスワードをタイプミスすると、
+            なにも言われずに&quot;guest&quot;としてログインしてしまう。
+            パスワードをタイプミスしたというメッセージがないため、
+            アクセス可能である筈のファイルにできないが理由がわからないという問題が発生する。
+            <parameter moreinfo="none">map to guest</parameter> パラメータをこの設定にすると、
+            ヘルプディスクサービスからは <emphasis>憎まれる</emphasis> ことになるだろう:-)。</para>
+	</listitem>
+
+	<listitem>
+	    <para><constant>Bad Uid</constant> - 
+            これは、Sambaがドメインモードのセキュリティ (security = {domain|ads}) で構成されている環境でのみ意味を持つ。
+            この環境において、認証が成功したにも関わらず UNIX側のユーザアカウントが存在しない (smbdが作成することもできない) 場合に、定義されたゲストアカウントへのマッピングを行う。これは Samba 2.2 系列におけるデフォルトの挙動である。
+            メンバサーバで winbindd が実行されている場合、nss_winbind ライブラリが Windows ドメインのユーザやグループを NSS インタフェース経由で Samba を実行する OS に対して提供するため、このパラメータが必要となる事態は発生し得ない。
+            </para>
+	</listitem>
+    </itemizedlist>
+
+    <para><parameter moreinfo="none">security</parameter> モードが
+    share 以外の場合、&quot;ゲスト&quot;共有サービスを設定する場合は、
+    このパラメータが必須である。これは、サーバがクライアントの認証に成功しない限り、
+    要求されるリソースの名前がサーバに送られることは<emphasis>決して</emphasis>なく、
+    サーバが&quot;ゲスト&quot;共有に対する認証の成否を、
+    適切な時点(共有への接続時)に行なうことができないためである。
+    <parameter moreinfo="none">security = server</parameter>の場合、
+    ユーザーログオンに失敗したときに、ユーザー名を間違えてもパスワードを
+    間違えてもサーバーから同じエラーが返されるため、
+    ユーザー名の間違いなのか、パスワードの間違いなのかの情報が得られないので、
+    このパラメーターにこのモードを設定する意味が無い。</para>
+
+    <para> 以前の Samba のリリースに親しんでいる人のため、
+    このパラメータは、local.h 中の <constant>GUEST_SESSSETUP </constant>
+    というコンパイル設定に対応づけられている。</para>
+</description>
+
+<value type="default">Never</value>
+<value type="example">Bad User</value>
+</samba:parameter>

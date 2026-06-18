@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="pdbedit.8">
+
+<refmeta>
+	<refentrytitle>pdbedit</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>pdbedit</refname>
+	<refpurpose>SAM データベース (Samba ユーザのデータベース) を管理する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>pdbedit</command>
+		<arg choice="opt">-L</arg>	
+		<arg choice="opt">-v</arg>	
+		<arg choice="opt">-w</arg>	
+		<arg choice="opt">-u username</arg>	
+		<arg choice="opt">-f fullname</arg>	
+		<arg choice="opt">-h homedir</arg>	
+		<arg choice="opt">-D drive</arg>	
+		<arg choice="opt">-S script</arg>
+		<arg choice="opt">-p profile</arg>	
+                <arg choice="opt">-K</arg>
+		<arg choice="opt">-a</arg>	
+		<arg choice="opt">-t, --password-from-stdin</arg>
+		<arg choice="opt">-m</arg>	
+		<arg choice="opt">-r</arg>	
+		<arg choice="opt">-x</arg>	
+		<arg choice="opt">-i passdb-backend</arg>	
+		<arg choice="opt">-e passdb-backend</arg>   
+		<arg choice="opt">-b passdb-backend</arg>
+		<arg choice="opt">-g</arg>
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">-s configfile</arg>
+		<arg choice="opt">-P account-policy</arg>
+		<arg choice="opt">-C value</arg>
+		<arg choice="opt">-c account-control</arg>
+		<arg choice="opt">-y</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは、<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para>pdbedit プログラムは SAM
+	データベース内に保持されるユーザアカウントを管理するために利用され、
+	root だけが実行できる。</para>
+
+	<para>pdbedit ツールは、 passdb モジュールのインターフェイス経由で操作を行なうことで、
+	実際に利用するユーザーデータベースの種類
+	(現在のところ、smbpasswd ファイル、LDAP、NIS+、tdb
+	ベースのデータベースがあり、それ以外のものもツールの変更なしに追加が可能) に依存しない作りになっている。
+	</para>
+
+	<para>pdbedit の主な利用方法として、
+	ユーザーアカウントの追加、
+	ユーザーアカウントの削除、
+	ユーザーアカウントの変更、
+	ユーザーアカウントの一覧表示、
+	ユーザーアカウントの取り込みの 5 種類がある。</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+	<variablelist>
+		<varlistentry>
+		<term>-L</term>
+		<listitem><para>
+		データベースのすべてのユーザーアカウントを一覧表示する。
+		ユーザー名と UID の組み合わせが「:」で区切られて一覧表示される。</para>
+		<para>例: <command>pdbedit -L</command></para>
+		<para><programlisting>
+sorce:500:Simo Sorce
+samba:45:Test User
+</programlisting></para>
+		</listitem>
+		</varlistentry>
+		
+		
+		
+		<varlistentry>
+		<term>-v</term>
+		<listitem><para>
+		冗長な一覧表示形式を有効にする。
+		データベース内のユーザーを一覧表示する際には、
+		アカウントの各項目を詳細に表示する。</para>
+
+		<para>例: <command>pdbedit -L -v</command></para>
+		<para><programlisting>
+---------------
+username:       sorce
+user ID/Group:  500/500
+user RID/GRID:  2000/2001
+Full Name:      Simo Sorce
+Home Directory: \\BERSERKER\sorce
+HomeDir Drive:  H:
+Logon Script:   \\BERSERKER\netlogon\sorce.bat
+Profile Path:   \\BERSERKER\profile
+---------------
+username:       samba
+user ID/Group:  45/45
+user RID/GRID:  1090/1091
+Full Name:      Test User
+Home Directory: \\BERSERKER\samba
+HomeDir Drive:  
+Logon Script:   
+Profile Path:   \\BERSERKER\profile
+</programlisting></para>
+		</listitem>
+		</varlistentry>
+		
+		
+		
+		<varlistentry>
+		<term>-w</term>
+		<listitem><para>
+		一覧表示を「smbpasswd」形式にする。
+		データベース内のユーザを一覧表示する際、<!--pdbedit は-->
+		アカウントの各項目は
+		<filename>smbpasswd</filename>
+		ファイル互換の形式
+		(詳細は
+		<citerefentry><refentrytitle>smbpasswd</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> を参照のこと)
+		で表示される。	
+		</para>
+		<para>例: <command>pdbedit -L -w</command></para>
+		<programlisting>
+sorce:500:508818B733CE64BEAAD3B435B51404EE:
+          D2A2418EFC466A8A0F6B1DBB5C3DB80C:
+          [UX         ]:LCT-00000000:
+samba:45:0F2B255F7B67A7A9AAD3B435B51404EE:
+          BC281CE3F53B6A5146629CD4751D3490:
+          [UX         ]:LCT-3BFA1E8D:
+</programlisting>
+		</listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-u username</term>
+		<listitem><para>
+		操作 (表示・追加・削除など) の対象とするユーザ名を指定する。
+		追加・削除・変更操作においては<emphasis>必須</emphasis>であり、
+		表示操作においては<emphasis>任意</emphasis>である。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-f fullname</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ユーザのフルネームを指定する。</para>
+
+		<para>例: <command>-f "Simo Sorce"</command></para>
+		</listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-h homedir</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ユーザのホームディレクトリとなるネットワークパスを指定する。</para>
+
+		<para>例: <command>-h "\\\\BERSERKER\\sorce"</command>
+		</para>
+		</listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-D drive</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ホームディレクトリの割り当て先とする
+		Windows のドライブ名を指定する。</para>
+
+		<para>例: <command>-D "H:"</command>
+		</para>
+		</listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-S script</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ユーザのログオンスクリプトのパスを指定する。</para>
+
+		<para>例: <command>-S "\\\\BERSERKER\\netlogon\\sorce.bat"</command>
+		</para>
+		</listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-p profile</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ユーザのプロファイルパスを指定する。</para>
+
+		<para>例: <command>-p "\\\\BERSERKER\\netlogon"</command>
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-G SID|rid</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ユーザのプライマリグループの SID
+		(セキュリティ識別子) または RID を指定する。</para>
+
+		<para>例: <command>-G S-1-5-21-2447931902-1787058256-3961074038-1201</command></para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-U SID|rid</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ユーザの SID
+		(セキュリティ識別子) または RID を指定する。</para>
+
+		<para>例: <command>-U S-1-5-21-2447931902-1787058256-3961074038-5004</command></para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-c account-control</term>
+		<listitem><para>
+		ユーザの追加および変更を行なう際に、
+		ユーザのアカウント制御プロパティを指定する。
+		指定可能なフラグを以下に示す:</para>
+
+	<para>
+		<itemizedlist>
+			<listitem><para>N: パスワード不要</para></listitem>
+			<listitem><para>D: アカウント無効</para></listitem>
+			<listitem><para>H: ホームディレクトリ必須</para></listitem>
+			<listitem><para>T: 一時的に他のアカウントと重複</para></listitem>
+			<listitem><para>U: 通常のユーザアカウント</para></listitem>
+			<listitem><para>M: MNS ログオン用のユーザアカウント</para></listitem>
+			<listitem><para>W: コンピュータ信頼アカウント(訳注: ドメインに参加する各マシンのためのアカウント)</para></listitem>
+			<listitem><para>S: サーバ信頼アカウント</para></listitem>
+			<listitem><para>L: 自動ロック</para></listitem>
+			<listitem><para>X: 無期限パスワード</para></listitem>
+			<listitem><para>I: ドメイン信頼アカウント(訳注: 信頼関係するドメインのためのアカウント)</para></listitem>
+		</itemizedlist>
+	</para>
+
+		<para>例: <command>-c "[X          ]"</command></para>
+		</listitem>
+		</varlistentry>
+
+                <varlistentry>
+                <term>-K|--kickoff-time</term>
+                <listitem><para>このオプションは特定のユーザに対してkickoff時間を
+		変更するために使われる。kickoff時間を無制限にする引数は、
+		"決して指定してはならない"。
+                </para>
+                <para>例: <command>pdbedit -K never user</command></para>
+                </listitem>
+                </varlistentry>
+
+		<varlistentry>
+		<term>-a</term>
+		<listitem><para>
+		ユーザをデータベースに追加する際に指定する。
+		ユーザ名を
+		<parameter>-u</parameter> オプションで指定する必要がある。
+		ユーザを追加する際、
+		pdbedit はユーザのパスワードの入力を求める。</para>
+
+		<para>例: <command>pdbedit -a -u sorce</command>
+<programlisting>new password:
+retype new password
+</programlisting>
+</para>
+
+		<note><para>
+		<smbconfoption name="unix password sync"/> が設定されていた場合でも、
+		pdbedit はスクリプトを実行せず、Samba のユーザデータベース内のデータのみを更新する点に注意。
+		</para>
+
+		<para>
+		ユーザの追加と同時にパスワード同期を直ちに行ないたい場合は、
+		<command>smbpasswd</command> の <option>-a</option> オプションを使用すること。
+		</para>
+		</note>
+		</listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-t, --password-from-stdin</term>
+		<listitem><para>
+		パスワードを		
+		(<command>passwd(1)</command> プログラムのように)
+		/dev/tty から読み取る代わりに標準入力から読み取らせる。
+		パスワードは二度入力し、各々末尾に改行(newline)文字を付けること。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-r</term>
+		<listitem><para>
+		データベースの既存のユーザの情報を変更する際に指定する。
+		ユーザ名は
+		<parameter>-u</parameter> オプションで指定する必要がある。
+		これ以外のオプションは、
+		指定したユーザのプロパティを変更するために用いられる。
+		このオプションは過去との互換性を保つために残されているだけで、
+		現在は指定する必要はない。
+		</para></listitem>
+		</varlistentry>
+			
+		<varlistentry>
+		<term>-m</term>
+		<listitem><para>このオプションは
+		<parameter>-a</parameter>
+		オプションと組み合わせて利用する。
+		これにより、
+		pdbedit はユーザーアカウントではなくコンピュータ信頼アカウントを追加する。
+		(-u username にはコンピュータ名を指定する)</para>
+
+		<para>例: <command>pdbedit -a -m -u w2k-wks</command>
+		</para>
+		</listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-x</term>
+		<listitem><para>
+		データベースからユーザを削除する際に指定する。
+		ユーザ名は
+		<parameter>-u</parameter> オプションで指定する必要がある。</para>
+
+		<para>例: <command>pdbedit -x -u bob</command></para>
+		</listitem>
+		</varlistentry>
+		
+
+		<varlistentry>
+		<term>-i passdb-backend</term>
+		<listitem><para>
+		ユーザ情報の取得元となるパスワードデータベースとして、
+		smb.conf で指定したものとは別のものを指定する。
+		これは、ローカルのユーザデータベースにデータを取り込む
+		(インポートする) 際に利用する。</para>
+
+
+		<para>このオプションにより、
+		パスワードデータベースの移行を容易に行うことができる。
+		</para>
+
+		<para>例: <command>pdbedit -i smbpasswd:/etc/smbpasswd.old
+                </command></para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-e passdb-backend</term>
+		<listitem><para>指定したパスワードデータベースに存在するすべてのユーザを転送 (エクスポート) する。</para>
+
+		<para>このオプションにより、
+		パスワードデータベースの移行とバックアップを容易に行うことが可能となる。</para>
+		
+		<para>例: <command>pdbedit -e smbpasswd:/root/samba-users.backup</command></para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-g</term>
+		<listitem><para><parameter>-g</parameter> オプションを指定すると、
+		<parameter>-i in-backend -e out-backend</parameter>
+		オプションはユーザーデータベースではなく、
+		グループマッピングに対して適用される。</para>
+
+		<para>このオプションにより、
+		パスワードデータベースの移行とバックアップを容易に行うことが可能となる。</para>
+		
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-b passdb-backend</term>
+		<listitem><para>デフォルト以外のパスワードデータベースを指定する。</para>
+
+		<para>例: <command>pdbedit -b xml:/root/pdb-backup.xml -l</command></para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-P account-policy</term>
+		<listitem><para>アカウントポリシーを表示する。</para>
+		<para>有効なポリシーは、
+		「minimum password age」、「reset count minutes」、
+		「disconnect time」、「user must logon to change password」、
+		「password history」、「lockout duration」、
+		「min password length」、「maximum password age」、
+		「bad lockout attempt」である。</para>
+
+		<para>例: <command>pdbedit -P "bad lockout attempt"</command></para>
+<para><programlisting>
+account policy value for bad lockout attempt is 0
+</programlisting></para>
+
+		</listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-C account-policy-value</term>
+		<listitem><para>アカウントポリシーを指定した値に設定する。
+		このオプションは、<parameter>-P</parameter>
+		オプションと組み合わせて使用する。</para>
+
+		<para>例: <command>pdbedit -P "bad lockout attempt" -C 3</command></para>
+<para><programlisting>
+account policy value for bad lockout attempt was 0
+account policy value for bad lockout attempt is now 3
+</programlisting></para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-y</term>
+		<listitem><para> <parameter>-y</parameter> オプションを指定すると、
+		<parameter>-i in-backend -e out-backend</parameter>
+		オプションはユーザーデータベースではなく、
+		アカウントポリシーに対して適用される。</para>
+
+		<para>このオプションにより、
+		アカウントポリシーをデフォルトの TDB から LDAP ディレクトリサーバなどのパスワードデータベースに移行することが可能となる。</para>
+
+		<para>例: <command>pdbedit -y -i tdbsam: -e ldapsam:ldap://my.ldap.host</command></para>
+	
+		</listitem>
+		</varlistentry>
+
+		&stdarg.help;
+		&stdarg.server.debug;
+		&popt.common.samba;
+
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>注意</title>
+	
+	<para>このコマンドは root だけが利用できる。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは、Samba バージョン 3 用に記述されている。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>, <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry></para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作られた。 Samba は現在、Linux
+	カーネルが開発されているような方法でのオープンソースプロジェクトである
+	Samba Team によって開発されている。</para>
+
+	<para>pdbedit のマニュアルページは Simo Sorce と Jelmer Vernooij によって作られた。</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.5.1 - 3.5.3  対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.24 対応の翻訳は
+たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+        <para>このドキュメントの Samba 3.2.4-3.5.3 対応の翻訳は
+太田俊哉 (ribbon@samba.gr.jp) によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>

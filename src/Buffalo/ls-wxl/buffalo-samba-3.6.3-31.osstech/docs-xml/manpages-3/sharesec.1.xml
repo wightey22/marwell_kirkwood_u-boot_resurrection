@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="sharesec.1">
+
+<refmeta>
+	<refentrytitle>sharesec</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>sharesec</refname>
+	<refpurpose>共有のACLに対する設定と取得</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>sharesec</command>
+		<arg choice="req">sharename</arg>
+		<arg choice="opt">-r, --remove=ACL</arg>
+		<arg choice="opt">-m, --modify=ACL</arg>
+		<arg choice="opt">-a, --add=ACL</arg>
+		<arg choice="opt">-R, --replace=ACLs</arg>
+		<arg choice="opt">-D, --delete</arg>
+		<arg choice="opt">-v, --view</arg>
+		<arg choice="opt">-M, --machine-sid</arg>
+		<arg choice="opt">-F, --force</arg>
+		<arg choice="opt">-d, --debuglevel=DEBUGLEVEL</arg>
+		<arg choice="opt">-s, --configfile=CONFIGFILE</arg>
+		<arg choice="opt">-l, --log-basename=LOGFILEBASE</arg>
+		<arg choice="opt">-V, --version</arg>
+		<arg choice="opt">-?, --help</arg>
+		<arg choice="opt">--usage</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>sharesec</command>プログラムは、SMBファイル共有上の共有のパーミッションを
+	操作するプログラムである。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<para>以下のオプションは<command>sharesec</command>プログラムで有効である。ACLのフォーマットは、
+	ACL FORMATセクションで説明されている。</para>
+
+	<variablelist>
+		<varlistentry>
+		<term>-a|--add=ACL</term>
+		<listitem><para>指定されたACLリストにACEを追加する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-D|--delete</term>
+		<listitem><para>すべてのセキュリティディスクリプタを削除する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-F|--force</term>
+		<listitem><para>強制的にACLを格納する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-m|--modify=ACL</term>
+		<listitem><para>存在するACEを変更する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-M|--machine-sid</term>
+		<listitem><para>マシンのSIDを初期化する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-r|--remove=ACL</term>
+		<listitem><para>ACEを削除する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-R|--replace=ACLS</term>
+		<listitem><para>
+		存在する共有パーミッションACLを上書きする。
+		</para></listitem>
+		</varlistentry>
+
+		&stdarg.help;
+		&stdarg.server.debug;
+		&popt.common.samba;
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>ACL FORMAT</title>
+
+	<para>ACLのフォーマットは、1つまたはそれ以上の、カンマ又は改行で分離された、ACL
+	エントリである。1つのACLエントリは以下のうちのどれかである:</para>
+
+	<para><programlisting>
+	REVISION:&lt;revision number&gt;
+	OWNER:&lt;sid or name&gt;
+	GROUP:&lt;sid or name&gt;
+	ACL:&lt;sid or name&gt;:&lt;type&gt;/&lt;flags&gt;/&lt;mask&gt;
+	</programlisting></para>
+
+	<para>
+	ACLのリビジョンはセキュリティディスクリプタの　内部Windows NT ACL リビジョン
+	を指定する。もしも指定されなければ既定値として1が取られる。1以外の値を使うこと
+	は、奇妙な振る舞いを引き起こすかもしれない。</para>
+
+	<para>
+	owner と group は、それぞれオブジェクトのためのownerとgroup SIDを指定する。
+	もしもSIDがS-1-x-y-z形式で指定されれば、それが使われ、それ以外では、
+	名前で指定されたと見なされ、対象のファイル又はディレクトリが存在するサーバ
+	上でSIDに解決される。</para>
+
+	<para>
+	ACLは、そのSIDに対するパーミッションを指定する。このSIDはS-1-x-y-z
+	形式で指定されるが、そのファイル又はディレクトリが存在するサーバ上で
+	名前解決が出来る場合には、名前で指定できる。type,flagsとmask値は、そのSIDに
+	対して許可されるアクセス権の種類を決める。</para>
+
+	<para>
+	typeはALLOWEDまたはDENIEDを、SIDに対するアクセスの許可/拒否として使う
+	ことができる。flagの値は共有のACLに対しては通常ゼロである。
+	</para>
+
+	<para>
+	maskはSIDに対して許可されるアクセス権を表現する値である。これは、10進又は
+	16進の値として与えられるか、同じ名前の、Windows NTにおけるアクセス許可の
+	指定時に使用される、以下のテキスト文字列のどれか1つを使うことも出来る。
+	</para>
+
+	<itemizedlist>
+		<listitem><para><emphasis>R</emphasis> - 読み取りを許可</para></listitem>
+		<listitem><para><emphasis>W</emphasis> - 書き込みを許可</para></listitem>
+		<listitem><para><emphasis>X</emphasis> - オブジェクトの実行を許可</para></listitem>
+		<listitem><para><emphasis>D</emphasis> - オブジェクトの削除</para></listitem>
+		<listitem><para><emphasis>P</emphasis> - パーミッションの変更</para></listitem>
+		<listitem><para><emphasis>O</emphasis> - 所有権の取得</para></listitem>
+	</itemizedlist>
+
+	<para>以下の組み合わせパーミッションも指定することができる:</para>
+
+	<itemizedlist>
+		<listitem><para><emphasis>READ</emphasis> -  'RX' と同等
+		permissions</para></listitem>
+		<listitem><para><emphasis>CHANGE</emphasis> - 'RXWD' パーミッションと同等
+		</para></listitem>
+		<listitem><para><emphasis>FULL</emphasis> - 'RWXDPO' パーミッションと同等</para></listitem>
+	</itemizedlist>
+	</refsect1>
+
+<refsect1>
+	<title>終了ステータス</title>
+
+	<para>The <command>sharesec</command>プログラムは、操作が実行された時の成功、またはそれ以外の状態に
+	応じて終了ステータスをセットする。終了ステータスは以下の値のうちのどれかである。</para>
+
+	<para>もしも操作が成功すれば、sharesecは終了ステータスを0にして戻る。もしも、
+	<command>sharesec</command>が指定されたサーバに接続できないか、ACLの設定
+	又は取得時にエラーが生じたならば、終了ステータスは1で戻る。もしもコマンド行
+	引数の解釈時にエラーがあれば終了ステータスは2で戻る。</para>
+</refsect1>
+
+<refsect1>
+	<title>実行例</title>
+
+	<para>SIDに対してフルアクセスを追加
+	<parameter>S-1-5-21-1866488690-1365729215-3963860297-17724</parameter> on
+	<parameter>share</parameter>:
+	</para>
+
+	<programlisting>
+	host:~ # sharesec share -a S-1-5-21-1866488690-1365729215-3963860297-17724:ALLOWED/0/FULL
+	</programlisting>
+
+	<para><parameter>share</parameter>に対するすべてのACEを表示:
+	</para>
+
+	<programlisting>
+	host:~ # sharesec share -v
+	REVISION:1
+	OWNER:(NULL SID)
+	GROUP:(NULL SID)
+	ACL:S-1-1-0:ALLOWED/0/0x101f01ff
+	ACL:S-1-5-21-1866488690-1365729215-3963860297-17724:ALLOWED/0/FULL
+	</programlisting>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba バージョン 3用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team によって、Linux
+	カーネルの開発と同様のオープンソースプロジェクトとして開発が行なわれている。
+	</para>
+	
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.3.6 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.3.6 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>太田俊哉 (ribbon@samba.gr.jp)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+</refentry>

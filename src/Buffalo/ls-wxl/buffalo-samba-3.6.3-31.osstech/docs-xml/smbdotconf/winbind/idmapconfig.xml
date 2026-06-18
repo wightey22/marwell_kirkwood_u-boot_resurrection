@@ -1,0 +1,63 @@
+<samba:parameter name="idmap config"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1" hide="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+	idmap config のプレフィックスは、それぞれの信頼されたドメインを
+	管理する方法を提供する。idmap config プレフィックスに続けて、
+	ドメイン名、コロン、そして選択したバックエンド用の設定を指定
+	しなければならない。全てのドメインで指定可能な3つのオプションがある。
+	</para>
+
+	<variablelist>  
+		<varlistentry>
+		<term>backend = backend_name</term>
+		<listitem><para>
+	        このドメインでSID/uid/gidのバックエンドとして利用する
+			idmapプラグインの名前を指定する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>range = low - high</term>
+                <listitem><para>
+		バックエンドの管轄下にある、利用可能なuidとgidの範囲を指定する。
+		一般的に、同じバックエンドにてSID/uid/gidを保存・取得する場合、
+		範囲は変わらない。
+                </para>
+		<para>
+		Winbindは、このパラメータを使って信頼できるバックエンドから
+		unix IDとSIDのマッピング情報を検索する。そのため、各ドメイン
+		ごとに設定される必要があり、<smbconfoption name="idmap uid"/>
+		と<smbconfoption name="idmap gid"/>の設定範囲とは異なっている
+		必要がある。
+		</para></listitem>
+
+		</varlistentry>
+	</variablelist>
+
+	<para>
+	次の例はCORPドメインが<citerefentry><refentrytitle>idmap_ad</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> バックエンド
+	で、他の全てのドメインが<citerefentry><refentrytitle>idmap_tdb</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> バックエンドとしてどのように
+	設定されるかを示している。
+	この設定では、CORPドメインの管理者がSFUを使って1000000以下をアサイン
+	しており、winbindが次の1000000台を、自分の管轄下のドメインとローカル
+	グループのためのマッピングに使う場合の例である。
+	</para>
+	
+	<programlisting>
+	idmap backend = tdb
+	idmap uid = 1000000-1999999
+	idmap gid = 1000000-1999999
+
+	idmap config CORP : backend  = ad
+	idmap config CORP : range = 1000-999999
+	</programlisting>
+	
+</description>
+</samba:parameter>

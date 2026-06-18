@@ -1,0 +1,33 @@
+<samba:parameter name="only user"
+					type="boolean"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> この真偽値のオプションは、<parameter moreinfo="none">user</parameter> 
+    パラメータに設定されていないユーザからの接続を許可するかどうかを制御する。
+    デフォルトでは、このオプションは無効になっており、
+    クライアントがサーバで使用するユーザ名を提供することが可能である。
+    このパラメータを有効にすることで、サーバは <parameter moreinfo="none">user</parameter> 
+    パラメータで設定されたユーザ名のみを利用する。
+    これは <smbconfoption name="security">share</smbconfoption>
+    のセキュリティの時のみ有用である。</para>
+
+    <para> このパラメータを有効にすると、
+    Samba はサービス名からユーザ名を推測することも行なわなくなる。
+    このため、[homes] セクションを利用していると問題が発生してしまうことがある。
+    <command moreinfo="none">user = %S</command> とすることで、
+    <parameter moreinfo="none">user</parameter> リストにサービス名が設定され、
+    ホームディレクトリをユーザの名前にすることができる。</para>
+
+    <para> このパラメータを有効にすると、
+    Samba はサービス名からユーザ名を推測することも行なわなくなるので注意すること。
+    これにより、[homes] セクションを利用していると問題が発生してしまうことがある。
+    <command moreinfo="none">user = %S</command> とすることで、
+    <parameter moreinfo="none">user</parameter> リストにサービス名が設定され、
+    ホームディレクトリをユーザの名前にすることができる。</para>
+</description>
+
+<related>user</related>
+
+<value type="default">no</value>
+</samba:parameter>

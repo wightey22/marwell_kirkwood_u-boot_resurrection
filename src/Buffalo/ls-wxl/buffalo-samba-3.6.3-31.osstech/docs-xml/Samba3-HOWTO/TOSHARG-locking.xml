@@ -1,0 +1,1108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="locking">
+<chapterinfo>
+	&author.jeremy;
+	&author.jelmer;
+	&author.jht;
+	&author.eroseme;
+</chapterinfo>
+<title>ファイルとレコードのロッキング</title>
+
+<para>
+<indexterm><primary>locking</primary></indexterm>
+多くのネットワーク管理者に問題を発生させる1つの領域はロッキングである。
+問題の範囲はインターネット上で検索することですぐにはっきりする。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>ロッキングのセマンティクス</primary></indexterm>
+Sambaは、Microsoft Windows NT4/200xサーバも提供する、Microsoft Windowsクライアントが
+期待するすべてのロッキングのセマンティクスを提供する。
+</para>
+
+<para>
+<indexterm><primary>ロッキング</primary></indexterm>
+<emphasis>ロッキング</emphasis>という用語は、並外れて広い意味を持ち、この1つの用語の
+配下にすべてカテゴライズされる機能の範囲をカバーしている。
+</para>
+
+<para>
+<indexterm><primary>opportunistic locking</primary></indexterm>
+<indexterm><primary>locking protocol</primary></indexterm>
+<indexterm><primary>performance advantage</primary></indexterm>
+Opportunistic lockingはネットワークで結合されたクライアント上で、アプリケーションの
+見かけの性能を向上させることが出来る好ましい機能である。しかし、opportunistic locking
+プロトコルは頑丈ではなく、そのため、極端に単純化した設定か、広範囲の遅くて障害の多い
+ネットワーク上を超えて起動するときに、問題に遭遇する。この場合、opportunistic locking
+のOSによる管理か、反復的なエラーは提供することを意図した考えられる性能の利点を相殺する。
+</para>
+
+<para>
+<indexterm><primary>レジストリ</primary></indexterm>
+Microsoft Windows ネットワーク管理者は、ファイルとレコードのロッキングセマンティックス
+(動作)はSamba中かMicrosoft Windowsクライアント上のレジストリの設定で制御できることを
+知っておく必要がある。
+</para>
+
+<note>
+<para>
+<indexterm><primary>lockingの無効化</primary></indexterm>
+時々、各Microsoft WindowsクライアントのようにSambaサーバ上でロッキングの制御の設定を
+無効化する必要がある！
+</para>
+</note>
+
+</sect1>
+
+<sect1>
+<title>議論</title>
+
+<para>
+<indexterm><primary>レコードのロッキング</primary></indexterm>
+<indexterm><primary>拒否モード</primary></indexterm>
+SMBサーバによって実行されることが必要な2つのタイプのロッキングがある。最初のものは
+オープンしているファイル中の一定の範囲のバイト範囲をクライアントがロックすることが
+できる<emphasis>レコードロッキング</emphasis>である。2番目のものは、ファイルが
+オープンしているときに指定される<emphasis>拒否モード</emphasis>である。
+</para>
+
+<para>
+<indexterm><primary>ロッキングのセマンティックス</primary></indexterm>
+<indexterm><primary>レコードロッキング</primary></indexterm>
+<indexterm><primary>ロッキング</primary></indexterm>
+<indexterm><primary>バイト幅</primary></indexterm>
+<indexterm><primary>UNIXのロッキング</primary></indexterm>
+UNIX配下のレコードロッキングのセマンティックスは、Windows配下のレコードロッキングと大幅に
+異なる。Samba2.2より前のSambaは、異なったSambaクライアントとの間で、適切なレコード
+ロッキングを実装するために、ネイティブなfcntl()UNIXシステムコールを使うことを試みた。
+これはいくつかの理由で完全に正しいものにはならなかった。最も簡単なものは、Windows
+クライアントはロックするバイトレンジとして、クライアントのOSに依存するが、2の32乗か2の
+64乗の範囲を指定できた。UNIXロッキングはレンジの幅として2の31乗までしかサポートして
+いなかった。そのため、2の31乗以上のロック要求を正確に満足させることは出来なかった。
+そのほかにもここに記述するのには余りにも多すぎる数多くの違いがあった。
+</para>
+
+<para>
+<indexterm><primary>レコードロッキング</primary></indexterm>
+<indexterm><primary>バイト幅ロック</primary></indexterm>
+Samba2.2以降では、UNIXシステムに依存しない、独立したレコードロッキングを完璧に実装した。
+もしもクライアントが0から2の31乗までの間でバイト幅ロックを要求した場合、SambaはUNIX
+システムにこの要求を落として扱う。他のどのようなロックもUNIXでは扱わない。
+</para>
+
+<para>
+<indexterm><primary>ロックのチェック</primary></indexterm>
+<indexterm><primary>rpc.lockd</primary></indexterm>
+厳密に言うと、Sambaサーバはファイル上への各読み/書きの呼び出し前にロックのチェックを
+すべきである。不幸にも、fcntl()が機能する方法で、これは遅延を引き起こし、
+<command>rpc.lockd</command>に負荷を掛けることになる。これは、それに対してロッキングが
+重要なとき、読み書きの前にロッキングを呼び出すことをクライアントは独立して行うはずという
+理由で、ほとんど常時不必要である。既定値では、Sambaはクライアントによって明示的に
+問い合わせがあったときにのみロッキングコールを行うが、もしも
+<smbconfoption name="strict locking">yes</smbconfoption>を設定した場合、
+読み/書きの呼び出し<emphasis>毎に</emphasis>ロックチェックの呼び出しを行う。
+</para>
+
+<para>
+<indexterm><primary>バイト幅のロッキング</primary></indexterm>
+<smbconfoption name="locking">no</smbconfoption>を使うことによってバイト幅ロッキングを
+完全に停止することも出来る。これは、ロッキングをサポートしない共有か、必要がないとき
+(たとえばCD-ROMなど)に便利である。この場合、Sambaは毎回OKであると、ロッキング呼び出しの
+戻り値をクライアントに返すようにごまかす。
+</para>
+
+<para>
+<indexterm><primary>deny modes</primary></indexterm>
+<indexterm><primary>DENY_NONE</primary></indexterm>
+<indexterm><primary>DENY_READ</primary></indexterm>
+<indexterm><primary>DENY_WRITE</primary></indexterm>
+<indexterm><primary>DENY_ALL</primary></indexterm>
+<indexterm><primary>DENY_FCB</primary></indexterm>
+<indexterm><primary>DENY_DOS</primary></indexterm>
+2番目のクラスのロッキングは、<emphasis>deny modes</emphasis>である。これらは、その
+オープンに対して同時に許されるべきアクセスのタイプを決めるため、ファイルをオープン
+したときにアプリケーションによって設定される。クライアントは、
+<constant>DENY_NONE</constant>, <constant>DENY_READ</constant>,
+<constant>DENY_WRITE</constant>, か <constant>DENY_ALL</constant>を問い合わせできる。
+<constant>DENY_FCB</constant> と <constant>DENY_DOS</constant>と呼ばれる特別な互換
+モードもある。
+</para>
+
+<sect2>
+<title>Opportunistic Lockingの概要</title>
+
+<para>
+<indexterm><primary>opportunistic locking</primary></indexterm>
+<indexterm><primary>oplocks</primary></indexterm>
+<indexterm><primary>caching</primary></indexterm>
+Opportunistic locking (oplocks)はサーバ上に存在するファイルにアクセスする時に、
+ネットワークの効率を増大させる目的で、レジストリエントリ(サーバとクライアント上)
+経由でWindowsファイルシステム(APIと対照した場合)によって起動される。効率は、
+以下を許容することでクライアント上にローカルにファイルをキャッシュすることにより
+増大させる:
+</para>
+
+<variablelist>
+	<varlistentry><term>Read-ahead:</term>
+		<listitem><para>
+<indexterm><primary>Read-ahead</primary></indexterm>
+		クライアントはファイルのローカルコピーから読み、ネットワークの待ち時間を
+		なくす。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>Write caching:</term>
+		<listitem><para>
+<indexterm><primary>Write caching</primary></indexterm>
+		クライアントはファイルのローカルコピーに書き込み、ネットワークの待ち
+		間をなくす。
+		</para></listitem>
+	</varlistentry>
+
+        <varlistentry><term>Lock caching:</term>
+        <listitem><para>
+<indexterm><primary>Lock caching</primary></indexterm>
+		クライアントはアプリケーションをローカルにロックし、ネットワークの待ち
+		間をなくす。
+		</para></listitem>
+        </varlistentry>
+</variablelist>
+
+<para>
+<indexterm><primary>効率の増大</primary></indexterm>
+<indexterm><primary>oplocks</primary></indexterm>
+<indexterm><primary>deny-none</primary></indexterm>
+oplocksによる効率の増大は、他のプロセスからの同時アクセスのためのファイルのステータスを
+Windowsがモニタするために、deny-noneでオープンされていたとしても、ファイルに対する
+排他的なアクセスを行うことによる。
+</para>
+
+<variablelist>
+<title>Windowsは4つの種類のOplocksを定義する:</title>
+
+		<varlistentry><term>Level1 Oplock</term>
+			<listitem><para>
+<indexterm><primary>Level1 Oplock</primary></indexterm>
+<indexterm><primary>リダイレクタ</primary></indexterm>
+<indexterm><primary>同時アクセス</primary></indexterm>
+<indexterm><primary>キャッシュされたローカルファイル</primary></indexterm>
+			リダイレクタは、ファイルがdeny none(同時アクセスを許可)で
+			オープンしていることを確認し、ファイルに他のプロセスからの
+			アクセスが無いことを検査し、oplocksが有効になっていることを
+			確認し、次に、ファイルに対するdeny-all/read-write/exclusive
+			アクセスを許可する。その後、クライアントはキャッシュされたローカル
+			ファイルに対して操作を実行する。
+			</para>
+
+			<para>
+<indexterm><primary>oplock break</primary></indexterm>
+<indexterm><primary>ローカルロックのフラッシュ</primary></indexterm>
+<indexterm><primary>遅延オープン</primary></indexterm>
+<indexterm><primary>バイト幅ロッキング</primary></indexterm>
+			もしも2番目のプロセスがファイルをオープンしようとすると、
+			オリジナルのoplockをリダイレクタが"ブレーク"するまで
+			オープンは待たされる。oplockブレークは、キャッシュしている
+			クライアントに、サーバにローカルファイルを書き戻し、ローカルの
+			ロックをフラッシュし、先読みしたデータを廃棄するように通知する。
+			ブレークが完了し、遅延したオープンが許可され、多重プロセスが、
+			強制的かバイト幅ロッキングオプションによって指示されたように、
+			同時ファイルアクセスが出来るようになる。しかし、もしもオリジナルの
+			ファイルがdeny-mode以外の共有モードの場合、次に、2番目の
+			プロセスは、oplockがブレークしても、アクセスが制限されるか
+			アクセスが拒否される。
+			</para></listitem>
+        </varlistentry>
+
+        <varlistentry><term>Level2 Oplock</term>
+                <listitem><para>
+<indexterm><primary>Level2 Oplock</primary></indexterm>
+<indexterm><primary>Level1 oplock</primary></indexterm>
+<indexterm><primary>キャッシング</primary></indexterm>
+		キャッシングを除いて、Level1 oplockのような機能は、すべての読み出しに
+		対してのみ重要である。すべてのその他の操作は、サーバ上でファイルの
+		ディスクへのコピーを実行する。
+                </para></listitem>
+        </varlistentry>
+
+        <varlistentry><term>Filter Oplock</term>
+                <listitem><para>
+<indexterm><primary>Filter Oplock</primary></indexterm>
+				ファイルへの書き込み又は削除アクセスを許可しない。
+                </para></listitem>
+        </varlistentry>
+
+        <varlistentry><term>Batch Oplock</term>
+                <listitem><para>
+<indexterm><primary>Batch Oplock</primary></indexterm>
+				ファイルのオープンとクローズを操作し、ファイル属性のキャッシュを行う。
+                </para></listitem>
+        </varlistentry>
+</variablelist>
+
+<para>
+<indexterm><primary>oplocks</primary></indexterm>
+oplocksはファイルシステムによって起動され、アプリケーションAPIではないということは重要な
+詳細事項である。そのため、あるアプリケーションはoplockされたファイルをクローズできるが、
+ファイルシステムはoplocksを放棄しない。oplockのブレークが発生したとき、ファイルシステムは
+次に、2番目のプロセスによる、次のファイルオープンの準備中で、単純にファイルをクローズする。
+</para>
+
+<para>
+<indexterm><primary>Opportunistic locking</primary></indexterm>
+<indexterm><primary>client-side data caching</primary></indexterm>
+<indexterm><primary>data caching</primary></indexterm>
+<indexterm><primary>oplock break</primary></indexterm>
+<emphasis>Opportunistic locking</emphasis>は、この機能に対して、実際には妥当ではない名前
+である。この機能の真の利点は、クライアントサイドのデータキャッシングであり、oplocksは
+ネットワーク上のディスクストレージにデータを書き戻すための、単なる通知メカニズムである。
+oplocksの制限は、サーバとキャッシュしているクライアント間でのoplocksブレーク(通知)を
+処理するためのメカニズムの信頼性である。もしもこの交換に失敗すると(通常、数多くの理由で
+タイムアウトするという場合)、クライアントサイドキャッシングの優位性は否定される。
+</para>
+
+<para>
+<indexterm><primary>クライアントサイドのキャッシング</primary></indexterm>
+ユーザか管理者が考慮すべき、実際の決断点は、ローカルにクライアント上にキャッシュされる
+複数のユーザのデータ間で共有するのは賢明であるかどうかと言うことである。多くの場合、
+答えは「否」である。データをキャッシュするかしないかの決断は真の質問であり、そのため、
+oplocksはクライアントサイドのキャッシングのトグルとして取り扱うべきである。クライアント
+サイドのキャッシングが望ましく、信頼性がある場合、それを<quote>on</quote>にする。
+クライアントサイドのキャッシングが不必要で、信頼性に欠け、あるいは反生産的な場合、
+<quote>off</quote>にする。
+</para>
+
+<para>
+<indexterm><primary>oplocks</primary></indexterm>
+Oplocksは既定値ではすべての設定された共有上にSambaによって<quote>on</quote>に設定されて
+いるので、もしも潜在的な利便性が、遅延の可能性より小さい場合、それぞれのケースで決定
+するときには注意深く行うべきである。以下の推奨項目は、oplocksが効果的になる環境を特徴
+づけるのに役に立つだろう。
+</para>
+
+<para>
+<indexterm><primary>oplocks</primary></indexterm>
+<indexterm><primary>high-availability</primary></indexterm>
+Windowsのoplocksは簡易な効率向上機能である。これは堅牢でも信頼できるプロトコルではない。
+oplocksのすべての実装は、考え得る性能と信頼性との間でのトレードオフとして評価される
+べきである。信頼性は、上記での継続したルールが適用されないように減少する。oplockが
+有効で、WAN上をまたいで、南太平洋の環礁の、高信頼性のサーバ上で、ミッション
+クリティカルな、多人数で使う会社のデータベースが台風にさらされている状況を考えてみよう。
+この設定はoplockの問題に遭遇するだろう。
+</para>
+
+<para>
+<indexterm><primary>ミッションクリティカル</primary></indexterm>
+Oplocksは、クライアントサイドでのデータキャッシングのための構成要素のトグルとして
+扱われる時、クライアントの性能を理解するために有益であり得る。もしもデータのキャッシングが
+さえぎられそうな場合、oplocksの使用は評価されるべきである。Sambaはすべての共有に対して
+oplocksを既定値で有効にする。サーバ上の共有データ、サーバネットワークの信頼性と各共有の
+oplocksの設定の使用法をクライアントに提供すべきであることに注意深く注意を払う。
+ミッションクリティカルな領域、高信頼性環境では、データの整合性はしばしば優先度が高く
+なる。複雑で高価な構成は、もしもクライアントがファイルサーバへの接続が切れた時、
+継続したデータの可用性を提供するために、フェイルオーバによるサーバ切り替えがすぐに出来る
+ことが出来るように、実装される。
+</para>
+
+<para>
+<indexterm><primary>Windowsクライアントのフェイルオーバ</primary></indexterm>
+<indexterm><primary>トランスポート層の接続断</primary></indexterm>
+Windowsクライアントのフェイルオーバの動作は、確立しているTCP/IPトランスポートコネクション
+に依存するという理由で、他のプラットフォームよりもアプリケーションの中断のリスクがより
+大きい。もしも、ファイルサーバのフェールオーバとして接続が中断されたならば、新しい
+セッションは再度確立せねばならない。トランスポート層が切断された時から正しく復帰するために
+プログラミングされているWindowsクライアントはまれである。そのため、ほとんどの
+アプリケーションは、ある種の中断を経験することになる。最悪の場合、アボートして再起動が
+必要となる。
+</para>
+
+<para>
+<indexterm><primary>caching writes</primary></indexterm>
+<indexterm><primary>caching reads</primary></indexterm>
+<indexterm><primary>oplock break</primary></indexterm>
+もしもクライアントセッションが、oplocksのために、ローカルに書き込みと読み取りを
+キャッシングしているなら、TCPの中断からアプリケーションの再起動または復帰のときに
+データが喪失するだろう。ファイルサーバが復旧すると、oplocksのブレークはクライアント
+には送信されない。この場合、先のセッションからの作業は失われる。oplocksが無効に
+なっていて、リアルタイムにファイルサーバにクライアントがデータを書き込むという
+シナリオを観察することで、フェイルオーバは、切断時に存在するディスク上のデータを
+提供する。
+</para>
+
+<para>
+ミッションクリティカルな、高可用性環境では、oplocksに対して厳重な注意をはらうべきである。
+理想的には、広範囲なテストは、oplocksが有効かつ無効な状態で、すべての影響される
+アプリケーションで行うべきである。
+</para>
+
+<sect3>
+<title>共有の排他的なアクセス</title>
+
+<para>
+oplocksは、単一のユーザか、同時に1人のみのユーザで、排他的にアクセスされる共有に限定
+される時に最も有効である。oplocksの本当の姿は、ローカルにクライアントでキャッシング
+されているデータという理由により、キャッシングを中断する何らかの操作は遅延を引き起こす。
+</para>
+
+<para>
+ホームディレクトリは、oplocksが問題ないと理解され、効率を得られる、最も明らかな例である。
+</para>
+
+</sect3>
+
+<sect3>
+<title>共有またはファイルに対する多重アクセス</title>
+
+<para>
+共有中のファイルへ各追加ユーザがoplocksを有効にしてアクセスすると、遅延の可能性と、
+結果として生じる性能の低下が増大する。複数のユーザが、oplocksを有効にした共有上の
+ファイルにアクセスする時、oplocksブレークの送受信と、の管理と、データのオフセットを
+フラッシュするためにクライアントのキャッシングを他のクライアントが待つ間に結果として
+生じる遅延の管理の影響は、キャッシュしているユーザの効率向上を相殺する。
+</para>
+
+<para>
+oplocksを設定して各追加のクライアントがファイルにアクセスする時、潜在的な効率の
+向上は否定され、最終的には効率のボトルネックとなる。
+</para>
+
+</sect3>
+
+<sect3>
+<title>UNIXまたはNFSクライアントがアクセスしたファイル</title>
+
+<para>
+<indexterm><primary>NFSクライアント</primary></indexterm>
+<indexterm><primary>データの破壊</primary></indexterm>
+ローカルのUNIXとNFSクライアントは強制的なファイルロックメカニズムなしでファイルにアクセス
+する。そのため、それらクライアントプラットフォームは、ファイルをキャッシュしている
+Windowsクライアントにサーバからのoplocksブレークを初期化できない。ローカルのUNIXか
+NFSファイルアクセスはこのため、データが壊れるようなファイルを公開している、Windows
+クライアントによってキャッシュされたファイルに書き込める。
+</para>
+
+<para>
+もしも、ファイルがWindows間とローカルUNIXかNFSユーザによって共有されているならば、
+oplocksはoffにする。
+</para>
+
+</sect3>
+
+<sect3>
+<title>遅くて信頼できないネットワーク</title>
+
+<para>
+<indexterm><primary>性能の向上</primary></indexterm>
+<indexterm><primary>WAN</primary></indexterm>
+<indexterm><primary>latency</primary></indexterm>
+クライアントサイドの読み取りと書き込みのキャッシングが、回線上でそれらの読み書きを送る
+上での大部分の差分を送る時に、oplocksが遭遇する性能向上の最も大きな可能性がある。
+これは、ネットワークがとても遅く、詰まっているか分散している(WAN中の場合)には、頻繁に起きる。
+しかし、ネットワークの遅延がoplocksメカニズムの信頼性に関して大きな影響があり、そのため、
+潜在的に知覚できる効率の向上を十二分に相殺するoplocks問題を発生する見込みを増大する。
+もちろん、もしもoplocksブレークが、決して送られる必要がなければ、これは、oplocksを利用
+する最も効率的なシナリオである。
+</para>
+
+<para>
+もしもネットワークが遅いか、信頼性がないばあいか、WANの場合、もしも複数のユーザが
+同じファイルを定期的に開く事がある場合、決してoplocksを設定しないこと。
+</para>
+
+</sect3>
+
+<sect3>
+<title>マルチユーザデータベース</title>
+
+<para>
+<indexterm><primary>マルチユーザデータベース</primary></indexterm>
+<indexterm><primary>management bottleneck</primary></indexterm>
+<indexterm><primary>oplocks disabled</primary></indexterm>
+マルチユーザデータベースは、その本質的な性質から、明らかに危険である。それらは通常不定
+間隔でたくさんのユーザによって激しくアクセスされる。oplocksが有効になっている共有上で
+マルチユーザデータベースを配置すると、Sambaサーバ上でのロッキング管理のボトルネックに
+なるだろう。手作りあるいは所用製品のデータベースアプリケーションのどちらにせよ、
+共有のoplocksは無効にすること。
+</para>
+
+</sect3>
+
+<sect3>
+<title>PDM Data Shares</title>
+
+<para>
+<indexterm><primary>PDM</primary></indexterm>
+<indexterm><primary>Process data management</primary></indexterm>
+<indexterm><primary>クライアントサイドのデータキャッシング</primary></indexterm>
+<indexterm><primary>oplocksの管理</primary></indexterm>
+<indexterm><primary>oplocksの無効化</primary></indexterm>
+IMAN、EnoviaやCleacaseのようなProcess data management (PDM)アプリケーションはWindows
+クライアントプラットフォームでの使用が増え、そのため、SMBによるデータ格納も増えている。
+PDMアプリケーションは、重要なデータのセキュリティとアクセスのために、複数ユーザ環境を
+管理する。一般的なPDM環境では、必要に応じてローカルにロードするデータは、洗練された
+クライアントデザインのアプリケーションに関連づけられる。更に追加で、PDMアプリケーションは
+通常各クライアントのデータ状態をモニタする。この場合、クライアントサイドのデータ
+キャッシングは、ローカルのアプリケーションとPDMサーバで協調して保守するために、最も
+残される。任意のキャッシング作業からクライアントOSを、任意のoplocks管理から、共有上で
+oplocksを無効にすることによって取り除くことは適切である。
+</para>
+
+</sect3>
+
+<sect3>
+<title>Force Userに対する注意</title>
+
+<para>
+<indexterm><primary>oplock break</primary></indexterm>
+Sambaには、&smb.conf;の変数によって定義されるどんなユーザにも、接続してきたユーザが
+共有にアクセスする時に、ユーザを変更する<smbconfoption name="force user"/>という
+パラメータを&smb.conf;中に含むことが出来る。もしもoplocksが共有上で有効になっている場合、
+ユーザアクセス中の変更は、ユーザが明示的にファイルをロードしなくとも、クライアントに送信
+するoplocksブレークを発生させる。ネットワークが遅いか信頼性がない場合、ファイルにアクセス
+しているユーザなしでoplocksブレークが失われることがある。これは、oplocksブレークの喪失を
+補うために、絶えず再接続するクライアントとして見た目の効率低下を引き起こす。
+</para>
+
+<para>
+以下を組み合わせることを防ぐ:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	&smb.conf;中の共有定義中の<smbconfoption name="force user"/> 。
+	</para></listitem>
+
+	<listitem><para>
+	遅いか信頼性のないネットワーク。
+	</para></listitem>
+
+	<listitem><para>
+	Oplocksが有効。
+	</para></listitem>
+</itemizedlist>
+
+</sect3>
+
+<sect3>
+<title>高度なSamba Oplocksパラメータ</title>
+
+<para>
+<indexterm><primary>oplockパラメータ</primary></indexterm>
+<indexterm><primary>oplockのメカニズム</primary></indexterm>
+<indexterm><primary>oplocksの実装</primary></indexterm>
+Sambaはタイミングと使用レベルの計測のためにoplocksメカニズムの、種々のプロパティを
+管理者が調整できるoplocksパラメータを提供する。これらのパラメータは、問題を引き起こす
+ような環境中でoplocksを実装するために、すぐれた融通性を提供する。パラメータは、
+<smbconfoption name="oplock break wait time"/>と
+<smbconfoption name="oplock contention limit"/>である。
+</para>
+
+<para>
+<indexterm><primary>turn oplocks off</primary></indexterm>
+ほとんどのユーザ、管理者と環境にとって、もしも、これらのパラメータが必要ならば、より良い
+選択肢は、単にoplocksをoffにすることである。Samba SWATでは、両パラメータについて、
+<quote>Samba oplocksコードを読解しない限り、このパラメータを変更しないこと。</quote>
+という説明がある。これは良い助言である。
+</para>
+
+</sect3>
+
+<sect3>
+<title>ミッションクリティカル、高信頼性</title>
+
+<para>
+ミッションクリティカル、高信頼性を必要とする環境では、データの整合性がしばしば
+優先される。複雑で高価な構成は、もしもクライアントとファイルサーバへの接続が切れた時、
+フェイルオーバによる切り替えが、継続したデータの有効性を提供するためにすぐに行われる
+ように実装される。
+</para>
+
+<para>
+Windowsクライアントのフェイルオーバの動作は、確立したTCPトランスポート層の接続に
+依存しているために、他のプラットフォームよりアプリケーションの中断というリスクとなる。
+もしも、ファイルサーバのフェイルオーバで接続が中断されたならば、新しいセッションは
+確立されねばならない。トランスポート層の切断から正しく復帰するためにコードが書かれている
+Windowsアプリケーションはまれである。そのため、ほとんどのアプリケーションは、ある種の
+中断が生じることになる。最悪の場合、アボートして再起動が必要となる。
+</para>
+
+<para>
+もしもクライアントセッションが、oplocksにより、ローカルに読み書きをキャッシュしている
+ならば、TCPの中断からアプリケーションが再起動か復帰する時、データが失われるかもしれない。
+TCPの接続が失われた時、oplocksブレークはクライアントには送られない。この場合、以前の
+セッションからの作業は失われる。oplocksを無効にしてこのシナリオを観察すると、
+もしもクライアントがリアルタイムにファイルサーバにデータを書き込んでいたら、
+フェイルオーバはディスコネクト時に存在したディスク上のデータを提供するだろう。
+</para>
+
+<para>
+ミッションクリティカル、高可用性を要求する環境では、oplocksの使用については厳重に注意を
+払う必要がある。理想的には、oplocksを有効/無効にした、すべての影響があるアプリケーション
+について、広範囲なテストを行うべきである。
+</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>SambaのOplocks制御</title>
+
+<para>
+oplocsは、ユニークなWindowsファイルロッキング機能である。これは真のファイルロッキング機能
+ではないが、Windowsのファイルロッキングの多くの議論中に含まれ、そのため、事実上の
+ロッキング機能として考えられる。oplocksは、実際の所、Windowsクライアントファイル
+キャッシング機能の一部である。これは、エンタープライズコンピューティング領域中に存在
+する、種々のカスタマイズされたネットワーク上で実装される時には、とりわけ丈夫か信頼性が
+ある機能ではない。
+</para>
+
+<para>
+SambaではWindowsと同様に、クライアント側のキャッシング機構であるoplockを、サーバ側の
+コンポーネントとして実装している。Windowsの機能設計上、oplock は軽量型として設定されて
+いる(機能が限定されている)。このためoplockを効果的に設定するには、これらの制限事項の
+把握が不可欠であり、またカスタマイズされたネットワークやクライアントの利用状況に特化
+したデータアクセスを構成する際の理解が行き届いている場合にのみ適用されるものである。
+</para>
+
+<para>
+Oplocksの基本的な意味は、クライアントが、変更中にそのハードドライブ上にファイルを
+ダウンロードし、キャッシュ出来るということである。もしも、2番目のクライアントがファイルに
+アクセスしようとした場合、最初のクライアントはブレークを受け取り、サーバに対して
+同期を取らねばならない。これは、ある場合においては、かなり効率が向上する。いくつかの
+プログラムは、単一の変更のためにサーバに対してファイルの内容すべてを戻して同期を取る
+ことを行うものもある。
+</para>
+
+<para>
+Level1 Oplocks(単に<quote>oplocks</quote>としても知られている)はopportunistic lockingの
+別の言い方である。
+</para>
+
+<para>
+Level2 Oplocksは<emphasis>リードオンリ</emphasis>として取り扱うファイルに対して
+opportunistic lockingを提供する。通常これはリードオンリか、クライアントが、ファイルの
+オープン時に、最初に書き込まないファイルに使われる。
+</para>
+
+<para>
+Kernel OplocksはLinux kernelに、Microsoft Windowsネットワークファイルロッキングのより良い
+統合を提供するにも関わらず、Sambaがoplocksしたファイルとの共存を許可する基本的な方式
+である。SGI IRIXとLinuxは現時点でoplocksを認識するただ2つのOSである。
+</para>
+
+<para>
+使用しているシステムがkernel oplocksをサポートしている限り、UNIX/LinuxとSMBクライアントの
+両方から同じファイルをアクセスする時、oplocksを無効にすべきである。もしも、複数の
+クライアントからデータベースファイルを共有している時(たとえば、Microsoft Access)、
+顕著なパフォーマンスダウンと、さらに、最初の場所におけるデータベースのアクセス問題が
+発生する、ファイル全体(1つのレコードではなく)の同期に影響する、最初のクライアントが
+受け取る任意のブレークという理由で、oplocksは気にせず常時無効にすべきである。
+特に、Microsoft Outlookのパーソナルフォルダ(*.pst)はoplocksに対してとてもひどく反応する。
+疑っているのならば、oplocksを無効にして、その辞典からシステムを調整してみると良いだろう。
+</para>
+
+<para>
+もしもクライアントサイドのキャッシングが無効で、ネットワークの信頼性があるのであれば、
+oplocksをonにすることで利点が得られる。もしも、使用しているネットワークが遅くて、信頼性が
+ないか､他のファイル共有方式(たとえばNFS)との間でファイルを共有しているか、WAN経由の
+場合か、頻繁に同一ファイルを複数の人がアクセスする場合、クライアントがoplocksブレークを
+送るオーバヘッドからの利益を得られず、そのかわりに共有に対してoplocksを無効にしたいと
+思うだろう。
+</para>
+
+<para>
+考慮すべき他の要素は、ファイルアクセスの認識されたパフォーマンスである。もしもoplocks
+が使用するネットワーク上で、わかるほどのスピード向上を提供しない場合、それを取り扱う
+難しさ分の価値がないかもしれない。
+</para>
+
+<sect2>
+<title>設定例</title>
+
+<para>
+以下の節では、Sambaロッキングの制御に関する2つの異なった側面について評価する。
+</para>
+
+<sect3>
+<title>oplocksを無効にする</title>
+
+<para>
+以下のようにして、共有単位でoplocksを無効にすることが出来る:
+</para>
+
+<para>
+<smbconfblock>
+<smbconfsection name="[acctdata]"/>
+<smbconfoption name="oplocks">False</smbconfoption>
+<smbconfoption name="level2 oplocks">False</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+既定値のoplocksタイプはLevel1である。Level2 oplocksは&smb.conf;ファイル中で、共有単位に
+有効に出来る。
+</para>
+
+<para>
+代わりに、以下のようにして、共有内でファイル単位にoplocksを無効に出来る:
+</para>
+
+<para>
+	<smbconfblock>
+<smbconfoption name="veto oplock files">/*.mdb/*.MDB/*.dbf/*.DBF/</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+もしも、Sambaのログエントリから確認出来る、oplocksの問題に遭遇した場合、
+安全を期すために、oplocksとLevel2 oplocksを無効にしても良い。
+</para>
+
+</sect3>
+
+<sect3>
+<title>Kernel oplocksを無効にする</title>
+
+<para>
+Kernel oplocks は、キャッシュされているファイルをUNIXプロセスがオープンしようとする
+時に、(もしもUNIX kernelがWindowsクライアントに対してoplocksを送信する機能がある時)
+Sambaに対して通知する&smb.conf;パラメータである。このパラメータはUNIXと、Sambaサーバ
+上でoplocksが有効になっているWindows間で共有するファイルをアドレスする。UNIXプロセスは
+Windowsクライアントによってoplockedされた(キャッシュされた)ファイルを開くことが出来、
+ファイルがデータ破壊のリスクがあるという事を伝える、oplocksブレークをsmbdプロセスは
+送らない。もしもUNIX kernelがoplockブレークを送る機能があるならば、kenel oplocks
+パラメータは、Sambaにoplockブレークを送ることを有効にする。kernel oplocksは、
+&smb.conf;ファイル中でサーバ単位に有効に出来る。
+</para>
+
+<para>
+<smbconfblock>
+<smbconfoption name="kernel oplocks">yes</smbconfoption>
+</smbconfblock>
+既定値はnoである。
+</para>
+
+<para>
+<emphasis>Veto oplocks</emphasis>は、oplocksが無効になる特定のファイルを識別するための、
+&smb.conf;パラメータである。veto oplocksに設定されているファイルをWindowsクライアントが
+オープンする時、クライアントはoplocksが許可されず、すべての操作はクライアント上に
+キャッシュされたファイルのコピーの代わりにディスク上のオリジナルのファイル上で実行
+される。UNIXプロセスとoplocksを無効にしたそれらファイルとの間で共有されるファイルを
+明示的に識別することで、サーバ全体でのoplocks設定が、データ破壊のリスクがない、ファイルの
+キャッシングという効率の向上を、Windowsクライアントが利用できることを有効にできる。
+veto oplocksは、以下の<link linkend="far1"/>で示されるような、&smb.conf;中で、
+共有単位か、サーバ全体で有効に出来る。
+</para>
+
+<para>
+<example id="far1">
+<title>いくつかのファイルがoplocksされた共有</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="veto oplock files">/filename.htm/*.txt/</smbconfoption>
+
+<smbconfsection name="[share_name]"/>
+<smbconfoption name="veto oplock files">/*.exe/filename.ext/</smbconfoption>
+</smbconfblock>
+</example>
+</para>
+
+<para>
+<smbconfoption name="oplock break wait time"/>は、&smb.conf;中のパラメータで、oplock
+ブレーク要求をSambaが繰り返す時間感覚を調整する。Sambaは
+<quote>Sambaのoplocksコードを読んで理解しない限りこのパラメータを変更しないこと</quote>
+と忠告している。oplock break wait timeは、以下のように、&smb.conf;中でグローバルな形で
+のみ設定できる。
+</para>
+
+<para>
+	<smbconfblock>
+<smbconfoption name="oplock break wait time"> 0 (default)</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+<emphasis>Oplock break contention limit</emphasis>は、&smb.conf;中のパラメータで、
+パラメータによって指定された制限に、設定された数多くの競合するクライアントが到達する
+場合、 oplockを許可するためのSambaサーバのレスポンスを制限する。Sambaは
+<quote>Sambaのoplocksコードを読んで理解しない限りこのパラメータを変更しないこと</quote>
+と忠告している。oplock break contention limitは、<link linkend="far3"/>のように、
+&smb.conf;中で共有単位あるいはグローバルにサーバ全体で有効に出来る。
+</para>
+
+<para>
+<example id="far3">
+<title>Oplock Break Contention Limitの設定</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="oplock break contention limit"> 2 (default)</smbconfoption>
+
+<smbconfsection name="[share_name]"/>
+<smbconfoption name="oplock break contention limit"> 2 (default)</smbconfoption>
+</smbconfblock>
+</example>
+</para>
+
+</sect3>
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>Microsoft Windowsのoplocksとキャッシュ制御</title>
+
+<para>
+ネットワーク経由で共有データベースにアクセスする任意のアプリケーションに影響しうる
+Windows 2000/XPワークステーション上でアプリケーション(Norton Antivirusのような)を
+動かす時によく知られている問題がある。これは、Windows 2000/XP OSの既定値の設定の結果に
+よるものである。他の 2000/XPコンピュータ上の共有データベースファイルに、
+ワークステーションがアクセスする時、Windows 2000/XP OSは、ファイルをロックし、情報を
+ローカルにキャッシュすることで効率を向上することを試みる。これが起きると、
+アプリケーションは、ネットワーク操作中、<quote>アクセスが拒否されました</quote>という
+エラーが表示されて適切に動作しなくなる。
+</para>
+
+<para>
+データファイル(データファイルがそこに格納されて、他のWindows PCによってアクセスされる
+という意味で)のためのデータベースサーバとして振る舞う、NTファミリの、すべての
+Windows OSは、データファイルの破損を防ぐリスクを最小限にするために、oplocksを無効にする
+必要があるかもしれない。これには、Windows 9x/Me、Windows NT、Windows 200xと
+Windows XPが含まれる。
+<footnote><para>Microsoftはこの件について KB 300216で解説している。</para></footnote>
+</para>
+
+<para>
+もしも、サーバの代わりにWindows NTファミリのワークステーションを使っているならば、
+そのワークステーション上でoplocksを無効にしなければならない。例えば、もしも、
+Windows NT サーバの代わりにWindows NT ワークステーションをPC上で使っていて、
+その上に、他のWindows PCからアクセスされるデータファイルがあるならば、そのシステム上で
+oplocksを無効にしなければならないかもしれない。
+</para>
+
+<para>
+大きな違いは、oplocksを無効にするための値を入れるWindowsレジストリの位置である。
+LanManServerの位置の代わりにLanManWorkstationの位置が使われる。
+</para>
+
+<para>
+Windowsレジストリエディタを使ってこのレジストリの値を検査(必要に応じて変更か追加)する
+ことができる。このレジストリ値を変更する時、新しい設定を反映させるために、PCを再起動
+しなければならない。
+</para>
+
+<para>
+oplocksのためのクライアントレジストリエントリの位置は、Microsoft Windows NTよりも
+前の位置から、Windows 2000では変わっている。
+</para>
+
+<note><para>
+Windows 2000 は、以前のWindows中でoplocksを無効にするために使うEnableOplocksレジストリ
+エントリを引き続き使用している。
+</para></note>
+
+<para>
+以下のレジストリエントリを変更することによって、oplocksの許可を拒否することも出来る:
+</para>
+
+<para>
+<programlisting>
+	HKEY_LOCAL_MACHINE\System\
+		CurrentControlSet\Services\MRXSmb\Parameters\
+
+		OplocksDisabled REG_DWORD 0 又は 1
+		既定値: 0 (無効になっていない)
+</programlisting>
+</para>
+
+<note><para>
+OplocksDisabledというレジストリエントリ値は、リモートファイル上のoplocksの要求のあるなしを
+Windowsクライアント上で設定する。oplocksを無効にするためには、OplocksDisabledの値は
+1に設定しなければならない。
+</para></note>
+
+<para>
+<programlisting>
+	HKEY_LOCAL_MACHINE\System\
+		CurrentControlSet\Services\LanmanServer\Parameters
+
+		EnableOplocks REG_DWORD 0 又は 1
+		既定値: 1 (既定値で有効)
+
+		EnableOpLockForceClose REG_DWORD 0 又は 1
+		既定値: 0 (既定値で無効)
+</programlisting>
+</para>
+
+<note><para>
+EnableOplocksという値はWindowsベースのサーバ(ファイルを共有しているワークステーションを
+含む)で、ローカルファイル上のoplocksを許可/拒否することを設定する。
+</para></note>
+
+<para>
+クローズまたはプログラム終了時でオープンしているoplocksを強制的に終了するためには、
+EnableOpLockForceCloseを1に設定しなければならない。
+</para>
+
+<para>
+Level2 oplocksの動作概要は以下の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	ステーション1がoplockを要求してファイルを開く。
+	</para></listitem>
+	<listitem><para>
+	他のどのステーションもファイルを開かない間、サーバはステーション1に排他的oplockを許可する。
+	</para></listitem>
+	<listitem><para>
+	ステーション2がoplockを要求してファイルを開く。
+	</para></listitem>
+	<listitem><para>
+	ステーション1がまだファイルを書き込んでいないなら、サーバはステーション1にレベル2の
+	oplockのブレーク通知を行う。
+	</para></listitem>
+	<listitem><para>
+	ステーション1はローカルにバッファした情報をサーバに書き戻す。
+	</para></listitem>
+	<listitem><para>
+	ステーション1はレベル2のoplockを素unしたサーバに情報を送る(代わりにステーション1は
+	ファイルをクローズすることが出来たはずである)。
+	</para></listitem>
+	<listitem><para>
+	サーバはステーション2のオープン要求に対応し、レベル2のoplockを許可する。
+	その他のステーションは同じくファイルを開くことが出来、同様にレベル2のoplockが
+	許可される。
+	</para></listitem>
+	<listitem><para>
+	ステーション2(か、ファイルをオープンしている他のステーション)はSMB書き込み要求を
+	送る。サーバは書き込み応答を返す。
+	</para></listitem>
+	<listitem><para>
+	サーバは、ファイルをオープンしているすべてのステーションに対して、ロックを
+	壊さないこと、すなわちファイルに対して oplock を保持しているステーションが
+	ないことを確認する。この時点で、ワークステーションはキャッシュされた
+	書き込みもロックも保持していないため、break-to-none 勧告に対して応答する
+	必要がないからである。それぞれのワークステーションは、単にローカルで
+	キャッシュしている先読みデータを無効にするだけでよい。
+	</para></listitem>
+</itemizedlist>
+
+<sect2>
+<title>ワークステーションサービスのエントリ</title>
+
+<para><programlisting>
+	\HKEY_LOCAL_MACHINE\System\
+		CurrentControlSet\Services\LanmanWorkstation\Parameters
+
+	UseOpportunisticLocking   REG_DWORD   0 又は 1
+	既定値: 1 (真)
+</programlisting></para>
+
+<para>
+これは、リダイレクタがoplockの効率向上機能を使うかどうかを指示する。
+このパラメータは問題を判別するためにのみ無効にすべきである。
+</para>
+
+</sect2>
+<sect2>
+<title>サーバサービスのエントリ</title>
+
+<para><programlisting>
+	\HKEY_LOCAL_MACHINE\System\
+		CurrentControlSet\Services\LanmanServer\Parameters
+
+	EnableOplocks   REG_DWORD   0 又は 1
+	既定値: 1 (真)
+</programlisting></para>
+
+<para>
+これは、サーバが、ファイルにoplocksを使うことをクライアントに対して許可するか
+どうかを指定する。oplocksは明確に効率を向上させるが、特にWANのような、ある種の
+ネットワーク上でキャッシュされたデータを失う可能性がある。
+</para>
+
+<para><programlisting>
+	MinLinkThroughput   REG_DWORD   0 は秒あたり無限のバイト量
+	既定値: 0
+</programlisting></para>
+
+<para>
+これは、この接続のための、生の(raw) I/Oとoplocksを無効にする前に、サーバによって
+許可される最小のリンクスループットを指定する。
+</para>
+
+<para><programlisting>
+	MaxLinkDelay   REG_DWORD   0 から 10万秒
+	既定値: 60
+</programlisting></para>
+
+<para>
+これは、リンクのディレイで許される最小限の時間を指定する。もしもこの値よりも遅延が
+大きい場合、サーバは生の(raw)I/Oとoplocksを、この接続では無効にする。
+</para>
+
+<para><programlisting>
+	OplockBreakWait   REG_DWORD   10 から 180 秒
+	既定値: 35
+</programlisting></para>
+
+<para>
+これは、oplockブレーク要求に対してクライアントが返答するまで、サーバが待つ時間を指定
+する。より小さな値はより速やかにクラッシュしたクライアントを検出できるが、キャッシュした
+データを失う可能性がある。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>持続的なデータ破壊</title>
+
+<para>
+もしもこの章で議論されている設定のすべてを適用したが、データの破壊問題と他の症状が持続
+しているのであれば、追加して監視するものがある。
+</para>
+
+<para>
+単独の欠陥があるネットワークカードのような、欠陥があるネットワークハードウェアについて、
+開発者から信用できる報告を受けていることが、読み取りキャッシングとデータ破壊に類似して
+いる兆候を引き起こす。もしも、繰り返しインデックスした後にもかかわらす、持続的なデータ
+破壊が起きているならば、問い合わせ中でデータファイルの再構築をしなければならないかも
+しれない。これは、リビルドするようなのと同じいくつかの定義で新しいデータファイルを作成
+することを改善し、古いファイルから新しいファイルにデータを転送する。Samba知識ベース中で
+見つけることが出来る、これを行う、いくつかの手法がある。
+</para>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+サーバをインストールするやいなや、問題が表面化するサイトがある。他のサイト内では長い
+間問題が表面化していない。例外を除いてほとんど、問題が表面化したとき、当惑と、潜在的な
+データ破壊を引き起こすだろう。
+</para>
+
+<para>
+過去数年の間、Sambaがデータ破壊を引き起こすというクレームの、数多くの不満が、Samba
+メーリングリスト上に投稿されてきた。3つの原因が認識されてきた:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	不正なoplocksの設定(アプリが使うものとの非互換)。これは、Microsoft Windows NT4か
+	Microsoft Windows 200xベースで使っているサーバでも共通の問題である。ソフトウェア
+	アプリケーションベンダのファイルロッキングに関する設定手順に急いで従うべきである。
+	もしも疑うのであれば、サーバとクライアント両方でoplocksを無効にする。Microsoft
+	Windowsクライアント上でキャッシングするすべての形式のファイルを無効にすることも
+	必要かもしれない。
+	</para></listitem>
+
+	<listitem><para>
+	不完全なネットワークカード、ケーブル、あるいはハブ/スイッチ。これは、一般的に
+	低コストネットワークハードウェアにおける一般的な事項であるが、より高級なハード
+	ウェアにおける非互換性の問題も時折ある。
+	</para></listitem>
+
+	<listitem><para>
+	データファイルを書く時にSambaのログファイルに時折痕跡が残ることがある。これは、
+	ごく少数のサイトで報告されていて(過去3年でおおよそ5つ)、すべての再現試験は
+	失敗した。Sambaチームはこの現象を捕まえられず、そのため、何らかの特定の現象と
+	して分離できていない。Sambaを使う非常に数多くのシステムがあることを考えると、
+	Sambaチームと同様に、これに影響を受けたサイトにとって、これはいらいらする、
+	やっかいな難問である。もしも、このタイプの現象に遭遇したならば、遅滞なく、
+	Sambaの<ulink url="https://bugzilla.samba.org">Bugzilla</ulink>にバグレポートを
+	投稿してほしい。可能な限りのたくさんの情報をもらえると、現象の特定の手助けと、
+	(問題の特定と修正のための基本的なステップである)問題の再現の手助けになる。
+	</para></listitem>
+</itemizedlist>
+
+	<sect2>
+	<title>locking.tdb のエラーメッセージ</title>
+
+	<para>
+		<quote>
+			以下のようなたくさんのエラーメッセージがSambaのログ中にある:
+		</quote>
+<programlisting>
+tdb(/usr/local/samba_2.2.7/var/locks/locking.tdb): rec_read bad magic
+ 0x4d6f4b61 at offset=36116
+</programlisting>
+
+		<quote>
+			これは何を意味するのか?
+		</quote>
+	</para>
+
+	<para>
+	このエラーはtdbファイルが壊れていることを表示している。smbdのすべてのプロセスを停止し、
+	locking.tdbを削除してsmbdを再起動する。
+	</para>
+
+	</sect2>
+
+	<sect2>
+		<title>Windows XP上でのMicrosoft Officeファイルセーブ時の問題</title>
+
+<indexterm><primary>KB 812937</primary></indexterm>
+		<para>これはWindows XPのバグである。より詳細な情報は、
+		<ulink url="http://support.microsoft.com/?id=812937">Microsoft KBの記事812937</ulink>
+		を参照のこと。</para>
+
+	</sect2>
+
+	<sect2>
+
+		<title>XP SP1でネットワーク経由でファイルを消すのに長い時間がかかる</title>
+		
+		<para><quote>XP SP1を適用語、ネットワーク経由でファイルを消すのに、時々おおよそ35秒もかかる。</quote></para>
+
+<indexterm><primary>KB 811492</primary></indexterm>
+		<para>これはWindows XPのバグである。より詳しい情報は、
+		<ulink url="http://support.microsoft.com/?id=811492">Microsoft KBの記事</ulink>
+		を参照のこと。</para>
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>参考文献</title>
+
+<para>
+Microsoftの<ulink url="http://support.microsoft.com/">サポート</ulink>webサイトで、
+ファイルとレコードのロッキングに関する更新された文書をチェックしても良いだろう。
+追加で、Sambaの<ulink url="http://www.samba.org/">web</ulink>サイトで、
+<literal>locking</literal>という単語を探しても良いだろう。
+</para>
+
+<para>
+Microsoft MSDNライブラリ上にある opportunistic locking 節は以下の通り:
+</para>
+
+<para>
+<indexterm><primary>KB 224992</primary></indexterm>
+Microsoft KB, <quote>OPLOCKS によるトランザクションの整合性を維持</quote>,
+Microsoft Corporation, April 1999, <ulink noescape="1" url="http://support.microsoft.com/kb/224992/ja">Microsoft
+KB の記事 224992(訳注:機械翻訳)</ulink>.
+</para>
+
+<para>
+<indexterm><primary>KB 296264</primary></indexterm>
+Microsoft KB, <quote>Windows で Opportunistic Lock を構成する</quote>,
+Microsoft Corporation, April 2001 <ulink noescape="1" url="http://support.microsoft.com/kb/296264/ja">Microsoft KB の記事 296264</ulink>.
+</para>
+
+<para>
+<indexterm><primary>KB 129202</primary></indexterm>
+Microsoft KB, <quote>PC Ext: Windows NT の Opportunistic Locking の説明</quote>,
+Microsoft Corporation, April 1995 <ulink noescape="1" url="http://support.microsoft.com/kb/129202/ja">Microsoft
+KB の記事 129202</ulink>.
+</para>
+
+</sect1>
+</chapter>

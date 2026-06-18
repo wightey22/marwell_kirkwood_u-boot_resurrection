@@ -1,0 +1,33 @@
+<samba:parameter name="idmap alloc backend"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1" hide="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	idmap alloc backend は Winbindが WindowsのSIDに対してUnixのuid/gidを
+	割り当てるためのプラグインインターフェースを提供する。
+	このオプションは
+	ID割り当て機能を提供する idmap モジュールの名前を結びつけるために
+	利用される。
+	それぞれのidmapプラグインが実装しているID割り当て機能の特徴については
+	それぞれのmanページを参照のこと。最も共通のプラグインは、
+	tdb (<citerefentry><refentrytitle>idmap_tdb</refentrytitle><manvolnum>8</manvolnum></citerefentry>) と
+        ldap (<citerefentry><refentrytitle>idmap_ldap</refentrytitle>
+        <manvolnum>8</manvolnum></citerefentry>) である。
+	</para>
+
+	<para>
+	このパラメータの既定値は<smbconfoption name="idmap backend"/>
+	である。そのため、Winbindは標準のバックエンドから取得したUnixのIDを
+	割り当てる。このパラメータは、会社でユーザ情報を集中管理している
+	といった時に、UnixのID情報を外部から取得する必要がある場合にのみ設定
+	する。
+	</para>
+
+	<para><smbconfoption name="idmap alloc config"/> オプションも参照のこと。
+	</para>
+</description>
+
+<value type="example">tdb</value>
+</samba:parameter>

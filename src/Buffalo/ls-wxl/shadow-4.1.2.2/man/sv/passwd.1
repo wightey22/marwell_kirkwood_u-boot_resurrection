@@ -1,0 +1,317 @@
+.\"     Title: passwd
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23-11-2008
+.\"    Manual: Användarkommandon
+.\"    Source: Användarkommandon
+.\"
+.TH "PASSWD" "1" "23-11-2008" "Användarkommandon" "Användarkommandon"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAMN"
+passwd \- ändra användarlösenord
+.SH "SYNOPSIS"
+.HP 7
+\fBpasswd\fR [\fIflaggor\fR] [\fIINLOGGNINGSNAMN\fR]
+.SH "BESKRIVNING"
+.PP
+The
+\fBpasswd\fR
+command changes passwords for user accounts\&. A normal user may only change the password for his/her own account, while the superuser may change the password for any account\&.
+\fBpasswd\fR
+also changes account information, such as the full name of the user, the user\'s login shell, or his/her password expiry date and interval\&.
+.SS "Lösenordsändringar"
+.PP
+The user is first prompted for his/her old password, if one is present\&. This password is then encrypted and compared against the stored password\&. The user has only one chance to enter the correct password\&. The superuser is permitted to bypass this step so that forgotten passwords may be changed\&.
+.PP
+Efter att lösenordet har matats in kontrolleras lösenordets åldringsinformation för att se om användaren tillåts att ändra lösenord för tillfället\&. Om inte, nekar
+\fBpasswd\fR
+att ändra lösenordet och avslutas\&.
+.PP
+Användaren frågas sedan två gånger efter ett ersättande lösenord\&. Den andra inmatningen jämförs mot den första och båda måste stämma överens för att lösenordet ska ändras\&.
+.PP
+Sedan testas lösenordet för sin komplexitet\&. Som en allmän riktlinje bör lösenord innehålla 6 till 8 tecken och inkluderas ett eller flera tecken från var och en av följande punkter:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'gemena bokstäver ur alfabetet
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'siffrorna 0 till 9
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'skiljetecken
+.RE
+.PP
+Tänk på att inte inkludera systemets standardtecken för radering eller döda\&.
+\fBpasswd\fR
+kommer att neka alla lösenord som inte har lämplig komplexitet\&.
+.SS "Tips för användarlösenord"
+.PP
+Säkerhet i ett lösenord beror på styrkan på krypteringsalgoritmen och nyckellängden\&. Krypteringsmetoden för
+\fIUNIX\-system\fR
+är baserad på NBS DES\-algoritmen och är mycket säker\&. Längden på nyckeln är beroende på slumpmässigheten för det valda lösenordet\&.
+.PP
+Problem i lösenordssäkerheten brukar normalt komma från slarvigt valda lösenord eller hantering\&. Av denna anledning bör du inte välja ett lösenord som finns i en ordbok eller som måste skrivas ner\&. Lösenordet bör heller inte vara ett korrekt namn, ditt personnummer, födelsedatum eller gatuadress\&. Dessa kan användas som gissningar för att ta sig in i systemet\&.
+.PP
+You can find advices on how to choose a strong password on http://en\&.wikipedia\&.org/wiki/Password_strength
+.SH "FLAGGOR"
+.PP
+Flaggorna som gäller för kommandot
+\fBpasswd\fR
+är:
+.PP
+\fB\-a\fR, \fB\-\-all\fR
+.RS 4
+Denna flagga kan endast användas med
+\fB\-S\fR
+och gör att status visas för alla användare\&.
+.RE
+.PP
+\fB\-d\fR, \fB\-\-delete\fR
+.RS 4
+Ta bort en användares lösenord (gör det blankt)\&. Detta är ett snabbt sätt att inaktivera ett lösenord för ett konto\&. Det kommer att ta bort det angivna kontots lösenord\&.
+.RE
+.PP
+\fB\-e\fR, \fB\-\-expire\fR
+.RS 4
+Lösenordet för ett konto sätts omedelbart som utgånget\&. Detta kan tvinga en användare att ändra sitt lösenord vid nästa inloggningsförsök\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Visa hjälpmeddelande och avsluta\&.
+.RE
+.PP
+\fB\-i\fR, \fB\-\-inactive\fR\fIINAKTIV\fR
+.RS 4
+Denna flagga används för att inaktivera ett konto efter att lösenordet har varit utgånget i ett antal dagar\&. Efter att ett användarkonto har haft ett utgånget lösenord i
+\fIINAKTIV\fR
+dagar får användaren inte längre logga in med detta konto\&.
+.RE
+.PP
+\fB\-k\fR, \fB\-\-keep\-tokens\fR
+.RS 4
+Indicate password change should be performed only for expired authentication tokens (passwords)\&. The user wishes to keep their non\-expired tokens as before\&.
+.RE
+.PP
+\fB\-l\fR, \fB\-\-lock\fR
+.RS 4
+Lock the named account\&. This option disables an account by changing the password to a value which matches no possible encrypted value, and by setting the account expiry field to 1\&.
+.RE
+.PP
+\fB\-m\fR, \fB\-\-mindays\fR\fIMIN_DAGAR\fR
+.RS 4
+Sätter minimalt antal dagar mellan lösenordsändringar till
+\fIMIN_DAGAR\fR\&. Ett nollvärde för detta fält betyder att användaren kan ändra sitt lösenord när som helst\&.
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+Tyst läge\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-repository\fR\fIFÖRRÅD\fR
+.RS 4
+change password in
+\fIREPOSITORY\fR
+repository
+.RE
+.PP
+\fB\-S\fR, \fB\-\-status\fR
+.RS 4
+Visa statusinformation för konto\&. Statusinformationen innehåller 7 fält\&. Första fältet är användarens inloggningsnamn\&. Det andra fältet indikerar om användarkontot är låst (L), saknar lösenord (NP) eller har ett användbart lösenord (P)\&. Det tredje fältet anger datumet för senaste lösenordsändringen\&. De nästa fyra fälten är minimal ålder, maximal ålder, varningsperiod och inaktivitetsperiod för lösenordet\&. Dessa åldrar anges i dagar\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-unlock\fR
+.RS 4
+Unlock the named account\&. This option re\-enables an account by changing the password back to its previous value (to value before using
+\fB\-l\fR
+option), and by resetting the account expiry field\&.
+.RE
+.PP
+\fB\-w\fR, \fB\-\-warndays\fR\fIVARN_DAGAR\fR
+.RS 4
+Sätter antalet dagar för varning före ett lösenord behöver ändras\&. Flaggan
+\fIVARN_DAGAR\fR
+är antalet dagar före användaren varnas om att lösenordet är på väg att bli utgånget\&.
+.RE
+.PP
+\fB\-x\fR, \fB\-\-maxdays\fR\fIMAX_DAGAR\fR
+.RS 4
+Sätter maximalt antal dagar som ett lösenord ska vara giltigt\&. Efter
+\fIMAX_DAGAR\fR
+krävs det att lösenordet ändras\&.
+.RE
+.SH "TÄNK PÅ"
+.PP
+Inte alla flaggor kanske stöds\&. Kontroll av lösenordskomplexiteten kan variera mellan olika system\&. Användare rekommenderas att välja ett lösenord som är så komplext som han eller hon känner sig komfortabel med\&. Användare kanske inte kan ändra sina lösenord på ett system om NIS är aktiverat och de inte är inloggade mot NIS\-servern\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBENCRYPT_METHOD\fR (string)
+.RS 4
+This defines the system default encryption algorithm for encrypting passwords (if no algorithm are specified on the command line)\&.
+.sp
+It can take one of these values:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fIDES\fR
+(default)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fIMD5\fR
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fISHA256\fR
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fISHA512\fR
+.RE
+.IP "" 4
+.sp
+Note: this parameter overrides the
+\fBMD5_CRYPT_ENAB\fR
+variable\&.
+.sp
+Note: if you use PAM, it is recommended to set this variable consistently with the PAM modules configuration\&.
+.RE
+.PP
+\fBMD5_CRYPT_ENAB\fR (boolean)
+.RS 4
+Indicate if passwords must be encrypted using the MD5\-based algorithm\&. If set to
+\fIyes\fR, new passwords will be encrypted using the MD5\-based algorithm compatible with the one used by recent releases of FreeBSD\&. It supports passwords of unlimited length and longer salt strings\&. Set to
+\fIno\fR
+if you need to copy encrypted passwords to other systems which don\'t understand the new algorithm\&. Default is
+\fIno\fR\&.
+.sp
+This variable is superceded by the
+\fBENCRYPT_METHOD\fR
+variable or by any command line option used to configure the encryption algorithm\&.
+.sp
+This variable is deprecated\&. You should use
+\fBENCRYPT_METHOD\fR\&.
+.sp
+Note: if you use PAM, it is recommended to set this variable consistently with the PAM modules configuration\&.
+.RE
+.PP
+\fBOBSCURE_CHECKS_ENAB\fR (boolean)
+.RS 4
+Enable additional checks upon password changes\&.
+.RE
+.PP
+\fBPASS_ALWAYS_WARN\fR (boolean)
+.RS 4
+Warn about weak passwords (but still allow them) if you are root\&.
+.RE
+.PP
+\fBPASS_CHANGE_TRIES\fR (number)
+.RS 4
+Maximum number of attempts to change password if rejected (too easy)\&.
+.RE
+.PP
+\fBPASS_MAX_LEN\fR (number), \fBPASS_MIN_LEN\fR (number)
+.RS 4
+Number of significant characters in the password for crypt()\&.
+\fBPASS_MAX_LEN\fR
+is 8 by default\&. Don\'t change unless your crypt() is better\&. This is ignored if
+\fBMD5_CRYPT_ENAB\fR
+set to
+\fIyes\fR\&.
+.RE
+.PP
+\fBSHA_CRYPT_MIN_ROUNDS\fR (number), \fBSHA_CRYPT_MAX_ROUNDS\fR (number)
+.RS 4
+When
+\fBENCRYPT_METHOD\fR
+is set to
+\fISHA256\fR
+or
+\fISHA512\fR, this defines the number of SHA rounds used by the encryption algorithm by default (when the number of rounds is not specified on the command line)\&.
+.sp
+With a lot of rounds, it is more difficult to brute forcing the password\&. But note also that more CPU resources will be needed to authenticate users\&.
+.sp
+If not specified, the libc will choose the default number of rounds (5000)\&.
+.sp
+The values must be inside the 1000\-999999999 range\&.
+.sp
+If only one of the
+\fBSHA_CRYPT_MIN_ROUNDS\fR
+or
+\fBSHA_CRYPT_MAX_ROUNDS\fR
+values is set, then this value will be used\&.
+.sp
+If
+\fBSHA_CRYPT_MIN_ROUNDS\fR
+>
+\fBSHA_CRYPT_MAX_ROUNDS\fR, the highest value will be used\&.
+.RE
+.SH "FILER"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Användarkontoinformation\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Säker användarkontoinformation\&.
+.RE
+.SH "AVSLUTNINGSVÄRDEN"
+.PP
+Kommandot
+\fBpasswd\fR
+avslutas med följande värden:
+.PP
+\fI0\fR
+.RS 4
+lyckad
+.RE
+.PP
+\fI1\fR
+.RS 4
+åtkomst nekad
+.RE
+.PP
+\fI2\fR
+.RS 4
+ogiltig kombination av flaggor
+.RE
+.PP
+\fI3\fR
+.RS 4
+oväntat fel, ingenting har genomförts
+.RE
+.PP
+\fI4\fR
+.RS 4
+oväntat fel, filen
+\fIpasswd\fR
+saknas
+.RE
+.PP
+\fI5\fR
+.RS 4
+Filen
+\fIpasswd\fR
+är upptagen, försök igen
+.RE
+.PP
+\fI6\fR
+.RS 4
+ogiltigt argument till flagga
+.RE
+.SH "SE OCKSÅ"
+.PP
+\fBgroup\fR(5),
+\fBpasswd\fR(5),
+\fBshadow\fR(5)\&.

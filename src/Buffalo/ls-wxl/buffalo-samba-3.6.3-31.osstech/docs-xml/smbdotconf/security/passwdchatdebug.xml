@@ -1,0 +1,27 @@
+<samba:parameter name="passwd chat debug"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータは、passwd chat script パラメータを
+    <emphasis>debug</emphasis> モードで実行するかどうかに影響する。
+    debug モードの場合、passwd chat 中にやりとりされる文字列は、
+    <smbconfoption name="debug level"/> 
+    を 100 にすることで、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> のログファイル中に出力されるようになる。
+    <command moreinfo="none">smbd</command> のログ中に平文のパスワードが見えてしまうため、これは危険なオプションである。
+    このパラメータは、 Samba の管理者が <parameter>passwd chat</parameter> スクリプトが
+    <parameter moreinfo="none">passwd program</parameter>
+    のデバッグを行なう際に役立つ。デバッグが終了したら、必ず無効にすること。
+    <smbconfoption name="pam password change"/>
+    パラメータが有効になっている場合、このオプションは無効になる。
+    このパラメータはデフォルトで無効になっている。</para>
+</description>
+
+<related>passwd chat</related>
+<related>pam password change</related>
+<related>passwd program</related>
+
+<value type="default">no</value>
+</samba:parameter>

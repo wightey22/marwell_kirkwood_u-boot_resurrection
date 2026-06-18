@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="rpcclient.1">
+
+<refmeta>
+	<refentrytitle>rpcclient</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>rpcclient</refname>
+	<refpurpose>クライアント側の MS-RPC 関数を発行するツール
+	</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>rpcclient</command>
+		<arg choice="opt">-A authfile</arg>
+		<arg choice="opt">-c &lt;command string&gt;</arg>
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-l logdir</arg>
+		<arg choice="opt">-N</arg>
+		<arg choice="opt">-s &lt;smb config file&gt;</arg>
+		<arg choice="opt">-U username[%password]</arg>
+		<arg choice="opt">-W workgroup</arg>
+		<arg choice="opt">-N</arg>
+		<arg choice="opt">-I destinationIP</arg>
+		<arg choice="req">server</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para><command>rpcclient</command> は Samba の MS-RPC
+	機能をテストするために開発されたユーティリティであり、
+	開発と安定を何度か繰り返している。
+	多数のシステム管理者がこのツールを用いて UNIX ワークステーションから
+	Windows NT クライアントを管理するスクリプトを作成している。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>server</term>
+		<listitem><para>接続先のサーバを NetBIOS 名で指定する。
+		サーバは SMB/CIFS サーバである必要がある。 この名前の解決には
+		<citerefentry><refentrytitle>smb.conf</refentrytitle><manvolnum>5
+		</manvolnum></citerefentry> ファイルの
+		<smbconfoption name="name resolve order"/>
+		パラメータが用いられる。
+		</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-c|--command='command string'</term>
+		<listitem><para>実行するコマンド (以下で記述) 
+		をセミコロンで区切って指定する。</para></listitem>
+		</varlistentry>
+
+		
+		<varlistentry>
+		<term>-I IP-address</term>
+		<listitem><para><replaceable>IP address</replaceable> は接続先の
+		サーバのアドレスを指定する。記述方法は、標準的な "a.b.c.d"
+		のフォーマットで指定する。</para>
+
+		<para>通常、クライアントは上記の <parameter>name resolve order
+		</parameter> パラメータで指定された名前解決の機能を使用して
+		NetBIOS 名を検索し、SMB/CIFS サーバを特定する。
+		このパラメータを使用することで、クライアントに対し強制的に
+		指定された IP Address にサーバがあると認識させ、接続しようとしているリソースの
+		NetBIOS 名を無視させることができる。</para>
+
+		<para>このパラメータにデフォルトの値はない。
+		もしこの値が指定されていないのなら、上で述べたようにクライアントが
+		自動的に判別する。</para></listitem>
+		</varlistentry>
+
+		&stdarg.server.debug;
+		&popt.common.samba;
+		&popt.common.credentials;		
+		&popt.common.connection;
+		&stdarg.help;
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>コマンド</title>
+
+	<refsect2>
+	<title>LSARPC</title>
+
+	<variablelist>
+		<varlistentry><term>lsaquery</term><listitem><para>
+		info policy を問い合わせる。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lookupsids</term><listitem><para>
+		リストされた SID からユーザ名を解決する。
+		</para></listitem></varlistentry>
+		
+		<varlistentry><term>lookupnames</term><listitem><para>
+		リストされたユーザ名から SID を解決する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>enumtrusts</term><listitem><para>
+		信頼するドメインの一覧を表示する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>enumprivs</term><listitem><para>
+		ユーザ権利の一覧を表示する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>getdispname</term><listitem><para>
+		ユーザ権利の名前を取得する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsaenumsid</term><listitem><para>
+		LSA の SID の一覧を表示する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsaenumprivsaccount</term><listitem><para>
+		指定した SID の持つユーザ権利を一覧表示する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsaenumacctrights</term><listitem><para>
+		指定されたユーザ権利を持つ SID を一覧表示する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsaenumacctwithright</term><listitem><para>
+		指定されたユーザ権利を持つアカウントを一覧表示する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsaaddacctrights</term><listitem><para>
+		アカウントにユーザ権利を追加する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsaremoveacctrights</term><listitem><para>
+		アカウントからユーザ権利を取り除く。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsalookupprivvalue</term><listitem><para>
+		ユーザ権利の名前から値を取得する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>lsaquerysecobj</term><listitem><para>
+		LSA セキュリティオブジェクトを問い合わせる。
+		</para></listitem></varlistentry>
+	</variablelist>	
+	</refsect2>
+	
+	<refsect2>
+	<title>LSARPC-DS</title>
+	
+	<variablelist>
+		<varlistentry><term>dsroledominfo</term><listitem><para>
+		プライマリドメインの情報を取得する。</para></listitem></varlistentry>
+	</variablelist>
+
+	<para> </para>
+
+	<para><emphasis>DFS</emphasis></para>
+	<variablelist>
+		<varlistentry><term>dfsexist</term><listitem><para>
+		DFS をサポートしているか問い合わせる。</para></listitem></varlistentry>
+		<varlistentry><term>dfsadd</term><listitem><para>
+		DFS の共有を追加する。</para></listitem></varlistentry>
+		<varlistentry><term>dfsremove</term><listitem><para>
+		DFS の共有を削除する。</para></listitem></varlistentry>
+		<varlistentry><term>dfsgetinfo</term><listitem><para>
+		DFS の共有の情報を問い合わせる。</para></listitem></varlistentry>
+		<varlistentry><term>dfsenum</term><listitem><para>
+		DFS の共有の一覧を表示する。</para></listitem></varlistentry>
+	</variablelist>
+
+	</refsect2>
+
+	<refsect2>
+	<title>REG</title>
+	<variablelist>
+		<varlistentry><term>shutdown</term><listitem><para>
+		遠隔操作でシャットダウンさせる。</para></listitem></varlistentry>
+		<varlistentry><term>abortshutdown</term><listitem><para>
+		シャットダウンを中止させる。</para></listitem></varlistentry>
+	</variablelist>
+
+	</refsect2>
+
+	<refsect2>
+	<title>SRVSVC</title>
+
+	<variablelist>
+		<varlistentry><term>srvinfo</term><listitem><para>
+		サーバ情報を問い合わせる。</para></listitem></varlistentry>
+		
+		<varlistentry><term>netshareenum</term><listitem><para>
+		共有を一覧表示する。</para></listitem></varlistentry>
+
+		<varlistentry><term>netfileenum</term><listitem><para>
+		開いているファイルを一覧表示する。</para></listitem></varlistentry>
+		
+		<varlistentry><term>netremotetod</term><listitem><para>
+		リモートサーバの時間を取得する。</para></listitem></varlistentry>
+	</variablelist>
+
+	</refsect2>
+
+	<refsect2>
+	<title>SAMR</title>
+
+	<variablelist>
+		<varlistentry><term>queryuser</term><listitem><para>
+		ユーザ情報を問い合わせる。</para></listitem></varlistentry>
+		<varlistentry><term>querygroup</term><listitem><para>
+		グループ情報を問い合わせる。</para></listitem></varlistentry>
+		<varlistentry><term>queryusergroups</term><listitem><para>
+		ユーザが所属するグループを問い合わせる。</para></listitem></varlistentry>
+		<varlistentry><term>querygroupmem</term><listitem><para>
+		グループに所属するメンバーを問い合わせる。
+		</para></listitem></varlistentry>
+		<varlistentry><term>queryaliasmem</term><listitem><para>
+		エイリアスに所属するメンバーを問い合わせる。</para></listitem></varlistentry>
+		<varlistentry><term>querydispinfo</term><listitem><para>
+		ユーザ情報の一覧を表示する。</para></listitem></varlistentry>
+		<varlistentry><term>querydominfo</term><listitem><para>
+		ドメイン情報を問い合わせる。</para></listitem></varlistentry>
+		<varlistentry><term>enumdomusers</term><listitem><para>
+		ドメインユーザを一覧表示する。</para></listitem></varlistentry>
+		<varlistentry><term>enumdomgroups</term><listitem><para>
+		ドメイングループを一覧表示する。</para></listitem></varlistentry>
+		<varlistentry><term>enumalsgroups</term><listitem><para>
+		エイリアスグループ(ローカルグループ)を一覧表示する。</para></listitem></varlistentry>
+		<varlistentry><term>createdomuser</term><listitem><para>
+		ドメインユーザを作成する。</para></listitem></varlistentry>
+		<varlistentry><term>samlookupnames</term><listitem><para>
+		名前を検索する。</para></listitem></varlistentry>
+		<varlistentry><term>samlookuprids</term><listitem><para>
+		rid を検索する。
+		</para></listitem></varlistentry>
+		<varlistentry><term>deletedomuser</term><listitem><para>
+		ドメインユーザを削除する。</para></listitem></varlistentry>
+		<varlistentry><term>samquerysecobj</term><listitem><para>
+		SAMR セキュリティオブジェクトを問い合わせる。
+		</para></listitem></varlistentry>
+		<varlistentry><term>getdompwinfo</term><listitem><para>ドメインパスワード情報を取得する</para></listitem></varlistentry>
+		<varlistentry><term>lookupdomain</term><listitem><para>ドメイン情報を検索する</para></listitem></varlistentry>
+	</variablelist>
+
+	</refsect2>
+
+	<refsect2>
+	<title>SPOOLSS</title>
+
+	<variablelist>
+		<varlistentry><term>adddriver &lt;arch&gt; &lt;config&gt; [&lt;version&gt;]</term> 
+		<listitem><para>
+		プリンタドライバ情報をサーバに登録するために AddPrinterDriver() RPC
+		の呼び出しを行なう。ドライバファイルは <command>getdriverdir
+		</command> コマンドが返却するディレクトリ中に予め存在している必要が
+		ある。<parameter>arch</parameter> に設定できる値は <command>
+		getdriverdir</command> コマンドで取得できる値と同じである。
+		<parameter>config</parameter> パラメータでは以下の形式のファイルを
+		指定する。</para>
+		
+<para><programlisting>
+Long Printer Name:\
+Driver File Name:\
+Data File Name:\
+Config File Name:\
+Help File Name:\
+Language Monitor Name:\
+Default Data Type:\
+Comma Separated list of Files
+</programlisting></para>
+
+		<para>空のフィールドには、"NULL" という文字列を指定しておくこと。</para>
+		
+		<para>Samba は Print Monitor 機能をサポートする必要がない。
+		これは、この機能が双方向通信を利用するドライバを使うローカルプリンタにしか関係しないためである。
+		このフィールドは必ず「NULL」にしておくこと。
+		遠隔の NT プリントサーバにコマンドを発行する場合、
+		ドライバの Print Monitor 機能をドライバの追加前にインストールしていないと、
+		RPC に失敗する。 </para>
+
+		<para><parameter>version</parameter> パラメータにより、プリンタドライバのバージョン番号が指定される。
+		省略した場合、アーキテクチャに応じたバージョンが用いられる。
+		このオプションは Windows 2000 (バージョン 3)のプリンタドライバのアップロードに用いることができる。
+		</para></listitem></varlistentry>
+	
+		<varlistentry><term>addprinter &lt;printername&gt; 
+		&lt;sharename&gt; &lt;drivername&gt; &lt;port&gt;</term>
+		<listitem><para>
+		遠隔のサーバ上にプリンタを追加する。このプリンタは自動的に共有される。
+		このコマンドを実行する前に、プリンタドライバをサーバ上にインストール
+		して (<command>adddriver</command> を参照のこと)、<parameter>port
+		</parameter> を有効なポート名にしておく (<command>enumports</command>
+		を参照) 必要があることに注意。</para>
+		</listitem></varlistentry>
+
+		<varlistentry><term>deldriver</term><listitem><para>
+		指定されたプリンタドライバについて、すべてのアーキテクチャ用のものを削除する。これは、
+		ドライバのファイル自体をサーバから削除するわけではなく、
+		サーバのドライバのリストからエントリだけを削除するものである。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>deldriverex &lt;driver&gt; [architecture] [version]
+		</term><listitem><para>
+		指定されたプリンタドライバについて、ドライバファイルも含めて削除する。
+		削除対象のバージョンやアーキテクチャを指定することも可能である。
+		アーキテクチャが指定されなかった場合、すべてのドライバファイルが削除される。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>enumdata</term><listitem><para>サーバ上に格納されているプリンタの設定情報を一覧表示する。Windows NT クライアントの場合、
+		これらの情報はレジストリに格納されているが、Samba サーバの場合、
+		プリンタ用の TDB ファイル中に格納されている。このコマンドは、
+		Microsoft Platform SDK 中にある GetPrinterData() 関数に相当する。
+		(このコマンドは現在実装されていない)</para></listitem></varlistentry>
+
+		<varlistentry><term>enumdataex</term><listitem><para>キーに基づいたプリンタの情報を表示する。</para></listitem></varlistentry>
+
+		<varlistentry><term>enumjobs &lt;printer&gt;</term>
+		<listitem><para>指定されたプリンタのジョブおよびその状況を表示する。
+		このコマンドは、Microsoft Platform SDK 中の EnumJobs() 関数に相当する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>enumkey</term><listitem><para>プリンタキーを
+		一覧表示する。</para></listitem></varlistentry>
+		
+		<varlistentry><term>enumports [level]</term>
+		<listitem><para>
+		指定された info level でEnumPorts() 関数を呼び出す。現在、info level
+		1 と 2 のみがサポートされている。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>enumdrivers [level]</term> 
+		<listitem><para>
+		EnumPrinterDrivers() を実行する。これは全てのアーキテクチャ用の
+		インストールされたドライバの一覧を表示する。フラグとオプションの
+		詳細については、Microsoft Platform SDK のドキュメントを参照のこと。
+		現在、info level 1, 2, 3 のみがサポートされている。 
+		</para></listitem></varlistentry>
+
+
+
+		<varlistentry><term>enumprinters [level]</term>
+		<listitem><para>EnumPrinters() を実行する。これは共有されている
+		インストール済プリンタの一覧を表示する。フラグとオプションの詳細に
+		ついては、Microsoft Platform SDK のドキュメントを参照のこと。
+		現在、info level 1, 2, 5 のみがサポートされている。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>getdata &lt;printername&gt; &lt;valuename;&gt;</term> 
+		<listitem><para>指定されたプリンタの設定情報を取得する。
+		詳細な情報に付いては、<command>enumdata</command> コマンドを参照のこと。
+		このコマンドは Microsoft Platform SDK 中の GetPrinterData()
+		に相当するものである。</para></listitem></varlistentry>
+
+		<varlistentry><term>getdataex</term><listitem><para>キー名に基づいた
+		プリンタドライバのデータを取得する。</para></listitem></varlistentry>
+		
+		<varlistentry><term>getdriver &lt;printername&gt;</term>
+		<listitem><para>
+		指定されたプリンタのプリンタドライバの情報 (ドライバファイル、
+		設定ファイル、関連するファイルなど) を取得する。このコマンドは
+		Microsoft Platform SDK 中の GetPrinterDriver() に相当するものである。
+		現在、info level 1, 2, 3 のみがサポートされている。 
+		</para></listitem></varlistentry>
+	
+		<varlistentry><term>getdriverdir &lt;arch&gt;</term>
+		<listitem><para>
+		GetPrinterDriverDirectory() RPC を発行して、SMB 共有名と指定された
+		アーキテクチャ用のプリンタドライバの格納されているサブディレクトリを
+		取得する。<parameter>arch</parameter> に指定できる値は、 "Windows 4.0"
+		(for Windows 95/98), "Windows NT x86", "Windows NT PowerPC",
+		"Windows Alpha_AXP", "Windows NT R4000" である。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>getprinter &lt;printername&gt;</term> 
+		<listitem><para>現在のプリンタ情報を取得する。このコマンドは Microsoft
+		Platform SDK の GetPrinter() に相当する。 
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>getprintprocdir</term><listitem><para>print
+		processor ディレクトリを取得する。</para></listitem></varlistentry>
+		
+		<varlistentry><term>openprinter &lt;printername&gt;</term> 
+		<listitem><para>指定したプリンタに対して、OpenPrinterEx() と
+		ClosePrinter() RPC を実行する。</para></listitem></varlistentry>
+		<varlistentry><term>setdriver &lt;printername&gt;
+		&lt;drivername&gt;</term>
+		<listitem><para>SetPrinter() コマンドを実行して、既にインストール
+		されているプリンタ用のプリンタドライバを更新する。
+		更新されるプリンタドライバは、プリントサーバ上に適切にインストール
+		されている必要がある。</para>
+
+		<para>インストールされているプリンタやドライバの一覧を取得する方法に
+		ついては <command>enumprinters</command> や <command>enumdrivers
+		</command> コマンドも参照のこと。</para></listitem></varlistentry>
+
+		<varlistentry><term>addform</term><listitem><para>フォームを追加する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>setform</term><listitem><para>フォームを設定する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>getform</term><listitem><para>フォームを取得する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>deleteform</term><listitem><para>フォームを削除する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>enumforms</term><listitem><para>フォームを
+		一覧表示する。</para></listitem></varlistentry>
+
+		<varlistentry><term>setprinter</term><listitem><para>プリンタのコメントを
+		設定する。</para></listitem></varlistentry>
+
+		<varlistentry><term>setprinterdata</term><listitem><para>REG_SZ
+		プリンタデータを設定する。</para></listitem></varlistentry>
+
+
+		<varlistentry><term>setprintername &lt;printername&gt;
+		&lt;newprintername&gt;</term>
+		<listitem><para>プリンタ名を設定する。</para></listitem></varlistentry>
+
+		<varlistentry><term>rffpcnex</term><listitem><para>Rffpcnex
+		テストを実行する。</para></listitem></varlistentry>
+
+	</variablelist>
+
+	</refsect2>
+
+	<refsect2>
+	<title>NETLOGON</title>
+
+	<variablelist>
+
+	<varlistentry><term>logonctrl2</term>
+	<listitem><para>Logon Control 2 に変更する。</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>logonctrl</term>
+	<listitem><para>Logon Control に変更する。</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>samsync</term>
+	<listitem><para>Sam Synchronisation をはかり、結果を表示する。</para></listitem>
+	</varlistentry>
+	<varlistentry><term>samdeltas</term>
+	<listitem><para>Sam Delta Synchronisation をはかり、結果を表示する。
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>samlogon</term>
+	<listitem><para>ドメインユーザでログオンする。</para></listitem>
+	</varlistentry>
+
+	</variablelist>
+	</refsect2>
+
+	<refsect2>
+	<title>共通コマンド</title>
+
+	<variablelist>
+		<varlistentry><term>debuglevel</term><listitem><para>現在の debug
+		level を設定する。これはログ情報の書き込みに影響する。
+		</para></listitem></varlistentry>
+
+		<varlistentry><term>help (?)</term><listitem><para>コマンド一覧の表示と、
+		幾つかのコマンドに付いての詳細な説明を表示する。
+		</para></listitem></varlistentry>
+		
+		<varlistentry><term>quit (exit)</term><listitem><para><command>rpcclient
+		</command> を終了させる。</para></listitem></varlistentry>
+	</variablelist>
+	</refsect2>
+
+</refsect1>
+
+<refsect1>
+	<title>バグ</title>
+	
+	<para><command>rpcclient</command> は開発者のテストツールとしての利用を
+	念頭に置いているため、あまり動作が安定していない部分
+	(コマンドラインの解析など) もある。無効なパラメータを解析しようとすると、
+	失敗してコアダンプするのは既知の不具合である。</para>
+
+	<para>Luke Leighton のオリジナルの rpcclient マニュアルページより:</para>
+	
+	<para><emphasis>警告!</emphasis> SMB 上の MSRPC コードは
+	ネットワークトレースを行なうことで開発されている。オリジナルの開発者
+	(Microsoft) からは、SMB 上で MSRPC がどのように動作するか、
+	個々の MSRPC サービスがどのように動作するかについての情報は提供されていない。
+	これらのサービスに関する Microsoft の実装も、場所によってはかなり風変わりで
+	あることが明らかになっている。</para>
+
+	<para>同様に Samba への実装も場あたり的な面がある。
+	多くのサービスの実装が解明されるにつれて、<citerefentry><refentrytitle>smbd
+	</refentrytitle><manvolnum>8</manvolnum></citerefentry> や <citerefentry>
+	<refentrytitle>rpcclient</refentrytitle><manvolnum>1</manvolnum>
+	</citerefentry> は、幾つかのコマンドやサービスにおいてバージョン間の互換性が
+	なくなることもありうる。なお、開発者達は発見した問題を Microsoft
+	に対してレポートしており、報告された問題はサービスパックで修正されているが、
+	その結果互換性が損なわれることがあるかもしれない。</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba バージョン 3 用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作成された。現在 Samba は Samba Team によって、
+	Linux カーネルの開発と同様のオープンソースプロジェクトとして開発が
+	行なわれている。</para>
+
+	<para>オリジナルの rpcclient マニュアルページは Matthew Geddes と
+	Luke Keneth Casson Leighton によって作成され、
+	Gerald Carter によって書き直された。
+	Samba 2.2 における DocBook 形式への変換は、Gerald Carter
+	によって行なわれた。Samba 3.0 における DocBook XML 4.2 形式への変換は
+	Alexander Bokovoy によって行われた。</para>
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.23 - 3.4.3 対応のものである。</para>
+
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>高橋 基信 (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+
+	<para>Samba 3.0.23 - 3.5.3 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>

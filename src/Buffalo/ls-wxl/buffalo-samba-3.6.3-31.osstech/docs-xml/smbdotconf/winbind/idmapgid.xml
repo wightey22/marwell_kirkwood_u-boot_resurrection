@@ -1,0 +1,21 @@
+<samba:parameter name="idmap gid"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1" hide="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+		<synonym>winbind gid</synonym>
+<description>
+        <para>idmap gid パラメータは UNIX グループを NT グループの SID に
+	  マッピングする際に使用するグループ id の範囲を指定する。 
+	  予期しない競合が発生しないようにするため、この GID の範囲に
+	  ローカルな グループや NIS グループが存在しないようにすること。
+	</para>
+
+	<para><smbconfoption name="idmap backend"/>、
+	<smbconfoption name="idmap config"/>も参照のこと。
+	</para>
+</description>
+
+<value type="default"></value>
+<value type="example">10000-20000</value>
+</samba:parameter>

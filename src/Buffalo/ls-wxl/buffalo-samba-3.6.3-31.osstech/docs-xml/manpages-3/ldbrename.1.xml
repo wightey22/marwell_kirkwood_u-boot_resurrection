@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<refentry id="ldbrename.1">
+
+<refmeta>
+	<refentrytitle>ldbrename</refentrytitle>
+	<manvolnum>1</manvolnum>
+        <refmiscinfo class="source">Samba</refmiscinfo>
+        <refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+        <refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>ldbrename</refname>
+	<refpurpose>好みのエディタを使ってLDBデータベースを編集</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>ldbrename</command>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-o オプション</arg>
+		<arg choice="req">olddn</arg>
+		<arg choice="req">newdb</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>ldbrenameは、LDBデータベース中にある、ベースがDNの木を
+	改名する事が出きるようにするユーティリティである。このユーティリ
+	ティは2つの引数をとる。最上位の要素のDN名と変更先のDN名である。
+	</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-h</term>
+		<listitem><para>
+		有効なオプションのリストを表示する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>-H &lt;ldb-url&gt;</term>
+			<listitem><para>
+				接続するLDB URL。詳細はldb(7)を参照のこと。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>-o オプション</term>
+			<listitem><para>その他のldbオプションで、たと
+			えばモジュール。</para></listitem>
+		</varlistentry>
+		
+	</variablelist>
+	
+</refsect1>
+
+<refsect1>
+	<title>環境変数</title>
+
+	<variablelist>
+		<varlistentry><term>LDB_URL</term>
+			<listitem><para>接続するLDBのURL(-H コマンド
+	行オプションを使うことで無効化できる)</para></listitem>
+		</varlistentry>
+	</variablelist>
+	
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページはSambaシステムバージョン4.0で修正される。</para>
+</refsect1>
+
+<refsect1>
+	<title>参照</title>
+
+	<para>ldb(7), ldbmodify, ldbdel, ldif(5)</para>
+
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para> ldbは 
+		 <ulink url="http://samba.org/~tridge/">Andrew Tridgell</ulink>によって書かれた。
+	</para>
+
+	<para>
+もしも問題を報告したいか、助言を送りたいのであれば、
+<ulink url="http://ldb.samba.org/"/> webサイトを見て，
+現在の問い合わせ先とメンテナの情報を確認してほしい。
+	</para>
+
+	<para>このマニュアルページは Jelmer Vernooij によって書かれた。</para>
+	
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.3.6 - 3.5.3 対応のものである。</para>
+		<para>このドキュメントの Samba 3.3.6 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>太田俊哉(ribbon@samba.gr.jp)</para></listitem>
+	</itemizedlist>	
+		によって行なわれた。</para>
+</refsect1>
+</refentry>

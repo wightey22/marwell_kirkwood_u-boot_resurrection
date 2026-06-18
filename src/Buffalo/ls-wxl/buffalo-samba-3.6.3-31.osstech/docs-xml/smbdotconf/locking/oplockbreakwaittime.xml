@@ -1,0 +1,19 @@
+<samba:parameter name="oplock break wait time"
+                 context="G"
+				 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	<para>
+	これは Windows 9x と Windows NT 双方のバグに対応するために追加されたチューニングオプションである。
+	クライアントが oplock を解除させるような SMB を発行した時に、
+	Samba のクライアントに対する応答が早過ぎると、
+	クライアントは誤動作してしまい、解除要求に応答しない。
+	このチューニングパラメータ(ミリ秒単位で指定する)は、
+	こうした(異常動作を行なう)クライアントに対して oplock 解除要求を送付する前に、Samba がとる待ち時間になる。</para>
+
+	<warning><para>
+	Samba の oplock コードを読んで理解していない限り、このパラメータを変更してはいけない。
+	</para></warning>
+</description>
+<value type="default">0</value>
+</samba:parameter>

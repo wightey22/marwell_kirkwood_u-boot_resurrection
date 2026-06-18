@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="winbind_krb5_locator.7">
+
+<refmeta>
+	<refentrytitle>winbind_krb5_locator</refentrytitle>
+	<manvolnum>7</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">7</refmiscinfo>
+	<refmiscinfo class="version">3.3</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>winbind_krb5_locator</refname>
+	<refpurpose>Windowsの方式で、MITとHeimdal KerberosのためのKDCを決定するためのプラグイン</refpurpose>
+</refnamediv>
+
+
+<refsect1>
+	<title>説明</title>
+
+	<para>
+	このプラグインは、
+<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。
+	</para>
+
+	<para>
+		<command>winbind_krb5_locator</command>は
+		MITとHeimdalKerberosライブラリにおいて、Sambaシステムの実装と
+		同じセマンティクスで、(KDCとkpasswdサービス用の)
+		Kerberosサーバを検出することを可能にするプラグインである。
+		この機能はサイト構成のDNSサービスレコードの探索と、最も
+		近いドメインコントローラー情報のキャッシュに対応している。
+		このプラグインは、最も最近のKerberosの実装によって
+		提供されているパブリックロケーターAPIを利用する。
+	</para>
+</refsect1>
+<refsect1>
+	<title>必須条件</title>
+	<para>
+		MIT Kerberos(バージョン1.5以降)か
+		Heimdal Kerberos(バージョン1.0以降)が必要である。
+	</para>
+
+	<para>
+		このプラグインは、あらかじめ設定済みで、稼働中の
+		<citerefentry><refentrytitle>winbindd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry>デーモンに
+		問い合わせを行う。
+	</para>
+
+	<para>
+		<command>winbind_krb5_locator.so</command>ファイルはシステムの
+		Kerberosライブラリがあるプラグインディレクトリに手動で
+		コピーする必要がある。
+
+		MIT Kerberosでは通常以下のディレクトリ:
+			<filename>/usr/lib/krb5/plugins/libkrb5/</filename>。
+		Heimdal Kerberosでは通常以下のディレクトリ:
+			<filename>/usr/lib/plugin/krb5/</filename>。
+
+		あなたが利用しているKerberosで正しいインストールパスを
+		確認すること。
+		このプラグインを使うために
+		<filename>/etc/krb5.conf</filename>を変更する必要は無い。
+	</para>
+	<para>
+	        適切なプラグインディレクトリにロケータープラグインをコピー
+		した後に、即座にこの機能が有効になる。ユーザーは
+		<filename>/etc/krb5.conf</filename>を変更したり、サーバー情報を
+		追加したりすることなく、Kerberos対応のWindows環境に対する
+		kinitを行うことが可能となる。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>
+	このマニュアルページはSamba 3システム用である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連ユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は、Samba Team によって Linux
+	カーネルの開発と同様に、オープンソースプロジェクトとして開発されている。
+	</para>
+
+	<para>
+		The winbind_krb5_locatorマニュアルページはGuenther Deschnerによって記述された。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.3.2 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.3.2 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+	<para>太田俊哉 (ribbon@samba.gr.jp)</para>
+	<para>武田保真 </para>
+	</itemizedlist>	
+        によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>

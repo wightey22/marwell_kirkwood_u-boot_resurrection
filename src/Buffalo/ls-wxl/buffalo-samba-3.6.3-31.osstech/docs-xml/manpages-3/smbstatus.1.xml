@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbstatus.1">
+
+<refmeta>
+	<refentrytitle>smbstatus</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbstatus</refname>
+	<refpurpose>現在の Samba の接続を報告</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbstatus</command>
+		<arg choice="opt">-P</arg>
+		<arg choice="opt">-b</arg>
+		<arg choice="opt">-d &lt;debug level&gt;</arg>
+		<arg choice="opt">-v</arg>
+		<arg choice="opt">-L</arg>
+		<arg choice="opt">-B</arg>
+		<arg choice="opt">-p</arg>
+		<arg choice="opt">-S</arg>
+		<arg choice="opt">-s &lt;configuration file&gt;</arg>
+		<arg choice="opt">-u &lt;username&gt;</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>smbstatus</command> は現在の Samba への接続を
+	表示するだけの非常に単純なプログラムである。</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-P|--profile</term>
+		<listitem><para>Samba が profiling
+		オプション付きでコンパイルされた場合に、profile
+		された共有メモリの内容だけを出力する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-b|--brief</term>
+		<listitem><para>簡単な出力を表示する。</para></listitem>
+		</varlistentry>
+
+		&stdarg.server.debug;
+		&popt.common.samba;
+
+		<varlistentry>
+		<term>-v|--verbose</term>
+		<listitem><para>詳細な出力を表示する。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-L|--locks</term>
+		<listitem><para>ロックのリストだけを表示する。</para>
+		</listitem>
+		</varlistentry>
+
+		
+		<varlistentry>
+		<term>-B|--byterange</term>
+		<listitem><para>バイト範囲のロック(byte range lock)を含めて表示する
+		</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-p|--processes</term>
+		<listitem><para><citerefentry><refentrytitle>smbd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry> のプロセスの一覧を表示し、終了する。
+		スクリプト作成時に有用である。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-S|--shares</term>
+		<listitem><para>共有の一覧だけを表示する。
+		(訳注: "共有の" は "接続の" としたほうが正しい。)</para>
+		</listitem>
+		</varlistentry>
+
+		&stdarg.help;
+
+		<varlistentry>
+		<term>-u|--user=&lt;username&gt;</term>
+		<listitem><para><parameter>username</parameter> で
+		指定されたユーザに関する情報だけを表示する。</para>
+		</listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページはバージョン3のSamba用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> と <citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>.</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+    Andrew Tridgell によって作られた。Samba は現在 Linux カーネルが
+    開発されているような方法でのオープンソースプロジェクトである 
+    Samba Team によって開発されている。</para>
+	
+	<para>オリジナルの Samba の マニュアルページは Karl Auer によって書かれた。
+	マニュアルページは YODL 形式(別の、優秀なオープンソースソフトウェアで、
+	<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">ftp://ftp.icce.rug.nl/pub/unix/</ulink>にある)
+	で変換され、Jeremy Allison によって Samba 2.0 リリースのために更新された。
+	Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。
+	Samba 3.0 のための DocBook XML 4.2 形式への変換は Alexander Bokovoy が行った。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+       <para>このドキュメントの Samba 3.0.0 対応の翻訳は、ちかましゅうへい によって行なわれた。</para>
+       <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉(ribbon@samba.gr.jp)によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>
+

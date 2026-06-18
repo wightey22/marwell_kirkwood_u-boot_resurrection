@@ -1,0 +1,12 @@
+<samba:parameter name="load printers"
+                 context="G"
+				 type="boolean"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、printcapファイル中で定義されたすべてのプリンタをデフォルトでブラウジング可能とするかどうかを制御する真偽値パラメータである。
+    詳細は、 <smbconfoption name="printers"/> 
+    セクションを参照のこと。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

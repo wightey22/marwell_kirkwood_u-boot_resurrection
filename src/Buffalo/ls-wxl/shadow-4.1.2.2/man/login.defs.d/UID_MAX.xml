@@ -1,0 +1,10 @@
+<varlistentry>
+  <term><option>UID_MAX</option> (number)</term>
+  <term><option>UID_MIN</option> (number)</term>
+  <listitem>
+    <para>
+      Range of user IDs used for the creation of regular users by
+      <command>useradd</command> or <command>newusers</command>.
+    </para>
+  </listitem>
+</varlistentry>

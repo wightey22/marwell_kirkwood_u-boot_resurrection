@@ -1,0 +1,121 @@
+<samba:parameter name="username map"
+                 context="G"
+                 advanced="1" developer="1"
+		 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションにより、クライアント上とサーバ上でのユーザ名のマッピング
+    情報を格納したファイルが指定される。これは幾つかの目的で利用される。
+    通常は DOS や Windows マシンでユーザが利用しているユーザ名を UNIX マシン上でのユーザ名にマッピングする為に用いられるが、
+    複数のユーザを特定のユーザ名にマッピングすることで、
+    ユーザ間でのファイル共有を簡単に行なえるようにするために用いることも可能である。</para>
+
+    <para>
+    security パラメータが user もしくは share の場合、username map パラメータは
+    ユーザの資格情報が検証されるたびに適用されることに注意。
+    ドメインのメンバサーバ(domain もしくは ads)の場合、ドメインコントローラから認証を受けた後で username map パラメータが適用され、マッピングの際には、完全ユーザ名(例えば biddle = DOMAIN\foo) で記述する必要がある。
+    </para>
+    
+    <para>ファイルは各行ごとに評価される。各々の行は、左端に UNIX ユーザ名が
+    あり、'=' を挟んでその右側にユーザ名のリストが続く形式をとる。
+    右側のユーザ名のリストには、グループ内のすべての UNIX ユーザ名に一致させる
+    @group という形式を含めることもできる。
+    '*' はワイルドカードであり、任意の名前と一致する。
+    ファイルの各行は最大 1023 文字まで記述可能である。</para>
+
+    <para>ファイルの評価は、
+    提供されたユーザ名と '=' の右側の各ユーザ名とを各行毎に比較することにより行なわれる。
+    提供されたユーザ名が右側のどれかに一致すると、
+    提供されたユーザ名が一致したユーザ名に置き換わり、
+    引続き以降の行の処理が行なわれていくことになる。</para>
+
+    <para>'#' や ';' で始まる行は無視される。</para>
+
+    <para>'!' ではじまる行があると、
+    以降の行でユーザ名が一致した時点で比較処理は中止される。
+    それ以外の場合、この比較処理はすべての行に対して継続される。
+    ファイルの最後でワイルドカードによるマッピングを行なっている場合には、
+     '!' を使うとかなり便利である。</para>
+
+    <para>たとえば、<constant>admin</constant> や
+    <constant>administrator</constant> といった名前から UNIX の <constant>root</constant>
+    へのマッピングを行ないたい場合は、以下のように記述する:
+<programlisting>
+<command moreinfo="none">root = admin administrator</command>
+</programlisting>
+    また、UNIX の <constant>system</constant> グループに所属するユーザを
+    <constant>sys</constant> という UNIX ユーザに置き換えるには、以下のように記述する:
+<programlisting>
+<command moreinfo="none">sys = @system</command>
+</programlisting>
+    </para>
+
+    <para>username map のファイル中には幾つのマッピングの設定を行なっても構わない。</para>
+
+    <para>システムが NIS の NETGROUP オプションをサポートしている場合、
+    グループ名の一致処理を行なう際には、 <filename moreinfo="none">/etc/group</filename> データベースより先にネットグループのデータベースが調べられる。
+    </para>
+
+    <para>空白を含む Windows のユーザ名は、
+    ダブルクォートで両側を括って記述する。たとえば、
+<programlisting>
+<command moreinfo="none">tridge = &quot;Andrew Tridgell&quot;</command>
+</programlisting>
+    は、Windows のユーザ名 &quot;Andrew Tridgell&quot; を
+    UNIX のユーザ名 &quot;tridge&quot; に置き換える。</para>
+
+    <para> 以下の例は、 mary と fred を UNIX ユーザ sys に置き換え、
+    そのほかのユーザを guest に置き換える。
+    '!'を利用することで、一致した行以降の処理を抑止していることに注意。
+<programlisting format="linespecific">
+!sys = mary fred
+guest = *
+</programlisting>
+    </para>
+
+    <para>ユーザ名が現われる箇所全てに置き換えの結果が適用されることに注意。
+    例えば、\\server\fred に接続する場合、<constant>
+    fred</constant> が <constant>mary</constant> に置き換えられる場合は、
+    実際に接続する先は \\server\mary であり、パスワードも
+    <constant>fred</constant> ではなく、<constant>mary</constant>
+    のものを入力することが必要になる。この唯一の例外は、(設定している場合に)
+    <smbconfoption name="password server"/>
+    に対してユーザ名を送出するときである。
+    password server は、
+    クライアントが提供したユーザ名を置換なしでそのまま受け取る。</para>
+
+    <para>逆のマッピングは行われないことにも注意。この影響が現われるのは印刷時である。
+    Windows for Workgroup におけるプリントマネージャは、
+    置き換えが行われたユーザが印刷ジョブを所有していないと判断するため、
+    印刷ジョブ削除時にトラブルが発生する。</para>
+
+    <para>
+    Samba 3.0.8 より前のバージョンでは、Kerberos ログインが行なわれる場合にのみ、
+    完全ユーザ名(たとえば: <literal>DOMAIN\user</literal>)がサポートされていた。
+    しかし、NTLM[SSP] によるユーザ認証の際には、ユーザ名部分のみがマッチングの対象と
+    なっていた。このため、同一のサーバに対するアクセスで、結果が一致しないという事態
+    が発生していた。
+   </para>
+
+   <para>
+    以下の機能は、Samba 3.0.8 以降のものである。
+   </para>
+
+   <para>
+    ローカル認証の場合、username map パラメータは、コネクションに対する認証が行なわれる際のユーザ名に対して適用される。
+    </para>
+
+    <para>
+    認証を外部のドメインコントローラに依存している場合、
+    smbd は username map パラメータを、ユーザ認証が成功した場合にのみ、認証された完全ユーザ名(例: DOMAIN\user) に対して適用する。
+    </para>
+
+    <para>
+    以下に設定例を示す:
+<programlisting>
+username map = /usr/local/samba/lib/users.map
+</programlisting>
+    </para>
+</description>
+<value type="default"><comment>no username map</comment></value>
+</samba:parameter>

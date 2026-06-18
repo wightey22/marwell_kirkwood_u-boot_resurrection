@@ -1,0 +1,29 @@
+<samba:parameter name="winbind normalize names"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+	  このパラメーターは、winbindd がユーザー名やグループ名に含まれる
+	  空白をアンダースコア「_」に置き換えるかどうかを制御する。
+	  例えば、&quot;Space Kadet&quot; という名前が、&quot;space_kadet&quot;
+	  という文字列に置き換えられるべきかどうかということを意味する。
+	  シェルの既定値のフィールドセパレーターが空白であるため、
+	  Unixのシェルスクリプトは空白を含むユーザー名を扱うことが難しい。
+	  もしあなたのドメインでアカウント名にアンダースコアを含む場合、
+	  このオプションを有効にしてはならない(nss_infoプラグインで名前の
+	  エイリアス機能がサポートされている場合を除く)。
+	</para>
+
+	<para>この機能は、認証されていないドメインユーザとグループの名前の
+	エイリアスを作成するAPIも提供する。特定の設定に関するidmapやnss
+	プラグインの仕様についてはマニュアルページを参照のこと。エイリアス
+	の設定は、前述の「空白文字の制御」と排他的な関係である。
+	</para>
+</description>
+
+<value type="default">no</value>
+<value type="example">yes</value>
+</samba:parameter>

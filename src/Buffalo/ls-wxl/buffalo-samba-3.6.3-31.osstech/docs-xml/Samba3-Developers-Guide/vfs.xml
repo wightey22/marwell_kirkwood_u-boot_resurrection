@@ -1,0 +1,920 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="vfs">
+<chapterinfo>
+	<author>
+		<firstname>Alexander</firstname><surname>Bokovoy</surname>
+		<affiliation>
+			<address><email>ab@samba.org</email></address>
+		</affiliation>
+	</author>
+	<author>
+		<firstname>Stefan</firstname><surname>Metzmacher</surname>
+		<affiliation>
+			<address><email>metze@samba.org</email></address>
+		</affiliation>
+	</author>
+	<pubdate> 27 May 2003 </pubdate>
+</chapterinfo>
+
+<title>VFS モジュール</title>
+
+<sect1>
+<title>Samba (Posix) VFSレイヤ</title>
+
+<para>Samba開発のほとんどが、POSIX互換なOSを使っている間、
+NTファイルシステムの文法を適用する場合に、POSIXによって要求されるものよりも、
+ファイルシステムに対してのもののほうがより明確である。Samba 2.2以降、すべての
+操作に関連するファイルシステムは、NTFS文法を変換するために必要とされる追加の関数と、
+POSIXの両方でモデル化された後の仮想ファイルシステム(VFS)のための、概要レイヤ
+を通して行われる。
+</para>
+
+<para>
+この概要レイヤは、現在通常のPOSIXファイルシステムが持っているものよりもたくさんの機能を
+提供している。それらすべてが使用している特定のファイルシステムに対して実装すべきであるという
+ことは要求されない。しかし、それらの機能が有効な時、SambaはCIFSクライアントに対して
+それを公告し、それらは、それらの機能に遭遇する時、更に多くの追加機能を期待する
+ことを予測するかもしれないという事を意味するWindowsクライアントの場合、とアプリケーション
+によって使われるかもしれない。これらには、実行時にVFSモジュールを動的にロードするための
+基盤を提供することにより処理が出来ることとSambaのコアを変更なしに、この降雪を扱うことを
+許可するための実際的な理由がある。
+This abstraction layer now provides more features than a regular POSIX
+file system could fill in. It is not required that all of them should
+be implemented by your particular file system.  However, when those
+features are available, Samba would advertize them to a CIFS client
+and they might be used by an application and in case of Windows client
+that might mean a client expects even more additional functionality
+when it encounters those features. There is a practical reason to
+allow handling of this snowfall without modifying the Samba core and
+it is fulfilled by providing an infrastructure to dynamically load VFS
+modules at run time.
+</para>
+
+<para>各VFSモジュールは数多くのVFS動作を実装できる。それがそれを行う方法とは
+無関係であり、たった2つの事が実際には重要である:特定の実装が他のモジュールの
+実装と協調することを必要としているか否かかということと、モジュールが、それが動作中の
+文脈で特有である追加情報を格納することを必要とするか否かということである。
+複数のVFSモジュールは同じ時にロードでき、異なったパラメータで同じVFSモジュールの、
+いくつかのインスタンスをロードすることも可能である。
+</para>
+
+<sect2>
+<title>汎用インタフェース</title>
+
+<para>VFSモジュールには3つの主要なコンポーネントがある:
+<itemizedlist>
+	<listitem><para><emphasis>初期化関数</emphasis> これは、実装された操作を
+登録するためにモジュールをロードする間に呼ばれる。</para></listitem>
+<listitem><para><emphasis>オペレーションテーブル</emphasis> 
+静的に定義されたモジュール関数とVFSレイヤ操作の間でのマッピングを提供する。
+</para></listitem>
+<listitem><para><emphasis>モジュール関数</emphasis> これは実際の操作を行う。
+		</para></listitem>
+</itemizedlist>
+</para>
+
+<para>この構造がVFSサブシステムに対して最初に適用された間、ローダブルモジュールを
+サポートするすべてのSamba3サブシステムにまたがって、現在共通的に使われる。実際、ある1つの
+モジュールは異なった<emphasis>オペレーションテーブル</emphasis>を分離された
+<emphasis>初期化関数</emphasis>を通して公開することで、異なったサブシステムに対しての
+数多くのインタフェースを提供できる。</para>
+
+<para><emphasis>初期化関数</emphasis>は、Samba動作時にモジュールを登録するのに使われる。
+Sambaの内部構造体とAPIは、日時が経つにつれ変化し、各リリースバージョンは、VFSの開発作業の
+ために増加したVFSインタフェースバージョンを持つか、任意のSambaの構造体が、バイナリ
+非互換の方式で変更される。VFSモジュールがコンパイルされるとき、Samba環境のVFS
+インタフェースバージョンはモジュールのバイナリオブジェクト中に埋め込まれ、それは
+モジュールのロード時にSambaコアによってチェックされる。もしも、モジュールによって
+通知されるVFSインタフェース番号が、Sambaコアが認識するものと一致しない場合、バージョンの
+不一致が検出され、(変更された)Samba構造体をアクセスするときに、メモリ破壊の可能性を
+防ぐために、モジュールはロードされない。
+</para>
+
+<para>それ故、初期化関数はVFS登録関数 <literal>smb_register_vfs()</literal>に
+3つのパラメータを渡す。
+<itemizedlist>
+	<listitem><para><emphasis>インタフェースバージョン番号</emphasis>, 
+			<literal>SMB_VFS_INTERFACE_VERSION</literal>という定数として, </para></listitem>
+	<listitem><para><emphasis>モジュール名</emphasis>, Sambaコアが認識する、そして
+			</para></listitem>
+	<listitem><para><emphasis>オペレーションテーブル</emphasis>。</para></listitem>
+</itemizedlist>
+</para>
+
+<para><emphasis>オペレーションテーブル</emphasis>は、モジュール内のどの関数が、特定の
+VFS操作に対応しているかと、どのようにそれらの関数を、残りのVFSサブシステムと協調
+させるかを定義する。各オペレーションは以下の方法で実行できる:
+<itemizedlist>
+	<listitem><para><emphasis>transparent</emphasis>,これは、オペレーションが
+	    上書きされている間、その固有の動作の前後に、モジュールは引き続き以前の
+	    処理を呼び出すだろう。このモードは
+  <literal>SMB_VFS_LAYER_TRANSPARENT</literal>という定数によって指示される;</para>
+  </listitem>
+  <listitem><para><emphasis>opaque</emphasis>, 一連の動作を終了させている処理用。
+      たとえば、非POSIXファイルシステム、あるいは、たとえば個人向け
+      オーディオコレクションのためのデータベースのような、全くファイルシステムでないもの
+      上でのPOSIX動作を実装するのに使われる。このモードでは、定数
+      <literal>SMB_VFS_LAYER_OPAQUE</literal>を使う。</para></listitem>
+  <listitem><para><emphasis>splitter</emphasis>, ある種のファイルシステム動作が、
+      以前の実行を透過的に呼び出すために追加される中で、終了する時の方法。これは通常、
+      それを呼び出す側に戻す前に、その呼び出しの結果をマングリングすることを伴う。
+      このモードは定数<literal>SMB_VFS_LAYER_SPLITTER</literal>を選択する。
+      </para></listitem>
+  <listitem><para><emphasis>logger</emphasis>は何も変更せず、何らの追加VFS操作も行わない。
+      <emphasis>logger</emphasis>モジュールが動作するとき、動作についての情報が
+      外部機能(あるいはSambaの固有のデバッグツール)を使ってどこかに記録されるが、
+      それはVFSレイヤではない。このタイプの動作を記述するためには
+      <literal>SMB_VFS_LAYER_LOGGER</literal>定数を使う。
+  </para>
+  </listitem>
+  <listitem><para>正反対に、<emphasis>scanner</emphasis>モジュールは、システムに渡される
+      データを処理している間、他のVFS操作を呼び出す。このタイプの操作は、定数
+      <literal>SMB_VFS_LAYER_SCANNER</literal>によって指示される。</para></listitem>
+</itemizedlist>
+</para>
+
+<para>基本的に、<emphasis>transparent</emphasis>, <emphasis>opaque</emphasis>と
+<emphasis>logger</emphasis>という3つのタイプがある。<emphasis>Splitter</emphasis>と
+<emphasis>scanner</emphasis>は、開発者を混乱させるかもしれない(そして、我々の
+経験が示すように、彼らは全く混乱している)が、この分割はモジュールの動作の性質を
+よりよく提示するはずである。これまでの所、開発されたほとんどのモジュールは、
+transparentを伴いopaqueが一般的な、3つのタイプのどれかである。
+Most of modules
+developed so far are either one of those three fundamental types with
+transparent and opaque being prevalent.
+</para>
+
+<para>
+各VFS操作は、操作の呼び出しを簡単にさせるための、vfs_op_type、関数ポインタと
+vfs_ops構造体中のハンドルポインタと、treeマクロを持つ(
+<filename>include/vfs.h</filename> と
+<filename>include/vfs_macros.h</filename>を参照のこと)。
+</para>
+
+<para><programlisting>
+typedef enum _vfs_op_type {
+	SMB_VFS_OP_NOOP = -1,
+
+	...
+
+	/* File operations */
+
+	SMB_VFS_OP_OPEN,
+	SMB_VFS_OP_CLOSE,
+	SMB_VFS_OP_READ,
+	SMB_VFS_OP_WRITE,
+	SMB_VFS_OP_LSEEK,
+	SMB_VFS_OP_SENDFILE,
+
+	...
+
+	SMB_VFS_OP_LAST
+} vfs_op_type;
+</programlisting></para>
+
+<para>この構造体は関数とすべての操作のためのハンドルポインタを含む。<programlisting>
+struct vfs_ops {
+	struct vfs_fn_pointers {
+		...
+		
+		/* File operations */
+		
+		int (*open)(struct vfs_handle_struct *handle,
+			struct connection_struct *conn,
+			const char *fname, int flags, mode_t mode);
+		int (*close)(struct vfs_handle_struct *handle,
+			struct files_struct *fsp, int fd);
+		ssize_t (*read)(struct vfs_handle_struct *handle, 
+			struct files_struct *fsp, int fd, void *data, size_t n);
+		ssize_t (*write)(struct vfs_handle_struct *handle, 
+			struct files_struct *fsp, int fd, 
+			const void *data, size_t n);
+		SMB_OFF_T (*lseek)(struct vfs_handle_struct *handle, 
+			struct files_struct *fsp, int fd, 
+			SMB_OFF_T offset, int whence);
+		ssize_t (*sendfile)(struct vfs_handle_struct *handle, 
+			int tofd, files_struct *fsp, int fromfd, 
+			const DATA_BLOB *header, SMB_OFF_T offset, size_t count);
+
+		...
+	} ops;
+	
+	struct vfs_handles_pointers {
+		...
+		
+		/* File operations */
+		
+		struct vfs_handle_struct *open;
+		struct vfs_handle_struct *close;
+		struct vfs_handle_struct *read;
+		struct vfs_handle_struct *write;
+		struct vfs_handle_struct *lseek;
+		struct vfs_handle_struct *sendfile;
+		
+		...
+	} handles;
+};
+</programlisting></para>
+
+<para>
+このマクロは任意のvfs操作を呼び出すために*使われるべきである*。
+直接conn-&gt;vfs.ops.*を呼び出しては*いけない!!!*
+<programlisting>
+...
+	
+/* File operations */
+#define SMB_VFS_OPEN(conn, fname, flags, mode) \
+	((conn)-&gt;vfs.ops.open((conn)-&gt;vfs.handles.open,\
+	 (conn), (fname), (flags), (mode)))
+#define SMB_VFS_CLOSE(fsp, fd) \
+	((fsp)-&gt;conn-&gt;vfs.ops.close(\
+	(fsp)-&gt;conn-&gt;vfs.handles.close, (fsp), (fd)))
+#define SMB_VFS_READ(fsp, fd, data, n) \
+	((fsp)-&gt;conn-&gt;vfs.ops.read(\
+	(fsp)-&gt;conn-&gt;vfs.handles.read,\
+	 (fsp), (fd), (data), (n)))
+#define SMB_VFS_WRITE(fsp, fd, data, n) \
+	((fsp)-&gt;conn-&gt;vfs.ops.write(\
+	(fsp)-&gt;conn-&gt;vfs.handles.write,\
+	 (fsp), (fd), (data), (n)))
+#define SMB_VFS_LSEEK(fsp, fd, offset, whence) \
+	((fsp)-&gt;conn-&gt;vfs.ops.lseek(\
+	(fsp)-&gt;conn-&gt;vfs.handles.lseek,\
+	 (fsp), (fd), (offset), (whence)))
+#define SMB_VFS_SENDFILE(tofd, fsp, fromfd, header, offset, count) \
+	((fsp)-&gt;conn-&gt;vfs.ops.sendfile(\
+	(fsp)-&gt;conn-&gt;vfs.handles.sendfile,\
+	 (tofd), (fsp), (fromfd), (header), (offset), (count)))
+
+...
+</programlisting></para>
+
+</sect2>
+
+<sect2>
+<title>有効なVFS操作レイヤ</title>
+
+<para>
+これらの値は、複数のVFSモジュールとの接続用に、conn-&gt;vfsとconn-&gt;vfs_opaque構造体を
+構築するときに、VFSサブシステムによって使われる。内部的にSambaはこのプロセスで、opaqueと
+transparentレイヤのみを区別する。他のタイプは、よりよい診断機能を提供するために使われる。
+</para>
+
+<para>
+ほとんどのモジュールはtransparentレイヤを提供する。opaqueレイヤは、実際のファイルシステム
+コール(DBベースのVFSのような)を実装するモジュール用である。例えば、既定値の、Sambaに
+組み込まれているPOSIX VFSはopaque VFSモジュールである。
+</para>
+
+<para>    
+他のレイヤタイプ(logger, splitter, scanner)は異なったtransparencyの段階を提供するためと、
+診断VFSモジュールの動作のために設計された。
+</para>
+
+<para>
+各モジュールは、1つのレイヤは1つの操作毎に使われる、同じ時に提供されるいくつかの
+レイヤを実装できる。
+</para>
+
+<para><programlisting>
+typedef enum _vfs_op_layer {
+	SMB_VFS_LAYER_NOOP = -1,	/* - For using in VFS module to indicate end of array */
+					/*   of operations description */
+	SMB_VFS_LAYER_OPAQUE = 0,	/* - Final level, does not call anything beyond itself */
+	SMB_VFS_LAYER_TRANSPARENT,	/* - Normal operation, calls underlying layer after */
+					/*   possibly changing passed data */
+	SMB_VFS_LAYER_LOGGER,		/* - Logs data, calls underlying layer, logging may not */
+					/*   use Samba VFS */
+	SMB_VFS_LAYER_SPLITTER,		/* - Splits operation, calls underlying layer _and_ own facility, */
+					/*   then combines result */
+	SMB_VFS_LAYER_SCANNER		/* - Checks data and possibly initiates additional */
+					/*   file activity like logging to files _inside_ samba VFS */
+} vfs_op_layer;
+</programlisting></para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>Samba VFSサブシステムとモジュールの間での相互作用</title>
+
+<sect2>
+<title>初期化と登録</title>
+
+<para>
+各SambaモジュールはVFSモジュールで、それがSambaに静的にリンクされるならば、
+<programlisting>NTSTATUS vfs_example_init(void);</programlisting>関数か、
+共有モジュールならば、
+<programlisting>NTSTATUS init_module(void);</programlisting>関数を持つべきである。
+</para>
+
+<para>
+これは、モジュール内部の静的でない関数のみがそうすべきである。グローバル
+変数は同様に静的であるべきである!
+</para>
+
+<para>
+モジュールはその関数を
+<programlisting>
+NTSTATUS smb_register_vfs(int version, const char *name, vfs_op_tuple *vfs_op_tuples);
+</programlisting>
+関数経由で登録すべきである。
+</para>
+
+<variablelist>
+
+<varlistentry><term>version</term>
+<listitem><para>はSMB_VFS_INTERFACE_VERSIONで設定されるべきである。</para></listitem>
+</varlistentry>
+
+<varlistentry><term>name</term>
+<listitem><para>これは、このモジュールを使うために、<command>vfs objects</command>
+パラメータ中で一覧表示する事が出来る名前である。</para></listitem>
+</varlistentry>
+
+<varlistentry><term>vfs_op_tuples</term>
+<listitem><para>
+これは、vfs_op_tupleの配列である(vfs_op_tuplesは、詳細が以下で説明される)。
+</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>
+モジュールが提供することを望む各操作のために、vfs_op_tuple入れつん中にエントリが
+ある。
+</para>
+
+<programlisting>
+typedef struct _vfs_op_tuple {
+	void* op;
+	vfs_op_type type;
+	vfs_op_layer layer;
+} vfs_op_tuple;
+</programlisting>
+
+<variablelist>
+
+<varlistentry><term>op</term>
+<listitem><para>指定した関数への関数ポインタ。</para></listitem>
+</varlistentry>
+
+<varlistentry><term>type</term>
+<listitem><para>どの操作を関数が提供するかを指定するための、関数のvfs_op_type。</para></listitem>
+</varlistentry>
+
+<varlistentry><term>layer</term>
+<listitem><para>どこで関数が操作するかのvfs_op_layer。</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>簡単な例:</para>
+
+<programlisting>
+static vfs_op_tuple example_op_tuples[] = {	
+	{SMB_VFS_OP(example_connect),	SMB_VFS_OP_CONNECT,	SMB_VFS_LAYER_TRANSPARENT},
+	{SMB_VFS_OP(example_disconnect),	SMB_VFS_OP_DISCONNECT,	SMB_VFS_LAYER_TRANSPARENT},
+
+	{SMB_VFS_OP(example_rename),	SMB_VFS_OP_RENAME,	SMB_VFS_LAYER_OPAQUE},
+
+	/* This indicates the end of the array */
+	{SMB_VFS_OP(NULL),				SMB_VFS_OP_NOOP,	SMB_VFS_LAYER_NOOP}
+};
+
+NTSTATUS init_module(void)
+{
+	return smb_register_vfs(SMB_VFS_INTERFACE_VERSION, &quot;example&quot;, example_op_tuples);
+}
+</programlisting>
+
+</sect2>
+
+<sect2>
+<title>どのようにモジュールは接続単位でデータを処理するか</title>
+
+<para>各VFS関数の最初のパラメータは、vfs_handle_structモジュールへのポインタである。
+</para>
+
+<programlisting>
+typedef struct vfs_handle_struct {
+	struct vfs_handle_struct  *next, *prev;
+	const char *param;
+	struct vfs_ops vfs_next;
+	struct connection_struct *conn;
+	void *data;
+	void (*free_data)(void **data);
+} vfs_handle_struct;
+</programlisting>
+
+<variablelist>
+
+<varlistentry><term>param</term>
+<listitem><para>これは<command>vfs objects</command>パラメータ中で指定されるモジュール
+パラメータである。</para>
+<para>すなわち、'vfs objects = example:test'用パラメータは、&quot;test&quot;であろう。</para></listitem>
+</varlistentry>
+
+<varlistentry><term>vfs_next</term>
+<listitem><para>このvfs_ops構造体には、次のモジュール操作を呼び出すための情報が含まれている。
+次のモジュール操作を呼ぶためにSMB_VFS_NEXT_*マクロを使い、直接handle-&gt;vfs_next.ops.*に
+アクセスしないこと!</para></listitem>
+</varlistentry>
+
+<varlistentry><term>conn</term>
+<listitem><para>これは、ハンドルが帰属するconnection_structに戻るためのポインタである。</para></listitem>
+</varlistentry>
+
+<varlistentry><term>data</term>
+<listitem><para>モジュール固有データを保持するためのポインタである。
+handle-&gt;conn-&gt;mem_ctx TALLOC_CTX上で接続が有効な間、データをallocできる。
+しかし、自分自身でメモリ管理を行う必要もある。</para></listitem>
+</varlistentry>
+
+<varlistentry><term>free_data</term>
+<listitem><para>これは、モジュール固有データをフリーにする関数へのポインタである。
+TALLOC_CTX handle-&gt;conn-&gt;mem_ctx上で固有データをtallocした場合、この関数ポインタは
+NULLに設定することが出来る。</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para>固有データを扱うための、いくつかの有益なマクロ。
+</para>
+
+<programlisting>
+#define SMB_VFS_HANDLE_GET_DATA(handle, datap, type, ret) { \
+	if (!(handle)||((datap=(type *)(handle)-&gt;data)==NULL)) { \
+		DEBUG(0,(&quot;%s() failed to get vfs_handle-&gt;data!\n&quot;,FUNCTION_MACRO)); \
+		ret; \
+	} \
+}
+
+#define SMB_VFS_HANDLE_SET_DATA(handle, datap, free_fn, type, ret) { \
+	if (!(handle)) { \
+		DEBUG(0,(&quot;%s() failed to set handle-&gt;data!\n&quot;,FUNCTION_MACRO)); \
+		ret; \
+	} else { \
+		if ((handle)-&gt;free_data) { \
+			(handle)-&gt;free_data(&amp;(handle)-&gt;data); \
+		} \
+		(handle)-&gt;data = (void *)datap; \
+		(handle)-&gt;free_data = free_fn; \
+	} \
+}
+
+#define SMB_VFS_HANDLE_FREE_DATA(handle) { \
+	if ((handle) &amp;&amp; (handle)-&gt;free_data) { \
+		(handle)-&gt;free_data(&amp;(handle)-&gt;data); \
+	} \
+}
+</programlisting>
+
+<para>SMB_VFS_LAYER_TRANSPARENT関数がSMB_VFS_LAYER_OPAQUE関数を呼び出せる方式。</para>
+
+<para>これを行う最も簡単な方法は、SMB_VFS_OPAQUE_*マクロを使うことである。
+</para>
+
+<programlisting>
+...
+/* File operations */
+#define SMB_VFS_OPAQUE_OPEN(conn, fname, flags, mode) \
+	((conn)-&gt;vfs_opaque.ops.open(\
+	(conn)-&gt;vfs_opaque.handles.open,\
+	 (conn), (fname), (flags), (mode)))
+#define SMB_VFS_OPAQUE_CLOSE(fsp, fd) \
+	((fsp)-&gt;conn-&gt;vfs_opaque.ops.close(\
+	(fsp)-&gt;conn-&gt;vfs_opaque.handles.close,\
+	 (fsp), (fd)))
+#define SMB_VFS_OPAQUE_READ(fsp, fd, data, n) \
+	((fsp)-&gt;conn-&gt;vfs_opaque.ops.read(\
+	(fsp)-&gt;conn-&gt;vfs_opaque.handles.read,\
+	 (fsp), (fd), (data), (n)))
+#define SMB_VFS_OPAQUE_WRITE(fsp, fd, data, n) \
+	((fsp)-&gt;conn-&gt;vfs_opaque.ops.write(\
+	(fsp)-&gt;conn-&gt;vfs_opaque.handles.write,\
+	 (fsp), (fd), (data), (n)))
+#define SMB_VFS_OPAQUE_LSEEK(fsp, fd, offset, whence) \
+	((fsp)-&gt;conn-&gt;vfs_opaque.ops.lseek(\
+	(fsp)-&gt;conn-&gt;vfs_opaque.handles.lseek,\
+	 (fsp), (fd), (offset), (whence)))
+#define SMB_VFS_OPAQUE_SENDFILE(tofd, fsp, fromfd, header, offset, count) \
+	((fsp)-&gt;conn-&gt;vfs_opaque.ops.sendfile(\
+	(fsp)-&gt;conn-&gt;vfs_opaque.handles.sendfile,\
+	 (tofd), (fsp), (fromfd), (header), (offset), (count)))
+...
+</programlisting>
+
+<para>SMB_VFS_LAYER_TRANSPARENT関数が次のモジュール関数を呼び出せる方式。</para>
+
+<para>これを行う最も簡単な方法は、SMB_VFS_NEXT_*マクロを使うことである。
+</para>
+
+<programlisting>
+...
+/* File operations */
+#define SMB_VFS_NEXT_OPEN(handle, conn, fname, flags, mode) \
+	((handle)-&gt;vfs_next.ops.open(\
+	(handle)-&gt;vfs_next.handles.open,\
+	 (conn), (fname), (flags), (mode)))
+#define SMB_VFS_NEXT_CLOSE(handle, fsp, fd) \
+	((handle)-&gt;vfs_next.ops.close(\
+	(handle)-&gt;vfs_next.handles.close,\
+	 (fsp), (fd)))
+#define SMB_VFS_NEXT_READ(handle, fsp, fd, data, n) \
+	((handle)-&gt;vfs_next.ops.read(\
+	(handle)-&gt;vfs_next.handles.read,\
+	 (fsp), (fd), (data), (n)))
+#define SMB_VFS_NEXT_WRITE(handle, fsp, fd, data, n) \
+	((handle)-&gt;vfs_next.ops.write(\
+	(handle)-&gt;vfs_next.handles.write,\
+	 (fsp), (fd), (data), (n)))
+#define SMB_VFS_NEXT_LSEEK(handle, fsp, fd, offset, whence) \
+	((handle)-&gt;vfs_next.ops.lseek(\
+	(handle)-&gt;vfs_next.handles.lseek,\
+	 (fsp), (fd), (offset), (whence)))
+#define SMB_VFS_NEXT_SENDFILE(handle, tofd, fsp, fromfd, header, offset, count) \
+	((handle)-&gt;vfs_next.ops.sendfile(\
+	(handle)-&gt;vfs_next.handles.sendfile,\
+	 (tofd), (fsp), (fromfd), (header), (offset), (count)))
+...
+</programlisting>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>新しいVFSインタフェースへのアップグレード</title>
+
+<sect2>
+<title>2.2.*から3.0αモジュールへのアップグレード</title>
+
+<orderedlist>
+<listitem><para>
+すべてのvfs操作関数に最初のパラメータとして&quot;vfs_handle_struct *handle, &quot;
+を追加する。例えば、
+example_connect(connection_struct *conn, const char *service, const char *user);
+-&gt;   example_connect(vfs_handle_struct *handle, connection_struct *conn, const char *service, const char *user);
+</para></listitem>
+
+<listitem><para>
+&quot;default_vfs_ops.&quot;を&quot;smb_vfs_next_&quot;で置き換える。たとえば、
+default_vfs_ops.connect(conn, service, user);
+-&gt;   smb_vfs_next_connect(conn, service, user);
+</para></listitem>
+
+<listitem><para>
+すべての&quot;smb_vfs_next_*&quot;関数を大文字化する。たとえば、
+e.g. smb_vfs_next_connect(conn, service, user);
+-&gt;   SMB_VFS_NEXT_CONNECT(conn, service, user);
+</para></listitem>
+
+<listitem><para>
+すべてのSMB_VFS_NEXT_*()呼び出しに対して最初のパラメータとして&quot;handle, &quot;を
+追加する。たとえば、
+SMB_VFS_NEXT_CONNECT(conn, service, user);
+-&gt;   SMB_VFS_NEXT_CONNECT(handle, conn, service, user);
+</para></listitem>
+
+<listitem><para>
+(2.2.*モジュール用のみ) 
+古いstruct vfs_ops example_opsをvfs_op_tuple example_op_tuples[]配列に変換する。たとえば、
+<programlisting>
+struct vfs_ops example_ops = {
+	/* Disk operations */
+	example_connect,		/* connect */
+	example_disconnect,		/* disconnect */
+	NULL,				/* disk free *
+	/* Directory operations */
+	NULL,				/* opendir */
+	NULL,				/* readdir */
+	NULL,				/* mkdir */
+	NULL,				/* rmdir */
+	NULL,				/* closedir */
+	/* File operations */
+	NULL,				/* open */
+	NULL,				/* close */
+	NULL,				/* read  */
+	NULL,				/* write */
+	NULL,				/* lseek */
+	NULL,				/* sendfile */
+	NULL,				/* rename */
+	NULL,				/* fsync */
+	example_stat,			/* stat  */
+	example_fstat,			/* fstat */
+	example_lstat,			/* lstat */
+	NULL,				/* unlink */
+	NULL,				/* chmod */
+	NULL,				/* fchmod */
+	NULL,				/* chown */
+	NULL,				/* fchown */
+	NULL,				/* chdir */
+	NULL,				/* getwd */
+	NULL,				/* utime */
+	NULL,				/* ftruncate */
+	NULL,				/* lock */
+	NULL,				/* symlink */
+	NULL,				/* readlink */
+	NULL,				/* link */
+	NULL,				/* mknod */
+	NULL,				/* realpath */
+	NULL,				/* fget_nt_acl */
+	NULL,				/* get_nt_acl */
+	NULL,				/* fset_nt_acl */
+	NULL,				/* set_nt_acl */
+
+	NULL,				/* chmod_acl */
+	NULL,				/* fchmod_acl */
+
+	NULL,				/* sys_acl_get_entry */
+	NULL,				/* sys_acl_get_tag_type */
+	NULL,				/* sys_acl_get_permset */
+	NULL,				/* sys_acl_get_qualifier */
+	NULL,				/* sys_acl_get_file */
+	NULL,				/* sys_acl_get_fd */
+	NULL,				/* sys_acl_clear_perms */
+	NULL,				/* sys_acl_add_perm */
+	NULL,				/* sys_acl_to_text */
+	NULL,				/* sys_acl_init */
+	NULL,				/* sys_acl_create_entry */
+	NULL,				/* sys_acl_set_tag_type */
+	NULL,				/* sys_acl_set_qualifier */
+	NULL,				/* sys_acl_set_permset */
+	NULL,				/* sys_acl_valid */
+	NULL,				/* sys_acl_set_file */
+	NULL,				/* sys_acl_set_fd */
+	NULL,				/* sys_acl_delete_def_file */
+	NULL,				/* sys_acl_get_perm */
+	NULL,				/* sys_acl_free_text */
+	NULL,				/* sys_acl_free_acl */
+	NULL				/* sys_acl_free_qualifier */
+};
+</programlisting>
+-&gt;
+<programlisting> 
+static vfs_op_tuple example_op_tuples[] = {
+	{SMB_VFS_OP(example_connect),	SMB_VFS_OP_CONNECT,	SMB_VFS_LAYER_TRANSPARENT},
+	{SMB_VFS_OP(example_disconnect),	SMB_VFS_OP_DISCONNECT,	SMB_VFS_LAYER_TRANSPARENT},
+	
+	{SMB_VFS_OP(example_fstat), 	SMB_VFS_OP_FSTAT,	SMB_VFS_LAYER_TRANSPARENT},
+	{SMB_VFS_OP(example_stat),		SMB_VFS_OP_STAT,	SMB_VFS_LAYER_TRANSPARENT},
+	{SMB_VFS_OP(example_lstat), 	SMB_VFS_OP_LSTAT,	SMB_VFS_LAYER_TRANSPARENT},
+
+	{SMB_VFS_OP(NULL),				SMB_VFS_OP_NOOP,	SMB_VFS_LAYER_NOOP}
+};
+</programlisting>
+</para></listitem>
+
+<listitem><para>
+example_op_tuples[]配列をファイルの最後に移動する。
+</para></listitem>
+
+<listitem><para>
+ファイルの最後にinit_module()関数を追加する。たとえば、
+<programlisting>
+NTSTATUS init_module(void)
+{
+	return smb_register_vfs(SMB_VFS_INTERFACE_VERSION,&quot;example&quot;,example_op_tuples);
+}
+</programlisting>
+</para></listitem>
+
+<listitem><para>
+使用しているvfs_init()関数がvfs_ops構造体を準備するだけ以上か、smb_vfs_handle_struct
+構造体を記憶しているかを調べる。
+<simplelist>
+<member>もしもそうでなければ、vfs_init()関数を取り除くことが出来る。</member>
+<member>もしもそうならば、コードをexample_connect()操作に移すか、init_module()に移すかを決める。
+そして次に、vfs_init()を取り除く。たとえば、debugクラスの登録は、init_module()に行くべきで
+あり、固有データの割り当てはexample_connect()に行くべきである。</member>
+</simplelist>
+</para></listitem>
+
+<listitem><para>
+(3.0alpha*モジュールのみ) 
+使用しているvfs_done()関数が必要とされるコードを含んでいるかを確認する。
+<simplelist>
+<member>もしもそうでなければ、vfs_done()関数を取り除くことが出来る。</member>
+<member>もしもそうならば、コードをexample_disconnect()操作に移動出来るかを決める。
+それ以外の場合、smb_register_exit_event()と一緒にSMB_EXIT_EVENTを登録する。たとえば、
+固有データを開放する事はexample_disconnect()に行くべきである。
+</member>
+</simplelist>
+</para></listitem>
+
+<listitem><para>
+何らかのグローバル変数が残っているかを確認する。
+もしもコネクションベース上にこのデータを持つ方がよいかどうかを決める。
+<simplelist>
+  <member>もしもそうでない場合、存在しているものを取り去る(すなわち、固有デバッグクラス用の変数とする)。</member>
+  <member>もしもそうであれば、データすべてを構造体に入れる。接続単位ベース上でそのような構造体を
+    指定するためにhandle-&gt;dataを使うことが出来る。</member>
+</simplelist>
+
+  すなわち、もしも以下ような構造体をもっているような場合:
+<programlisting>    
+struct example_privates {
+	char *some_string;
+	int db_connection;
+};
+</programlisting>
+これを行う最初の方法は以下の通り:
+<programlisting>
+static int example_connect(vfs_handle_struct *handle,
+	connection_struct *conn, const char *service, 
+	const char* user)
+{
+	struct example_privates *data = NULL;
+
+	/* alloc our private data */
+	data = (struct example_privates *)talloc_zero(conn-&gt;mem_ctx, sizeof(struct example_privates));
+	if (!data) {
+		DEBUG(0,(&quot;talloc_zero() failed\n&quot;));
+		return -1;
+	}
+
+	/* init out private data */
+	data-&gt;some_string = talloc_strdup(conn-&gt;mem_ctx,&quot;test&quot;);
+	if (!data-&gt;some_string) {
+		DEBUG(0,(&quot;talloc_strdup() failed\n&quot;));
+		return -1;
+	}
+
+	data-&gt;db_connection = open_db_conn();
+
+	/* and now store the private data pointer in handle-&gt;data
+	 * we don't need to specify a free_function here because
+	 * we use the connection TALLOC context.
+	 * (return -1 if something failed.)
+	 */
+	VFS_HANDLE_SET_DATA(handle, data, NULL, struct example_privates, return -1);
+
+	return SMB_VFS_NEXT_CONNECT(handle,conn,service,user);
+}
+
+static int example_close(vfs_handle_struct *handle, files_struct *fsp, int fd)
+{
+	struct example_privates *data = NULL;
+	
+	/* get the pointer to our private data
+	 * return -1 if something failed
+	 */
+	SMB_VFS_HANDLE_GET_DATA(handle, data, struct example_privates, return -1);
+	
+	/* do something here...*/
+	DEBUG(0,(&quot;some_string: %s\n&quot;,data-&gt;some_string));
+	
+	return SMB_VFS_NEXT_CLOSE(handle, fsp, fd);
+}
+</programlisting>
+これを行う次の方法は以下の通り:
+<programlisting>
+static void free_example_privates(void **datap)
+{
+	struct example_privates *data = (struct example_privates *)*datap;
+	
+	SAFE_FREE(data-&gt;some_string);
+	SAFE_FREE(data);
+	
+	*datap = NULL;
+	
+	return;
+}
+
+static int example_connect(vfs_handle_struct *handle, 
+	connection_struct *conn, const char *service, 
+	const char* user)
+{
+	struct example_privates *data = NULL;
+
+	/* alloc our private data */
+	data = (struct example_privates *)malloc(sizeof(struct example_privates));
+	if (!data) {
+		DEBUG(0,(&quot;malloc() failed\n&quot;));
+		return -1;
+	}
+
+	/* init out private data */
+	data-&gt;some_string = strdup(&quot;test&quot;);
+	if (!data-&gt;some_string) {
+		DEBUG(0,(&quot;strdup() failed\n&quot;));
+		return -1;
+	}
+
+	data-&gt;db_connection = open_db_conn();
+
+	/* and now store the private data pointer in handle-&gt;data
+	 * we need to specify a free_function because we used malloc() and strdup().
+	 * (return -1 if something failed.)
+	 */
+	SMB_VFS_HANDLE_SET_DATA(handle, data, free_example_privates, struct example_privates, return -1);
+
+	return SMB_VFS_NEXT_CONNECT(handle,conn,service,user);
+}
+
+static int example_close(vfs_handle_struct *handle, files_struct *fsp, int fd)
+{
+	struct example_privates *data = NULL;
+	
+	/* get the pointer to our private data
+	 * return -1 if something failed
+	 */
+	SMB_VFS_HANDLE_GET_DATA(handle, data, struct example_privates, return -1);
+	
+	/* do something here...*/
+	DEBUG(0,(&quot;some_string: %s\n&quot;,data-&gt;some_string));
+	
+	return SMB_VFS_NEXT_CLOSE(handle, fsp, fd);
+}
+</programlisting>
+</para></listitem>
+
+<listitem><para>
+サードパーティモジュールを構築することを簡単にするため、configure.in,(configure)、
+install.shとMakefile.inをモジュールと一緒に提供することは有用であろう。
+(<filename>examples/VFS</filename>中の例を一見してみること。)
+</para>
+
+<para>
+configurationスクリプトは、Sambaソースツリーへのパスを指定するために、
+<option>--with-samba-source</option>を受け付ける。また、コンパイラにたくさんの
+警告を出させるための、<option>--enable-developer</option>も受け付ける。
+</para>
+
+<para>
+あなたのモジュール用に、この<filename>configure.in</filename>と
+<filename>Makefile.in</filename>スクリプトを拡張できる。
+</para></listitem>
+
+<listitem><para>
+コンパイルとテスト...
+<simplelist>
+<member><userinput>./configure <option>--enable-developer</option></userinput> ...</member>
+<member><userinput>make</userinput></member>
+<member>Try to fix all compiler warnings</member>
+<member><userinput>make</userinput></member>
+<member>Testing, Testing, Testing ...</member>
+</simplelist>
+</para></listitem>
+</orderedlist>
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>いくつかの注意事項</title>
+
+<sect2>
+<title>TRANSPARENT関数の実装</title>
+
+<para>
+以下のような関数を書くことはしない:
+
+<programlisting>
+static int example_close(vfs_handle_struct *handle, files_struct *fsp, int fd)
+{
+	return SMB_VFS_NEXT_CLOSE(handle, fsp, fd);
+}
+</programlisting>
+
+真に必要とする関数のみをオーバーロードすること!
+</para>
+
+</sect2>
+
+<sect2>
+<title>OPAQUE関数の実装</title>
+
+<para>
+もしも、既定値のSamba opaque関数よりもよりよいバージョンを実装したいならば
+(たとえば、特別なファイルシステムに対するdisk_free()関数のようなもの)、
+その特定の関数をオーバロードすることは問題ない。
+</para>
+
+<para>
+もしもデータベースファイルシステムあるいはposixファイルシステムから異なる
+何かを実装したい場合、すべてのvfs操作をオーバロードするようにすること!!!
+</para>
+<para>
+使用するファイルシステムがサポートしない機能は、以下のようなものでオーバロードすべきである:
+たとえば、リードオンリファイルシステムなど。
+</para>
+
+<programlisting>
+static int example_rename(vfs_handle_struct *handle, connection_struct *conn,
+			char *oldname, char *newname)
+{
+	DEBUG(10,(&quot;function rename() not allowed on vfs 'example'\n&quot;));
+	errno = ENOSYS;
+	return -1;
+}
+</programlisting>
+
+</sect2>
+
+</sect1>
+
+</chapter>

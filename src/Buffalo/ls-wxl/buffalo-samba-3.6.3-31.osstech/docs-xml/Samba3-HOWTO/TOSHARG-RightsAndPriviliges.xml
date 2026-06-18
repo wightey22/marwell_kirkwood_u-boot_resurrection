@@ -1,0 +1,596 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="rights">
+<chapterinfo>
+        &author.jerry;
+        &author.jht;
+</chapterinfo>
+
+<title>User Rights and Privileges</title>
+
+<para>
+<indexterm><primary>Windowsのユーザ</primary></indexterm>
+<indexterm><primary>Windowsのグループ</primary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+Sambaがドメインを制御しているネットワーク中で、Windowsのユーザ、グループとマシン
+アカウントを管理するには、Microsoft Windowsネットワーク環境とUNIX OS環境の間で
+インタフェースを取る必要がある。Windows セキュリティドメインにマシンを追加するための
+権利(許可)は、Windows NT4ドメインとActive Directoryドメインの両方で、非管理者ユーザに
+割り当て(設定)することができる。
+</para>
+
+<para>
+<indexterm><primary>Windows NT4/2kX/XPPro</primary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+<indexterm><primary>trusted</primary></indexterm>
+<indexterm><primary>ユーザのログオン</primary></indexterm>
+ドメインへWindows NT4/2kX/XPProましんを追加するには、追加されるマシンごとにマシン
+アカウントを作成する必要がある。マシンアカウントは、ユーザのログオンを許可する
+ために信頼できるマシンを検証するために使うのに必要である。
+</para>
+
+<para>
+<indexterm><primary>ユーザアカウント</primary></indexterm>
+<indexterm><primary>特別なアカウント</primary></indexterm>
+<indexterm><primary>アカウント名</primary></indexterm>
+<indexterm><primary>/bin/false</primary></indexterm>
+<indexterm><primary>/dev/null</primary></indexterm>
+<indexterm><primary>man-in-the-middle</primary></indexterm>
+マシンアカウントはユーザアカウントに類似していて、そのため、Sambaをホスティングしている
+UNIXマシンでの実装では(すなわちSambaが動いているマシン)、ユーザアカウントの特別なタイプ
+として作成する必要がある。マシンアカウントは、通常のユーザアカウントと比べて、
+アカウント名(ログインID)が<literal>$</literal>記号で終わっているところが異なる。
+更に、このタイプのアカウントは、システムユーザとしてUNIX環境に決してログイン出来ない
+ことと、ログインシェルが<command>/bin/false</command>に設定されていることと、ホーム
+ディレクトリが<command>/dev/null</command>に設定されていることも違う。マシンアカウントは
+起動時にドメインメンバのマシンであることを検証するためのみに使われる。このセキュリティ
+対応は、ネットワークの完全性を破る中間者攻撃をブロックするために設計されている。
+</para>
+
+<note><para>
+<indexterm><primary>コンピュータアカウント</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>credentials</primary></indexterm>
+<indexterm><primary>安全な認証</primary></indexterm>
+マシン(コンピュータ)アカウントは、ドメインメンバサーバとワークステーションのための
+セキュリティ証明書(credentials)を格納するために、Windows NT OSファミリで使われる。
+ドメインメンバの起動時、ドメインコントローラと証明書の交換を含む検証プロセスを
+行う。もしもドメインコントローラが保持している証明書を使っての認証に失敗した
+場合、マシンはドメインユーザからのアクセスが出来なくなる。コンピュータアカウント
+は、Microsoft Windowsのセキュアな認証方法において必須のものである。
+</para></note>
+
+<para>
+<indexterm><primary>UNIXシステムアカウント</primary></indexterm>
+<indexterm><primary>システム管理者</primary></indexterm>
+<indexterm><primary>root</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+UNIXシステムアカウントの作成は、<constant>root</constant>アカウントと言う方が通りがよい、
+システム管理者の伝統的な唯一の権利であった。UNIX環境では、同じUIDを持つ複数のユーザを
+作ることが可能である。UID=0のUNIXユーザはだれでも<constant>root</constant>アカウント
+ユーザと本質的に同じである。
+</para>
+
+<para>
+<indexterm><primary>システムインタフェーススクリプト</primary></indexterm>
+<indexterm><primary>CIFS機能呼び出し</primary></indexterm>
+<indexterm><primary>rootアカウント</primary></indexterm>
+<indexterm><primary>UNIXホストシステム</primary></indexterm>
+すべてのバージョンのSambaは、UNIX環境で、ユーザ、グループとマシンアカウントを管理する
+ためのCIFS機能呼び出しを許可するシステムインタフェーススクリプトを呼び出す。3.0.10
+を含むそれまでのすべてのバージョンのSambaは、それらのインタフェーススクリプトを
+実行するために、明確にUNIXの<constant>root</constant>アカウントにマップされる
+Windows管理者アカウントを使用することを要求する。こうする必要性は、無理もない話だが、
+特に、UNIXホストシステムで<constant>root</constant>レベルのアクセスを行ってはならない
+人が特権を得てしまう事について、Samba管理者の間では評判が悪い。
+</para>
+
+<sect1>
+<title>権利の管理能力</title>
+
+<para>
+<indexterm><primary>Windowsの権限モデル</primary></indexterm>
+<indexterm><primary>権限モデル</primary></indexterm>
+<indexterm><primary>割り当てられた権利</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+Samba 3.0.11から、Windowsの権限モデルのサポートが導入された。このモデルは、特定の
+権利をユーザかグループSIDに割り当てるというものである。この機能を有効にするため、
+&smb.conf;ファイル中の<smbconfsection name="global"/>セクション中で、
+<smbconfoption name="enable privileges">yes</smbconfoption>を定義しなければならない。
+</para>
+
+<para>
+<indexterm><primary>権利</primary></indexterm>
+<indexterm><primary>権限</primary></indexterm>
+<indexterm><primary>権限の管理</primary></indexterm>
+現在、Samba-3でサポートされている権利は<link linkend="rp-privs"/>に一覧がある。
+この章の残りでは、Sambaサーバ上でどのように権限を管理し使うかについて説明する。
+</para>
+
+<indexterm><primary>SeMachineAccountPrivilege</primary></indexterm>
+<indexterm><primary>SePrintOperatorPrivilege</primary></indexterm>
+<indexterm><primary>SeAddUsersPrivilege</primary></indexterm>
+<indexterm><primary>SeRemoteShutdownPrivilege</primary></indexterm>
+<indexterm><primary>SeDiskOperatorPrivilege</primary></indexterm>
+<indexterm><primary>SeTakeOwnershipPrivilege</primary></indexterm>
+<table id="rp-privs">
+        <title>現在有効な権限の一覧</title>
+        <tgroup cols="2">
+                <colspec align="right"/>
+                <colspec align="left"/>
+                <thead>
+                        <row>
+                                <entry align="left">権限</entry>
+                                <entry align="left">説明</entry>
+                        </row>
+                </thead>
+                <tbody>
+                        <row>
+                                <entry><para>SeMachineAccountPrivilege</para></entry>
+                                <entry><para>マシンをドメインに追加する</para></entry>
+                        </row>
+                        <row>
+                                <entry><para>SePrintOperatorPrivilege</para></entry>
+                                <entry><para>プリンタの管理</para></entry>
+                        </row>
+                        <row>
+                                <entry><para>SeAddUsersPrivilege</para></entry>
+                                <entry><para>ドメインへのユーザとグループの追加</para></entry>
+                        </row>
+                        <row>
+                                <entry><para>SeRemoteShutdownPrivilege</para></entry>
+                                <entry><para>リモートシステムの強制シャットダウン</para></entry>
+                        </row>
+                        <row>
+                                <entry><para>SeDiskOperatorPrivilege</para></entry>
+                                <entry><para>ディスク共有の管理</para></entry>
+                        </row>
+<!-- These are not used at this time - so void them from the docs.
+                        <row>
+                                <entry><para>SeBackupPrivilege</para></entry>
+                                <entry><para>Back up files and directories</para></entry>
+                        </row>
+                        <row>
+                                <entry><para>SeRestorePrivilege</para></entry>
+                                <entry><para>Restore files and directories</para></entry>
+                        </row>
+**** End of commented out section **** -->    
+                        <row>
+                                <entry><para>SeTakeOwnershipPrivilege</para></entry>
+                                <entry><para>ファイルか他のオブジェクトに対する所有権の取得</para></entry>
+                        </row>
+            </tbody>
+        </tgroup>
+</table>
+
+<sect2>
+<title><quote>net rpc rights</quote>ユーティリティの使用</title>
+
+<para>
+<indexterm><primary>権利の管理</primary></indexterm>
+<indexterm><primary>割り当てられた権利</primary></indexterm>
+<indexterm><primary>ドメインに対するNT4ユーザマネージャ</primary></indexterm>
+<indexterm><primary>コマンドラインユーティリティ</primary></indexterm>
+<indexterm><primary>管理操作</primary></indexterm>
+Sambaサーバ上でユーザとグループに権利を割り当てる管理には2つの主要な手段がある。
+<command>止め引用のNT4ユーザマネージャ</command>はSambaドメインコントローラに接続
+するためにWindows NT4、2000かXP Professionalのドメインメンバクライアントのどれから
+でも使うことが出来、権限の割り当てを表示したり修正できる。しかし、このアプリケーション
+は、Windows 2000かそれ以降のクライアント上で動かす時にはバグがある。そのため、管理
+操作の実行を行うために必要なコマンドラインユーティリティを提供している。
+</para>
+
+<para>
+Samba-3.0.11以降の<command>net rpc rights</command>ユーティリティは新しい3つの
+サブコマンドを提供している:
+</para>
+
+<variablelist>
+	<varlistentry><term>list [name|accounts]</term>
+		<listitem><para>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>list</tertiary></indexterm>
+<indexterm><primary>有効な権利</primary></indexterm>
+<indexterm><primary>割り当てられた権限</primary></indexterm>
+<indexterm><primary>特権アカウント</primary></indexterm>
+		引数なしで起動した場合、<command>net rpc list</command>は単純にサーバ
+		上の有効な権利の一覧を表示する。特定のユーザまたはグループを指定した
+		場合、ツールは指定されたアカウントに割り当てられている現在の権限を
+		表示する。<constant>accounts</constant>という特別な文字列を付けて起動
+		した場合、<command>net rpc rights list</command>はサーバ上のすべての
+		特権アカウントの一覧とそれに割り当てられた権利を表示する。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>grant &lt;user&gt; &lt;right [right ...]&gt;</term>
+		<listitem><para>
+<indexterm><primary>権利の割り当て</primary></indexterm>
+<indexterm><primary>権利の許可</primary></indexterm>
+<indexterm><primary>クライアントマシンの追加</primary></indexterm>
+<indexterm><primary>ユーザかグループ</primary></indexterm>
+		引数なしで起動すると、この機能は指定されたユーザかグループに一連の
+		権利を割り当てるのに使う。例えば、Sambaドメインコントローラ上の
+		Domain Admins groupのメンバに、ドメインにクライアントマシンを追加する
+		能力を許可するためには、以下のように実行する:
+<screen>
+&rootprompt; net -S server -U domadmin rpc rights grant \
+	 'DOMAIN\Domain Admins' SeMachineAccountPrivilege
+</screen>
+		以下のような指定も同じ結果となる:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>rights grant</tertiary></indexterm>
+<screen>
+&rootprompt; net rpc rights grant 'DOMAIN\Domain Admins' \
+     SeMachineAccountPrivilege -S server -U domadmin
+</screen>
+		空白で区切った権利の一覧を指定することで、複数の権限を割り当てることも
+		可能である。パラメータ'Domain\Domain Admins'はシステムシェルによって
+		バックスラッシュと空白が解釈されてしまうのを防ぐために、シングルクォート
+		かダブルクォートで囲まなければならない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>revoke &lt;user&gt; &lt;right [right ...]&gt;</term>
+		<listitem><para>
+		このコマンドは<command>net rpc rights grant</command>と形式が似ている。
+		これは、ユーザとグループから割り当てられた権利(か権利の一覧)を削除する。
+		</para></listitem>
+	</varlistentry>
+
+</variablelist>
+
+<note><para>
+<indexterm><primary>member</primary></indexterm>
+<indexterm><primary>Domain Admins</primary></indexterm>
+<indexterm><primary>権限の削除</primary></indexterm>
+、アカウントに割り当てられる権限の設定か削除を可能にするため、Domain Admins グループ
+メンバとして接続する必要がある。この能力はDomain Adminsグループに固有で変更できない。
+Domain Adminsのメンバに割り当てられた能力以外、既定値の権利と権限はない。これは、
+すべての管理者の権利と権限(それらに割り当てられた能力以外)は、Domain Adminsグループ
+でも明示的に割り当てられなければならないということを意味する。
+</para></note>
+
+<para>
+<indexterm><primary>rootとして実行</primary></indexterm>
+<indexterm><primary>必要な権利</primary></indexterm>
+<indexterm><primary>add machine script</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+いったんsmbdが、ユーザが必要な権利を持っていると確認した場合、特定の操作はrootとして
+実行されるので、初期状態では、どのユーザに対しても、何らの権利は割り当てられない。
+例えば、Windowsドメインにクライアントを参加させる時、<parameter>add machine script</parameter>
+はほとんどの場合、スーパーユーザの権利で動作させる必要がある。この理由のため、アカウントに
+対して権限を割り当てるのはとても注意すべきである。
+</para>
+
+<para>
+<indexterm><primary>Access</primary></indexterm>
+<indexterm><primary>root user</primary></indexterm>
+<indexterm><primary>権限のバイパス</primary></indexterm>
+root ユーザ(UID=0)としてのアクセスは、すべての権限チェックをバイパスする。
+</para>
+
+</sect2>
+
+<sect2>
+<title>権限の説明</title>
+
+<para>
+<indexterm><primary>privileges</primary></indexterm>
+<indexterm><primary>additional privileges</primary></indexterm>
+<indexterm><primary>house-keeping</primary></indexterm>
+Samba-3.0.11で実装された権限は以下の通りである。ありそうではあるが、可能であれば、
+この後のSambaのリリースで権限が追加実装されるかもしれない。また、現在実装されて
+いるが、使われていないものは、管理項目として将来のリリースで削除されるかも
+しれないので、それらの機能を使った時の成功/失敗はSambaメーリングリスト上で報告
+することは重要である。
+</para>
+
+<variablelist>
+	<varlistentry><term>SeAddUsersPrivilege</term>
+		<listitem><para>
+<indexterm><primary>SeAddUsersPrivilege</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>net rpc user add</primary></indexterm>
+		この権利は、<command>net rpc user add</command>か、
+		<command>NT4 User Manager for Domains</command>のような
+		ツール経由で新しいユーザまたはグループアカウントを作成
+		するか否かをsmbdがユーザに許可することを決める。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>SeDiskOperatorPrivilege</term>
+		<listitem><para>
+<indexterm><primary>SeDiskOperatorPrivilege</primary></indexterm>
+<indexterm><primary>共有の追加/削除/変更</primary></indexterm>
+<indexterm><primary>ACL</primary></indexterm>
+		この権利を所有するアカウントは、 &smb.conf;ファイル中で定義した
+		共有を<command>追加/削除/変更</command>するコマンドをrootとして
+		実行出来る。このようなユーザはSambaサーバ上のファイル共有に関連
+		づけられているACLを変更も出来る。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>SeMachineAccountPrivilege</term>
+		<listitem><para>
+<indexterm><primary>SeMachineAccountPrivilege</primary></indexterm>
+<indexterm><primary>ドメインへの参加権利</primary></indexterm>
+<indexterm><primary>クライアントのドメインへの参加</primary></indexterm>
+		この権利は、ユーザがSambaが制御しているドメインにクライアント
+		マシンを参加させることが出来るか否かを制御する。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>SePrintOperatorPrivilege</term>
+		<listitem><para>
+<indexterm><primary>SePrintOperatorPrivilege</primary></indexterm>
+<indexterm><primary>privilege</primary></indexterm>
+<indexterm><primary>global right</primary></indexterm>
+<indexterm><primary>管理者の権利</primary></indexterm>
+<indexterm><primary>printers admin</primary></indexterm>
+		この権限は&smb.conf;ファイル中の<smbconfoption name="printer admin"/>
+		オプションと、それがグローバルな権利であるという(プリンタ単位毎ではない)
+		ことを除いて同じように動作する(セクション5の&smb.conf;マニュアルページ
+		参照)。結局smb.confのオプションは無効となり、プリンタへの管理者権限は
+		このオプションと、<filename>ntprinters.tdb</filename>ファイル中にある
+		プリンタオブジェクトに対するセキュリティ記述子によって排他的に制御される。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>SeRemoteShutdownPrivilege</term>
+		<listitem><para>
+<indexterm><primary>SeRemoteShutdownPrivilege</primary></indexterm>
+<indexterm><primary>サーバの再起動</primary></indexterm>
+<indexterm><primary>シャットダウンの中止</primary></indexterm>
+		Sambaはサーバのシャットダウンと再起動のためと、直前に出されたシャット
+		ダウンコマンドを中止するためののフックを提供する。この操作は通常OS
+		によってrootユーザにのみ制限されているので、上記のフックのどれかを使う
+		ことができるアカウントはこの権利を持っていなければならない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>SeTakeOwnershipPrivilege</term>
+		<listitem><para>
+<indexterm><primary>SeTakeOwnershipPrivilege</primary></indexterm>
+<indexterm><primary>take ownership</primary></indexterm>
+		この権利はファイルとディレクトリの所有権を得る事を許可する。
+		</para></listitem>
+	</varlistentry>
+
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title>Windows2000ドメインコントローラでサポートされている権限</title>
+
+<para>
+    参照のために、Windows NT4 PDCで表示される権限は以下の通り:
+<indexterm><primary>SeCreateTokenPrivilege</primary></indexterm>
+<indexterm><primary>SeAssignPrimaryTokenPrivilege</primary></indexterm>
+<indexterm><primary>SeLockMemoryPrivilege</primary></indexterm>
+<indexterm><primary>SeIncreaseQuotaPrivilege</primary></indexterm>
+<indexterm><primary>SeMachineAccountPrivilege</primary></indexterm>
+<indexterm><primary>SeTcbPrivilege</primary></indexterm>
+<indexterm><primary>SeSecurityPrivilege</primary></indexterm>
+<indexterm><primary>SeTakeOwnershipPrivilege</primary></indexterm>
+<indexterm><primary>SeLoadDriverPrivilege</primary></indexterm>
+<indexterm><primary>SeSystemProfilePrivilege</primary></indexterm>
+<indexterm><primary>SeSystemtimePrivilege</primary></indexterm>
+<indexterm><primary>SeProfileSingleProcessPrivilege</primary></indexterm>
+<indexterm><primary>SeIncreaseBasePriorityPrivilege</primary></indexterm>
+<indexterm><primary>SeCreatePagefilePrivilege</primary></indexterm>
+<indexterm><primary>SeCreatePermanentPrivilege</primary></indexterm>
+<indexterm><primary>SeBackupPrivilege</primary></indexterm>
+<indexterm><primary>SeRestorePrivilege</primary></indexterm>
+<indexterm><primary>SeShutdownPrivilege</primary></indexterm>
+<indexterm><primary>SeDebugPrivilege</primary></indexterm>
+<indexterm><primary>SeAuditPrivilege</primary></indexterm>
+<indexterm><primary>SeSystemEnvironmentPrivilege</primary></indexterm>
+<indexterm><primary>SeChangeNotifyPrivilege</primary></indexterm>
+<indexterm><primary>SeRemoteShutdownPrivilege</primary></indexterm>
+<screen>
+         SeCreateTokenPrivilege  Create a token object
+  SeAssignPrimaryTokenPrivilege  Replace a process level token
+          SeLockMemoryPrivilege  Lock pages in memory
+       SeIncreaseQuotaPrivilege  Increase quotas
+      SeMachineAccountPrivilege  Add workstations to domain
+                 SeTcbPrivilege  Act as part of the operating system
+            SeSecurityPrivilege  Manage auditing and security log
+       SeTakeOwnershipPrivilege  Take ownership of files or other objects
+          SeLoadDriverPrivilege  Load and unload device drivers
+       SeSystemProfilePrivilege  Profile system performance
+          SeSystemtimePrivilege  Change the system time
+SeProfileSingleProcessPrivilege  Profile single process
+SeIncreaseBasePriorityPrivilege  Increase scheduling priority
+      SeCreatePagefilePrivilege  Create a pagefile
+     SeCreatePermanentPrivilege  Create permanent shared objects
+              SeBackupPrivilege  Back up files and directories
+             SeRestorePrivilege  Restore files and directories
+            SeShutdownPrivilege  Shut down the system
+               SeDebugPrivilege  Debug programs
+               SeAuditPrivilege  Generate security audits
+   SeSystemEnvironmentPrivilege  Modify firmware environment values
+        SeChangeNotifyPrivilege  Bypass traverse checking
+      SeRemoteShutdownPrivilege  Force shutdown from a remote system
+</screen>
+	また、Windows 200x/XP ドメインコントローラとワークステーションでサポートされている権限は以下の通り:
+<indexterm><primary>SeCreateTokenPrivilege</primary></indexterm>
+<indexterm><primary>SeAssignPrimaryTokenPrivilege</primary></indexterm>
+<indexterm><primary>SeLockMemoryPrivilege</primary></indexterm>
+<indexterm><primary>SeIncreaseQuotaPrivilege</primary></indexterm>
+<indexterm><primary>SeMachineAccountPrivilege</primary></indexterm>
+<indexterm><primary>SeTcbPrivilege</primary></indexterm>
+<indexterm><primary>SeSecurityPrivilege</primary></indexterm>
+<indexterm><primary>SeTakeOwnershipPrivilege</primary></indexterm>
+<indexterm><primary>SeLoadDriverPrivilege</primary></indexterm>
+<indexterm><primary>SeSystemProfilePrivilege</primary></indexterm>
+<indexterm><primary>SeSystemtimePrivilege</primary></indexterm>
+<indexterm><primary>SeProfileSingleProcessPrivilege</primary></indexterm>
+<indexterm><primary>SeIncreaseBasePriorityPrivilege</primary></indexterm>
+<indexterm><primary>SeCreatePagefilePrivilege</primary></indexterm>
+<indexterm><primary>SeCreatePermanentPrivilege</primary></indexterm>
+<indexterm><primary>SeBackupPrivilege</primary></indexterm>
+<indexterm><primary>SeRestorePrivilege</primary></indexterm>
+<indexterm><primary>SeShutdownPrivilege</primary></indexterm>
+<indexterm><primary>SeDebugPrivilege</primary></indexterm>
+<indexterm><primary>SeAuditPrivilege</primary></indexterm>
+<indexterm><primary>SeSystemEnvironmentPrivilege</primary></indexterm>
+<indexterm><primary>SeChangeNotifyPrivilege</primary></indexterm>
+<indexterm><primary>SeRemoteShutdownPrivilege</primary></indexterm>
+<indexterm><primary>SeUndockPrivilege</primary></indexterm>
+<indexterm><primary>SeSyncAgentPrivilege</primary></indexterm>
+<indexterm><primary>SeEnableDelegationPrivilege</primary></indexterm>
+<indexterm><primary>SeManageVolumePrivilege</primary></indexterm>
+<indexterm><primary>SeImpersonatePrivilege</primary></indexterm>
+<indexterm><primary>SeCreateGlobalPrivilege</primary></indexterm>
+<screen>
+         SeCreateTokenPrivilege  Create a token object
+  SeAssignPrimaryTokenPrivilege  Replace a process level token
+          SeLockMemoryPrivilege  Lock pages in memory
+       SeIncreaseQuotaPrivilege  Increase quotas
+      SeMachineAccountPrivilege  Add workstations to domain
+                 SeTcbPrivilege  Act as part of the operating system
+            SeSecurityPrivilege  Manage auditing and security log
+       SeTakeOwnershipPrivilege  Take ownership of files or other objects
+          SeLoadDriverPrivilege  Load and unload device drivers
+       SeSystemProfilePrivilege  Profile system performance
+          SeSystemtimePrivilege  Change the system time
+SeProfileSingleProcessPrivilege  Profile single process
+SeIncreaseBasePriorityPrivilege  Increase scheduling priority
+      SeCreatePagefilePrivilege  Create a pagefile
+     SeCreatePermanentPrivilege  Create permanent shared objects
+              SeBackupPrivilege  Back up files and directories
+             SeRestorePrivilege  Restore files and directories
+            SeShutdownPrivilege  Shut down the system
+               SeDebugPrivilege  Debug programs
+               SeAuditPrivilege  Generate security audits
+   SeSystemEnvironmentPrivilege  Modify firmware environment values
+        SeChangeNotifyPrivilege  Bypass traverse checking
+      SeRemoteShutdownPrivilege  Force shutdown from a remote system
+              SeUndockPrivilege  Remove computer from docking station
+           SeSyncAgentPrivilege  Synchronize directory service data
+    SeEnableDelegationPrivilege  Enable computer and user accounts to
+                                 be trusted for delegation
+        SeManageVolumePrivilege  Perform volume maintenance tasks
+         SeImpersonatePrivilege  Impersonate a client after authentication
+        SeCreateGlobalPrivilege  Create global objects
+</screen>
+<indexterm><primary>equivalence</primary></indexterm>
+    SambaチームはUNIX/Linux環境で論理的に問題が無く、有用な権限のみを実装している。
+    Windows 200X/XPにおける権限の多くはUNIX中のものに直接相当するものは無い。
+    </para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>管理者のドメインSID</title>
+
+<para>
+<indexterm><primary>domain Administrator</primary></indexterm>
+<indexterm><primary>User Rights and Privileges</primary></indexterm>
+<indexterm><primary>passdb backend</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>net getlocalsid</primary></indexterm>
+すべてのWindows NT4とそれ以降のサーバはdomain Administratorアカウントを必要とすることに
+注意。Sambaバージョン3.0.11以降は、割り当てられた権利と権限
+(<link linkend="rights">ユーザの権利と権限</link>を参照)経由で管理者の任務を実行する
+ことを許可する。サーバのpassdbバックエンド中のアカウントは、よく知られている既定値の
+管理者アカウントのRIDに設定できる。Sambaドメインコントローラ上のドメインSIDを得る
+ためには、以下のコマンドを実行する:
+<screen>
+&rootprompt; net getlocalsid
+SID for domain FOO is: S-1-5-21-4294955119-3368514841-2087710299
+</screen>
+<indexterm><primary>RID</primary></indexterm>
+以下のように、<command>pdbedit</command>を使ってアカウントにドメイン管理者のRIDを
+割り当てても良い:
+<indexterm><primary>pdbedit</primary></indexterm>
+<screen>
+&rootprompt; pdbedit -U S-1-5-21-4294955119-3368514841-2087710299-500 -u root -r
+</screen>
+</para>
+
+<note><para>
+<indexterm><primary>RID 500</primary></indexterm>
+<indexterm><primary>よく知られたRID</primary></indexterm>
+<indexterm><primary>権利と権限</primary></indexterm>
+<indexterm><primary>rootアカウント</primary></indexterm>
+500というRIDの値は、よく知られた既定値のAdministratorアカウントの標準値である。これは、
+Windowsマシン上かドメイン上のAdministratorアカウントが持つ権利と権限を割り当てるRIDで
+ある。UNIX/Linux環境下では、同等なものはUID=0(rootアカウント)である。
+</para></note>
+
+<para>
+<indexterm><primary>Administratorアカウントなし</primary></indexterm>
+<indexterm><primary>equivalent rights and privileges</primary></indexterm>
+<indexterm><primary>Windowsのグループアカウント</primary></indexterm>
+<indexterm><primary>3.0.11</primary></indexterm>
+Sambaバージョン 3.0.11以降のリリースでは、WindowsのユーザかWindowsのグループアカウントの
+ために設定された権利と権限と同等のものを提供するAdministratorアカウントなしで動作させる
+ことが可能である。
+</para>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+	<sect2>
+	<title>Windowsクライアントの管理が出来る権利と権限は何か?</title>
+
+	<para>
+<indexterm><primary>domain global</primary></indexterm>
+<indexterm><primary>ローカルグループ</primary></indexterm>
+<indexterm><primary>管理者の権利</primary></indexterm>
+<indexterm><primary>Windowsクライアント</primary></indexterm>
+	Windows NT4(とそれ以降)のクライアントがドメインに参加したとき、ドメイン全体での
+	<literal>Domain Admins</literal>グループはクライアント上のローカルな
+	<literal>Administrators</literal>グループのメンバシップに追加される。ドメイン
+	グローバルの<literal>Domain Admins</literal>グループのメンバであるユーザは誰でも
+	Windowsクライアント上で管理者の権利と権限を持つ。
+	</para>
+
+	<para>
+<indexterm><primary>望ましい解決方法</primary></indexterm>
+<indexterm><primary>管理者の権利と権限</primary></indexterm>
+<indexterm><primary>Power Users</primary></indexterm>
+<indexterm><primary>ドメイングローバルユーザ</primary></indexterm>
+<indexterm><primary>ドメイングローバルグループ</primary></indexterm>
+	これは、ユーザがドメインサーバ上でも管理者の権利と権限を持ってしまうために、
+	必ずしもすべての場合において良い解決方法とは言えない。Windowsクライアント上の
+	<literal>Power Users</literal>グループはワークステーションのみのローカルな
+	管理者権限を持つ。任意のグローバルユーザかドメイングローバルグループは、
+	ローカルワークステーションの<literal>Power Users</literal>グループのメンバに
+	追加できる。
+	</para>
+
+	<para>
+<indexterm><primary>ネストされたグループのサポート</primary></indexterm>
+<indexterm><primary>ローカルグループへのドメインユーザとグループの追加</primary></indexterm>
+<indexterm><primary>net</primary></indexterm>
+<indexterm><primary>Windowsワークステーション</primary></indexterm>
+	<link linkend="nestedgrpmgmgt">ネストされたグループのサポート</link>に、Windows
+	ワークステーション上でのローカルグループにドメインユーザとグループを追加する
+	方法の例がある。Sambaサーバから<command>net</command>を使うことで、この作業が
+	行える。
+	</para>
+
+	<para>
+<indexterm><primary>cmd</primary></indexterm>
+<indexterm><primary>cmd shell</primary></indexterm>
+<indexterm><primary>net</primary><secondary>localgroup</secondary></indexterm>
+	これを行う別の方法は、Windowsワークステーションに<literal>Administrator</literal>
+	としてログオンし、<command>cmd</command>シェルを開き、以下を実行する:
+<screen>
+&dosprompt; net localgroup administrators /add <userinput>domain_name\entity</userinput>
+</screen>
+	ここで、<literal>entity</literal>は、ドメインユーザかドメイングループのアカウント名である。
+	</para>
+
+	</sect2>
+
+</sect1>
+
+</chapter>

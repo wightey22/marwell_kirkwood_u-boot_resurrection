@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+
+<chapter id="contributing">
+<chapterinfo>
+	&author.jelmer;
+</chapterinfo>
+
+<title>コードの寄贈</title>
+
+<para>以下は、Sambaのソースコードを変更することとそれをSambaのメインブランチに
+組み込むことに興味がある場合に便利かもしれない、いくつかのTIPSと注意事項である。
+</para>
+
+<variablelist>
+	<varlistentry>
+		<term>ソースを検索する</term>
+
+		<listitem>
+		<para>Sambaにコードを寄贈するために、最新のソースを得ておく必要がある。
+		  Samba HOWTOコレクションの付録に記載されているGIT(訳注:オリジナルはCVS)
+		  からソースコードを検索する。
+		</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>大量の変更はチームメンバと相談する</term>
+		<listitem>
+		<para>大量の変更を行うときには、Sambaチームのメンバと相談してほしい。
+		  Sambaコードのある部分は、1人またはそれ以上の'担当' - すなわち
+		  大半のコードを書き維持しているSamba開発者がいる。
+		</para>
+
+		<para>この方法は余計な時間と、他の誰かが同じ事を作業しているか、
+		  作成した実装が正しいものではないという理由で、Sambaのメインブランチに
+		  入れられない、何らかの作業を行うのを防ぐことが出来る。
+		</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>パッチ形式</term>
+		<listitem>
+		<para>Sambaツリーへのパッチはunified diff形式にすべきである。
+		  たとえば、<userinput>diff -u</userinput>によって生成されたファイルである。
+		</para>
+
+		<para>もしもCVSから検索したSambaのコピーを修正しているならば、
+		  <userinput>cvs diff -u</userinput>を実行することによりそれらの変更の
+		  差分を生成することが簡単にできる。</para>			
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>Sambaソースコードの変更時に注意する点</term>
+		<listitem><para>
+		<itemizedlist>
+		<listitem><para>他の場所から単純にコピーして、動くまで、
+		    それを変更してはならない。コードはきれいで論理的である必要がある。
+		    重複したコードは拒否される。</para></listitem>
+		<listitem><para>パッチをテストすること。提供されたパッチを、Samba Teamの
+		    誰かが評価する前にしばらく時間がかかるかもしれないので、
+		    提供されたパッチが、再びレビューサイクルを通過する事が必要な時
+		    より前に長い時間がかかるかもしれない。</para></listitem>
+		<listitem><para>1つの大きなdiffファイル中に分離されたパッチを入れないこと。
+		    これは、読解とテストが困難になる。誰かが問題を抱えているものと混合する
+		    という理由で、コミットされた良いパッチを得られないというリスクに
+		    なるかもしれない。 </para></listitem>
+		<listitem><para>coding-suggestionsの章で推奨されているような
+		    Sambaのコーディング形式に従うようにすること。</para></listitem>
+			</itemizedlist>
+		</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>バグ修正の投稿</term>
+		<listitem>
+		<para>Sambaにおける、バグに対するバグ修正は、バグの説明の所
+		  にあるような、Sambaの
+		  <ulink url="https://bugzilla.samba.org/">バグジラシステム</ulink>
+		  を使って投稿すべきである。
+		</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>新規機能パッチの投稿</term>
+		<listitem>
+		<para>新規機能のパッチが何をするかについての説明と共に、パッチを
+		  <ulink url="mailto:samba-technical@samba.org">Samba-technicalメーリングリスト</ulink>
+		  に投稿し、可能であれば、変更するコードの部分の、
+		  Sambaチームメンバの'担当'(のだれか)にも送ること。
+		  Sambaチームメンバは常時忙しいので、皆が、'他の誰かの1人にそれを処理させる'
+		  傾向がある。もしも1週間経っても誰も反応しないのであれば、Sambaチーム
+		  のだれかから反応があるまで、再送すること。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>パッチのフィードバック</term>
+		<listitem>
+		<para>Sambaチームの誰かはパッチを確認し、コミットするか、なぜそうしなかったかについての
+		  コメントを出すだろう。後者の場合、パッチを修正し、パッチが
+		  受け付けられるまで再度提出することが出来る。</para>
+		</listitem>
+	</varlistentry>
+</variablelist>
+
+</chapter>

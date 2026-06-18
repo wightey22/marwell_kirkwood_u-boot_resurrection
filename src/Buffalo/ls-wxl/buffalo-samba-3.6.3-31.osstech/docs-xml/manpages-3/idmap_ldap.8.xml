@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="idmap_ldap.8">
+
+<refmeta>
+	<refentrytitle>idmap_ldap</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>idmap_ldap</refname>
+	<refpurpose>SambaのWinbind用idmap_ldapバックエンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<title>説明</title>
+
+	<para>idmap_ldap プラグインは、 LDAP ディレクトリサービスにある
+	SID/uid/gid のマッピングテーブルに対して、 Winbind から格納／
+	呼び出しを行う手段を提供する。このモジュールは &quot;idmap&quot;
+	と &quot;idmap alloc&quot; API の両方を実装している。
+	</para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>IDMAP オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>ldap_base_dn = DN</term>
+		<listitem><para>
+			SID/uid/gid マッピングエントリの検索を行う際に使用する、
+			ディレクトリの base suffix を定義する。定義されていない場合、
+			idmap_ldap はデフォルトで smb.conf の &quot;ldap idmap suffix&quot;
+			オプションの値を使用する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>ldap_user_dn = DN</term>
+		<listitem><para>
+			認証の際に使用する user DN を定義する。
+			未定義の場合は匿名バインドが実行される。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>ldap_url = ldap://server/</term>
+		<listitem><para>
+			既存の SID/uid/gid マップのエントリを検索する際に使用する LDAP 
+			サーバーを指定する。未定義の場合、 ldap://localhost/ が使われる。
+		</para></listitem>
+		</varlistentry>
+
+                <varlistentry>
+		<term>range = low - high</term>
+                <listitem><para>
+			バックエンドが権威を持つと規定されている、 uid と gid の利用可能な
+			マッチング範囲を定義する。事実上同じバックエンドが SID/uid/gid
+			マッピングのエントリを格納／呼び出しするため、通常その範囲は
+			割り当て範囲と同じになる。指定がない場合 Winbind はフェイル
+			オーバーして、 smb.conf の &quot;idmap uid&quot; と
+			&quot;idmap gid&quot; オプションを使用する。
+                </para></listitem>
+                </varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>IDMAP ALLOC オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>ldap_base_dn = DN</term>
+		<listitem><para>
+			そのディレクトリの中で、新しい SID/uid/gid マッピングのエントリを
+			格納するべき base suffix を定義する。指定がない場合、 idmap_ldap は
+			デフォルトとして smb.conf の &quot;ldap idmap suffix&quot;
+			オプションを使用する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>ldap_user_dn = DN</term>
+		<listitem><para>
+			認証の際に使用するuser DNを定義する。
+			未定義の場合は匿名バインドが実行される。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>ldap_url = ldap://server/</term>
+		<listitem><para>
+			modify/add/delete リクエストを送信する宛先としての LDAP サーバー
+			を指定する。未定義の場合 ldap://localhost/ が使われる。
+		</para></listitem>
+		</varlistentry>
+
+                <varlistentry>
+		<term>range = low - high</term>
+                <listitem><para>
+			winbindd からユーザとグループに対して割り当てができる uid と
+			 gid の利用可能範囲を定義する。指定がない場合 Winbind はフェイル
+			オーバーして、 smb.conf の &quot;idmap uid&quot; と
+			&quot;idmap gid&quot; オプションを使用する。
+                </para></listitem>
+                </varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>使用例</title>
+
+	<para>
+	以下の LDAP 設定の例は、SID/gid/uid マッピングを高速に検索するために
+	localhost 上で動作しているスレーブサーバーのものであり、紹介(referral)
+	の設定が正しくなされていることを暗に示している。
+	idmap 割当て用バックエンドは直接マスターを指しており、紹介（とそれに
+	続くマスターへの再接続）はスキップされる。これにより、スレーブは
+	割り当て要求の結果としてマスター側で書き込まれたものを返してくれる。
+	</para>
+
+	<programlisting>
+	[global]
+	    idmap domains = ALLDOMAINS
+	    idmap config ALLDOMAINS:default      = yes
+	    idmap config ALLDOMAINS:backend      = ldap
+	    idmap config ALLDOMAINS:ldap_base_dn = ou=idmap,dc=example,dc=com
+	    idmap config ALLDOMAINS:ldap_url     = ldap://localhost/
+	    idmap config ALLDOMAINS:range        = 10000 - 50000
+
+	    idmap alloc backend = ldap
+	    idmap alloc config:ldap_base_dn = ou=idmap,dc=example,dc=com
+	    idmap alloc config:ldap_url     = ldap://master.example.com/
+	    idmap alloc config:range        = 10000 - 50000
+	</programlisting>
+</refsect1>
+
+<refsynopsisdiv>
+	<title>備考</title>
+
+	<para>LDAP サーバーに対して認証を使用するには DN とパスワードを
+	指定する必要があるだろう。設定ファイル中に平文で指定された
+	パスワードが晒されてしまうことを防ぐために、これらはセキュリティ
+	ストアの中に格納される。特定の idmap ドメインにおいて、指定された
+	DN に対する秘密のパスワードを格納するには &quot;net idmap &quot; 
+	コマンドを使用する。
+	</para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+	オリジナルの Samba ソフトウェアとそれに関連するユーティリティーは、
+	Andrew Tridgell によって作られた。Samba は現在、Linux カーネル開発と
+	同様の方法で、Samba Team によりオープンソースプロジェクトとして
+	開発されている。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+		によって行なわれた。</para>
+</refsect1>
+
+</refentry>

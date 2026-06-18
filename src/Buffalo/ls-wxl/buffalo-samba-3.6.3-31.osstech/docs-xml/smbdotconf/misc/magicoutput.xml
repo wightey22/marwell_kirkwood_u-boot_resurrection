@@ -1,0 +1,16 @@
+<samba:parameter name="magic output"
+		 context="S"
+		 type="string"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> このパラメータは、Magic スクリプト(下記の 
+	<smbconfoption name="magic script"/>
+	パラメータを参照) によって生成される出力結果が書き込まれるファイルの名前を指定する。</para>
+
+	<warning><para>複数のクライアントが同じ <parameter moreinfo="none">Magic 
+	スクリプト</parameter> を同じディレクトリで利用する場合、
+	出力ファイルの内容は不定になる。</para></warning>
+</description>
+<value type="default">&lt;magic script name&gt;.out</value>
+<value type="example">myfile.txt</value>
+</samba:parameter>

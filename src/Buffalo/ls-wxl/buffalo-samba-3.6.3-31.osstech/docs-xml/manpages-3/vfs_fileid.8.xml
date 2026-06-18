@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_fileid.8">
+
+<refmeta>
+	<refentrytitle>vfs_fileid</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_fileid</refname>
+	<refpurpose>クラスタ構成時にえるように、
+    ユニークなデバイス ID 値で file_if 構造体を生成する。
+	</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = fileid</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>この VFS モジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>
+	システムの一部である。</para>
+
+	<para>
+    ファイルロックの際、Samba は file_id 構造体を使ってファイルを一意に
+    特定する。デフォルトでは、file_id には <command>stat()</command>
+    システムコールで返されたデバイスおよび inode 番号が格納されている。
+    file_id はファイルの一意な識別子であるため、これはある特定のクラスタ
+    構成のの中では、すべてのノードで同じ値である必要がある。
+    このモジュールは <command>SMB_VFS_FILE_ID_CREATE()</command> の動作を
+    オーバーライドし、設定されたアルゴリズム（ "fileid:algorithm"
+    オプションを参照のこと）に従ってデバイス番号を生成する。
+	</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+
+		<varlistentry>
+		<term>fileid:algorithm = ALGORITHM</term>
+		<listitem>
+		<para>
+        指定できるアルゴリズムは<command>fsname</command>と
+        <command>fsid</command>である。デフォルト値は
+        <command>fsname</command>である。
+		</para>
+        <para><command>fsname</command> アルゴリズムでは、
+        デバイス ID を カーネルのデバイス名から生成する。
+		</para>
+        <para><command>fsid</command> アルゴリズムでは、デバイス ID を
+        <command>statfs()</command>システムコールで返された
+        <command>f_fsid</command>から生成する。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>fileid:mapping = ALGORITHM</term>
+		<listitem>
+        <para>このオプションは<command>fileid:algorithm</command>オプションの
+        レガシーな（古い）バージョンである。これは Samba 3.0 のカスタム
+        バージョンにおいて、フィールドマッピング機能に関する以前のバージョンで
+        使われていた。
+		</para>
+		</listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+
+	<para>
+    <command>fsid</command> アルゴリズムを使って
+    <command>fileid</command> モジュールを使う場合の例
+	</para>
+
+<programlisting>
+        <smbconfsection name="[global]"/>
+	<smbconfoption name="vfs objects">fileid</smbconfoption>
+	<smbconfoption name="fileid:algorithm">fsid</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba システムのバージョン 3.2(訳注:3.x?) 用である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+    オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+    Tridgell によって作成された。現在 Samba は Samba Team に
+    よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+    として開発が行なわれている。
+	</para>
+
+</refsect1>
+<refsect1>
+    <title>日本語訳</title>
+    <para>このマニュアルページは Samba 3.2.8 - 3.5.3 対応のものである。</para>
+    <para>このドキュメントの Samba 3.2.8 - 3.5.3 対応の翻訳は
+    <itemizedlist>
+        <listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+    </itemizedlist>
+    によって行なわれた。</para>
+</refsect1>
+
+</refentry>

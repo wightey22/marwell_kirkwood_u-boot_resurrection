@@ -1,0 +1,751 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="integrate-ms-networks">
+ 
+<chapterinfo>
+	&author.jht;
+        <pubdate> (Jan 01 2001) </pubdate>
+</chapterinfo>
+ 
+<title>Microsoft Windows ネットワークへのSambaの統合</title>
+ 
+<para>
+<indexterm><primary>NetBIOS</primary></indexterm>
+この章ではNetBIOS over TCP/IPの名前からIPアドレスを解決する事について取り扱う。もしも、
+使用しているWindowsクライアントがNetBIOS over TCP/IPを使うように設定されていない場合、
+この章は使用している環境には適用されない。もしも使用している設定が、NetBIOS over TCP/IPを
+使うのであれば、この章はネットワークの問題を解決するのに手助けとなるだろう。
+</para>
+
+<note>
+<para>
+<indexterm><primary>NetBEUI</primary></indexterm>
+<indexterm><primary>LLC</primary></indexterm>
+NetBIOS over TCP/IPはNetBEUIとは関係ない。NetBEUIはNetBIOS over Logical Link Control(LLC)
+である。最近のネットワークでは、NetBIOSを動かさないことを強く推奨している。また、
+NetBEUI over TCP/IPというようなものはない。&smbmdash;そのようなプロトコルは、全く完全に
+誤解である。
+</para>
+</note>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+多くのMicrosoft Windows ネットワーク管理者は、UNIX/Linux OS中で実装されているような
+基本的なTCP/IPネットワーキングに一度も出会ったことはない。同じく、多くのUNIXとLinux
+管理者は、Microsoft Windows TCP/IPベースのネットワークの複雑さ(とそれに対する願望
+は無いかもしれない)に出会ったことがない。
+</para>
+
+<para>
+この章では、各OS環境において、どのように、名前がIPアドレスに解決されるかについての
+基本について、簡単に紹介する。
+</para>
+
+</sect1>
+
+<sect1>
+<title>背景情報</title>
+
+<para>
+<indexterm><primary>NetBIOS over TCP/IP</primary></indexterm>
+<indexterm><primary>UDP port 137</primary></indexterm>
+<indexterm><primary>TCP port 139</primary></indexterm>
+<indexterm><primary>TCP port 445</primary></indexterm>
+<indexterm><primary>UDP port 137</primary></indexterm>
+Microsoft Windows 2000から、Microsoft Windows ネットワークをNetBIOS over TCP/IPなしで
+動かすことが可能になった。NetBIOS over TCP/IPは、NetBIOS名前解決にUDPポート137を、
+NetBIOSセッションサービスにTCPのポート139を使う。NetBIOS over TCP/IPが、Microsoft 
+Windows 2000とそれ以降のクライアントで無効になると、TCPポート445のみが使われ、
+UDPポート137とTCPポート139は使われなくなる。
+</para>
+
+<note>
+<para>
+Windows 2000かそれ以降のクライアントを使うとき、もしも NetBIOS over TCP/IPが無効になって
+いない場合、クライアントはUDPポート137(NetBIOSネームサービスであり、Windows Internet 
+Name serviceあるいはWINSとしても知られている)とTCPポート445(実際のファイルと印刷データの
+転送)を使う。
+</para>
+</note>
+
+<para>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>DDNS</primary></indexterm>
+<indexterm><primary>SRV RR</primary></indexterm>
+<indexterm><primary>IXFR</primary></indexterm>
+<indexterm><primary>DHCP</primary></indexterm>
+NetBIOS over TCP/IPが無効の場合、DNSの使用が基本である。現在ほとんどの、
+NetBIOS over TCP/IPを無効にした環境では、Microsoft Active Directoryサービス(ADS)を
+使っている。ADSは
+<indexterm><primary>DNS</primary><secondary>Dynamic</secondary></indexterm>
+サービスリソースレコード(SRV RR)と増分ゾーン転送(IXFR)を使う、ダイナミックDNSを要求
+する。
+<indexterm><primary>DHCP</primary></indexterm>
+ADSと同時にDHCPを使うことは、クライアントワークステーションネットワーク設定上で
+集中制御管理を行う手段として推奨される。
+</para>
+
+</sect1>
+
+<sect1>
+<title>純粋なUNIX/Linux環境中での名前解決</title>
+
+<para>
+この節が対象としている重要な設定ファイルは以下の通り:
+</para>
+
+<indexterm><primary>/etc/hosts</primary></indexterm>
+<indexterm><primary>/etc/resolv.conf</primary></indexterm>
+<indexterm><primary>/etc/host.conf</primary></indexterm>
+<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+
+<itemizedlist>
+	<listitem><para><filename>/etc/hosts</filename></para></listitem>
+	<listitem><para><filename>/etc/resolv.conf</filename></para></listitem>
+	<listitem><para><filename>/etc/host.conf</filename></para></listitem>
+	<listitem><para><filename>/etc/nsswitch.conf</filename></para></listitem>
+</itemizedlist>
+
+<sect2>
+<title><filename>/etc/hosts</filename></title>
+
+<para>
+このファイルは静的なIPアドレスと名前の一覧を含んでいる。
+<programlisting>
+127.0.0.1	localhost localhost.localdomain
+192.168.1.1	bigbox.quenya.org	bigbox	alias4box
+</programlisting>
+</para>
+
+<para>
+<indexterm><primary>/etc/hosts></primary></indexterm>
+<indexterm><primary>name resolution</primary></indexterm>
+<filename>/etc/hosts</filename>の目的は、名前解決メカニズムを提供することであり、
+ユーザはIPアドレスを覚えなくても済むようになる。
+</para>
+
+<para>
+<indexterm><primary>IPアドレス</primary></indexterm>
+<indexterm><primary>MACアドレス</primary></indexterm>
+<indexterm><primary>物理ネットワーク転送レイヤ</primary></indexterm>
+物理的なネットワーク転送レイヤ上で送られたネットワークパケットは、IPアドレスを
+使うのではなく、メディアアクセスコントロールアドレス、あるいはMACアドレス
+を使って通信を行う。IPアドレスは、現在32ビット長で、通常ドット(あるいは
+ピリオド)で分割された4つの十進数で表現される。&smbmdash;
+たとえば、168.192.1.1である。
+</para>
+
+<para>
+<indexterm><primary>MACアドレス</primary></indexterm>
+MACアドレスは48ビット(あるいは6バイト)であり、通常2桁の16進数をコロン
+で分離して表現される。たとえば 40:8e:0a:12:34:56.である。
+</para>
+
+<para>
+すべてのネットワークインタフェースはMACアドレスを持たねばならない。MACアドレス
+に対して1つ以上のIPアドレスを割り当てることができる。IPアドレスとMACアドレスの間に
+何らの関係はない。そのようなすべての割り当ては、任意、あるいは自由に行える。
+最も基本的なレベルでは、すべてのネットワーク津心は、MACアドレスを使って行われる。
+MACアドレスがグローバルに一意で、一般的に、特定のインタフェースに固定されている
+ので、IPアドレスの割り当てはネットワーク管理の視点から意味をなす。1つ以上のIP
+アドレスをMACアドレス毎に割り当てられる。1つのアドレスはプライマリIPアドレスで
+ある必要がある。&smbmdash;これは、アドレス解決プロトコル(ARP)の問い合わせで
+帰ってくるアドレスである。
+</para>
+
+<para>
+<indexterm><primary>マシン名</primary></indexterm>
+ユーザあるいはプロセスが他のマシンと通信したい場合、プロトコルは、
+<quote>マシン名</quote>あるいは<quote>ホスト名</quote>が、TCP/IP設定制御ファイルで
+制御される方法で、IPアドレスに解決されるように実装されている。
+<filename>/etc/hosts</filename>はそのようなファイルの1つである。
+</para>
+
+<para>
+<indexterm><primary>ARP/RARP</primary></indexterm>
+送信先のインタフェースのIPアドレスが決まったとき、ARP/RARPと呼ばれるプロトコルが、
+対象インタフェースのMACアドレスを識別するのに使われるARPは、すべて1であるMACアドレスを
+使って、ローカルネットワークセグメント上のすべてのインタフェースに対してUDPを使って
+送信する、ブロードキャストベースの方法である。ネットワークインタフェースは2つのMAC
+アドレスのみに返信する。そのインタフェース固有のアドレスと、ff:ff:ff:ff:ff:ffという
+アドレスである。ARP要求からの返信パケットにはMACアドレスと各インタフェースのプライマリ
+IPアドレスが含まれている。
+</para>
+
+<para>
+<indexterm><primary>/etc/hosts</primary></indexterm>
+<filename>/etc/hosts</filename>ファイルはすべてのUNIX/Linux TCP/IPインストールの
+基本であり、最低でも、localhostとローカルネットワークインタフェースの
+IPアドレスとローカルマシン上のプライマリ名を含んでいる。このファイルは、
+名前解決方法の出発点となる。つまり、その他の名前解決機構を利用する前に、
+基本的な名前解決は行われている。
+</para>
+
+</sect2>
+
+
+<sect2>
+<title><filename>/etc/resolv.conf</filename></title>
+
+<para>
+このファイルで名前解決ライブラリを指定する:
+</para>
+
+<itemizedlist>
+	<listitem><para>マシンが存在するドメインの名前
+	</para></listitem>
+	
+	<listitem><para>完全に一意でないホスト名をIPアドレスに解決しようとする時に
+	自動的に検索されるべき任意のドメイン名。
+	</para></listitem>
+	
+	<listitem><para>名前解決検索を実行するのに問い合わせされる、有効なドメイン
+	ネームサーバのIP仇レスか名前。
+	</para></listitem>
+</itemizedlist>
+
+</sect2>
+
+
+<sect2>
+<title><filename>/etc/host.conf</filename></title>
+
+
+<para>
+<indexterm><primary>/etc/host.conf</primary></indexterm>
+<filename>/etc/host.conf</filename>は、<filename>/etc/resolv.conf</filename>中で
+設定できるようにするための主要な手段である。これはきわめて重要な設定ファイルである。
+このファイルは名前解決が処理されるかもしれない順序を制御する。通常の構造は
+以下の通り:
+<programlisting>
+order hosts,bind
+multi on
+</programlisting></para>
+
+<para>両方のアドレスが返されるべきである。詳細については、
+<filename>host.conf</filename>マニュアルページを参照のこと。
+</para>
+
+</sect2>
+
+
+<sect2>
+<title><filename>/etc/nsswitch.conf</filename></title>
+
+<para>
+<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+このふぁいるは実際の名前解決先を制御する。ファイルは通常以下のようにリゾルバ
+オブジェクト指定を記述する:
+<programlisting>
+# /etc/nsswitch.conf
+#
+# Name Service Switch 設定ファイル
+#
+
+passwd:		compat
+# Alternative entries for password authentication are:
+# passwd:	compat files nis ldap winbind
+shadow:		compat
+group:		compat
+
+hosts:		files nis dns
+# Alternative entries for host name resolution are:
+# hosts:	files dns nis nis+ hesiod db compat ldap wins
+networks:	nis files dns
+
+ethers:		nis files
+protocols:	nis files
+rpc:		nis files
+services:	nis files
+</programlisting></para>
+
+<para>
+もちろん、それらの各メカニズムは、適切な機能かサービスを正しく設定する
+事を要求する。
+</para>
+
+<para>
+ネットワーク要求/メッセージを送ることが必要にならない限り、TCP/IPネットワークは
+何もデータを送らないことに注意すべきである。すべてのTCP/IP通信は、必要時にのみ
+通信を行うという原則を仮定している。
+</para>
+
+
+<para>
+<indexterm><primary>libnss_wins.so</primary></indexterm>
+<indexterm><primary>NetBIOS names</primary></indexterm>
+<indexterm><primary>make</primary></indexterm>
+<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+<indexterm><primary>wins</primary></indexterm>
+バージョン 2.2.0から、Sambaはname service switch機構用の拡張のために、Linuxをサポート
+するようになり、Linuxクライアントは、Microsoft Windows NetBIOSの名前解決機能を使える
+ようになった。この機能を使うためには、Sambaはmakeコマンドで適切な引数を付けてコンパイル
+する必要がある(すなわち、<userinput>make nsswitch/libnss_wins.so</userinput>)。
+次に名前解決ライブラリを<filename>/lib</filename>ディレクトリにインストールし、
+<parameter>wins</parameter>パラメータを、<filename>/etc/nsswitch.conf</filename>ファイル
+中の<quote>hosts:</quote>行に追加する必要がある。この時点で、
+SambaサーバとMicrosoft Windowsマシンが存在するワークグループ内にいる、
+どこかのMicrosoft Windowsマシンに対してNetBIOSマシン名でping出来る。
+</para>
+
+</sect2>
+</sect1>
+
+
+<sect1>
+<title>Microsoft Windowsネットワーク内でのような名前解決</title>
+
+<para>
+<indexterm><primary>コンピュータ名</primary></indexterm>
+<indexterm><primary>マシン名</primary></indexterm>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+<indexterm><primary>SMB名</primary></indexterm>
+Microsoft Windowsネットワークは、各マシンに割り当てられた名前をベースにしている。
+これは、<quote>コンピュータ名</quote>,<quote>マシン名</quote>,
+<quote>ネットワーキング名</quote>,<quote>NetBIOS名</quote>あるいは<quote>SMB名</quote>
+という、種々の(そして矛盾した)名前で呼ばれている。すべての単語は、ワークグループか
+ドメイン名の名前にも適用できる<quote>NetBIOS名</quote>を除いて同じものを意味する。
+<quote>ワークグループ</quote>と<quote>ドメイン</quote>という単語は、実際、どのマシンが
+関連づけられているかという、単なる名前である。すべてのNetBIOS名はきっかり16文字である。
+16番目の文字は予約されている。登録されたNetBIOS名のサービスレベル情報を指定する
+1バイトとして使われる。そのため、NetBIOSマシン名は、クライアント/サーバによって
+提供される各サービスタイプで登録される。
+</para>
+
+<para>
+<link linkend="uniqnetbiosnames">一意なNetBIOS名</link>と
+<link linkend="netbiosnamesgrp">グループ名</link>の表は、典型的なNetBIOS
+名前/サービスタイプ登録一覧である。
+</para>
+
+<table frame="all" id="uniqnetbiosnames">
+<title>一意なNetBIOS名</title>
+<tgroup cols="2">
+<colspec align="left"/>
+<colspec align="justify"/>
+<tbody>
+<row><entry>MACHINENAME&lt;00&gt;</entry><entry>MACHINENAME上でサーバサービスが動いている</entry></row>
+<row><entry>MACHINENAME&lt;03&gt;</entry><entry>一般的なマシン名(NetBIOS名)</entry></row>
+<row><entry>MACHINENAME&lt;20&gt;</entry><entry>LanManサーバサービスがMACHINENAMEで動いている</entry></row>
+<row><entry>WORKGROUP&lt;1b&gt;</entry><entry>ドメインマスタブラウザ</entry></row>
+</tbody>
+</tgroup>
+</table>
+
+<table frame="all" id="netbiosnamesgrp">
+<title>Group Names</title>
+<tgroup cols="2">
+<colspec align="left"/>
+<colspec align="justify"/>
+<tbody>
+<row><entry>WORKGROUP&lt;03&gt;</entry><entry>WORKGROUPのすべてのメンバによって登録された一般的な名前</entry></row>
+<row><entry>WORKGROUP&lt;1c&gt;</entry><entry>ドメインコントローラ/ネットログオンサーバ</entry></row>
+<row><entry>WORKGROUP&lt;1d&gt;</entry><entry>ローカルマスタブラウザ</entry></row>
+<row><entry>WORKGROUP&lt;1e&gt;</entry><entry>ブラウザ選定サービス</entry></row>
+</tbody>
+</tgroup>
+</table>
+
+<para>
+<indexterm><primary>NetBIOS</primary></indexterm>
+すべてのNetBIOSマシンは、それに固有の名前を
+<link linkend="uniqnetbiosnames">一意なNetBIOS名</link>と
+<link linkend="netbiosnamesgrp">グループ名</link>単位で登録することに注意すべきである。
+これは、システム管理者が、<filename>/etc/hosts</filename>中か、DNSデータベース中で、
+各IPアドレスに割り当てられる名前を決める伝統的な決め方をするTCP/IPでの流儀と
+大きく異なる。
+</para>
+
+<para>
+<indexterm><primary>NetBIOS</primary></indexterm>
+<indexterm><primary>/etc/hosts</primary></indexterm>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+明確な説明の中の、1つの重要なポイントに注意すべきである。
+<filename>/etc/hosts</filename>ファイルとDNSレコードは、それが必要かもしれない
+サービスのタイプを見つけることに、Microsoft Windowsクライアントが依存する、
+NetBIOS名前情報を提供しない。これの例は、Microsoft Windowsクライアントが
+ドメインログオンサーバを捜そうとする時に起こる事である。クライアントは
+名前タイプ*&lt;1C&gt;を登録しているすべてのマシンを列挙するために
+(NetBIOSブロードキャスト経由で)検索を実行することによって、このサービスと、この
+サービスを提供しているサーバのIPアドレスを捜す。次にログオン要求は、IPアドレスの
+一覧として返された各IPアドレスに送られる。どれかのマシンが最初に応答すると、
+次にそのマシンがログオンサービスを提供することになる。
+</para>
+
+<para>
+<indexterm><primary>ドメイン</primary></indexterm>
+<indexterm><primary>ワークグループ</primary></indexterm>
+Microsoft Windows ネットワークのセキュリティアーキテクチャを示している付加的な意味を
+持っているので、<quote>ワークグループ</quote>および<quote>ドメイン</quote>という
+名前は、まったくもって紛らわしい。<quote>ワークグループ</quote>という単語は、
+ネットワーク環境の基本原則がピアツーピア構造になっている事を示している。
+ワークグループにおいては、すべてのマシンは、自分自身のセキュリティについて責任があり、
+一般的にそのセキュリティは、パスワードの使用で制限される(共有レベルのセキュリティ
+として知られている)。ピアツーピアのネットワークを使うほとんどの場合、自分自身の
+マシンを制御するユーザは単に全くセキュリティを持たないように(訳注:共有しないように)
+するだろう。ワークグループ環境でもユーザレベルのセキュリティを使うことは可能で、
+その場合、ユーザ名と対応するパスワードを使うことを要求する。
+</para>
+
+<para>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>Network Basic Input/Output System</primary><see>NetBIOS</see></indexterm>
+<indexterm><primary>Logical Link Control</primary><see>LLC</see></indexterm>
+<indexterm><primary>Network Basic Extended User Interface</primary><see>NetBEUI</see></indexterm>
+<indexterm><primary>Internetworking Packet Exchange</primary><see>IPX</see></indexterm>
+<indexterm><primary>NetWare</primary></indexterm>
+<indexterm><primary>NetBT</primary></indexterm>
+<indexterm><primary>NBT</primary></indexterm>
+Microsoft Windowsネットワークは、ローカルとリモートマシンすべてでのメッセージ通信用の
+マシン名を使うために、前もって決定される。使われるプロトコルは、
+Server Message Block (SMB)と呼ばれ、これはNetBIOSプロトコル
+(Network Basic Input/Output System)を使って実装される。NetBIOSはLLC
+(Logical Link Control)プロトコルを使ってカプセル化される。 &smbmdash;
+この場合、結果のプロトコルはNetBEUI(Network Basic Extended User Interface)と呼ばれる。
+NetBIOSは、Novell NetWareによって使われるIPX(Internetworking Packet Exchange)上でも
+動作できる。&smbmdash;また、TCP/IPプロトコル上でも動作でき、この場合、結果の
+プロトコルは、NBTあるいはNetBT、すなわちNetBIOS over TCP/IPと呼ばれる。
+</para>
+
+<para>
+Microsoft Windows マシンは、たくさんの複雑な名前解決メカニズムを使う。主にTCP/IP
+で接続するので、このデモはその領域にのみ限っている。
+</para>
+
+<sect2>
+<title>NetBIOSネームキャッシュ</title>
+
+<para>
+<indexterm><primary>n-memory buffer</primary></indexterm>
+<indexterm><primary>ローカルキャッシュ</primary></indexterm>
+すべてのMicrosoft Windowsマシンは、おおよそ過去10分から15分の間に通信したすべての
+外部マシンのNetBIOS名とIPアドレスを格納する、メモリ中のバッファを使う。設定された
+すべての名前解決機構を使って行うよりも、ローカルキャッシュからマシンのIPアドレスを
+得る方がより効率的である。
+</para>
+
+<para>
+<indexterm><primary>名前検索</primary></indexterm>
+もしも、ローカル名前キャッシュにその名前があるマシンが、キャッシュ上で満了になり
+削除される前にシャットダウンした場合、そのマシンへメッセージ交換を行おうとすると、
+そのマシンはタイムアウトするだろう。その名前がキャッシュにあるので、名前解決は
+成功するが、マシンは反応しない。これは、ユーザにとって不満を感じさせるが、これは
+プロトコルの特性である。
+</para>
+
+<para>
+<indexterm><primary>nbtstat</primary></indexterm>
+<indexterm><primary>nmblookup</primary></indexterm>
+<indexterm><primary>NetBIOS</primary></indexterm>
+NetBIOS名前キャッシュの検査を行うMicrosoft Windows ユーティリティは、
+<quote>nbtstat</quote>である。Sambaにおける同等品は<command>nmblookup</command>である。
+</para>
+
+</sect2>
+
+<sect2>
+<title>LMHOSTSファイル</title>
+
+<para>
+<indexterm><primary>LMHOSTS</primary></indexterm>
+このファイルは通常Microsoft Windows NT 4.0かWindows 200x/XPのディレクトリ
+<filename>%SystemRoot%\SYSTEM32\DRIVERS\ETC</filename>にあり、IPアドレスとマシン名が
+対になったものを含む。<filename>LMHOSTS</filename>ファイルはNetBIOS名からIPアドレスへの
+マッピングを行う。
+</para>
+
+<para>
+典型的なものは以下の通り:
+</para>
+
+<para><programlisting>
+# Copyright (c) 1998 Microsoft Corp.
+#
+# This is a sample LMHOSTS file used by the Microsoft Wins Client (NetBIOS
+# over TCP/IP) stack for Windows98
+#
+# This file contains the mappings of IP addresses to NT computer names
+# (NetBIOS) names. Each entry should be kept on an individual line.
+# The IP address should be placed in the first column followed by the
+# corresponding computer name. The address and the computer name
+# should be separated by at least one space or tab. The "#" character
+# is generally used to denote the start of a comment (see the exceptions
+# below).
+#
+# This file is compatible with Microsoft LAN Manager 2.x TCP/IP lmhosts
+# files and offers the following extensions:
+#
+#      #PRE
+#      #DOM:&lt;domain&gt;
+#      #INCLUDE &lt;filename&gt;
+#      #BEGIN_ALTERNATE
+#      #END_ALTERNATE
+#      \0xnn (non-printing character support)
+#
+# Following any entry in the file with the characters "#PRE" will cause
+# the entry to be preloaded into the name cache. By default, entries are
+# not preloaded, but are parsed only after dynamic name resolution fails.
+#
+# Following an entry with the "#DOM:&lt;domain&gt;" tag will associate the
+# entry with the domain specified by &lt;domain&gt;. This effects how the
+# browser and logon services behave in TCP/IP environments. To preload
+# the host name associated with #DOM entry, it is necessary to also add a
+# #PRE to the line. The &lt;domain&gt; is always pre-loaded although it will not
+# be shown when the name cache is viewed.
+#
+# Specifying "#INCLUDE &lt;filename&gt;" will force the RFC NetBIOS (NBT)
+# software to seek the specified &lt;filename&gt; and parse it as if it were
+# local. &lt;filename&gt; is generally a UNC-based name, allowing a
+# centralized lmhosts file to be maintained on a server.
+# It is ALWAYS necessary to provide a mapping for the IP address of the
+# server prior to the #INCLUDE. This mapping must use the #PRE directive.
+# In addition the share "public" in the example below must be in the
+# LanMan Server list of "NullSessionShares" in order for client machines to
+# be able to read the lmhosts file successfully. This key is under
+# \machine\system\currentcontrolset\services\lanmanserver\
+# parameters\nullsessionshares
+# in the registry. Simply add "public" to the list found there.
+#
+# The #BEGIN_ and #END_ALTERNATE keywords allow multiple #INCLUDE
+# statements to be grouped together. Any single successful include
+# will cause the group to succeed.
+#
+# Finally, non-printing characters can be embedded in mappings by
+# first surrounding the NetBIOS name in quotations, then using the
+# \0xnn notation to specify a hex value for a non-printing character.
+#
+# The following example illustrates all of these extensions:
+#
+# 102.54.94.97     rhino     #PRE #DOM:networking  #net group's DC
+# 102.54.94.102    "appname  \0x14"       #special app server
+# 102.54.94.123    popular   #PRE         #source server
+# 102.54.94.117    localsrv  #PRE         #needed for the include
+#
+# #BEGIN_ALTERNATE
+# #INCLUDE \\localsrv\public\lmhosts
+# #INCLUDE \\rhino\public\lmhosts
+# #END_ALTERNATE
+#
+# In the above example, the "appname" server contains a special
+# character in its name, the "popular" and "localsrv" server names are
+# pre-loaded, and the "rhino" server name is specified so it can be used
+# to later #INCLUDE a centrally maintained lmhosts file if the "localsrv"
+# system is unavailable.
+#
+# Note that the whole file is parsed including comments on each lookup,
+# so keeping the number of comments to a minimum will improve performance.
+# Therefore it is not advisable to simply add lmhosts file entries onto the
+# end of this file.
+</programlisting></para>
+
+</sect2>
+
+<sect2>
+<title>HOSTSファイル</title>
+
+<para>
+このファイルは、通常Microsoft Windows NT 4.0あるいはWindows 200x/XPの
+ディレクトリ<filename>%SystemRoot%\SYSTEM32\DRIVERS\ETC</filename>中にあり、
+IPアドレスとIPホスト名が対になったものを含む。これは、名前解決機構として
+使うことが出来るが、どのようにTCP/IP環境が設定されたかに依存する。このファイルは
+UNIX/Linuxでの<filename>/etc/hosts</filename>ファイルと同じ使い方である。
+</para>
+</sect2>
+
+
+<sect2>
+<title>DNSによる検索</title>
+
+
+<para>
+<indexterm><primary>DNS</primary></indexterm>
+この機能は、ネットワーク設定機能中のTCP/IPに関する設定の中で設定できる。
+もしもこれが有効になると、どのようにNetBIOSノードタイプパラメータが設定
+されたかに正確に依存して決まる、選択された名前解決シーケンスが後に続く。
+ノードタイプ0は、NetBIOS名前キャッシュ中で名前検索をしても見つからなかった場合、
+NetBIOSブロードキャスト(UDP上のブロードキャスト)が使われる。もしも、失敗した場合、
+次にDNS、HOSTSとLMHOSTSが使われる。もしもノードタイプが8ならば、DNS,HOSTS,LMHOSTS
+の検索から結果を得る前に、NetBIOSユニキャスト(UDPユニキャストで)がWINSサーバに
+送られるか、ブロードキャスト検索が使われる。
+This capability is configured in the TCP/IP setup area in the network 
+configuration facility. If enabled, an elaborate name resolution sequence 
+is followed, the precise nature of which is dependent on how the NetBIOS 
+Node Type parameter is configured. A Node Type of 0 means that
+NetBIOS broadcast (over UDP broadcast) is used if the name 
+that is the subject of a name lookup is not found in the NetBIOS name 
+cache. If that fails, then DNS, HOSTS, and LMHOSTS are checked. If set to 
+Node Type 8, then a NetBIOS Unicast (over UDP Unicast) is sent to the 
+WINS server to obtain a lookup before DNS, HOSTS, LMHOSTS, or broadcast 
+lookup is used.
+</para>
+
+</sect2>
+
+<sect2>
+<title>WINSによる検索</title>
+
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>Windows Internet Name Server</primary><see>WINS</see></indexterm>
+<indexterm><primary>NetBIOS Name Server</primary><see>NBNS</see></indexterm>
+WINS(Windows Internet Name Server)サービスはrfc1001/1002で定義されたNBNS
+(NetBIOSネームサーバ)と同等のものである。WINSサーバは、もしもTCP/IP設定で、
+少なくとも1つのWINSサーバのIPアドレスを指定したとき、Windows クライアントによって
+登録される名前とIPアドレスを格納する。
+</para>
+
+<para>
+SambaをWINSサーバサーバとして設定するには、以下のパラメータを&smb.conf;
+ファイルに追加する必要がある:
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="wins support">Yes</smbconfoption>
+</smbconfblock></para>
+
+<para>
+<indexterm><primary>WINS</primary></indexterm>
+SambaをWINSサーバを使うように設定するためには、以下のパラメータを&smb.conf;
+ファイルに追加する必要がある:
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="wins support">No</smbconfoption>
+<smbconfoption name="wins server">xxx.xxx.xxx.xxx</smbconfoption>
+</smbconfblock></para>
+
+<para>
+ここで、<replaceable>xxx.xxx.xxx.xxx</replaceable>は、WINSサーバのIPアドレスである。
+</para>
+
+<para>SambaをWINSサーバとして設定するための情報は、
+<link linkend="NetworkBrowsing">ネットワークブラウジング</link>を参照のこと。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+TCP/IPネットワーク設定の問題は、すべてのネットワーク管理者が遅かれ早かれ直面する。
+原因は、キーボード入力の問題から、単純なケアレスミスまで多様である。もちろん、
+誰もが常時不注意であるというわけではない!
+</para>
+
+	<sect2>
+		<title>片方向しかpingが届かない</title>
+
+	<para>
+	<quote>WindowsからSambaサーバにpingが出来るが、SambaサーバからWindowsにpingが
+	できない。</quote>
+	</para>
+
+	<para>
+	WindowsマシンはIPアドレスが192.168.1.2で、ネットマスクが255.255.255.0であり、
+	Sambaサーバ(Linux)はIPアドレスが192.168.1.130で、ネットマスクが
+	255.255.255.128である。マシンはローカルネットワーク上にあり、その他の外部
+	接続はない。
+	</para>
+
+	<para>
+	整合していないネットマスクのため、Windowsマシンは、ネットワーク192.168.1.0/24上に
+	いて、Sambaサーバはネットワーク192.168.1.128/25にいる。&smbmdash;
+	これは論理的に異なったネットワークである。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ネットワーク接続がとても遅い</title>
+
+	<para>
+	遅いネットワークという共通の問題には以下がある:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>クライアントがDNSを使うように設定されていて、DNSサーバがダウンしている。</para></listitem>
+		<listitem><para>クライアントがリモートのDNSサーバサーバを使うように設定されているが、
+		リモート接続がダウンしている。</para></listitem>
+		<listitem><para>クライアントがWINSサーバを使うように設定されているが、
+		WINSサーバがない。</para></listitem>
+		<listitem><para>クライアントがWINSサーバを使うように設定されていないが、
+		WINSサーバがある。</para></listitem>
+		<listitem><para>ファイアウォールがDNSかWINSトラフィックを制限している。</para></listitem>
+	</itemizedlist>
+
+	</sect2>
+
+	<sect2>
+	<title>Sambaサーバ名前変更の問題</title>
+
+	<para>
+	<quote>Sambaサーバの名前が変わり、Sambaが再起動した後、Sambaサーバへ、新しい
+	名前で、Microsoft Windows NT4ワークステーションからpingが出来ない。しかし、
+	古い名前でのpingは引き続き出来るなぜ?</quote>
+	</para>
+
+	<para>
+	この説明から、以下の3つが明白となる:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>WINSが使われていないブロードキャストベースの名前解決のみ使われている。</para></listitem>
+		<listitem><para>Sambaサーバが改名されて再起動したのが10分か15分前以内である。</para></listitem>
+		<listitem><para>古いSambaサーバ名が、まだMicrosoft Windows NT4 ワークステーション
+		上のNetBIOS名前キャッシュ中にある。</para></listitem>
+	</itemizedlist>
+
+	<para>
+	Microsoft Windows NT4マシン上のNetBIOS名前キャッシュ中に、どの名前が存在して
+	いるかを調べるには、<command>cmd</command>シェルを開き、以下を行う:
+	</para>
+
+	<para>
+<screen>
+&dosprompt;<userinput>nbtstat -n</userinput>
+
+              NetBIOS Local Name Table
+
+   Name                 Type          Status
+------------------------------------------------
+&example.workstation.windows;            &lt;03&gt;  UNIQUE      Registered
+ADMINISTRATOR     &lt;03&gt;  UNIQUE      Registered
+&example.workstation.windows;            &lt;00&gt;  UNIQUE      Registered
+SARDON           &lt;00&gt;  GROUP       Registered
+&example.workstation.windows;            &lt;20&gt;  UNIQUE      Registered
+&example.workstation.windows;            &lt;1F&gt;  UNIQUE      Registered
+
+
+&dosprompt;nbtstat -c
+
+             NetBIOS Remote Cache Name Table
+
+   Name                 Type       Host Address     Life [sec]
+--------------------------------------------------------------
+&example.server.samba;	&lt;20&gt;  UNIQUE      192.168.1.1          240
+
+&dosprompt;
+</screen>
+	</para>
+
+	<para>
+	この例では、&example.server.samba;がSambaサーバで&example.workstation.windows;
+	が、Microsoft Windows NT4 ワークステーションである。
+	最初の行は、ローカル名前テーブルの内容を示していて(すなわち、Microsoft
+	Windows ワークステーションとして識別される)、2行目はNetBIOS名前キャッシュ中に
+	あるNetBIOS名を示している。
+	名前キャッシュ中にはこのワークステーションの名前として知られているリモートマシン
+	を含んでいる。
+	</para>
+
+	</sect2>
+
+</sect1>
+
+</chapter>

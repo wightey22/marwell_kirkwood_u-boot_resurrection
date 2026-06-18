@@ -1,0 +1,5 @@
+# List of source files which contain translatable strings.
+src/common.c
+src/cfdisk.c
+src/fdisk.c
+src/strlist.c

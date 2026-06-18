@@ -1,0 +1,13 @@
+<samba:parameter name="usershare max shares"
+	         context="G"
+		 basic="1" advanced="1"
+		 type="integer"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータは(訳注: usershare path パラメータで定義された) ユーザ定義共有ディレクトリの所有グループに所属するユーザによって作成可能なユーザ定義共有の最大数を設定する。
+	0 (デフォルト) の場合、ユーザ定義共有は作成できない。
+	</para>
+</description>
+<value type="default">0</value>
+</samba:parameter>

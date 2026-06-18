@@ -1,0 +1,22 @@
+<samba:parameter name="eventlog list"
+		 type="string"
+                 context="G"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータは、
+    Samba がマイクロソフトの「イベントビューア」ユーティリティ経由での表示を可能とするログファイル名の一覧を定義する。
+    一覧に含まれるログに対しては、ディスク上の
+    <filename>$(lockdir)/eventlog</filename> 内に、
+    対応する TDB ファイルが割り当てられる。</para>
+
+    <para>
+    管理者は、外部のプロセスを用いて
+    <filename>/var/log/messages</filename> のような一般の UNIX ログファイルを解析し、
+    イベントログの TDB ファイルにエントリを書き込む必要がある。
+    イベントログのエントリを書き込む方法については、eventlogadm(8) ユーティリティを参照のこと。
+    </para>
+
+</description>
+<value type="default"/>
+<value type="example">Security Application Syslog Apache</value>
+</samba:parameter>

@@ -1,0 +1,159 @@
+.\"     Title: grpck
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "GRPCK" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+grpck \- Vérifier l'intégrité des fichiers d'administration des groupes
+.SH "SYNOPSIS"
+.HP 6
+\fBgrpck\fR [\-r] [\fIgroupe\fR\ [\ \fIshadow\fR\ ]]
+.HP 6
+\fBgrpck\fR [\-s] [\fIgroupe\fR\ [\ \fIshadow\fR\ ]]
+.SH "DESCRIPTION"
+.PP
+The
+\fBgrpck\fR
+command verifies the integrity of the system authentication information\&. All entries in
+\fI/etc/group\fR
+and \fI/etc/gshadow\fR
+are checked to see that the entry has the proper format and valid data in each field\&. The user is prompted to delete entries that are improperly formatted or which have other uncorrectable errors\&.
+.PP
+Voici les vérifications effectuées\ \&:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'nombre correct de champs
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'unicité des noms de groupe
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'validité des membres et administrateurs
+.RE
+.PP
+Une erreur dans le nombre de champs ou la non unicité d\'un nom de groupe sera fatale\&. Si le nombre de champs n\'est pas correct, il sera demandé à l\'utilisateur de supprimer la ligne\&. Si l\'utilisateur ne répond pas par l\'affirmative, les vérifications suivantes ne seront pas effectuées\&. Il sera également demandé de supprimer les entrées correspondant aux noms de groupe redondants, mais dans ce cas, les autres vérifications seront effectuées\&. Toutes les autres erreurs ne sont que des avertissements et l\'utilisateur est encouragé à utiliser
+\fBgroupmod\fR
+pour les corriger\&.
+.PP
+Les commandes qui opèrent sur le fichier
+\fI/etc/group\fR
+ne peuvent pas modifier les entrées corrompues ou redondantes\&.
+\fBGrpck\fR
+doit être utilisé dans ce cas pour supprimer ces entrées\&.
+.SH "OPTIONS"
+.PP
+The options which apply to the
+\fBgrpck\fR
+command are:
+.PP
+\fB\-r\fR
+.RS 4
+Execute the
+\fBgrpck\fR
+command in read\-only mode\&. This causes all questions regarding changes to be answered
+\fIno\fR
+without user intervention\&.
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+Sort entries in
+\fI/etc/group\fR
+and \fI/etc/gshadow\fR
+by GID\&.
+.RE
+.PP
+By default,
+\fBgrpck\fR
+operates on
+\fI/etc/group\fRand \fI/etc/gshadow\fR\&. The user may select alternate files with the
+\fIgroup\fR
+and \fIshadow\fR parameters\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.SH "VOIR AUSSI"
+.PP
+
+\fBgroup\fR(5),
+\fBgshadow\fR(5)
+\fBpasswd\fR(5),
+\fBshadow\fR(5),
+\fBgroupmod\fR(8)\&.
+.SH "VALEURS DE RETOUR"
+.PP
+La commande
+\fBgrpck\fR
+retourne les valeurs suivantes en quittant\ \&:
+.PP
+\fI0\fR
+.RS 4
+succès
+.RE
+.PP
+\fI1\fR
+.RS 4
+erreur de syntaxe
+.RE
+.PP
+\fI2\fR
+.RS 4
+une entrée de groupe ou plus est incorrecte
+.RE
+.PP
+\fI3\fR
+.RS 4
+impossible d\'ouvrir les fichiers group
+.RE
+.PP
+\fI4\fR
+.RS 4
+impossible de verrouiller les fichiers group
+.RE
+.PP
+\fI5\fR
+.RS 4
+impossible de mettre à jour les fichiers group
+.RE

@@ -1,0 +1,24 @@
+<samba:parameter name="winbind enum groups"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  非常に大規模な環境において、 <citerefentry>
+	    <refentrytitle>winbindd</refentrytitle><manvolnum>8</manvolnum>
+	  </citerefentry> を使用する際には、 <command moreinfo="none">setgrent()</command>、
+	<command moreinfo="none">getgrent()</command>、
+	<command moreinfo="none">endgrent()</command> といった
+	システムコール群の呼び出しによるグループの一覧取得を抑止する
+	必要があるかも知れない。
+	<parameter moreinfo="none">winbind enum groups</parameter>
+	パラメータが <constant>no</constant> の場合、 <command moreinfo="none">getgrent()</command>
+	システムコールの呼び出しは、全くデータを返却しない。
+	</para>
+
+<warning><para>グループ一覧(enumeration)を無効にするとプログラムによっては異常動作を引き起こす恐れがある。 </para></warning>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

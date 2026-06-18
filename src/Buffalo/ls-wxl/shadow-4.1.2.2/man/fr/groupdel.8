@@ -1,0 +1,100 @@
+.\"     Title: groupdel
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "GROUPDEL" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+groupdel \- Supprimer un groupe
+.SH "SYNOPSIS"
+.HP 9
+\fBgroupdel\fR \fIgroupe\fR
+.SH "DESCRIPTION"
+.PP
+La commande
+\fBgroupdel\fR
+modifie les fichiers d\'administration des comptes du système, en supprimant les entrées qui se réfèrent à
+\fIgroupe\fR\&. Le groupe indiqué doit exister\&.
+.PP
+Vous devez vérifier vous\-même qu\'aucun fichier possédé par le groupe ne subsiste sur tous les systèmes de fichiers\&.
+.SH "AVERTISSEMENTS"
+.PP
+Vous ne pouvez pas supprimer le groupe primaire d\'un utilisateur existant\&. Vous devez supprimer l\'utilisateur auparavant\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.SH "VALEURS DE RETOUR"
+.PP
+La commande
+\fBgroupdel\fR
+retourne les valeurs suivantes en quittant\ \&:
+.PP
+\fI0\fR
+.RS 4
+succès
+.RE
+.PP
+\fI2\fR
+.RS 4
+erreur de syntaxe
+.RE
+.PP
+\fI6\fR
+.RS 4
+le groupe spécifié n\'existe pas
+.RE
+.PP
+\fI8\fR
+.RS 4
+impossible de supprimer le groupe primaire d\'un utilisateur existant
+.RE
+.PP
+\fI10\fR
+.RS 4
+impossible de mettre à jour le fichier des groupes
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBchfn\fR(1),
+\fBchsh\fR(1),
+\fBpasswd\fR(1),
+\fBgpasswd\fR(8),
+\fBgroupadd\fR(8),
+\fBgroupmod\fR(8),
+\fBuseradd\fR(8),
+\fBuserdel\fR(8),
+\fBusermod\fR(8)

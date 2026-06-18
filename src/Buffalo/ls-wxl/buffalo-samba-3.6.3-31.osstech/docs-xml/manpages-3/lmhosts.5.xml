@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="lmhosts.5">
+
+<refmeta>
+	<refentrytitle>lmhosts</refentrytitle>
+	<manvolnum>5</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ファイルフォーマットと変換</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>lmhosts</refname>
+	<refpurpose>Samba の NetBIOS hosts ファイル</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<para><filename>lmhosts</filename> は <citerefentry><refentrytitle>Samba
+	</refentrytitle><manvolnum>7</manvolnum></citerefentry> が NetBIOS 名を
+	IP アドレスに関連付ける為のファイルである。</para> 
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+	
+	<para>このファイルは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para><filename>lmhosts</filename> は <emphasis>Samba</emphasis> において
+	NetBIOS 名を IP アドレスに関連付ける為のファイルである。このファイルは
+	<filename>/etc/hosts</filename> ファイルと非常に酷似した形式をしているが、
+	ホスト名の部分は NetBIOS の命名形式で記述しなければならない。</para>
+</refsect1>
+
+<refsect1>
+	<title>ファイル形式</title>
+	<para> これは 1 行につき 1 つの NetBIOS 名を記述した ASCII ファイルである。
+	各行には 2 つのフィールドが有り、空白文字で区切られている。
+	'#' 文字で始まる行は全て無視される。lmhosts ファイルの各行は、
+	以下の様な情報が含まれている :</para>
+
+	<itemizedlist>
+		<listitem><para>IP アドレス - '.' 文字で区切られた 10 進数数字での表記
+		</para></listitem>
+
+		<listitem><para>NetBIOS 名 - 最大 15 文字の NetBIOS ホスト名であり、
+		'#' 文字に続けて 2 桁の 16 進数値で表現された NetBIOS 
+		名のタイプをオプションで指定できる。</para>
+
+		<para>もし '#' 文字以降が省略されると、NetBIOS 名のタイプに関わらず、
+		検索に使用した名前と一致した全てのホスト名に対応した
+		IP アドレスが返される。</para>
+		</listitem>
+	</itemizedlist>
+
+	<para>例は下記のとおり :</para>
+<programlisting>
+#
+# Sample Samba lmhosts file.
+#
+192.9.200.1	TESTPC
+192.9.200.20	NTSERVER#20
+192.9.200.21	SAMBASERVER
+</programlisting>
+
+	
+	<para>この例では、IP と NetBIOS 名の関連付けを 3 つ記述している。
+	1 番目と 3 番目のエントリは要求された NetBIOS 名のタイプに関係なく、
+	それぞれ "TESTPC" と "SAMBASERVER" という名前要求がされた時にだけ返される。
+	</para>
+
+	<para>2 番目のエントリは NetBIOS 名が "NTSERVER" で名前タイプが "0x20" 
+	である要求の場合にのみ返される。それ以外の名前タイプが指定されても、
+	名前は解決されない。</para>
+
+	<para><filename>lmhosts</filename> ファイルを置く規定の場所は、<citerefentry>
+	<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	ファイルと同じディレクトリである. </para>
+	
+</refsect1>
+
+<refsect1>
+	<title>ファイル</title>
+
+	<para>lmhosts は設定ファイルのディレクトリに置かれたものが読み込まれる。
+	このディレクトリの一は通常 <filename>/etc/samba</filename> もしくは <filename>/usr/local/samba/lib</filename> である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルは、Samba システムのバージョン 3 に適用される。</para>
+</refsect1>
+
+<refsect1>
+	<title>参照</title>
+	<para><citerefentry>
+	<refentrytitle>smbclient</refentrytitle><manvolnum>1</manvolnum>
+	</citerefentry>, <citerefentry><refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+	</citerefentry>, and <citerefentry><refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連ユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は、Samba Team によって Linux
+	カーネルの開発と同様に、オープンソースプロジェクトとして開発されている。
+	</para>
+	
+	<para>オリジナルの Samba のマニュアルページは Karl Auer によって書かれた。
+	マニュアルページのソースは YODL 形式(別の、優秀なオープンソースソフトウェアで、
+	<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">ftp://ftp.icce.rug.nl/pub/unix/</ulink>
+	にある)で変換され、Jeremy Allison によって Samba 2.0 リリースのために更新された。
+	Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。 
+	Samba 3.0 のための DocBook XML 4.2 形式の変換は Alexander Bokovoy によって行われた。
+	</para>
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.3 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>でん</para></listitem>
+		<listitem><para>たかはしもとのぶ (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+
+	<para>Samba 3.0.3 - Samba 3.5.3 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+</refsect1>
+
+</refentry>

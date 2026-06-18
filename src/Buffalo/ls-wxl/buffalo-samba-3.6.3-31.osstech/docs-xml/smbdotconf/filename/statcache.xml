@@ -1,0 +1,14 @@
+<samba:parameter name="stat cache"
+                 context="G"
+                 developer="1"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータにより、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> が、
+	大文字小文字を区別しない名前のマップ操作を高速化するためにキャッシュを利用するかどうかが設定される。
+	このパラメータを変更する必要はないであろう。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

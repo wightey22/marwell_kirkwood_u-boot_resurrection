@@ -1,0 +1,15 @@
+<samba:parameter name="perfcount module"
+		 context="G"
+		 type="string"
+		 advanced="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+SMB の操作をモニタリングする際に使用する perfcount バックエンドを指定する。
+perfcount モジュールはひとつだけ指定できる。そのモジュールは、smb.h
+で定義されている smb_perfcount_handler 構造体にある API をすべて
+実装していなければならない。
+	</para>
+</description>
+
+</samba:parameter>

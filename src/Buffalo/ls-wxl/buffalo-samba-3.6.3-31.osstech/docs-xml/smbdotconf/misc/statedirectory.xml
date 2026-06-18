@@ -1,0 +1,22 @@
+<samba:parameter name="state directory"
+                 context="G"
+                 advanced="1" developer="1"
+		 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>通常TDBファイルは<parameter moreinfo="none">lock directory</parameter>
+	  に格納される。Samba 3.4.0から、
+	  <parameter moreinfo="none">state directory</parameter>と
+	  <parameter moreinfo="none">cache directory</parameter>オプションを使うことで、
+	  持続的データを持つTDBファイルと持続的データを持たないTDBファイルとを
+	  区別することが出来る。
+	</para>
+
+	<para>このオプションは、持続的なデータを含むTDBファイルを格納する
+          ディレクトリを指定する。
+	</para>
+</description>
+
+<value type="default">${prefix}/var/locks</value>
+<value type="example">/var/run/samba/locks/state</value>
+</samba:parameter>

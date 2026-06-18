@@ -1,0 +1,21 @@
+<samba:parameter name="map archive"
+                 context="S"
+				 type="boolean"
+				 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> このパラメータは、DOSのアーカイブ属性を
+	UNIXの所有者(owner)実行権ビットに割り当てるかどうかを決定する。
+	DOSのアーカイブ属性は、バックアップを行なった後でファイルが修正されると設定される。
+    このオプションを変更する契機の一つは、Samba マシン上のファイルを修正した際に、UNIX 上で実行可能になってしまわないようにしたい場合であろう。
+    これは、共有のソースコードやドキュメントなどに関して、非常に悩ましい事象である。
+	</para>
+
+	<para> このパラメータを利用する場合は、
+	所有者の実行権ビットがマスクされないように(100というアクセス権が含まれるように)、
+	<smbconfoption name="create mask"/> パラメータを設定することが必要となることに注意。
+	詳細は、<smbconfoption name="create mask"/> パラメータを参照のこと。
+	</para>
+</description>
+
+<value type="default">yes</value>
+</samba:parameter>

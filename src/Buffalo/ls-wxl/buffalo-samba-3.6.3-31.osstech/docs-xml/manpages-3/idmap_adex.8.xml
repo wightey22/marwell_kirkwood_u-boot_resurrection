@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="idmap_adex.8">
+
+<refmeta>
+	<refentrytitle>idmap_adex</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>idmap_adex</refname>
+	<refpurpose>Samba の Winbind 用 idmap_adex バックエンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<title>説明</title>
+	<para>
+      idmap_adex プラグインは、RFC2307 スキーマ拡張を使った AD サーバから
+      Winbind が id のマッピング情報を読み込むための手段を提供する。この
+      モジュールでは idmap と nss_info API の両方を実装しており、ドメイン
+      信頼に加えて双方向のクロスフォレスト信頼をサポートしている。AD の 
+      users と groups オブジェクトに POSIX 属性情報を追加することで、
+      あらかじめ管理者が提供するマッピング情報を要求するリードオンリー
+      プラグインとなっている。これを使う一番の目的は、Windows 2003 R2 
+      以降で &quot;Identity Services for Unix&quot; を使うことにある。
+	</para>
+
+	<para>
+      注意：対象フォレストのグローバルカタログサーバの部分属性に、uidNumber,
+      gidNumber, uid 属性を追加しなければならないことに注意してほしい。
+      この作業を行うには、Active Directory スキーマ管理 MMC プラグイン
+      (schmmgmt.dll)を使う。
+	</para>
+</refsynopsisdiv>
+
+<refsynopsisdiv>
+	<title>NSS_INFO</title>
+	<para>
+      nss_info プラグインは、user オブジェクトから unixHomeDirectory,
+      gidNumber, loginShell, uidNumber 属性を、group オブジェクトから
+      gidNumber 属性を読み取って、libc の getpwnam() と getgrnam()
+      ファミリー関数が要求する情報を提供する。グループのメンバーシップは、
+      msSFU30PosixMember 属性ではなく Windows の group メンバーシップ
+      に従って提供される。
+	</para>
+
+	<para>
+      ユーザの別名は、user オブジェクトに uid 属性をセットすることで
+      実装されている。一方、グループの別名は group オブジェクトの
+      displayname 属性を読むという方法で実装されている。
+	</para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>設定例</title>
+	<para>
+      以下の例では、私たちのプリンシパルと信頼された AD ドメインから
+      id のマッピング情報と NSS データを取り出す方法について示している。
+	</para>
+
+	<programlisting>
+	[global]
+	idmap backend = adex
+	idmap uid = 1000-4000000000
+	idmap gid = 1000-4000000000
+
+	winbind nss info = adex
+	winbind normalize names = yes
+	</programlisting>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+    オリジナルの Samba ソフトウェアと関連ユーティリティは、Andrew Tridgell
+    により書かれた。Samba は現在 Samba チームの元で、Linux のカーネルと
+    同様にオープンソースソフトウェアとして開発されている。
+	</para>
+</refsect1>
+
+<refsect1>
+    <title>日本語訳</title>
+    <para>このマニュアルページは Samba 3.3.2 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの翻訳は
+    <itemizedlist>
+        <listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+    </itemizedlist>
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

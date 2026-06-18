@@ -1,0 +1,21 @@
+<samba:parameter name="valid users"
+                 context="S"
+		 type="list"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>サービスにアクセスできるユーザのリストを指定する。
+    '@'、'+'、'&amp;' からはじまる名前は、
+    <parameter moreinfo="none">invalid users</parameter> 
+    パラメータで説明した規則にしたがって解釈される。</para>
+
+    <para>このパラメータが設定されていない場合(既定値)、どのようなユーザでもログインできる。このリストと
+    <parameter moreinfo="none">invalid users</parameter> 
+    の両方に含まれるユーザのアクセスは拒否される。</para>
+
+    <para><parameter moreinfo="none">%S</parameter> は、現在のサービス名に置き換えられる。
+    これは [homes] セクションで用いると便利である。</para>
+</description>
+<related>invalid users</related>
+<value type="default"><comment>No valid users list (anyone can login) </comment></value>
+<value type="example">greg, @pcusers</value>
+</samba:parameter>

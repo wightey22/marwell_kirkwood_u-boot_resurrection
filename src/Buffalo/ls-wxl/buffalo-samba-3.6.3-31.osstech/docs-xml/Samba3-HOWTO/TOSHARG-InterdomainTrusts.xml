@@ -1,0 +1,606 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="InterdomainTrusts">
+<chapterinfo>
+	&author.jht;
+	&author.mimir;
+	<author>&person.jelmer;<contrib>drawing</contrib></author>
+        <author>
+                <firstname>Stephen</firstname><surname>Langasek</surname>
+                <affiliation>
+                        <address><email>vorlon@netexpress.net</email></address>
+                </affiliation>
+        </author>
+	<pubdate>April 3, 2003</pubdate>
+</chapterinfo>
+
+<title>ドメイン間の信頼関係</title>
+
+
+<para>
+<indexterm><primary>ドメイン間の信頼</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>trusts</primary></indexterm>
+<indexterm><primary>sambaからsambaへの信頼</primary></indexterm>
+<indexterm><primary>Active Directory</primary></indexterm>
+<indexterm><primary>NT4形式のドメイン</primary></indexterm>
+<indexterm><primary>trust relationships</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>LDAPベース</primary></indexterm>
+Samba-3はNT4形式のドメイン信頼関係をサポートする。NT4形式のドメインからSamba-3に移行
+したいが、Active Directory やLDAPベースの認証バックエンドを採用したくないという多くの
+サイトが使用したいと思う機能である。この章では、信頼関係に関する背景情報と信頼関係の
+作成方法を説明する。Samba-3はNT4を信頼することができ(その逆も可)、またSamba対Sambaの
+信頼を作成することも可能である。
+</para>
+
+<para>
+<indexterm><primary>winbind</primary></indexterm>
+<indexterm><primary>UIDレンジ</primary></indexterm>
+<indexterm><primary>GIDレンジ</primary></indexterm>
+<indexterm><primary>daemon</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+ドメイン間の信頼関係を使う場合、<command>winbind</command>を使うことが必要であるので、
+<command>winbindd</command>が動いていなければならない。このモードにおけるwinbindの
+動作は、&smb.conf;ファイル中の有効なUIDレンジと有効なGIDレンジの指定に依存する。
+これらは以下のように指定する:
+<smbconfblock>
+<smbconfoption name="idmap uid">10000-20000</smbconfoption>
+<smbconfoption name="idmap gid">10000-20000</smbconfoption>
+</smbconfblock>
+<indexterm><primary>passdbバックエンド</primary></indexterm>
+<indexterm><primary>POSIXユーザアカウント</primary></indexterm>
+<indexterm><primary>最大値</primary></indexterm>
+<indexterm><primary>4294967295</primary></indexterm>
+指定されたレンジの値はホストOSで使っている値とPOSIXユーザアカウント用のpassdbバック
+エンドで使っている値を上書きしてはならない。最大値はホストOSによって許可されている
+上限の値で制限される。これはUNIXカーネルで制限されるパラメータである。Linux kernel
+2.6ベースのシステムは最大値として4294967295(符号なし32ビット値)である。
+</para>
+
+<note><para>
+<indexterm><primary>winbind</primary></indexterm>
+<indexterm><primary>信頼しているドメイン</primary></indexterm>
+<indexterm><primary>信頼されたドメイン</primary></indexterm>
+winbindを使用するのはSambaが信頼しているドメインの時のみであり、信頼されたドメインの時
+には不要である。
+</para></note>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>拡張性</primary></indexterm>
+<indexterm><primary>信頼関係</primary></indexterm>
+Samba-3はSambaとMicrosoft Windows NT4形式と同じようにSamba間の信頼関係に参加できる。
+これは、Microsoft Windows NT4と同様な拡張性をSambaに付与する。
+</para>
+
+<para>
+<indexterm><primary>拡張性のあるバックエンド</primary></indexterm>
+<indexterm><primary>認証データベース</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>ドメイン間の信頼</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+Samaba-3はLDAPのような拡張性のあるバックエンド認証データベースと共に動作でき、プライマリ
+及びバックアップドメイン管理モードで動作できるので、管理者はドメイン間の信頼関係を使用
+する代わりの選択肢を考慮するべきである。なぜならば、この機能はその動作原理からして、
+本質的に脆弱なものだからである。このことこそが、Microsoft Active Directory が開発され
+採用される主な理由でもある。
+</para>
+
+</sect1>
+
+<sect1>
+<title>信頼関係に関する背景情報</title>
+
+<para>
+<indexterm><primary>セキュリティドメイン</primary></indexterm>
+<indexterm><primary>階層がない</primary></indexterm>
+<indexterm><primary>security structure</primary></indexterm>
+<indexterm><primary>大きな組織</primary></indexterm>
+<indexterm><primary>delegation</primary></indexterm>
+<indexterm><primary>administrative responsibilities</primary></indexterm>
+MS Windows NT3/4形式のセキュリティドメインは、階層がないセキュリティ構造を採用している。
+この構造の制約が、大規模な組織では Microsoft Windows ネットワークの拡張性に影響を与える
+ことはよく知られている。さらに、この設計の結果であるフラットな名前空間は、大規模で
+多様性に富む組織における管理責務の代行に多大な影響を及ぼす。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>Kerberos</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>limitations</primary></indexterm>
+<indexterm><primary>domain security</primary></indexterm>
+Microsoft は、古いテクノロジーの制約を回避するために、Active Directory Service(ADS)を、
+Kerberos及びLDAPをベースとして開発した。しかし全ての組織が ADSを採用する準備ができ、
+その意思があるわけではない。小規模の組織にとっては古い NT形式のドメインセキュリティで
+充分である。また、ADS を採用するために面倒な変更作業を行うことを望まない保守的な
+ユーザも残っている。
+</para>
+
+<para>
+<indexterm><primary>セキュリティドメイン</primary></indexterm>
+<indexterm><primary>アクセスの権利</primary></indexterm>
+<indexterm><primary>権限</primary></indexterm>
+<indexterm><primary>信頼</primary></indexterm>
+<indexterm><primary>信頼されたドメイン</primary></indexterm>
+<indexterm><primary>信頼しているドメイン</primary></indexterm>
+<indexterm><primary>片方向</primary></indexterm>
+Microsoft Windows NTで、Microsoft はあるドメインのユーザが、別のドメインのアクセス権や
+他の権限を付与されるような機構を実現するため、多様なセキュリティドメインの存在を可能に
+する機能を導入した。この機能を<emphasis>信頼(Trusts)</emphasis>という言葉で言い表わす。
+具体的には、あるドメインが別のドメインのユーザを<emphasis>信頼する</emphasis>という
+ことである。あるドメインのユーザが別のセキュリティドメインのユーザになれる時、
+そのようなドメインを信頼される(trusted)ドメインと言う。そのようなユーザに権利や権限を
+与えた方のドメインは信頼する(trusting) ドメインと言う。NT3.x/4.0 では信頼関係は一方向
+のみである。そのため双方のドメインのユーザが他方のドメインで権限と権利を持とうとする
+場合には、それぞれの方向に一つずつ、二つの信頼関係を設定する必要がある。
+</para>
+
+<para>
+<indexterm><primary>セキュリティドメイン</primary></indexterm>
+<indexterm><primary>nontransitive</primary></indexterm>
+<indexterm><primary>信頼関係</primary></indexterm>
+<indexterm><primary>transitive</primary></indexterm>
+<indexterm><primary>explicit trust</primary></indexterm>
+NT4形式のMicrosoft セキュリティドメインでは、全ての信頼は非推移的である。この意味は、
+例えば三つのドメインがあり(仮に赤、白、青とする)、その赤と白が信頼関係を持ち、また
+白と青が信頼関係を持つとする。この場合、赤と青のドメインの間に暗黙に了解された
+信頼関係を持つわけではない。関係は明示的でなければならず、推移的ではない。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>セキュリティコンテキスト</primary></indexterm>
+<indexterm><primary>信頼関係</primary></indexterm>
+<indexterm><primary>双方向の信頼</primary></indexterm>
+<indexterm><primary>Windows 2000</primary></indexterm>
+<indexterm><primary>セキュリティドメイン</primary></indexterm>
+<indexterm><primary>NT4形式のドメイン</primary></indexterm>
+Microsoft Windows 2000から登場した新たなADSセキュリティの方式では、信頼関係は既定値で
+双方向になっている。また、全てのADSドメイン間の信頼は推移的である。上の赤、白、青
+ドメインの例では、Windows 2000及びADSを使用する場合、赤と青ドメインは互いに信頼できる。
+これはADSドメインの本質的な特長である。Samba-3 はMicrosoft Windows NT4方式のドメイン間
+信頼機能を実装し、Microsoft Windows NT4方式のドメインと類似した方法で、
+Microsoft Windows 200x ADS セキュリティドメインとの相互運用を実現している。
+</para>
+
+</sect1>
+
+<sect1>
+<title>ネイティブなMicrosoft Windows NT4の信頼関係の設定</title>
+
+<para>
+<indexterm><primary>Interdomain Trusts</primary><secondary>creating</secondary></indexterm>
+<indexterm><primary>双方向の信頼</primary></indexterm>
+<indexterm><primary>security credentials</primary></indexterm>
+ドメイン間信頼関係を作成するには二つのステップがある。双方向の信頼関係を有効にする
+ためには、双方のドメイン管理者が相手のドメインのために信頼アカウントを作成し、
+セキュリティに関する信用情報を確認する際に使用できるようにしなければならない。
+</para>
+
+
+<sect2>
+<title>NT4ドメイン信頼関係の作成</title>
+
+<para>
+<indexterm><primary>ドメインの信頼</primary></indexterm>
+<indexterm><primary>信頼関係</primary></indexterm>
+<indexterm><primary>ドメインユーザマネージャ</primary></indexterm>
+<indexterm><primary>リモートドメイン</primary></indexterm>
+<indexterm><primary>standard confirmation</primary></indexterm>
+Microsoft Windows NT4では、全てのドメインの信頼関係は
+<application>ドメインユーザーマネジャ</application>を使って設定する。これは、
+メニューバーのドメインユーザーマネジャーポリシーのエントリから行う。
+<guimenu>ポリシー</guimenu>メニューから<guimenuitem>信頼関係</guimenuitem>を選択する。
+<guimenuitem>信頼する側のドメイン</guimenuitem>と記された低い方のボックスの隣に二つの
+ボタンがある。 <guibutton>追加</guibutton>と<guibutton>削除</guibutton>である。
+<guibutton>追加</guibutton>ボタンは、自ドメイン内のユーザにアクセス権限を付与することが
+できるリモートドメイン名を入力するパネルを開く。また、信頼するドメインが信頼される
+ドメインのユーザを認証するときに使用する、信頼関係のパスワードも入力する必要がある。
+パスワードは(標準的な確認の手続きとして)二度入力しなければならない。
+</para>
+
+</sect2>
+
+
+<sect2>
+<title>NT4ドメイン信頼関係の構築完了</title>
+
+<para>
+<indexterm><primary>信頼関係</primary></indexterm>
+<indexterm><primary>信頼しているドメイン</primary></indexterm>
+<indexterm><primary>信頼されたドメイン</primary></indexterm>
+<indexterm><primary>リモートドメイン</primary></indexterm>
+<indexterm><primary>パスワードが割り当てられた</primary></indexterm>
+<indexterm><primary>Interdomain Trusts</primary><secondary>Completing</secondary></indexterm>
+信頼関係は、もう一方のドメイン(信頼するドメイン)が信頼されるドメインと適切に接続された
+場合のみ動作する。信頼関係を完成するためには、管理者はまず、ドメインユーザーマネジャを
+起動し、メニューから<guilabel>ポリシー</guilabel>を選択し、
+それから<guilabel>信頼関係</guilabel>を選択し、<guilabel>信頼される側のドメイン</guilabel>
+と記されたボックスの横の<guibutton>追加</guibutton>ボタンをクリックする。パネルが
+開いたらリモートドメイン名とパスワードを入力する。
+</para>
+
+</sect2>
+
+<sect2>
+<title>ドメイン間信頼関係の機能</title>
+
+
+<para>
+<indexterm><primary>双方向の信頼</primary></indexterm>
+<indexterm><primary>信頼関係</primary></indexterm>
+<indexterm><primary>信頼が確立</primary></indexterm>
+<indexterm><primary>片方向の信頼</primary></indexterm>
+<indexterm><primary>Windows NT4ドメイン</primary></indexterm>
+<indexterm><primary>ドメイン間信頼関係</primary><secondary>機能</secondary></indexterm>
+双方向の信頼関係は、二つの方方向の信頼がそれぞれ互いの方向に作成されることで築かれる。
+二つのMicrosoft Windows NT4ドメイン間で片方向の信頼が確立されている場合(仮にDomAとDomB
+とする)、次の機能が可能になる:
+</para>
+
+<figure id="trusts1">
+	<title>信頼の概要</title>
+	<imagefile>trusts1</imagefile>
+</figure>
+
+<itemizedlist>
+	<listitem><para>
+	DomA(DomB への信頼接続を完了する)はDomBを<parameter>信頼する</parameter>。
+	</para></listitem>
+
+	<listitem><para>
+	DomAが<parameter>信頼する</parameter>ドメインである。
+	</para></listitem>
+
+	<listitem><para>
+	DomBが<parameter>信頼される</parameter>ドメインである(信頼アカウントの起点)。
+	</para></listitem>
+
+	<listitem><para>
+	DomB のユーザーは DomA のリソースにアクセスすることができる。
+	</para></listitem>
+
+	<listitem><para>
+	DomA のユーザーは DomB のリソースにアクセスすることはできない。
+	</para></listitem>
+
+	<listitem><para>
+	DomB のグローバル・グループは DomA で使用できる。
+	</para></listitem>
+
+	<listitem><para>
+	DomA のグローバル・グループは DomB では使用できない。
+	</para></listitem>
+
+	<listitem><para>
+	DomB は DomA のクライアントワークステーションのログオンダイアログボックスに表示される。
+	</para></listitem>
+
+	<listitem><para>
+	DomA は DomB のクライアントワークステーションのログオンダイアログボックスに表示されない。
+	</para></listitem>
+</itemizedlist>
+
+<itemizedlist>
+	<listitem><para>
+	信頼するドメインのユーザー/グループは信頼されるドメインへの権限、許可、
+	アクセスは与えられない。
+	</para></listitem>
+
+	<listitem><para>
+	信頼するドメインは信頼されるドメインにアクセスしたり(ユーザ/グローバルグループの)
+	アカウントを使用することができる。
+	</para></listitem>
+
+	<listitem><para>
+	信頼されるドメインの管理者は信頼するドメイン内で管理権限を付与される。
+	</para></listitem>
+
+	<listitem><para>
+	信頼されるドメインのユーザは信頼するドメインで権利や特権を付与される。
+	</para></listitem>
+
+	<listitem><para>
+	信頼されるドメインのグローバルグループは信頼するドメインで権利や許可を
+	与えられる。
+	</para></listitem>
+
+	<listitem><para>
+	信頼されるドメインのグローバルグループはMicrosoft Windowsドメインメンバ
+	マシンのローカルグループのメンバーになることができる。
+	</para></listitem>
+</itemizedlist>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>SambaにおけるNT形式のドメイン信頼関係の設定</title>
+
+<para>
+<indexterm><primary>ドメイン間の信頼関係</primary></indexterm>
+ここでは、Samba サーバがドメイン間の信頼関係に参加できるようにするための設定方法を、
+簡潔に紹介する。Samba における信頼関係のサポートは初期段階なので、正しく機能しない
+ことがあっても驚かないこと。
+</para>
+
+<para>
+<indexterm><primary>peer domain</primary></indexterm>
+<indexterm><primary>信頼関係</primary></indexterm>
+<indexterm><primary>Windows NT4サーバ</primary></indexterm>
+<indexterm><primary>ドメイン間</primary></indexterm>
+下記における手順の説明では、信頼関係の相手先のドメインは、Windows NT4 サーバで管理
+されていると仮定する。しかし、リモート側は Samba-3 ドメインであっても構わない。
+この文書を読み終わるころには明らかになることであるが、以下に書かれている説明のうち、
+Samba固有の部分のみを合わせると、純粋なSamba環境におけるドメイン信頼の構築の説明と
+なる、ということである。
+</para>
+
+<sect2 id="samba-trusted-domain">
+<title>信頼されるドメインとしてのSamba</title>
+
+<para>
+<indexterm><primary>trusted party</primary></indexterm>
+<indexterm><primary>特別なアカウント</primary></indexterm>
+<indexterm><primary>trusting party</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>smbpasswd</primary></indexterm>
+Samba PDC を、信頼関係のある二者のうち信頼される側に設定するためには、まず信頼する側の
+ドメインのための特別なアカウントを作成する必要がある。そのためには
+<command>smbpasswd</command>ユーティリティを使う。信頼されるドメインアカウントを
+作成するのは、信頼されるマシンアカウントを作成するのに似ている。仮にドメイン名をSAMBA
+とし、リモートドメインをRUMBAとする。最初のステップは好みのシェルからこのコマンドを
+発行することである:
+</para>
+
+<para>
+<screen>
+&rootprompt; <userinput>smbpasswd -a -i rumba</userinput>
+New SMB password: <userinput>XXXXXXXX</userinput>
+Retype SMB password: <userinput>XXXXXXXX</userinput>
+Added user rumba$
+</screen>
+
+ここで、<option>-a</option>はパスワードデータベースの中に新規のアカウントを追加するこ
+とを意味し、<option>-i</option>は、
+<quote>このアカウントをドメイン間の信頼フラグ付きで作成せよ</quote>ということを意味する。
+</para>
+
+<para>
+<indexterm><primary>アカウント名</primary></indexterm>
+<indexterm><primary>リモートドメイン</primary></indexterm>
+<indexterm><primary>パスワードデータベース</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+このアカウント名は<quote>rumba$</quote>(リモートドメインの名前)である。もしもこの
+ステップが失敗した場合、信頼アカウントがシステムのパスワードデータベース
+(<filename>/etc/passwd</filename>)に追加されたか確認すること。もしも追加されて
+いなければ、手動で追加し、上のステップを再度行うこと。
+</para>
+
+<para>
+<indexterm><primary>password</primary></indexterm>
+<indexterm><primary>新しいアカウント</primary></indexterm>
+<indexterm><primary>confirm the trust</primary></indexterm>
+<indexterm><primary>Windows NTサーバ</primary></indexterm>
+このコマンドを実行後、そのアカウントのパスワードの入力要求が来る。ここでは任意の
+パスワードを使用できるが、Windows NTではアカウント作成後7日間はパスワードを変更できない
+ので、注意すること。コマンドの実行が成功すると、新しいアカウントのエントリを、
+(設定した環境でのの標準的な方法で)見ることができるので、アカウント名が本当にRUMBA$で、
+フラグ欄に<quote>I</quote>が設定されているか確認する。この信頼関係の設定を完成する
+ために、次は Windows NTサーバの方から信頼を設定する。
+</para>
+
+
+<para>
+<indexterm><primary>ユーザマネージャ</primary></indexterm>
+<indexterm><primary>信頼されたドメインの名前</primary></indexterm>
+<indexterm><primary>relationship password</primary></indexterm>
+<indexterm><primary>リモートドメイン</primary></indexterm>
+<indexterm><primary>established</primary></indexterm>
+<application>ドメインユーザマネージャ</application>を開き、メニューから
+<guimenu>ポリシー</guimenu>を選び、<guimenuitem>信頼関係</guimenuitem>を選択する。
+<guilabel>信頼されたドメイン</guilabel>リストボックスのそばの<guimenu>追加</guimenu>
+ボタンをクリックする。信頼されたドメインの名前とそのパスワードを入力するダイアログ
+ボックスが表示される。リモートドメインの名前としてSAMBAを入力し、アカウント作成時に
+使用したパスワードを入力する。<guibutton>OK</guibutton>をクリックし、すべてが何事も
+なくうまくいくならば、
+<computeroutput>信頼関係が確立しました</computeroutput>(訳注:英文では
+<computeroutput>Trusted domain relationship successfully established</computeroutput>
+)が表示される。
+</para>
+
+</sect2>
+<sect2>
+<title>信頼するドメインとしてのSamba</title>
+
+<para>
+<indexterm><primary>NT-controlled domain</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+ここでは作業の順番が逆になる。今回も、Samba PDCに管理されるドメインを「SAMBA」とし、
+NTが管理するドメインを「RUMBA」とする。
+</para>
+
+<para>
+一番初めのステップはRUMBAのPDCにSAMBAドメインのアカウントを追加することである。
+</para>
+
+
+<para>
+<indexterm><primary>ユーザマネージャ</primary></indexterm>
+<indexterm><primary>信頼されたドメイン</primary></indexterm>
+<indexterm><primary>password</primary></indexterm>
+<application>ドメインユーザマネージャ</application>を起動し、<guimenu>ポリシー</guimenu>、
+<guimenuitem>信頼関係</guimenuitem>を選択する。次に、
+<guilabel>信頼するドメイン</guilabel>のボックスのそばの<guibutton>追加</guibutton>
+ボタンをクリックし、信頼されるドメイン(SAMBA)の名前を入力し、信頼関係を確立するために
+使用するパスワードを入力する。
+</para>
+
+<para>
+<indexterm><primary>password</primary></indexterm>
+<indexterm><primary>confirm the password</primary></indexterm>
+パスワードは任意に選択できる。Sambaサーバでは、いつでも容易にパスワードを変更することが
+できる。パスワードを確定するとアカウントは準備完了である。次は Sambaの番である。
+</para>
+
+<para>
+rootでログインし、好みのシェルを使って以下のコマンドを発行する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>trustdom establish</tertiary></indexterm>
+</para>
+
+<para>
+&rootprompt;<userinput>net rpc trustdom establish rumba</userinput>
+</para>
+
+<para>
+<indexterm><primary>password</primary></indexterm>
+<indexterm><primary>ドメイン間の接続</primary></indexterm>
+<indexterm><primary>通常の接続</primary></indexterm>
+Windows NT4サーバで入力したばかりのパスワードが聞かれる。時々、
+<literal>NT_STATUS_NOLOGON_INTERDOMAIN_TRUST_ACCOUNT</literal>というエラーメッセージが
+現れるが、問題はないので無視して構わない。これは入力したパスワードが正しく、この
+アカウントは通常の接続ではなく、ドメイン間接続のための準備ができている、と NTサーバが
+言っている、という意味である。その後、(大規模ネットワークの場合は特に)しばらく時間が
+かかるかもしれないが、我慢する。しばらくすると<literal>Success</literal>という
+メッセージが表示される。おめでとう! これで信頼関係が成立した。
+</para>
+
+<note><para>
+<filename>secrets.tdb</filename>ファイルに書き込み権がなければならないので、上記の
+コマンドはrootとして実行すること。
+</para></note>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>Windows 2000との間での、NT4形式のドメイン信頼関係</title>
+
+<para>
+<indexterm><primary>信頼関係</primary></indexterm>
+<indexterm><primary>Windows 2000サーバ</primary></indexterm>
+<indexterm><primary>NT4形式</primary></indexterm>
+<indexterm><primary>mixed mode</primary></indexterm>
+<application>ドメインユーザマネージャ</application>が無いにもかかわらず、ミックスモードで
+動作するWindows 2000ドメインコントローラを、信頼するサーバとして、NT4形式の信頼関係を設定
+することは可能である。また、SambaがWindows 2000サーバを信頼することもできるはずだが、
+この領域ではさらにテストが必要である。
+</para>
+
+<para>
+<indexterm><primary>ドメイン間の信頼</primary></indexterm>
+<indexterm><primary>信頼アカウント</primary></indexterm>
+<indexterm><primary>not transitive</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+前述のように、
+<link linkend="samba-trusted-domain">Sambaサーバ上でのドメイン間信頼関係の作成</link>
+で、信頼関係を作成したら、SambaユーザにアクセスさせたいリソースのあるドメインのAD
+コントローラ上で、<application>Active Directoryドメインと信頼関係</application>
+ダイアログボックスを開く。NT4形式の信頼関係は推移的ではないので、自ドメインのユーザが、
+AD内の複数のミックスモードのドメインにアクセスできるようにしたい場合は、各ドメインに
+ついて上記の手順を繰り返さなければならない、ということを忘れないこと。
+<application>Active Directoryドメインと信頼関係</application>を開き、Samba ドメインを信頼する Active Directory ドメインの名前を右クリックし、<guimenuitem>プロパティ</guimenuitem>を選択し、
+<guilabel>信頼</guilabel>タブをクリックする。パネルの上部に
+<guilabel>このドメインによって信頼されるドメイン:</guilabel>という名前の付いた一覧が
+表示され、その隣に<guilabel>追加...</guilabel>ボタンがある。このボタンをクリックすると、
+NT4のように、信頼されるドメインの名前と関係パスワードを聞かれる。<emphasis>OK</emphasis>
+をクリックし、しばらくすると、
+<computeroutput>Active Directoryから、信頼されるドメインが追加されて信頼関係が確認された</computeroutput>
+というメッセージが表示される。これで、自システムのSamba ユーザに、ADドメインの
+リソースへのアクセス権限が付与された。
+</para>
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+ドメイン間の信頼関係は、不安定な、又は頻繁にダウンするようなネットワークで試みるべきでは
+ない。ネットワークの安定性と整合性は、分散型ネットワークにおけるドメイン間の信頼関係の
+ための必須要件である。
+</para>
+
+<sect2>
+<title>信頼されるドメインからのブラウジングに失敗する</title>
+
+<para>
+<emphasis>信頼されるWindows200xドメインのマシンから信頼するSambaドメインのWindows200x
+メンバをブラウズしようとすると、次のエラーが出</emphasis>
+<screen>
+システムはセキュリティを侵害しようとするような行為を検出しました。
+認証を受けるサーバに連絡が取れることを確認してください。
+</screen>
+</para>
+
+<para>
+<emphasis>接続しようとしているサーバのイベントログに、下位レベルのドメインのメンバで
+あるためにグループポリシーが適用されない、というエントリがある。</emphasis>
+</para>
+
+<para>
+問題のマシンのコンピュータアカウントが Windows200xドメインにあり、それが無効化されて
+いる場合にこの問題が起こり得る。コンピュータアカウントがない(削除されたか、もともと
+存在しない)か、そのアカウントを有効になっていない(すなわち、そのアカウントを他の
+ドメインに参加させただけという)場合は、問題は起こらないようである。既定値では、
+ドメイン(Windows 200xドメイン) から離脱する場合、コンピュータは自動的にドメイン内の
+コンピュータ・アカウントを無効にしようとする。アカウントを無効化する権限をもつ
+アカウントととして操作していた時にドメインからマシンを離脱した場合、アカウントの
+無効化が実行される。そうでなければ実行されない。
+</para>
+
+</sect2>
+
+<sect2>
+<title>LDAP ldapsamと古いバージョンのsmbldap-toolsに関する問題</title>
+
+<para>
+ドメイン間の信頼関係を設定するために、信頼アカウントを作成するために、
+<command>smbldap-useradd</command>スクリプトを使うと、信頼関係の設定処理は失敗する。
+LDAPデータベース中に作成されたアカウントはアカウントフラグとして
+<literal>[W          ]</literal>となっていて、ドメイン間の信頼関係が動作する時に
+必要である<literal>[I          ]</literal>がない。
+</para>
+
+<para>これに対する簡単な解決方法がある。
+以下のようにして、マシンアカウントを作成する:
+<screen>
+&rootprompt; smbldap-useradd -w domain_name
+</screen>
+次に、信頼アカウントのパスワードを設定する:
+<screen>
+&rootprompt; smbldap-passwd domain_name\$
+</screen>
+テキストエディタを使って以下のファイルを作成する:
+<screen>
+dn: uid=domain_name$,ou=People,dc={your-domain},dc={your-top-level-domain}
+changetype: modify
+sambaAcctFlags: [I         ]
+</screen>
+次に、以下のようにして、LDAPデータベースにテキストファイルを適用する:
+<screen>
+&rootprompt; ldapmodify -x -h localhost \
+ -D "cn=Manager,dc={your-domain},dc={your-top-level-domain}" \
+ -W -f /path-to/foobar
+</screen>
+NT4のドメインユーザマネージャから片方向の信頼関係を作成した後、以下を実行する:
+<screen>
+&rootprompt; net rpc trustdom establish domain_name
+</screen>
+</para>
+
+<para>
+この機能は Samba-3とNT4ドメインで動くし、Samba-3とミックスモードの Windows 200x ADSでも
+動作する。sambaとNTの両方のDCが同じWINS サーバーを使用していなければならず、
+そうでなければ信頼関係は動作しない。
+</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

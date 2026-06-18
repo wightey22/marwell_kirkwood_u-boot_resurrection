@@ -1,0 +1,27 @@
+<samba:parameter name="force unknown acl user"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+
+<description>
+    <para>
+    このパラメータを設定すると、 ファイルの所有者や所有グループとして不明な
+    SID (ユーザやグループIDを示す、 セキュリティディスクリプタ) を含む Windows NT の ACL は、 
+    現在接続しているユーザの UNIX での uid や gid に自動的にマッピングされる。
+    </para>
+
+    <para>
+    これは、Windows NT のクライアントマシン上で作成された、 
+    マシン内でのみ有効なユーザ(ドメインユーザでない)を含んだ ACL を持つファイルやフォルダを(通常 XCOPY /O により)、 
+    Windows NT クライアントから Samba サーバにコピーした際に、 
+    ファイル上の不明な userid や groupid を現在接続しているユーザのものに対応付けることを意図したものである。
+    winbindd による Windows NT の SID から UNIX 側の uid や gid への任意の対応づけを可能とする以外に、 この問題を適切に対処する方法はない。
+    </para>
+
+    <para>
+    XCOPY /O が ACCESS_DENIED エラーを引きおこす際には、このパラメータを使って欲しい。 
+    </para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

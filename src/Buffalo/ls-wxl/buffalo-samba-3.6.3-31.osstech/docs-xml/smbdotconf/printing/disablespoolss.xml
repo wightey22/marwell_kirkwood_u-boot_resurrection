@@ -1,0 +1,22 @@
+<samba:parameter name="disable spoolss"
+                 context="G"
+				 type="boolean"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータを有効にすることで、
+	Samba の SPOOLSS MS-RPC サポートを無効にし、Samba 2.0.x と同様の動作をさせることが可能となる。
+	Windows NT/2000 クライアントは、Lanman 形式の印刷コマンドを利用することも可能である。
+	Windows 9x/Me は、このパラメータに影響されない。
+	なお、このパラメータを有効にすると、NT のプリンタプロパティを利用した、
+	Windows NTのプリンタ追加ウィザードによる Sambaマシンへのプリンタドライバのアップロード機能が無効になる。
+	また、Windows NT/2000 クライアントが、必要に応じて Samba
+	マシンからプリンタドライバをダウンロードする機能も同時に無効になる。
+	<emphasis>このパラメータを有効にする際は、充分注意すること。</emphasis>
+	</para>
+</description>
+
+<related>use client driver</related>
+
+<value type="default">no</value>
+</samba:parameter>

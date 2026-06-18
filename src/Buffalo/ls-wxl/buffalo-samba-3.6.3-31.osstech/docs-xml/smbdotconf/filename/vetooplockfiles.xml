@@ -1,0 +1,33 @@
+<samba:parameter name="veto oplock files"
+                 context="S"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、
+	<smbconfoption name="oplocks"/>
+	パラメータが有効になっている共有でのみ意味がある。
+	Samba の管理者は、このパラメータを使って
+	リストにマッチしたファイルに対する oplock を禁止することができる。
+	リストは <smbconfoption name="veto files"/> 
+	パラメータで利用されているものと同様の形式である。</para>
+
+	<para>
+	クライアントによるロック競合が激しいファイルに対して、
+	このオプションを適用したいということがあるだろう。
+	例としては NetBench SMB ベンチマーク・プログラムがある。
+	このプログラムは <filename moreinfo="none">「.SEM」</filename>
+	で終わる名前のファイルに対して激しい競合を発生させる。
+	これらのファイルに対する oplock を禁止するためには、
+	以下の設定例のように指定する
+	([global] セクションか、
+	Net Bench 用の共有のいずれかにおいて)。</para>
+
+	<para>
+	以下に設定例を示す。
+<programlisting>
+veto oplock files = /.*SEM/
+</programlisting>
+	</para>
+</description>
+<value type="default"><comment>oplock 取得を禁止されるファイルやディレクトリはない</comment></value>
+</samba:parameter>

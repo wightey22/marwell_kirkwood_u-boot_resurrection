@@ -1,0 +1,26 @@
+<samba:parameter name="os level"
+                 context="G"
+				 type="integer"
+                 basic="1" advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この数値は、
+    Samba がブラウザ選定時に宣言する優先度を設定する。
+    このパラメータの値は、 <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> 
+    が、ブロードキャスト範囲内における <smbconfoption name="workgroup"/>
+    のローカルマスタブラウザになるかどうかに影響する。</para>
+		
+    <para><emphasis>注意 :</emphasis> ローカルマスタブラウザの選定に際して、既定値では、
+    Samba が Windows NT 4.0/2000 のドメインコントローラ以外のすべての Microsoft 社のOSに優先する。
+    このため、Samba ホストの設定が不正の場合、
+    ブラウジング的にそのサブネットが孤立してしまう可能性がある。
+    Samba 3.0 系列では、このパラメータは通常自動設定されるため、既定値を手動で設定する必要は通常発生しない。(訳注: 実際には自動設定は行なわれない。この説明は誤りだと思われる)
+    このパラメータに関する詳細は、Samba-3 HOWTO ドキュメントの「Network Browsing」を参照のこと。
+	<emphasis>注意:</emphasis>このパラメータの最大値は255である。
+それより大きな値を使った場合、もしも、カウントは0から始まる!
+	</para>
+</description>
+<value type="default">20</value>
+<value type="example">65</value>
+</samba:parameter>

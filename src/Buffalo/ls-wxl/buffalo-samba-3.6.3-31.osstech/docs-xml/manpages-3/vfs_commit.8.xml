@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_commit.8">
+
+<refmeta>
+	<refentrytitle>vfs_commit</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_commit</refname>
+	<refpurpose>書き込み済みデータを特定の間隔でフラッシュする</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = commit</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である.</para>
+
+	<para><command>vfs_commit</command> VFS モジュールはファイルに書き込まれた多くのデータ
+	を管理し、指定された単位でファイに書き込む(同期する)。
+	</para>
+
+	<para><command>vfs_commit</command>は次の2つの状況で役に立つ。
+	第一に、非常に重要なデータが大量にある場合、commit:dthreshに小さな値を指定すれば
+	予期しない電源断に対して被害を最小にとどめることができる。
+	第二に、あるシステムでは書き込みデータを早期にフラッシュすることで
+	パフォーマンスを向上することができる。
+	</para>
+
+	<para>このモジュールはスタッカブルである。</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+
+		<varlistentry>
+		<term>commit:dthresh = BYTES</term>
+		<listitem>
+		<para>指定されたバイト数が書き込まれるたびにファイルを同期する
+		</para>
+
+		<para>以下のサフィックスが使用可能</para>
+		<itemizedlist>
+		<listitem><para><command>K</command> - BYTES はKByte表記</para></listitem>
+		<listitem><para><command>M</command> - BYTES はMByte表記</para></listitem>
+		<listitem><para><command>G</command> - BYTES はGByte表記</para></listitem>
+		</itemizedlist>
+
+		</listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+
+	<para>512 KBytes(524288 bytes)データを書き込むたびに、ファイルを同期する
+	</para>
+<programlisting>
+        <smbconfsection name="[precious]"/>
+	<smbconfoption name="path">/data/precious</smbconfoption>
+	<smbconfoption name="vfs objects">commit</smbconfoption>
+	<smbconfoption name="commit:dthresh">512K</smbconfoption>
+</programlisting>
+</refsect1>
+
+<refsect1>
+	<title>警告</title>
+	<para>一部のシステムでは、<command>commit</command>によるデータ同期を行うと
+	パフォーマンスを損なうことになる。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+	<para>このヘルプはSambaシステム　3.0.25(訳注3.x?)に対応している
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team に
+	よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+	として開発が行なわれている。</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このドキュメントは、Samba 3.0.25 - 3.5.3 対応のものである。</para>	
+    
+    <para>このドキュメントの翻訳は
+	<itemizedlist>
+		<listitem><para>平田祥司 (shouji@microft.co.jp)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

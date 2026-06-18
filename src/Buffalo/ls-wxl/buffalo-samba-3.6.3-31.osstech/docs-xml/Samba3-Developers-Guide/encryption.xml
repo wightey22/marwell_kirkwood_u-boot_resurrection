@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="pwencrypt">
+
+
+<chapterinfo>
+	<author>
+		<firstname>Jeremy</firstname><surname>Allison</surname>
+		<affiliation>
+			<orgname>Samba Team</orgname>
+			<address>
+				<email>samba@samba.org</email>
+			</address>
+		</affiliation>
+	</author>
+
+	<pubdate>19 Apr 1999</pubdate>
+</chapterinfo>
+	
+<title>LanMan と NT Password の暗号化</title>
+
+<sect1>
+	<title>初めに</title>
+	
+	<para>Samba用の、LanManager と Windows NT互換のパスワード暗号化は、
+	  LanManager または Windows NT サーバと正確に同じ方法で、ユーザの接続を
+	  検証することが出来るようになっている。</para>
+
+	<para>この文書は、どのようにSMB パスワードの暗号化アルゴリズムが動作し、
+	  それを使うことを選択する場合に、何が問題化について記述している。この文書を
+	  特に、セキュリティと"PROS and CONS"節を注意深く読むべきである。</para>
+	
+</sect1>
+
+<sect1>
+	<title>どのようにして動作するか?</title>
+
+	<para>LanManagerの暗号化はUNIパスワードの暗号化と若干似ている。サーバは、
+	  ユーザのパスワードをハッシュ化した値を含むファイルを使う。これは、ユーザからの
+	  平文パスワートを得て、それを大文字化し、14文字で打ち切るか、NULL文字を14文字に
+	  なるまで埋めることのどちらかを行って作成する。この14バイトの値は、'特別な'
+	  8バイトの値に暗号化されるため、2つの56ビットDESキーとして使われ、サーバと
+	  クライアントによって保存される16バイトの値に整形される。これは、
+	  "ハッシュ化されたパスワード"として知られる。</para>
+	
+	<para>Windows NTの暗号化は非常に高品質のメカニズムで、ユニコード版の、
+	  ユーザのパスワード上で、MD4ハッシュを行うことから成り立っている。これはまた、
+	  可逆変換不可能な16バイトハッシュ値である。</para>
+
+	<para>クライアント(LanManager, Windows for WorkGroups, Windows
+          95 か Windows NT)がSambaドライブ(かSambaリソース)をマウントしようとした時、
+	  最初に接続を要求し、クライアントとサーバが使うプロトコルを調整する。
+	  この要求のリプライ中で、Sambaサーバは8バイトのランダム値を生成し添付する。
+	  これは、"チャレンジ"と呼ばれ、リプライが返ってくることに備えてSambaサーバ中に
+	  保存される。チャレンジはすべてのクライアント接続毎に異なる。</para>
+
+	<para>クライアントは次にハッシュ化されたパスワード(上記で説明されている
+	  16バイト値)を使い、5つのNULL文字を追加し、3つの56ビットDESキーとし、
+	  それは、おのおのチャレンジの8バイト値を暗号化するのに使われ、"レスポンス"
+	  と呼ばれる24バイトの値に整形する。</para>
+
+	<para>SMB呼び出しSMBsessionsetupX(ユーザレベルセキュリティが選択された場合)中か、
+	  STBtconX呼び出し(共有レベルセキュリティが選択された場合)中で、24バイトの
+	  レスポンスはクライアントによってSambaサーバに戻される。Windows NTプロトコル
+	  レベル用に、上記の計算が、ユーザのパスワードのハッシュ両方ととレスポンス両方に
+	  対して行われ、2つの24バイト値がSMB呼び出しに対して戻される。</para>
+
+	<para>Sambaサーバは次に上記の計算を、サーバ内に保存されている16バイトの
+	  ハッシュ化されたパスワード(後述する<filename>smbpasswd</filename>から読んで)、
+	  ネゴシエートプロトコルの返答から得たチャレンジ値を使って再度行う。それは
+	  次に、計算した24バイトの値がクライアントから返されたものと一致するかを
+	  確認する。</para>
+
+	<para>もしも、それらの値が性格に一致するならば、クライアントが正しいパスワード
+	  (か、16バイトのハッシュ化された値 - 以下のセキュリティに関する注意を参照)
+	  を使っていて、その結果アクセスは許可される。もしもそうでない場合、
+	  クライアントは正しいパスワードを使っておらず、アクセスは拒否される。</para>
+
+	<para>Sambaサーバはユーザの平文パスワードを受け取ったり、格納することは
+	  決してないことに注意。それに由来する16バイトのハッシュ値のみである。また、
+	  平文パスワードまたは16バイトのハッシュ値はネットワーク上を決して流れない。
+	  そのため、セキュリティは向上する。</para>
+</sect1>
+
+<sect1>
+	<title>smbpasswd ファイル</title>
+	<anchor id="SMBPASSWDFILEFORMAT"/>
+	<para>Sambaが上記のプロトコルに参加するために、それがユーザ名と等価ならば、
+	  16バイトのハッシュ値を検索できる必要がある。残念ながら、UNIXパスワードの
+	  値は1方向ハッシュ関数による値なので(すなわち、UNIXのハッシュとして与えられた、
+	  ユーザの平文パスワードを検索することは不可能である)、この16バイト値を含む
+	  分離されたパスワードファイルを用意しなければならない。2つのパスワードファイルに
+	  起因する、同期ずれ問題を最小限にするために、UNIXの
+	  <filename>/etc/passwd</filename> と <filename>smbpasswd</filename>、
+	  ユーティリティ<command>mksmbpasswd.sh</command>がUNIXの
+	  <filename>/etc/passwd</filename>からsmbpasswdファイルを生成するために
+	  提供されている。
+	</para>
+
+
+	<para>使用している<filename>/etc/passwd</filename>ファイルからsmbpasswd
+	  ファイルを生成するために、以下のコマンドを使用する:</para>
+	
+	<para><prompt>$ </prompt><userinput>cat /etc/passwd | mksmbpasswd.sh
+	&gt; /usr/local/samba/private/smbpasswd</userinput></para>
+	
+	<para>もしも、NISを使っているシステム上ならば、以下を使用する</para>
+
+	<para><prompt>$ </prompt><userinput>ypcat passwd | mksmbpasswd.sh
+	&gt; /usr/local/samba/private/smbpasswd</userinput></para>
+	
+	<para><command>mksmbpasswd.sh</command>プログラムは、Sambaソース
+	  ディレクトリ中にある。既定値では、smbpasswdファイルは下記にある:</para>
+
+	<para><filename>/usr/local/samba/private/smbpasswd</filename></para>
+
+	<para><filename>/usr/local/samba/private/</filename> ディレクトリの
+	  所有者は、rootに設定すべきであり、それのアクセス許可設定は、0500
+	  (<command>chmod 500 /usr/local/samba/private</command>)に設定すべきである。
+	</para>
+
+	<para>同じように、privateディレクトリ内のsmbpasswdファイルはrootが所有
+	  すべきであり、それのアクセス許可設定は、0600
+	  (<command>chmod 600 smbpasswd</command>)にすべきである。</para>
+
+
+	<para>smbpasswdファイルの形式は以下の通り(ここでは行を折り返している。
+	  smbpasswdファイル内では、1つのエントリ毎に1行となっている):</para>
+	
+	<para><programlisting>
+username:uid:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:
+	[Account type]:LCT-&lt;last-change-time&gt;:Long name
+	</programlisting></para>
+	
+	<para>Although only the <replaceable>username</replaceable>, 
+	<replaceable>uid</replaceable>, <replaceable>
+	XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX</replaceable>,
+	[<replaceable>Account type</replaceable>]と<replaceable>
+	last-change-time</replaceable>セクションのみが重要であり、Sambaソースコード
+	内ではそれらのみが参照される。</para>
+
+	<para>XXXセクション中に、32の'X'文字の間に2つの':'文字があることが、
+	  <emphasis>特に重要</emphasis>で、smbpasswdとSambaのコードは、
+	  ':'の文字の間に32文字がない任意のエントリについては認証に失敗する。
+	  最初のXXXセクションはLanman passwordハッシュで、2番目はWindows NT
+	  用である。</para>
+
+	<para>passwordファイルが生成された時、すべてのユーザは32個の'X'文字を含む
+	  パスワードエントリを持つ。既定値で、これはこのユーザに対して、何らの
+	  アクセスも許可しない。ユーザがパスワードを設定すると、'X'文字は32バイトの
+	  ASCII16進数値(0-9,A-F)に変わる。これは、ユーザのパスワードの、
+	  16バイトハッシュ値を表現したものである。</para>
+
+	<para>(推奨しないが)ユーザがパスワードを持たないようにするためには、viを
+	  使ってこのファイルを編集し、最初の11文字をASCII文字列
+	  <constant>"NO PASSWORD"</constant>(引用符は勘定に入れない)に置き換える。
+	</para>
+
+	<para>たとえば、ユーザbobのパスワードをなくすには、彼のパスワードファイルの
+	  エントリを以下のようにする:</para>
+
+	<para><programlisting>
+bob:100:NO PASSWORDXXXXXXXXXXXXXXXXXXXXX:XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:
+	[U          ]:LCT-00000000:Bob's full name:/bobhome:/bobshell
+	</programlisting></para>
+	
+	<para>もしも、自分自身でsmbpasswdコマンドを使ってパスワードを設定することを認めて
+	  いるならば、(推奨しないが)ユーザがパスワードを再設定する時に、以前の
+	  パスワードを入力しなくてすむよう、初期値としてユーザに NO PASSWORD を設定しても
+	  よいだろう。これを行うためには、<command>smbpasswd</command>プログラムは
+	  そのユーザがパスワードなしで動くために、<command>smbd</command>デーモンに
+	  接続できる必要がある。これを行うには以下のような設定を</para>
+
+	<para><command>null passwords = yes</command></para>
+	
+	<para>smb.confファイルの[global]セクションに(これが、なぜ上記の記述が
+	  推奨されないかの理由である)記述する。出来れば、最初に各ユーザの初期パスワードを
+	  設定すれば、使用するサーバ上でこれを有効にしなくてすむ。</para>
+
+	<para><emphasis>注意 : </emphasis>このファイルはとても注意深く保護すべきである。
+	  誰でもがこのファイルにアクセスできると言うことは、(プロトコルについて
+	  十分な知識がなくても)使用するSMBサーバへのアクセス権を得ることが出来ることに
+	  なるからである。ファイルはそのため通常のUNIX<filename>/etc/passwd</filename>
+	  ファイルよりもより機密性が高い。</para>
+</sect1>
+
+</chapter>

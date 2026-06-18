@@ -1,0 +1,311 @@
+.\"     Title: su
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23.11.2008
+.\"    Manual: Dienstprogramme für Benutzer
+.\"    Source: Dienstprogramme für Benutzer
+.\"
+.TH "SU" "1" "23.11.2008" "Dienstprogramme für Benutzer" "Dienstprogramme für Benutzer"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+su \- ändert die Benutzer-ID oder wechselt zu Root
+.SH "SYNOPSIS"
+.HP 3
+\fBsu\fR [\fIOptionen\fR] [\fILOGIN\fR]
+.SH "BESCHREIBUNG"
+.PP
+Der Befehl
+\fBsu\fR
+dient dazu, während einer Sitzung ein anderer Benutzer zu werden\&. Wenn
+\fBsu\fR
+ohne
+\fBusername\fR
+aufgerufen wird, wechselt es standardmäßig zu Root\&. Zusätzlich kann das Argument
+\fB\-\fR
+angegeben werden\&. Damit wird eine Umgebung zur Verfügung gestellt, die der entspricht, die der Benutzer nach einer direkten Anmeldung erwartet\&.
+.PP
+Zusätzliche Argumente können nach dem Benutzername angegeben werden\&. In diesem Fall werden sie an die Login\-Shell des Benutzers weitergereicht\&. Insbesondere führt das Argument
+\fB\-c\fR
+dazu, dass das nächste Argument von den meisten Interpretatoren als Befehl behandelt wird\&. Dieser Befehl wird von der Shell ausgeführt, die in
+\fI/etc/passwd\fR
+für den Zielbenutzer angegeben ist\&.
+.PP
+Sie können das Argument
+\fB\-\-\fR
+verwenden, um Optionen für
+\fBsu\fR
+von Argumenten für die Shell zu trennen\&.
+.PP
+Der Benutzer wird gegebenenfalls nach einem Passwort gefragt\&. Unrichtige Passworteingaben werden eine Fehlermeldung erzeugen\&. Sowohl erfolgreiche als auch misslungene Versuche werden protokolliert, um Missbrauch des Systems zu entdecken\&.
+.PP
+Die aktuelle Umgebung wird an die neue Shell übergeben\&. Der Wert von
+\fB$PATH\fR
+wird für normale Benutzer auf
+\fI/bin:/usr/bin\fR
+gesetzt, für Root auf
+\fI/sbin:/bin:/usr/sbin:/usr/bin\fR\&. Dieses Verhalten kann durch die Definitionen von
+\fIENV_PATH\fR
+und
+\fIENV_SUPATH\fR
+in
+\fI/etc/login\&.defs\fR
+geändert werden\&.
+.PP
+Eine Subsystem\-Anmeldung wird durch einen "*" als erstes Zeichen der Login\-Shell gekennzeichnet\&. Das angegebene Home\-Verzeichnis wird als Wurzel für das Dateisystem verwendet, auf welchem der Benutzer tatsächlich angemeldet ist\&.
+.SH "OPTIONEN"
+.PP
+Die Optionen, die vom Befehl
+\fBsu\fR
+unterstützt werden, sind:
+.PP
+\fB\-c\fR, \fB\-\-command\fR\fIBEFEHL\fR
+.RS 4
+Gibt einen Befehl an, der von der Shell mittels ihrer Option
+\fB\-c\fR
+ausgeführt wird\&.
+.RE
+.PP
+\fB\-\fR, \fB\-l\fR, \fB\-\-login\fR
+.RS 4
+Eine Umgebung wird zur Verfügung gestellt, die der entspricht, die der Benutzer nach einer direkten Anmeldung erwartet\&.
+.sp
+Wenn
+\fB\-\fR
+verwendet wird, muss es als die letzte Option von
+\fBsu\fR
+angegeben werden\&. Die übrigen Formen ((\fB\-l\fR
+und
+\fB\-\-login\fR) unterliegen nicht dieser Beschränkung\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shell\fR\fISHELL\fR
+.RS 4
+Die Shell, die gestartet wird\&.
+.sp
+Die aufgerufene Shell wird bestimmt durch (höchste Priorität zuerst):
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Die Shell, die mit \-\-shell angegeben wurde\&.
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Falls
+\fB\-\-preserve\-environment\fR
+verwendet wird, die Shell, die durch die Umgebungsvariable
+\fB$SHELL\fR
+festgelegt wird\&.
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Die Shell, die in
+\fI/etc/passwd\fR
+für den Zielbenutzer angegeben ist\&.
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fI/bin/sh\fR, falls durch die obigen Methoden keine Shell gefunden werden kann\&.
+.RE
+.IP "" 4
+.sp
+Falls der Zielbenutzer eine beschränkte Shell hat (d\&.h\&. das Feld für die Shell im Eintrag des Benutzers in
+\fI/etc/passwd\fR
+ist nicht in
+\fI/etc/shell\fR) aufgeführt), wird die Option
+\fB\-\-shell\fR
+und die Umgebungsvariable
+\fB$SHELL\fR
+nicht beachtet, sofern
+\fBsu\fR
+nicht von Root aufgerufen wird\&.
+.RE
+.PP
+\fB\-m\fR, \fB\-p\fR, \fB\-\-preserve\-environment\fR
+.RS 4
+Erhält die aktuelle Umgebung\&.
+.sp
+Falls der Zielbenutzer eine beschränkte Shell besitzt, hat diese Option keinen Effekt (sofern
+\fBsu\fR
+nicht von Root aufgerufen wird)\&.
+.RE
+.SH "WARNUNGEN"
+.PP
+Diese Version von
+\fBsu\fR
+hat viele Kompilierungsoptionen\&. Deren Nützlichkeit hängt von den Anforderungen der jeweiligen Umgebung ab\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBCONSOLE\fR (string)
+.RS 4
+If defined, either full pathname of a file containing device names or a ":" delimited list of device names\&. Root logins will be allowed only upon these devices\&.
+.sp
+If not defined, root will be allowed on any device\&.
+.RE
+.PP
+\fBCONSOLE_GROUPS\fR (string)
+.RS 4
+List of groups to add to the user\'s supplementary group set when logging in on the console (as determined by the CONSOLE setting)\&. Default is none\&.
+
+Use with caution \- it is possible for users to gain permanent access to these groups, even when not logged in on the console\&.
+.RE
+.PP
+\fBDEFAULT_HOME\fR (boolean)
+.RS 4
+Indicate if login is allowed if we can\'t cd to the home directory\&. Default in no\&.
+.sp
+If set to
+\fIyes\fR, the user will login in the root (\fI/\fR) directory if it is not possible to cd to her home directory\&.
+.RE
+.PP
+\fBENV_HZ\fR (string)
+.RS 4
+If set, it will be used to define the HZ environment variable when a user login\&. The value must be preceded by
+\fIHZ=\fR\&. A common value on Linux is
+\fIHZ=100\fR\&.
+.RE
+.PP
+\fBENVIRON_FILE\fR (string)
+.RS 4
+If this file exists and is readable, login environment will be read from it\&. Every line should be in the form name=value\&.
+.RE
+.PP
+\fBENV_PATH\fR (string)
+.RS 4
+If set, it will be used to define the PATH environment variable when a regular user login\&. The value can be preceded by
+\fIPATH=\fR, or a colon separated list of paths (for example
+\fI/bin:/usr/bin\fR)\&. The default value is
+\fIPATH=/bin:/usr/bin\fR\&.
+.RE
+.PP
+\fBENV_SUPATH\fR (string)
+.RS 4
+If set, it will be used to define the PATH environment variable when the superuser login\&. The value can be preceded by
+\fIPATH=\fR, or a colon separated list of paths (for example
+\fI/sbin:/bin:/usr/sbin:/usr/bin\fR)\&. The default value is
+\fIPATH=/bin:/usr/bin\fR\&.
+.RE
+.PP
+\fBENV_TZ\fR (string)
+.RS 4
+If set, it will be used to define the TZ environment variable when a user login\&. The value can be the name of a timezone preceded by
+\fITZ=\fR
+(for example
+\fITZ=CST6CDT\fR), or the full path to the file containing the timezone specification (for example
+\fI/etc/tzname\fR)\&.
+.sp
+If a full path is specified but the file does not exist or cannot be read, the default is to use
+\fITZ=CST6CDT\fR\&.
+.RE
+.PP
+\fBLOGIN_STRING\fR (string)
+.RS 4
+The string used for prompting a password\&. The default is to use "Password: ", or a translation of that string\&. If you set this variable, the prompt will no be translated\&.
+.sp
+If the string contains
+\fI%s\fR, this will be replaced by the user\'s name\&.
+.RE
+.PP
+\fBMAIL_CHECK_ENAB\fR (boolean)
+.RS 4
+Enable checking and display of mailbox status upon login\&.
+.sp
+You should disable it if the shell startup files already check for mail ("mailx \-e" or equivalent)\&.
+.RE
+.PP
+\fBMAIL_DIR\fR (string)
+.RS 4
+Das Verzeichnis des Mail\-Spools\&. Diese Angabe wird benötigt, um die Mailbox zu bearbeiten, nachdem das entsprechende Benutzerkonto verändert oder gelöscht wurde\&. Falls nicht angegeben, wird ein Standard verwendet, der beim Kompilieren festgelegt wurde\&.
+.RE
+.PP
+\fBMAIL_FILE\fR (string)
+.RS 4
+Defines the location of the users mail spool files relatively to their home directory\&.
+.RE
+.PP
+The
+\fBMAIL_DIR\fR
+and
+\fBMAIL_FILE\fR
+variables are used by
+\fBuseradd\fR,
+\fBusermod\fR, and
+\fBuserdel\fR
+to create, move, or delete the user\'s mail spool\&.
+.PP
+If
+\fBMAIL_CHECK_ENAB\fR
+is set to
+\fIyes\fR, they are also used to define the
+\fBMAIL\fR
+environment variable\&.
+.PP
+\fBQUOTAS_ENAB\fR (boolean)
+.RS 4
+Enable setting of ulimit, umask, and niceness from passwd gecos field\&.
+.RE
+.PP
+\fBSULOG_FILE\fR (string)
+.RS 4
+If defined, all su activity is logged to this file\&.
+.RE
+.PP
+\fBSU_NAME\fR (string)
+.RS 4
+If defined, the command name to display when running "su \-"\&. For example, if this is defined as "su" then a "ps" will display the command is "\-su"\&. If not defined, then "ps" would display the name of the shell actually being run, e\&.g\&. something like "\-sh"\&.
+.RE
+.PP
+\fBSU_WHEEL_ONLY\fR (boolean)
+.RS 4
+If
+\fIyes\fR, the user must be listed as a member of the first gid 0 group in
+\fI/etc/group\fR
+(called
+\fIroot\fR
+on most Linux systems) to be able to
+\fBsu\fR
+to uid 0 accounts\&. If the group doesn\'t exist or is empty, no one will be able to
+\fBsu\fR
+to uid 0\&.
+.RE
+.PP
+\fBSYSLOG_SU_ENAB\fR (boolean)
+.RS 4
+Enable "syslog" logging of
+\fBsu\fR
+activity \- in addition to sulog file logging\&.
+.RE
+.PP
+\fBUSERGROUPS_ENAB\fR (boolean)
+.RS 4
+Enable setting of the umask group bits to be the same as owner bits (examples: 022 \-> 002, 077 \-> 007) for non\-root users, if the uid is the same as gid, and username is the same as the primary group name\&.
+
+If set to
+\fIyes\fR,
+\fBuserdel\fR
+will remove the user\'s group if it contains no more members, and
+\fBuseradd\fR
+will create by default a group with the name of the user\&.
+.RE
+.SH "DATEIEN"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informationen zu den Benutzerkonten\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Verschlüsselte Informationen zu den Benutzerkonten\&.
+.RE
+.SH "SIEHE AUCH"
+.PP
+\fBlogin\fR(1),
+\fBlogin.defs\fR(5),
+\fBsg\fR(1),
+\fBsh\fR(1)

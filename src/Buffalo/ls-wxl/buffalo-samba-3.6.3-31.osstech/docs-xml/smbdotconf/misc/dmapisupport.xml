@@ -1,0 +1,25 @@
+<samba:parameter name="dmapi support"
+                 context="S"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータにより、Samba がオフラインのファイルの判定に DMAPI
+	を用いるかどうかが制御される。
+	これは、通常ファイルを自動的にテープに移動していくような階層型ストレージとの連携の際に用いられる。	
+	</para>
+
+	<para>
+	Samba はファイルの状態を DMAPI アプリケーションが登録したイベントを確認することで推測することに注意。
+	この方法は、多くの階層型ストレージシステムで機能するが、一部機能しないシステムもあるかも知れない。この場合、 Samba はファイルがオフラインであるという誤った報告を行なうことになる。
+	</para>
+
+	<para>
+	このパラメータは、コンパイル時に DMAPI の実装サポートを確認できた場合にのみ有効となる。
+	また、実行時にシステムで DMAPI が使用可能であることが確認できた場合にのみ使用される。
+	</para>
+
+</description>
+<value type="default">no</value>
+</samba:parameter>

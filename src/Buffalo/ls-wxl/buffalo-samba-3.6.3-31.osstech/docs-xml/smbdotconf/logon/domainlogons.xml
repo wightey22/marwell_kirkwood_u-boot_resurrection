@@ -1,0 +1,18 @@
+<samba:parameter name="domain logons"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータが <constant>yes</constant> に設定されると、 
+	Samba サーバは、自身が所属する <smbconfoption name="workgroup"/>
+	に所属する Windows 95/98 に対するドメインログオン機能を提供するようになる。
+	さらに、Samba サーバは、
+	Windows NT 4.0 形式のドメインコントローラとしても機能するようになる。
+	この機能の設定に関する詳細な記述は、
+	Samba-PDC-HOWTO の「Domain Control」章を参照のこと。
+	</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

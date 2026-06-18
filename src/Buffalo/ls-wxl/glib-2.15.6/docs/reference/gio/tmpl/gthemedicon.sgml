@@ -1,0 +1,64 @@
+<!-- ##### SECTION Title ##### -->
+GThemedIcon
+
+<!-- ##### SECTION Short_Description ##### -->
+
+
+<!-- ##### SECTION Long_Description ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION See_Also ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### SECTION Stability_Level ##### -->
+
+
+<!-- ##### STRUCT GThemedIcon ##### -->
+<para>
+
+</para>
+
+
+<!-- ##### FUNCTION g_themed_icon_new ##### -->
+<para>
+
+</para>
+
+@iconname: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_themed_icon_new_from_names ##### -->
+<para>
+
+</para>
+
+@iconnames: 
+@len: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_themed_icon_new_with_default_fallbacks ##### -->
+<para>
+
+</para>
+
+@iconname: 
+@Returns: 
+
+
+<!-- ##### FUNCTION g_themed_icon_append_name ##### -->
+<para>
+
+</para>
+
+@icon: 
+@iconname: 
+
+

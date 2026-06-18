@@ -1,0 +1,19 @@
+<samba:parameter name="mangle prefix"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>短縮名を生成する際に、元々の名前に付加するプレフィックスの長さを指定する。
+    大きな値を指定すると、
+    ハッシュアルゴリズムの効果が低下し、
+    名前の衝突の可能性が高まる。
+    最小値は 1 であり、最大は 6 である。</para>
+
+	<para>
+	mangle prefix は mangling method が hash2 の時のみ有効である。
+	</para>
+</description>
+<value type="default">1</value>
+<value type="example">4</value>
+</samba:parameter>

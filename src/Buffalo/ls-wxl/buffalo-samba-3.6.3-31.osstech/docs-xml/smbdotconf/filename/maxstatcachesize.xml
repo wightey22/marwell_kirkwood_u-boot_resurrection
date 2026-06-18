@@ -1,0 +1,15 @@
+<samba:parameter name="max stat cache size"
+                 context="G"
+                 developer="1"
+		 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータにより、大文字小文字を区別しない名前の対応づけの高速化に用いられる
+	 <parameter moreinfo="none">stat cache</parameter> に用いられるメモリの上限値が指定される。
+	このパラメータには、使用する stat cache のサイズをキロバイト (1024) 単位で指定する。
+	値 0 は無制限を意味する。このパラメータを変更する必要はないであろう。</para>
+</description>
+<related>stat cache</related>
+<value type="default">256</value>
+<value type="example">100</value>
+</samba:parameter>

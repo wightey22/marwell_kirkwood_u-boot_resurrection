@@ -1,0 +1,39 @@
+<samba:parameter name="directory mask"
+	context="S"
+	type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>directory mode</synonym>
+<description>
+    <para> このパラメータは、パーミッションを示す8進数の数値であり、
+    UNIX 側のディレクトリ作成時に DOS の属性から UNIX のパーミッションを生成する際に使われる。
+    </para>
+
+    <para>ディレクトリ作成時に付与されるパーミッションは、
+    DOS の属性と UNIX のパーミッションとのマッピングにしたがって、
+    DOS の属性を UNIX のパーミッションに変換することにより生成されるが、
+    最終的には、このパラメータとビット単位の AND 演算が行なわれる。
+    このパラメータは、ディレクトリの UNIX のパーミッションに対するビットマスクと
+    考えることができる。ここで<emphasis>設定されない</emphasis>ビットは、
+    ディレクトリ作成時のパーミッションから削除される。</para>
+
+    <para>このパラメータの既定値は、
+    「group」と「other」の書き込み権を
+    UNIX のパーミッションから取り除き、ディレクトリの所有者のみが変更可能にしたものである。</para>
+		
+    <para> この処理に引き続いて、Samba はこのパラメータで生成された UNIX のパーミッションと
+    <smbconfoption name="force directory mode"/> パラメータの値との OR 演算を行う。
+    このパラメータは既定では 000 に設定されている(つまり、追加されるパーミッションはない)。</para>
+
+    <para>このパラメータは、Windows NT/2000 の ACL エディタで設定される
+    アクセス許可には適用されない。ACL に対しても強制的にマスクを適用したい場合は、
+    <smbconfoption name="directory security mask"/> パラメータを設定することが必要である。</para>
+</description>
+
+<related>force directory mode</related>
+<related>create mask</related>
+<related>directory security mask</related>
+<related>inherit permissions</related>
+
+<value type="default">0755</value>
+<value type="example">0775</value>
+</samba:parameter>

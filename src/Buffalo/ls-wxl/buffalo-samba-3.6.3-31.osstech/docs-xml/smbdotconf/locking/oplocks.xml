@@ -1,0 +1,25 @@
+<samba:parameter name="oplocks"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>この真偽値オプションは、
+	共有内のファイルオープンが要求された際に oplock (opportunistic lock = 便宜的ロック) を行なうかどうかを
+	<command moreinfo="none">smbd</command> に指示する。
+	oplock により、Samba サーバ上のファイルアクセス速度を劇的に改善(およそ 30% 以上)することができる。
+	oplock により、クライアントは、積極的にファイルをローカルにキャッシュするようになるが、
+	信頼性の低いネットワーク環境の場合などに、これを無効にしたいと考えることもあるだろう
+	(Windows NT サーバにおける既定値は有効である)。
+	</para>
+
+	<para> oplock は共有内のファイル単位で無効にすることも可能である。
+	<smbconfoption name="veto oplock files"/> パラメータを参照のこと。
+	システムによっては、oplock が OS 自身によって認識される。
+	この場合、Samba、NFS、ローカルなUNIXのいずれを経由してアクセスが行なわれた場合でも、
+	oplock が行なわれたファイルとのデータの同期が実現する。
+	詳細は、<smbconfoption name="kernel oplocks"/> パラメータを参照のこと。</para>
+</description>
+<related>kernel oplocks</related>
+<related>level2 oplocks</related>
+<value type="default">yes</value>
+</samba:parameter>

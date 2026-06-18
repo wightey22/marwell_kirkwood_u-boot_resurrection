@@ -1,0 +1,64 @@
+<samba:parameter name="username"
+	context="S"
+	type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>user</synonym>
+<synonym>users</synonym>
+<description>
+    <para>このパラメータに複数のユーザをコンマで区切ったリストで指定することにより、
+    各ユーザ名に対して(左から右に)順番に入力したパスワードを用いた認証が行われる。
+    </para>
+
+    <para> <parameter moreinfo="none">username</parameter> パラメータは、
+    PC 側からユーザ名が提供されない時にのみ必要である。
+    これに該当するのは、COREPLUS プロトコルを用いているか、
+    Windows for Workgroup において、ユーザ名が UNIX 側のユーザ名と異なっている場合である。
+    どちらの場合も、このパラメータの代わりに \\server\share%user の記法を用いるのが好ましい。</para>
+
+    <para>Sambaは <parameter>username</parameter> パラメータで指定された各ユーザに対して、
+    提供されたパスワードを用いて順番に認証を行っていくことになるため、
+    <parameter moreinfo="none">username</parameter>は最適の解決策とはいえない。
+    これは遅い上、パスワードが重複しているユーザが多数存在しているような場合には困ったことになる。
+    このパラメータを不用意に使うと、
+    タイムアウトやセキュリティ上の問題などが発生するかも知れない。
+    </para>
+
+    <para>Samba は、プラットフォームである UNIX のセキュリティ機構に依存している。
+    このパラメータは、ログインできるユーザを制限するものではなく、
+    提供されたパスワードを適用するユーザについての情報を Samba サーバに与えるものである。
+    ユーザは自分が好むユーザとしてログインすることが可能であるが、
+    telnet セッションよりは、被害を与えないだろう。
+    デーモンはログインしたユーザの権限で動作するため、
+    ユーザの権限で行えないことは何も行えない。</para>
+
+    <para>サービスへのアクセスを特定のユーザに制限したい場合は、
+    <smbconfoption name="valid users"/>
+    パラメータを利用すること。</para>
+
+    <para>ユーザ名が '@' ではじまっている場合は、
+    (Samba がネットグループをサポートするようにコンパイルされている場合)
+    まず NIS のネットグループ、更に UNIX のグループデータベースにおいて、
+    該当する名前のグループがないかが検索され、
+    その名前のグループに所属する全てのユーザ名に展開される。</para>
+
+    <para>ユーザ名が '+' から始まっている場合は、
+    UNIX のグループデータベースのみが検索され、
+    その名前のグループに所属する全てのユーザ名に展開される。</para>
+		
+    <para>ユーザ名が '&amp;' から始まっている場合は、
+    (Samba がネットグループをサポートするようにコンパイルされている場合)
+    NIS のネットグループのみが検索され、
+    その名前のグループに所属する全てのユーザ名に展開される。</para>
+
+    <para>グループ名の検索には時間が掛かるため、
+    クライアントによっては検索がタイムアウトしてしまう場合があることに注意。
+    </para>
+
+    <para>このパラメータにより、サービスへのアクセスがどのように行われるかの詳細については
+    <link linkend="VALIDATIONSECT">NOTE ABOUT 
+    ユーザ名とパスワード認証についての注意</link> のセクションを参照のこと。</para>
+</description>
+<value type="default"><comment>ゲストサービスの時は、
+guest account で設定されたアカウント、それ以外の時は &lt;空文字列&gt;</comment></value>
+<value type="example">fred, mary, jack, jane, @users, @pcgroup</value>
+</samba:parameter>

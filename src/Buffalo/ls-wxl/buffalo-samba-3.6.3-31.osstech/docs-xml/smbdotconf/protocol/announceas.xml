@@ -1,0 +1,21 @@
+<samba:parameter name="announce as"
+                 context="G"
+				 type="string"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、 <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が、
+    自身を「ネットワークコンピュータ」中のブラウズリストにアナウンスする際のサーバの種類を指定する。
+    デフォルトでは Windows NT に設定されている。有効な値は: 
+    「NT Server」(これは「NT」と表記することもできる)、 
+    「NT Workstation」、「Win95」、「WfW」であり、各々 Windows NT Server、
+    Windows NT Workstation、Windows 95、Windows for Workgroups を意味する。
+    変更を行なうと、Samba サーバがブラウザサーバ(訳注: ポテンシャルブラウザの意?)に正しく参加できなくなるかも知れないため、
+    Samba サーバを NT サーバとして表示させたくない特別な理由がない限り、
+    このパラメータを変更しないこと。
+    </para>
+</description>
+<value type="default">NT Server</value>
+<value type="example">Win95</value>
+</samba:parameter>

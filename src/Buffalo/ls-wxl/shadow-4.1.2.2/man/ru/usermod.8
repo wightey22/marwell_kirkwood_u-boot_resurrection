@@ -1,0 +1,214 @@
+.\"     Title: usermod
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Команды управления системой
+.\"    Source: Команды управления системой
+.\"
+.TH "usermod" "8" "11/23/2008" "Команды управления системой" "Команды управления системой"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "НАЗВАНИЕ"
+usermod \- изменяет учётную запись пользователя
+.SH "СИНТАКСИС"
+.HP 8
+\fBusermod\fR [\fIпараметры\fR] \fILOGIN\fR
+.SH "ОПИСАНИЕ"
+.PP
+Команда
+\fBusermod\fR
+изменяет системные файлы учётных записей согласно переданным в командной строке параметрам\&.
+.SH "ПАРАМЕТРЫ"
+.PP
+Параметры команды
+\fBusermod\fR:
+.PP
+\fB\-a\fR, \fB\-\-append\fR
+.RS 4
+Добавить пользователя в дополнительную группу(ы)\&. Использовать только вместе с параметром
+\fB\-G\fR\&.
+.RE
+.PP
+\fB\-c\fR, \fB\-\-comment\fR\fIКОММЕНТАРИЙ\fR
+.RS 4
+Новое значение поля комментария в файле пользовательских паролей\&. Обычно его изменяют с помощью программы
+\fBchfn\fR(1)\&.
+.RE
+.PP
+\fB\-d\fR, \fB\-\-home\fR\fIДОМАШНИЙ_КАТАЛОГ\fR
+.RS 4
+Новый домашний каталог пользователя\&. Если указан параметр
+\fB\-m\fR, то содержимое текущего домашнего каталога будет перемещено в новый домашний каталог, который будет создан, если он ещё не существует\&.
+.RE
+.PP
+\fB\-e\fR, \fB\-\-expiredate\fR\fIДАТА_УСТАРЕВАНИЯ\fR
+.RS 4
+Дата, когда учётная запись пользователя будет заблокирована\&. Дата задаётся в формате
+\fIГГГГ\-ММ\-ДД\fR\&.
+.RE
+.PP
+\fB\-f\fR, \fB\-\-inactive\fR\fIДНЕЙ\fR
+.RS 4
+Число дней, которые должны пройти после устаревания пароля, чтобы учётная запись заблокировалась навсегда\&. Если указано значение 0, то учётная запись блокируется сразу после устаревания пароля, а при значении \-1 данная возможность не используется\&. По умолчанию используется значение \-1\&.
+.RE
+.PP
+\fB\-g\fR, \fB\-\-gid\fR\fIГРУППА\fR
+.RS 4
+Имя или числовой идентификатор новой начальной группы пользователя\&. Группа с таким именем должна существовать\&. Идентификатор группы должен указывать на уже существующую группу\&. По умолчанию идентификатор группы установлен в 1\&.
+.RE
+.PP
+\fB\-G\fR, \fB\-\-groups\fR\fIГРУППА1\fR[\fI,ГРУППА2,\&.\&.\&.\fR[\fI,ГРУППАN\fR]]]
+.RS 4
+A list of supplementary groups which the user is also a member of\&. Each group is separated from the next by a comma, with no intervening whitespace\&. The groups are subject to the same restrictions as the group given with the
+\fB\-g\fR
+option\&. If the user is currently a member of a group which is not listed, the user will be removed from the group\&. This behaviour can be changed via the
+\fB\-a\fR
+option, which appends the user to the current supplementary group list\&.
+.RE
+.PP
+\fB\-l\fR, \fB\-\-login\fR\fIНОВОЕ_ИМЯ\fR
+.RS 4
+The name of the user will be changed from
+\fILOGIN\fR
+to
+\fINEW_LOGIN\fR\&. Nothing else is changed\&. In particular, the user\'s home directory name should probably be changed manually to reflect the new login name\&.
+.RE
+.PP
+\fB\-L\fR, \fB\-\-lock\fR
+.RS 4
+Заблокировать пароль пользователя\&. Это делается помещением символа \'!\' в начало шифрованного пароля, чтобы приводит к блокировке пароля\&. Не используйте этот параметр вместе с
+\fB\-p\fR
+или
+\fB\-U\fR\&.
+.sp
+Note: if you wish to lock the account (not only access with a password), you should also set the
+\fIEXPIRE_DATE\fR
+to
+\fI1\fR\&.
+.RE
+.PP
+\fB\-o\fR, \fB\-\-non\-unique\fR
+.RS 4
+При использовании с параметром
+\fB\-u\fR, этот параметр позволяет указывать не уникальный числовой идентификатор пользователя\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-password\fR\fIПАРОЛЬ\fR
+.RS 4
+Шифрованное значение пароля, которое возвращает функция
+\fBcrypt\fR(3)\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shell\fR\fIОБОЛОЧКА\fR
+.RS 4
+Имя новой регистрационной оболочки пользователя\&. Если задать пустое значение, то будет использована регистрационная оболочка по умолчанию\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-uid\fR\fIUID\fR
+.RS 4
+Числовое значение идентификатора пользователя (ID)\&. Значение должно быть уникальным, если не задан параметр
+\fB\-o\fR\&. Значение должно быть неотрицательным\&. Значения от 0 до 999 обычно зарезервированы для системных учётных записей\&. Для всех файлов, которыми владеет пользователь и которые расположены в его домашнем каталоге идентификатор владельца файла будет изменён автоматически\&. Для файлов, расположенных вне домашнего каталога идентификатор нужно изменять вручную\&.
+.RE
+.PP
+\fB\-U\fR, \fB\-\-unlock\fR
+.RS 4
+Разблокировать пароль пользователя\&. Это выполняется удалением символа \'!\' из начала шифрованного пароля\&. Не используйте этот параметр вместе с
+\fB\-p\fR
+или
+\fB\-L\fR\&.
+.sp
+Note: if you wish to unlock the account (not only access with a password), you should also set the
+\fIEXPIRE_DATE\fR
+(for example to
+\fI99999\fR, or to the
+\fIEXPIRE\fR
+value from
+\fI/etc/default/useradd\fR)\&.
+.RE
+.SH "ПРЕДОСТЕРЕЖЕНИЯ"
+.PP
+Команда
+\fBusermod\fR
+не будет изменять имя пользователя, если этот пользователь в данный момент работает в системе\&. Если требуется изменить числовой идентификатор пользователя, нужно проверить, что от этого пользователя нет запущенных процессов\&. Владельца файлов
+\fBcrontab\fR
+нужно изменять вручную\&. Владельца заданий
+\fBat\fR
+нужно изменять вручную\&. Также вручную нужно сделать все изменения связанные с NIS на сервере NIS\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAIL_DIR\fR (string)
+.RS 4
+Почтовый каталог\&. Данный параметр нужен для управления почтовым ящиком при изменении или удалении учётной записи пользователя\&. Если параметр не задан, то используется значение указанное при сборке\&.
+.RE
+.PP
+\fBMAIL_FILE\fR (string)
+.RS 4
+Defines the location of the users mail spool files relatively to their home directory\&.
+.RE
+.PP
+The
+\fBMAIL_DIR\fR
+and
+\fBMAIL_FILE\fR
+variables are used by
+\fBuseradd\fR,
+\fBusermod\fR, and
+\fBuserdel\fR
+to create, move, or delete the user\'s mail spool\&.
+.PP
+If
+\fBMAIL_CHECK_ENAB\fR
+is set to
+\fIyes\fR, they are also used to define the
+\fBMAIL\fR
+environment variable\&.
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "ФАЙЛЫ"
+.PP
+\fI/etc/group\fR
+.RS 4
+содержит информацию о группах
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+содержит информацию о пользователях
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+содержит защищаемую информацию о пользователях
+.RE
+.SH "СМОТРИТЕ ТАКЖЕ"
+.PP
+\fBchfn\fR(1),
+\fBchsh\fR(1),
+\fBpasswd\fR(1),
+\fBcrypt\fR(3),
+\fBgpasswd\fR(8),
+\fBgroupadd\fR(8),
+\fBgroupdel\fR(8),
+\fBgroupmod\fR(8),
+\fBlogin.defs\fR(5),
+\fBuseradd\fR(8),
+\fBuserdel\fR(8)\&.

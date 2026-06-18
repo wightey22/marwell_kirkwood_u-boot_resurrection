@@ -1,0 +1,20 @@
+<samba:parameter name="blocking locks"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> このパラメータは、クライアントからオープン中のファイルの一部範囲に対して、
+	バイト範囲のロック(byte range lock)が要求された際に、タイムアウトが発生した場合の
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> の動作を制御する。</para>
+
+	<para> このパラメータが設定されている場合にロック範囲の要求が即座に処理できない場合、
+	Samba は内部的にロック要求をキューイングして、タイムアウトが来るまで定期的にロックを取得する動作を行なう。</para>
+
+	<para> このパラメータが <constant>no</constant> の場合、
+	Samba は以前のバージョンの Samba (訳注: Samba 1.9.x 以前)と同様に振舞い、
+	ロック範囲が取得できない場合にただちにロック要求を失敗させる。
+	</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

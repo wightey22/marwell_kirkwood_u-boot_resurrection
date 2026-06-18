@@ -1,0 +1,82 @@
+.\"     Title: lastlog
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Polecenia Zarządzania Systemem
+.\"    Source: Polecenia Zarządzania Systemem
+.\"
+.TH "LASTLOG" "8" "11/23/2008" "Polecenia Zarządzania Systemem" "Polecenia Zarządzania Systemem"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAZWA"
+lastlog \- wyświetla informacje o ostanim logowaniu dla wybranego lub wszystkich użytkowaników
+.SH "SKŁADNIA"
+.HP 8
+\fBlastlog\fR [\fIopcje\fR]
+.SH "OPIS"
+.PP
+Polecenie
+\fBlastlog\fR
+formatuje i wyświetla zawartość bazy ostatnich logowań zapisanych w pliku
+\fI/var/log/lastlog\fR\&. Wyświetlone zostaną
+\fInazwa użytkownika\fR,
+\fIport\fR
+i
+\fIczas\fR
+ostatniego logowania\&. Domyślnie (bez flag) pozycje wyświetlane są w kolejności w jakiej są w pliku
+\fI/etc/passwd\fR\&.
+.SH "OPCJE"
+.PP
+Polecenie
+\fBlastlog\fR
+posiada następujące opcje:
+.PP
+\fB\-b\fR, \fB\-\-before\fR\fIDNI\fR
+.RS 4
+Wyświetlenie rekordów lastlog starszych niż zadana
+\fIDNI\fR\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Wyświetlenie komunikatu pomocy i zakończenie działania\&.
+.RE
+.PP
+\fB\-t\fR, \fB\-\-time\fR\fIDNI\fR
+.RS 4
+Wyświetlenie rekordów lastlog nie starszych niż zadana ilość
+\fIDNI\fR\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-user\fR \fILOGIN\fR|\fIRANGE\fR
+.RS 4
+Print the lastlog record of the specified user(s)\&.
+.sp
+The users can be specified by a login name, a numerical user ID, or a
+\fIRANGE\fR
+of users\&. This
+\fIRANGE\fR
+of users can be specified with a min and max values (\fIUID_MIN\-UID_MAX\fR), a max value (\fI\-UID_MAX\fR), or a min value (\fIUID_MIN\-\fR)\&.
+.RE
+.PP
+Jeżeli użytkownik nigdy się nie logował to zamiast portu i czasu logowania wyświetlany jest komunikat
+\fI**Nigdy nie zalogowany**\fR
+(użytkownik nigdy się nie logował)\&.
+.SH "UWAGI"
+.PP
+Baza danych
+\fIlastlog\fR
+jest plikiem zawierajacym informacje o ostanim logowaniu każdego użytkowanika\&. Pliku tego nie powinnoa się okresowo kasować i zakąłdać od nowa (rotacja)\&. Plik ten jest plikiem z dziurami tak więc jego rozmiar jest zwykle znacznie mniejszy pokazywany przez polecenie "\fBls \-l\fR" (pokazujące że jest on dużych rozmiarów jeżeli masz w
+\fIpasswd\fR
+użytkowaników z wysokimi wartościami UID)\&. Mozesz wyświetlić rzeczywisty rozmiar tego pliku używając polecenia "\fBls \-s\fR"\&.
+.SH "PLIKI"
+.PP
+\fI/var/log/lastlog\fR
+.RS 4
+Baza danych ostatnich logowań użytkowników\&.
+.RE
+.SH "OSTRZEŻENIA"
+.PP
+Duże luki w numeracji UID powodują, że program będzie pracował dłużej, nie wyświetlając wyników (np\&. jeśli w bazie lastlog nie ma wpisów dla o UID pomiedzy 170, a 800, to program będzie sprawiał wrażenie zawieszonego w trakcie przetwarzania wpisów dla użytkowanikół o UID 171\-799)\&.

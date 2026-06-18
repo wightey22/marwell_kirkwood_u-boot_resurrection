@@ -1,0 +1,215 @@
+.\"     Title: userdel
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "USERDEL" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+userdel \- supprimer un compte utilisateur et les fichiers associés
+.SH "SYNOPSIS"
+.HP 8
+\fBuserdel\fR [options] \fILOGIN\fR
+.SH "DESCRIPTION"
+.PP
+The
+\fBuserdel\fR
+command modifies the system account files, deleting all entries that refer to the user name
+\fILOGIN\fR\&. The named user must exist\&.
+.SH "OPTIONS"
+.PP
+Les options disponibles de la commande
+\fBuserdel\fR
+sont\ \&:
+.PP
+\fB\-f\fR, \fB\-\-force\fR
+.RS 4
+This option forces the removal of the user account, even if the user is still logged in\&. It also forces
+\fBuserdel\fR
+to remove the user\'s home directory and mail spool, even if another user uses the same home directory or if the mail spool is not owned by the specified user\&. If
+\fIUSERGROUPS_ENAB\fR
+is defined to
+\fIyes\fR
+in
+\fI/etc/login\&.defs\fR
+and if a group exists with the same name as the deleted user, then this group will be removed, even if it is still the primary group of another user\&.
+.sp
+\fINote\ \&:\fR
+Cette option est dangereuse, elle peut laisser votre système dans un état incohérent\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Afficher un message d\'aide et quitter\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-remove\fR
+.RS 4
+Les fichiers présents dans le répertoire personnel de l\'utilisateur seront supprimés en même temps que le répertoire lui\-même, ainsi que le répertoire d\'attente des courriels\&. Vous devrez rechercher et éliminer vous\-même les fichiers situés dans d\'autres systèmes de fichiers\&.
+.sp
+Le répertoire d\'attente des courriels est défini par la variable
+\fIMAIL_DIR\fR
+du fichier
+\fIlogin\&.defs\fR\&.
+.RE
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAIL_DIR\fR (string)
+.RS 4
+Répertoire d\'attente des courriels (\(Fo\ \&mail spool directory\ \&\(Fc)\&. Ce paramètre est nécessaire pour manipuler les boîtes à lettres lorsque le compte d\'un utilisateur est modifié ou supprimé\&. S\'il n\'est pas spécifié, une valeur par défaut définie à la compilation est utilisée\&.
+.RE
+.PP
+\fBMAIL_FILE\fR (string)
+.RS 4
+Defines the location of the users mail spool files relatively to their home directory\&.
+.RE
+.PP
+The
+\fBMAIL_DIR\fR
+and
+\fBMAIL_FILE\fR
+variables are used by
+\fBuseradd\fR,
+\fBusermod\fR, and
+\fBuserdel\fR
+to create, move, or delete the user\'s mail spool\&.
+.PP
+If
+\fBMAIL_CHECK_ENAB\fR
+is set to
+\fIyes\fR, they are also used to define the
+\fBMAIL\fR
+environment variable\&.
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.PP
+\fBUSERDEL_CMD\fR (string)
+.RS 4
+Si ce paramètre est défini, cette commande est exécutée lors de la suppression d\'un utilisateur\&. Elle pourra supprimer toutes les tâches périodiques cron ou at, tous les travaux d\'impression, etc\&. de l\'utilisateur (qui sera fourni comme premier paramètre)\&.
+.RE
+.PP
+\fBUSERGROUPS_ENAB\fR (boolean)
+.RS 4
+Enable setting of the umask group bits to be the same as owner bits (examples: 022 \-> 002, 077 \-> 007) for non\-root users, if the uid is the same as gid, and username is the same as the primary group name\&.
+
+If set to
+\fIyes\fR,
+\fBuserdel\fR
+will remove the user\'s group if it contains no more members, and
+\fBuseradd\fR
+will create by default a group with the name of the user\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/login\&.defs\fR
+.RS 4
+Configuration de la suite des mots de passe cachés \(Fo\ \&shadow password\ \&\(Fc\&.
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informations sécurisées sur les comptes utilisateurs\&.
+.RE
+.SH "VALEURS DE RETOUR"
+.PP
+La commande
+\fBuserdel\fR
+retourne les valeurs suivantes en quittant\ \&:
+.PP
+\fI0\fR
+.RS 4
+succès
+.RE
+.PP
+\fI1\fR
+.RS 4
+impossible de mettre à jour le fichier des mots de passe
+.RE
+.PP
+\fI2\fR
+.RS 4
+erreur de syntaxe
+.RE
+.PP
+\fI6\fR
+.RS 4
+l\'utilisateur indiqué n\'existe pas
+.RE
+.PP
+\fI8\fR
+.RS 4
+l\'utilisateur est actuellement connecté
+.RE
+.PP
+\fI10\fR
+.RS 4
+impossible de mettre à jour le fichier des groupes
+.RE
+.PP
+\fI12\fR
+.RS 4
+impossible de supprimer le répertoire personnel
+.RE
+.SH "AVERTISSEMENTS"
+.PP
+\fBUserdel\fR
+ne vous permet pas de supprimer un compte si l\'utilisateur en question est actuellement connecté\&. Vous devez tuer tous les processus en cours d\'exécution appartenant à l\'utilisateur que vous êtes en train de supprimer\&.
+.PP
+Vous ne pouvez supprimer aucun attribut NIS d\'un client NIS\&. Cela doit être effectué sur le serveur NIS\&.
+.PP
+Si
+\fIUSERGROUPS_ENAB\fR
+vaut
+\fIyes\fR
+dans le fichier
+\fI/etc/login\&.defs\fR,
+\fBuserdel\fR
+supprimera le groupe ayant le même nom que l\'utilisateur\&. Afin d\'éviter des incohérences entre les fichiers passwd et group,
+\fBuserdel\fR
+vérifie que le groupe n\'est pas utilisé comme groupe primaire d\'un autre utilisateur\ \&; si c\'est le cas un avertissement sera affiché et l\'utilisateur ne sera pas supprimé\&. L\'option
+\fB\-f\fR
+permet de forcer la suppression du groupe\&.
+.SH "VOIR AUSSI"
+.PP
+\fBchfn\fR(1),
+\fBchsh\fR(1),
+\fBpasswd\fR(1),
+\fBlogin.defs\fR(5),
+\fBgpasswd\fR(8),
+\fBgroupadd\fR(8),
+\fBgroupdel\fR(8),
+\fBgroupmod\fR(8),
+\fBuseradd\fR(8),
+\fBusermod\fR(8)\&.

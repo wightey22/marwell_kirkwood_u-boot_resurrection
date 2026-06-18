@@ -1,0 +1,25 @@
+<samba:parameter name="force directory mode"
+                 context="S"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータは、Samba によって作成されたディレクトリのパーミッションに 
+    <emphasis>必ず</emphasis >設定される UNIX のパーミッションビットを指定する。
+    これは、ディレクトリの作成時に、
+    パーミッションビットに対して、このパラメータの値でビット単位の
+    OR 演算を行なうことで実現される。
+    このパラメータの既定値は 000 (8 進数表記)である。この場合、作成されるディレクトリに対して特にパーミッションビットは追加されない。
+    このパラメータの値が適用されるのは、
+    <parameter moreinfo="none">directory mask</parameter> パラメータの適用後である。</para>
+
+    <para>下記の例は、作成されるすべてのディレクトリに対し、
+    グループ(group)とその他のユーザ(others)の読み込みと実行権ビットと、
+    所有者(user)の読み込み/書き込み/実行ビットが必ず付与されるようにする。</para>
+</description>
+
+<value type="default">000</value>
+<value type="example">0755</value>
+
+<related>directory mask</related>
+<related>inherit permissions</related>
+</samba:parameter>

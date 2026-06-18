@@ -1,0 +1,17 @@
+<samba:parameter name="debug pid"
+                 context="G"
+				 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>fork されて生成された <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> プロセスが同一のログファイルを共用している場合、
+	どのプロセスがメッセージを出力しているかを識別することは非常に難しい。
+	この真偽値パラメータを有効にすることで、ログファイル中のタイムスタンプメッセージのヘッダにプロセスIDが付加されるようになる。</para>
+
+	<para>
+	このパラメータを有効にする際は、 <smbconfoption name="debug
+	timestamp"/> が有効になっている必要があることに注意。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

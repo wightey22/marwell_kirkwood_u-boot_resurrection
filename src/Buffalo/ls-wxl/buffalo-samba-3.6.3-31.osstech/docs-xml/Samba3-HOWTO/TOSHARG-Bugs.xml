@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="bugreport">
+
+<chapterinfo>
+	&author.jht;
+	&author.jelmer;
+	&author.tridge;
+	<pubdate> 27 June 1997 </pubdate>
+</chapterinfo>
+
+<title>バグの報告</title>
+
+<sect1>
+<title>概要</title>
+
+<para>
+<indexterm><primary>Bugzilla</primary></indexterm>
+<indexterm><primary>バグの報告</primary></indexterm>
+Sambaの<ulink url="https://bugzilla.samba.org/">Bugzilla</ulink>機能を使って
+バグを報告し、また、報告を投稿する前に、この章を読んでほしい。また、
+もしも、リリース間での変更があるかと、同様にある時点でバグ報告機能を
+変更したかもしれないことを調べてほしい。
+</para>
+
+<para>
+自分自身で出来るだけバグを追い詰めてほしい。Sambaは、ボランティアで時間、技術、労力を
+提供している自主的なグループによって保守されている。問い合わせに対応しきれないメールを
+受け取っているので、早く修正できる形で、<quote>開発者にわかりやすい</quote>バグ報告を
+送ってもらえると、返事とバグ修正の機会が大きくなる。
+</para>
+
+<para>
+<indexterm><primary>comp.protocols.smb</primary></indexterm>
+<indexterm><primary>newsgroup</primary></indexterm>
+<indexterm><primary>設定の問題</primary></indexterm>
+もしも、comp.protocols.smbニュースグループか、メーリングリストに投稿した
+場合、それを開発者が読むと思ってはいけない。もしも、問題がバグではなくて、
+設定の問題だと推測したならば、手助けできる人がたくさんいるSambaメーリング
+リストに送った方がよい。
+</para>
+
+<para>
+<ulink noescape="1" url="http://samba.org/samba/">http://samba.org/samba/</ulink>の、
+Samba Webページ上で便利にアクセスできる、最近のメーリングリストアーカイブを見る事を
+好むかもしれない。
+</para>
+
+</sect1>
+
+<sect1>
+<title>一般的な情報</title>
+
+<para>
+バグレポートを投稿する前に、エラーに対する設定を確認する。設定を間違えていると
+いう明確なメッセージをログファイルの中でサポートする。正しい文法になっているか、
+設定ファイルをtestparmでチェックする。
+</para>
+
+<para>
+<link linkend="diagnosis">Sambaチェックリスト</link>を見てみたか?これはとても
+重要である。
+</para>
+
+<para>
+もしも、バグレポートの中にログファイルを含めるならば、その時点でクライアント上で
+何をしたかということを正確に、その結果が何であるかを正確に注釈を付けること。
+</para>
+
+</sect1>
+
+<sect1 id="dbglvl">
+<title>デバッグレベル</title>
+
+<para>
+もしも、バグが、サーバとしてSambaの正しくない動作を何かしているならば
+(例えばファイルのオープンを断るなど)、ログファイルがとても便利に使えるだろう。
+現象にもよるが、ログレベル3から10の間が、適切に問題を表示するかもしれない。
+より大きなレベルはより詳細な結果が得られるが、とてもたくさんのディスクを
+消費する。
+</para>
+
+<para>
+<indexterm><primary>debug level</primary></indexterm>
+<indexterm><primary>log level</primary></indexterm>
+debug levelを設定するには、&smb.conf;中で<smbconfoption name="log level"/>を指定する。
+また、特定のマシンだけログレベルを大きくし、各マシン毎に分離すると便利である。
+これを行うには、&smb.conf;中に以下の行を追加する:
+</para>
+
+<smbconfblock>
+<smbconfoption name="log level">10</smbconfoption>
+<smbconfoption name="log file">/usr/local/samba/lib/log.%m</smbconfoption>
+<smbconfoption name="include">/usr/local/samba/lib/smb.conf.%m</smbconfoption>
+</smbconfblock>
+
+<para>
+かつ、希望するコマンドを含む&smb.conf;を、新たに
+<filename>/usr/local/samba/lib/smb.conf.<replaceable>machine</replaceable></filename>として
+作成する。例えば、<smbconfoption name="log level"/>は便利に使えるだろう。
+これはまた、異なったセキュリティシステム、プロトコルレベルなどを1つのマシン上で
+体験することもできる。
+</para>
+
+<para>
+&smb.conf;のエントリ<smbconfoption name="log level"/>は、古いバージョンのSambaで
+使われていたパラメータ<smbconfoption name="debuglevel"/>と同義語であり、
+&smb.conf;ファイルの下位互換性のためにそのまま残っている。
+</para>
+
+<para>
+<smbconfoption name="log level"/>の値を大きくすると、きわめて大量のデバッグ情報を
+記録することになる。多くのデバッグ作業において、この値を<constant>3</constant>より
+大きくする必要はないだろう。値を<constant>10</constant>にすると、ほとんどすべての
+バグが記録されるが、大きなログデータ領域を準備する必要がある。
+</para>
+
+	<sect2>
+	<title>デバッグ固有の操作</title>
+
+	<para>
+<indexterm><primary>デバッグ</primary></indexterm>
+<indexterm><primary>ロギング</primary></indexterm>
+<indexterm><primary>functional components</primary></indexterm>
+<indexterm><primary>cluttering</primary></indexterm>
+	Samba-3.xはすべての操作に対する詳細なログが書かれるログファイル中で、
+	必要のない項目を外して特定の機能コンポーネントだけをデバッグ(ロギング)する
+	ことができる。これを行うための設定例は以下の通り:
+	</para>
+
+<para>
+<smbconfblock>
+<smbconfoption name="log level">0 tdb:3 passdb:5 auth:4 vfs:2</smbconfoption>
+<smbconfoption name="max log size">0</smbconfoption>
+<smbconfoption name="log file">/var/log/samba/%U.%m.log</smbconfoption>
+</smbconfblock>
+</para>
+
+	<para>
+	これは、上記で示されている値毎に各機能単位にデバッグクラス(ログレベル)を
+	渡すために詳細なレベルを拡張している。<parameter>log level</parameter>の
+	<constant>0</constant>という最初の値は、特定の機能単位に対するデバッグクラスを
+	除き、すべての不必要なデバッグ出力を抑止する。
+	<link linkend="dbgclass">デバッグ単位</link>の表は、Sambaが処理している各SMB
+	操作をとても正確に分析するのに使うことが出来るかもしれない。
+	</para>
+
+	<table frame="all" id="dbgclass">
+		<title>デバッグ単位</title>
+	<tgroup cols="2" align="center">
+		<thead>
+		<row><entry>機能名</entry><entry>機能名</entry></row>
+		</thead>
+		<tbody>
+		<row><entry>all</entry><entry>passdb</entry></row>
+		<row><entry>tdb</entry><entry>sam</entry></row>
+		<row><entry>printdrivers</entry><entry>auth</entry></row>
+		<row><entry>lanman</entry><entry>winbind</entry></row>
+		<row><entry>smb</entry><entry>vfs</entry></row>
+		<row><entry>rpc_parse</entry><entry>idmap</entry></row>
+		<row><entry>rpc_srv</entry><entry>quota</entry></row>
+		<row><entry>rpc_cli</entry><entry>acls</entry></row>
+		</tbody>
+	</tgroup>
+	</table>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>内部エラー</title>
+
+<para>
+もしも、ログファイル中に、<quote><errorname>INTERNAL ERROR</errorname></quote>という
+メッセージがあったら、これはSambaが動作中に予期しないシグナルを受け取ったことを意味する。
+これはおそらくセグメンテーションフォルトで、多くの場合Sambaのバグである(ハードウェア
+の故障かシステムソフトゥエアのバグを除く)。
+</para>
+
+<para>
+メッセージがsmbd由来であれば、smbが受け取った最後のSMBメッセージを詳細に説明する
+メッセージがおそらくあるだろう。この情報は、問題を解析するのにしばしば便利であるので、
+バグレポートの中に一緒に入れてほしい。
+</para>
+
+<para>
+もしも可能ならば、どのように問題を再現するかについての詳細も説明してほしい。
+適度に詳細を記述してほしい。
+</para>
+
+
+<para>
+<indexterm><primary>コアファイル</primary></indexterm>
+Sambaログファイルが保存されているディレクトリの<filename>corefiles</filename>サブ
+ディレクトリにコアファイルが存在する場合があるかもしれない。このファイルは、
+バグを追跡するのに最も便利なものである。これを利用するには以下のようにする:
+<indexterm><primary>gdb</primary></indexterm>
+<indexterm><primary>debug</primary></indexterm>
+<screen>
+&prompt;<userinput>gdb smbd core</userinput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>dbx</primary></indexterm>
+<indexterm><primary>スタックトレース</primary></indexterm>
+smbdとcoreに対する適切なパスを追加すると、gdbはそれらを扱えることが出来る。
+もしもgdbを用意していないならば、<userinput>dbx</userinput>を試してみること。
+デバッガ内で<command>where</command>コマンドを使うと、どこで問題が発生したかの
+トレースが得られる。これをレポートに含める。
+</para>
+
+<para>
+<indexterm><primary>disass</primary></indexterm>
+もしも、何らかのアセンブラ言語について知っているならば、どこで問題が発生したか
+を(もしもそれがライブラリルーチン内ならば、それを呼び出しているルーチンを
+逆アセンブルする)、<command>disass</command>で逆アセンブルし、そのコードの周辺を
+調べることで、正確にどこで現象が起きたかを調べてみる。アセンブラ言語について
+知らなくても、逆アセンブル結果をバグレポートに含めることは解析に役に立つ。
+</para>
+</sect1>
+
+<sect1>
+<title>稼働中のプロセスへのアタッチ</title>
+
+<para>
+<indexterm><primary>PID</primary></indexterm>
+<indexterm><primary>gdb</primary></indexterm>
+<indexterm><primary>smbstatus</primary></indexterm>
+不幸にも、いくつかのUNIX(特に最近のLinuxカーネルのいくつか)は、タスクがUIDを
+変えたとき(smbdはしばしばこれを行う)コアファイルの作成を抑制する。
+このような種類のシステムでデバッグするには、まず、
+<application>smbstatus</application>で<replaceable>PID</replaceable>を得、
+次に、<userinput>gdb smbd <replaceable>PID</replaceable></userinput>
+を使って、稼働中のプロセスにアタッチしてみる。次に、<command>c</command>
+を使って処理を続行し、クライアントを使ってコアダンプを起こさせる。
+デバッガはフォルトを受け取り、どこでそれが起こったかを表示する。
+</para>
+
+<para>
+時には、Samba Teamに問題を修正してもらうために、クラッシュした操作からの十分な情報を
+キャプチャすることを可能とさせるために、デバッグシンボルを持つSambaバイナリファイルを
+構築する必要がある。
+</para>
+
+<para>
+<constant>-g</constant>オプションを付けてコンパイルすると、シンボルが埋め込まれる。
+以下の行を、&smb.conf;ファイルのグローバルセクションに追加する:
+<screen>
+panic action = "/bin/sleep 90000"
+</screen>
+これにより任意のパニックをキャッチできる。もしも、<command>smbd</command>が
+固まってしまったように見えたら、sleepしているプロセスを捜す。もしも存在せず、
+空回りしてるように見えたら、空回りしているように見えるプロセスのPIDを調べ、
+以下のように入力する:
+<screen>
+&rootprompt; gdb /usr/local/samba/sbin/smbd
+</screen>
+<indexterm><primary>spinning process</primary></indexterm>
+次に、<quote>attach `pid'</quote>(pidは空回りしているプロセス)を行い、次に
+コールパス中のどこにsmbdがいるかを見るために<quote>bt</quote>を入力して
+バックトレースを取る。
+</para>
+
+</sect1>
+
+<sect1>
+<title>パッチ</title>
+
+
+<para>
+<indexterm><primary>diff</primary></indexterm>
+<indexterm><primary>patch</primary></indexterm>
+最も良い形のバグレポートは、修正を含むものである!もしも、パッチを送って
+もらえるのであれば、使用しているdiffがサポートしているのであれば、
+<userinput>diff -u</userinput>で差分を取ってほしい。そうでない場合、
+<userinput>diff -c4</userinput>を使ってほしい。オリジナルのソースに対する
+diffを取るようにすることと、正確にどのバージョンを使用しているかを知らせて
+ほしい。
+</para>
+
+</sect1>
+</chapter>

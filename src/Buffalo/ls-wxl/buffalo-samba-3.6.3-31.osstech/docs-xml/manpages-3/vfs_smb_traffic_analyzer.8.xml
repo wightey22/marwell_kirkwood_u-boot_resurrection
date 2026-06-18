@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_smb_traffic_analyzer.8">
+
+<refmeta>
+	<refentrytitle>smb_traffic_analyzer</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_smb_traffic_analyzer</refname>
+	<refpurpose>ヘルパアプリケーションに対して、ソケット経由でのSamba VFS読み出し
+	  書き込み操作のログを取る</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = smb_traffic_analyzer</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは、<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>vfs_smb_traffic_analyzer</command> VFSモジュールは、
+	  Sambaサーバ上のクライアント書き込みと読み出し操作のログを取り、
+	  このデータを、SQLデータベースに送る、ヘルパプログラムに対して
+	  ソケット上で送信する。ヘルパプログラムの詳細な情報は、
+	  http://holger123.wordpress.com/smb-traffic-analyzer/
+	  にあるプロジェクトホームページから得られる。
+	</para>
+	<para><command>vfs_smb_traffic_analyzer</command>は現在、以下のVFS操作を
+	  理解する:</para>
+
+	<simplelist>
+        <member>write</member>
+        <member>pwrite</member>
+	<member>read</member>
+	<member>pread</member>
+	</simplelist>
+
+	<para><command>vfs_smb_traffic_analyzer</command> sends the following data
+	in a fixed format seperated by a comma through either an internet or a
+	unix domain socket:</para>
+	<para><command>vfs_smb_traffic_analyzer</command>は、コンマによって分離された
+	  固定フォーマットで、以下のデータを、インターネットまたはUNIXドメインソケット
+	  を通じて送る:</para>
+	<programlisting>
+	BYTES|USER|DOMAIN|READ/WRITE|SHARE|FILENAME|TIMESTAMP
+	</programlisting>
+
+	<para>レコードの詳細:
+
+	<itemizedlist>
+	<listitem><para><command>BYTES</command> - VFS操作のバイト単位の長さ</para></listitem>
+	<listitem><para><command>USER</command> - 操作を開始したユーザ</para></listitem>
+	<listitem><para><command>DOMAIN</command> - ユーザのドメイン</para></listitem>
+	<listitem><para><command>READ/WRITE</command> - "W"なら書き込み操作、"R"なら読み出し操作</para></listitem>
+	<listitem><para><command>SHARE</command> - VFS操作が行われた共有の名前</para></listitem>
+	<listitem><para><command>FILENAME</command> - VFS操作によって使われたファイルの名前</para></listitem>
+	<listitem><para><command>TIMESTAMP</command> - VFS操作が行われたことを示す "yyyy-mm-dd hh-mm-ss.ms" での時間</para></listitem>
+	</itemizedlist>
+
+	</para>
+
+	<para>このモジュールはスタック可能である。</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+
+		<varlistentry>
+                <term>smb_traffic_analyzer:mode = STRING</term>
+                <listitem>
+                <para>もしも、STRINGが "unix_domain_socket" に一致するならば、モジュール
+		  は/var/tmp/stadsocketに位置するunixドメインソケットを使い、もしも、
+		  STRINGにそのほかの文字列か、未定義ならば、モジュールは、データの転送
+		  のためにインターネットドメインソケットを使う。</para>
+
+                </listitem>
+                </varlistentry>
+
+
+		<varlistentry>
+		<term>smb_traffic_analyzer:host = STRING</term>
+		<listitem>
+		<para>モジュールはホスト名がSTRINGという名前のシステムにデータを送る。</para>
+
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>smb_traffic_analyzer:port = STRING</term>
+		<listitem>
+		<para>モジュールはSTRING中で指定されたTCPポートにデータを送る。</para>
+		</listitem>
+		</varlistentry>
+		<varlistentry>
+		<term>smb_traffic_analyzer:anonymize_prefix = STRING</term>
+		<listitem>
+		<para>モジュールは、STRINGで与えられたプレフィックスと単純なハッシュ値で
+		  ユーザ名を置き換える。
+		</para>
+
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>smb_traffic_analyzer:total_anonymization = STRING</term>
+		<listitem>
+		<para>もしもSTRINGが'yes'に一致するならば、このモジュールは、
+		  追加のハッシュ値を生成しないで、smb_traffic_analyzer:anonymize_prefix
+		  オプションによって与えられる文字列で、任意のユーザ名を置き換える。
+		  これは、任意の転送データが1人のユーザにマッピングされ、ユーザに
+		  関連するデータの完全な匿名化を提供する。</para>
+		</listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>使用例</title>
+
+	<para>unixドメインソケットを使い、共有"example_share"上でモジュールを走らせる</para>
+	<programlisting>
+	<smbconfsection name="[example_share]"/>
+	<smbconfoption name="path">/data/example</smbconfoption>
+	<smbconfoption name="vfs objects">smb_traffic_analyzer</smbconfoption>
+	<smbconfoption name="smb_traffic_analyzer:mode">unix_domain_socket</smbconfoption>
+	</programlisting>
+
+	<para>The module running on share "example_share", using an internet socket,
+	connecting to host "examplehost" on port 3491.</para>
+	<para>インターネットソケットを使い、ポート3491のホスト名"examplehost"に対して
+	  接続し、共有"example_share"上でモジュールを走らせる</para>
+	<programlisting>
+	<smbconfsection name="[example_share]"/>
+	<smbconfoption name="path">/data/example</smbconfoption>
+	<smbconfoption name="vfs objects">smb_traffic_analyzer</smbconfoption>
+	<smbconfoption name="smb_traffic_analyzer:host">examplehost</smbconfoption>
+	<smbconfoption name="smb_traffic_analyzer:port">3491</smbconfoption>
+	</programlisting>
+
+	<para>The module running on share "example_share", using an internet socket,
+	connecting to host "examplehost" on port 3491, anonymizing user names with
+	the prefix "User".</para>
+	<para>インターネットソケットを使い、ポート3491のホスト名"examplehost"に対して
+	  接続し、プレフィックス"User"でユーザ名を匿名化する</para>
+	<programlisting>
+	<smbconfsection name="[example_share]"/>
+	<smbconfoption name="path">/data/example</smbconfoption>
+	<smbconfoption name="vfs objects">smb_traffic_analyzer</smbconfoption>
+	<smbconfoption name="smb_traffic_analyzer:host">examplehost</smbconfoption>
+	<smbconfoption name="smb_traffic_analyzer:port">3491</smbconfoption>
+	<smbconfoption name="smb_traffic_analyzer:anonymize_prefix">User</smbconfoption>
+	</programlisting>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+	<para>このマニュアルページはSamba3.3(訳注 3.x?)用のものである。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team に
+	よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+	として開発が行なわれている。</para>
+
+	<para>オリジナルのバージョンのVFSモジュールとヘルパツールは、
+	Holger Hetterichによって作成された。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.3.6 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.2.8 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>太田俊哉 (ribbon@samba.gr.jp)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

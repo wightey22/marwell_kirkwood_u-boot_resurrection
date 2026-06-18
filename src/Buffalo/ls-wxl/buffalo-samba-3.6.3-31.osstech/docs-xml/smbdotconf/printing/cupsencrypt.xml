@@ -1,0 +1,24 @@
+<samba:parameter name="cups encrypt"
+	context="G"
+	type="enum"
+	advanced="1" print="1"
+	xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  このパラメータは、もしも<smbconfoption name="printing"/>が
+	  <constant>cups</constant>で、もしもCUPSが1.0.xよりも新しいものを
+	  使っている場合にのみ適用可能である。これは、SambaがCUPSサーバと通信する時に、
+	  暗号化を使うべきか否かを定義する。取り得る値は
+	  <emphasis>auto</emphasis>, <emphasis>yes</emphasis> と
+        <emphasis>no</emphasis>である。
+	</para>
+
+	<para>
+	  autoに設定した場合、各CUPS接続のセットアップ時にTLSのハンドシェークを試みる。
+	  もしもそれが失敗した場合、暗号化なし操作に切り替える。
+	</para>
+
+</description>
+
+<value type="default">"no"</value>
+</samba:parameter>

@@ -1,0 +1,21 @@
+<samba:parameter name="ldap follow referral" context="G" type="enum"
+	advanced="1" developer="1"
+	xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+
+<description>
+
+	<para>このオプションは、LDAPデータベース中でエントリを検索する時に、
+	  LDAP referralを利用するかどうかを制御する。取り得る値は、
+	  referral機能の利用を有効にする場合は、<emphasis>on</emphasis>、
+	  これを無効にする場合は、<emphasis>off</emphasis>、
+	  libldapの既定値の設定を使う場合は<emphasis>auto</emphasis>である。
+	  libldapによるrefarral機能の仕様の有無は、ldap.conf(5)中に記述がある、
+	  REFERRALSパラメータによって、/etc/openldap/ldap.confにおいて
+	  設定される。</para>
+
+</description>
+
+<value type="default">auto</value>
+<value type="example">off</value>
+
+</samba:parameter>

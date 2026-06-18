@@ -1,0 +1,19 @@
+<samba:parameter name="ldap ssl ads"
+		 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このオプションはSambaが<emphasis>ads</emphasis>メソッドを使用
+	するLDAPサーバへの接続にSSLを利用するかを指定する。
+	このパラメータにより、Rpcメソッドへは影響しない。なお、
+	<smbconfoption name="ldap ssl"/>が<parameter>no</parameter>と設定
+	されているときには効果がないことに留意する。
+	</para>
+	<para>詳細については<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+	の<smbconfoption name="ldap ssl"/>を参照のこと。
+	</para>
+
+</description>
+<value type="default">no</value>
+</samba:parameter>

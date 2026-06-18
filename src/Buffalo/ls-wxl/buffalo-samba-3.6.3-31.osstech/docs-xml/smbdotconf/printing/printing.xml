@@ -1,0 +1,51 @@
+<samba:parameter name="printing"
+                 context="S"
+				 type="enum"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+		このパラメータは、プリンタの状態に関する情報をどのように解釈するかを設定する。
+		このオプションが[global] セクションで指定された場合、
+		<parameter moreinfo="none">print command</parameter>、
+		<parameter moreinfo="none">lpq command</parameter>、
+		<parameter moreinfo="none">lppause command</parameter>、
+		<parameter moreinfo="none">lpresume command</parameter>、
+		<parameter moreinfo="none">lprm command</parameter>の既定値にも影響する。
+	</para>
+
+    <para>
+    	現時点で指定できる印刷形式は
+	    <constant>BSD</constant> / <constant>AIX</constant> / 
+	    <constant>LPRNG</constant> / <constant>PLP</constant> / 
+	    <constant>SYSV</constant> / <constant>HPUX</constant> / 
+	    <constant>QNX</constant> / <constant>SOFTQ</constant> / 
+    	<constant>CUPS</constant>の9種類である。</para>
+
+    <para>種々のオプションを使うとき、他の print command の既定値が何であるかを確認する
+      ためには、<citerefentry><refentrytitle>testparm</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>プログラムを使う。</para>
+
+	<para>
+		このオプションを設定した際に、関連する印刷コマンドの
+	既定値がどのように設定されるかを確認する際は、
+		<citerefentry><refentrytitle>testparm</refentrytitle>
+    	<manvolnum>1</manvolnum></citerefentry>プログラムを使用すること。
+    </para>
+
+    <para>このオプションはプリンタ毎に設定することが可能である。
+    各種の印刷に関するコマンド (print command や lpq command など) で
+    既定値の設定を上書きさせる場合は、
+    <parameter>printing</parameter> パラメータの設定後に指定する必要があることに注意。
+    </para>
+
+    <para><link linkend="PRINTERSSECT">
+    [printers]</link> セクションでの説明も参照のこと。</para>
+
+</description>
+
+<value type="default">
+	OSによって異なるため<command moreinfo="none">testparm -v</command>で確認する。
+</value>
+
+</samba:parameter>

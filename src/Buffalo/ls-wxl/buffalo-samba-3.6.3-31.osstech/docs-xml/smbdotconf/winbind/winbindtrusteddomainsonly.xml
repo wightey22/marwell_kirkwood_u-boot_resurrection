@@ -1,0 +1,27 @@
+<samba:parameter name="winbind trusted domains only"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+	  このパラメータは、Samba が管理するドメインの、他の Samba 
+	  メンバーサーバに対して、NIS、rsync や LDAP で配布されている 
+	  UNIX アカウントの uid を、プライマリドメインの winbindd ユーザの 
+	  uid として使用するのを目的として設計された。
+	  これにより、<literal>DOMAIN\user1</literal> というユーザは、
+	  新しい uid が割り当てられる代わりに /etc/passwd の user1 
+	  というアカウントに割り当てられる。 
+	</para>
+
+	<para>
+	  このパラメーターは現在では idmap_nss バックエンドによって不要となっている。
+	  詳細は、<citerefentry><refentrytitle>idmap_nss</refentrytitle>
+	    <manvolnum>8</manvolnum></citerefentry> のマニュアルページを参照のこと。
+	</para>
+
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

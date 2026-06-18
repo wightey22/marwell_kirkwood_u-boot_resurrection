@@ -1,0 +1,13 @@
+<samba:parameter name="idmap cache time"
+                 context="G"
+		 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメーターにはWinbindのidmapインターフェースが
+	SID/uid/gidの問い合わせに成功した結果をキャッシュする秒数を設定する。
+	</para>
+</description>
+
+<value type="default">604800（1週間）</value>
+</samba:parameter>

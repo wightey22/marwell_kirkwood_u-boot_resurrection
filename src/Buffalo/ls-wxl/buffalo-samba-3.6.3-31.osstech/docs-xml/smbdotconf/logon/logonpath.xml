@@ -1,0 +1,70 @@
+<samba:parameter name="logon path"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータにより、移動プロファイル(Desktop、NTuser.datなど)が格納されるディレクトリが指定される。
+	以前のマニュアルページとは矛盾するが、このパラメータはWindows 9xの移動プロファイルとは無関係である。
+	Windows 9x システムで移動プロファイルを利用する方法については、
+	<smbconfoption name="logon home"/> パラメータを参照のこと。
+	</para>
+
+	<para>このオプションは、標準の変数置換が適用されるため、
+	個々のユーザやマシン毎にログオンスクリプトを分けることが可能である。
+	このパラメータにより、Windows NT クライアントによって読み出される「Application Data」(
+	<filename moreinfo="none">デスクトップ</filename>、<filename moreinfo="none">スタート メニュー</filename>、
+	<filename moreinfo="none">ネットワークコンピュータ</filename>、
+	<filename moreinfo="none">プログラム</filename>やその他のフォルダとそのコンテンツ)のディレクトリも設定される。
+	</para>
+
+	<para>
+	設定やディレクトリを Windows NT クライアント上にロードするため、共有やパスはユーザが読み込み可能にしなければならない。
+	また、Windows NT クライアントが NTuser.dat やその他のディレクトリを作成できるように、
+	ユーザが最初にログインする時には共有を書き込み可能にしなければならない。
+	必要があれば、ディレクトリと中身は読み出し専用にすることができる。
+	ただし、NTuser.dat ファイルを読み出し専用にすることは推奨できない。
+	NTuser.dat を NTuser.man に名前を変更することで期待される動作(<emphasis>固定</emphasis>プロファイル(MANdatory profile))を実現できる。
+	</para>
+
+	<para> Windows クライアントは、ユーザがログインしていなくても
+	 [homes] 共有への接続を保持することがある。
+	そのため、logon path に [homes] 共有への参照を含めないようにしなくてはならない
+	(たとえば、このパラメータを\\%N\homes\profile_path のように設定すると問題が発生することがある)。
+	</para>
+
+	<para>このオプションには、標準の変数置換が適用されるため、
+	個々のユーザやマシン毎にログオンスクリプトを分けることが可能になる。</para>
+
+	<warning><para>
+	この値をクォーテーションで囲まないこと。これを
+	<quote>\\%N\profile\%U</quote> のようにすると、
+	プロファイル機構に問題が発生する。
+	tdbsam もしくは ldapsam が passdb backend として用いられている環境では、
+	ユーザアカウントが作成された時点で、このパラメータで設定されている内容が passdb backend に書き込まれるが、
+	その後 smb.conf ファイルにあるパラメータの値は、上書きされることがある。
+	passdb backend への書き込みに際して発生したエラーについては、
+	適切なツール(コマンドラインツールの pdbedit などのツール)を用いて編集する必要がある。
+	</para></warning>
+
+	<para>このパラメータは、Sambaがログオンサーバとして構成された場合のみ、
+	意味をもつことに注意。</para>
+
+	<para>
+	このパラメータの値を空文字列に設定することで、移動プロファイルを無効にすることができる。
+	<smbconfoption name="logon path">""</smbconfoption> のようにすれば良い。 smb.conf ファイルのデフォルトの値を空文字列にしても、
+	passdb backend 中のユーザアカウントの設定で何らかの値を指定した場合は、
+	空文字列の設定を上書きすることになるので注意すること。
+	移動プロファイルを完全に無効とするには、各ユーザアカウントの設定が空文字列になっている必要がある。
+	</para>
+
+	<para>
+	設定例:
+<programlisting>
+logon path = \\PROFILESERVER\PROFILE\%U
+</programlisting>
+	</para>
+</description>
+<value type="default">\\%N\%U\profile</value>
+</samba:parameter>

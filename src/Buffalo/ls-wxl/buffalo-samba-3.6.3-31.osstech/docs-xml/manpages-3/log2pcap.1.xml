@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="log2pcap.1">
+
+<refmeta>
+	<refentrytitle>log2pcap</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>log2pcap</refname>
+	<refpurpose>Samba のログファイルからネットワークトレースを抽出する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>log2pcap</command>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-q</arg>
+		<arg choice="opt">logfile</arg>
+		<arg choice="opt">pcap_file</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>log2pcap</command> samba のログファイルを読み込み、
+	ログファイルに記録されているパケットダンプをもとに、pcap ファイル
+	(ethereal や tcpdump に代表される殆どの sniffer で読み込み可能)
+	を作成する。</para>
+
+	<para>SMB のヘッダーや値を正しく取得するためには、ログファイルの
+	<parameter>log level</parameter> は最低 <constant>5</constant>
+	は必要であり、パケットの最初の 512 データバイトを取得するには
+	<constant>10</constant>、全てのパケット情報を取得するには
+	<constant>50</constant> 必要である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+	    <varlistentry>
+		<term>-h</term>
+		<listitem><para>もしこのパラメータが指定された場合、
+		出力は <application>text2pcap</application> ユーティリティで
+		読み込むことのできる HEX ダンプとなる。</para></listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+	    	<term>-q</term>
+		<listitem><para>サイレントモード。不完全なデータや無くなった
+		データに対する警告メッセージを出さない。</para></listitem>
+	    </varlistentry>
+		
+	    <varlistentry>
+		<term>logfile</term>
+		<listitem><para>
+		Samba のログファイル。もしログファイルが指定されなかった場合、
+		log2pcap は stdin からログを読み込もうとする。
+		</para></listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>pcap_file</term>
+		<listitem><para>
+		pcap (もしくは hexdump) データを出力するファイル名。
+		もしこの引数が指定されていない場合、結果は stdout に出力される。
+		</para></listitem>
+	    </varlistentry>
+
+	    &stdarg.help;
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>使用例</title>
+
+	<para>Samba の全てのログファイルから、全てのネットワークトラフィックを抽出する: </para>
+
+	<para><programlisting>
+			<prompt>$</prompt> log2pcap &lt; /var/log/* &gt; trace.pcap
+	</programlisting></para>
+
+	<para>text2pcap を使用して pcap に変換する: </para>
+
+	<para><programlisting>
+	<prompt>$</prompt> log2pcap -h samba.log | text2pcap -T 139,139 - trace.pcap
+	</programlisting></para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba バージョン 3用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>バグ</title>
+
+	<para>SMB のデータだけが Samba のログより抽出され、LDAP や NetBIOS
+	のルックアップなど、それ以外のデータは取得できない。</para>
+
+	<para>生成された TCP と IP のヘッダーは正しい checksum
+	の値を保持していない。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>text2pcap</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>, <citerefentry><refentrytitle>ethereal</refentrytitle><manvolnum>1</manvolnum></citerefentry></para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作成された。現在 Samba は Samba Team によって、
+	Linux カーネルの開発と同様の オープンソースプロジェクトとして
+	開発が行なわれている。</para>
+	
+	<para>このマニュアルページは Jelmer Vernooij によって書かれた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.3 - 3.5.3 対応のものである。</para>
+
+	<para>このドキュメントの Samba 3.0.0 対応の翻訳は、山田 史朗
+	(shiro@miraclelinux.com)によって行なわれた。</para>
+
+	<para>Samba 3.0.3 - 3.5.3 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+</refsect1>
+
+</refentry>

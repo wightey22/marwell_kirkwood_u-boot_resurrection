@@ -1,0 +1,21 @@
+<samba:parameter name="printcap cache time"
+	context="G"
+	type="integer"
+		 print="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションにより、印刷サブシステムがプリンタの一覧情報を再確認するまでの時間を秒単位で制御することが可能となる。
+    この値が 60 より大きい場合、
+    初回の再確認時間は 60 秒に設定される。
+    これは、印刷サブシステムが初回の再確認を早期に実行するためである。
+    </para>
+
+    <para>このパラメータを 0 にすると、
+    起動後に新しいプリンタや削除されたプリンタを再確認する機能が無効化される。
+    </para>
+</description>
+
+
+<value type="default">750</value>
+<value type="example">600</value>
+</samba:parameter>

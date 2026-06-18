@@ -1,0 +1,31 @@
+<samba:parameter name="store dos attributes"
+                 context="S"
+		 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータが設定されると、Samba は DOS のファイル属性(システム、隠し、アーカイブ、読み取り専用)を、
+	(<smbconfoption name="map hidden"/> や <smbconfoption name="map readonly"/> パラメータにより制御される) UNIX のパーミッションビットからのマッピングを行なう前に、
+	ファイルシステムの拡張属性から読み取ろうとする。
+	このパラメータが設定されると、DOS のファイル属性は、UNIX ファイルシステム上で、各ファイルやディレクトリ毎に割り当てられた拡張属性の領域に格納される。
+	これ以外のマッピング機構が動作しないようにするため、
+	<smbconfoption name="map hidden"/>、
+	<smbconfoption name="map system"/>、<smbconfoption name="map archive"/>、<smbconfoption name="map
+	readonly"/> といったパラメータは無効にする必要がある。
+	このパラメータは DOS のファイル属性を「user.DOSATTRIB」という名前の拡張属性に、
+	文字列として書き込む。この拡張属性は、クライアントの拡張属性に関するリクエスト
+	からは明示的に隠蔽されている。Linux において拡張属性を有効にするには、Linux
+	カーネルで拡張属性がコンパイルされており、ファイルシステムが user_xattr
+	オプションをつけてマウントされている必要がある。
+
+	Samba 3.5.0以降では、「user.DOSATTRIB」という名前の拡張属性はDOSの属性と
+	同じように、ファイルの作成時刻を格納するように拡張された。これは後方互換であり、
+	Samba 3.5.0とそれ以降のもので作成されたファイルは、それ以前のバージョンのSamba
+	により、引き続きこの拡張属性からDOSのファイル属性を読めるようにしている。しかし、
+	ここに格納されたファイル作成時刻は読む事が出来ない。通常のファイルシステム
+	メタデータから分離して作成時刻を格納することは、POSIXファイルシステムのトップ
+	レベルにおいて、NTFSセマンティクスを正確に再現することが、Sambaに出来るようになる。
+	</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

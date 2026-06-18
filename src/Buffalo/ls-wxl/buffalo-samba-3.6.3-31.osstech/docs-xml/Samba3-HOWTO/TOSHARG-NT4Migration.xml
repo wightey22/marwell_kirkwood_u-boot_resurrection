@@ -1,0 +1,663 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="NT4Migration">
+<chapterinfo>
+	&author.jht;
+	<pubdate>April 3, 2003</pubdate>
+</chapterinfo>
+
+<title>NT4 PDC からSamba-3 PDCへの移行</title>
+
+<para>
+<indexterm><primary>移行</primary></indexterm>
+<indexterm><primary>ドメイン制御</primary></indexterm>
+これは、NT4ドメイン制御からSamba-3ベースのドメイン制御に移行する事を手助けするための、
+大まかなガイドである。
+</para>
+
+<sect1>
+<title>計画と開始方法</title>
+
+<para>
+<indexterm><primary>show-stopper-type</primary></indexterm>
+ITの世界では、しばしば、すべての問題は、貧弱な計画のために発生すると言われている。
+この言葉の結果として、予期され、計画される問題はすべてではない。さらに言うと、
+計画が良いと、ほとんどの、致命的なタイプの状況を予想できると言うことである。
+In the IT world there is often a saying that all problems are encountered because of
+poor planning. The corollary to this saying is that not all problems can be anticipated
+and planned for. Then again, good planning will anticipate most show-stopper-type situations.
+</para>
+
+<para>
+<indexterm><primary>移行の計画</primary></indexterm>
+Microsoft Windows NT4ドメイン制御からSamba-3ドメイン制御環境への移行を考えている場合、
+詳細な移行プランを作成すべきである。そこで、ここでは、移行を進めるために手助けとなる、
+いくつかの点について説明する。
+</para>
+
+<sect2>
+<title>目的</title>
+
+<para>
+<indexterm><primary>移行手順</primary></indexterm>
+多くの組織における重要な目的は、可能な限り副作用がないように、Microsoft Windows NT4
+からSamba-3ドメイン制御に移行を行うことである。移行手順において体験する挑戦の1つは、
+新しい環境でも状態がそのまま残っているという、説得力のある状態の提供であろう。
+オープンソース技術を導入する人は、最初にトラブルの徴候があったときに、Microsoftベースの
+プラットフォームソリューションに戻せ、という圧力を体験するだろう。
+</para>
+
+<para>
+<indexterm><primary>変更の動機付け</primary></indexterm>
+Samba-3が制御しているネットワークに移行を試みる前に、可能な限り、周りすべてから、
+変更に対する、承認を得る努力を行うようにする。<emphasis>なぜ</emphasis>組織において
+変更が重要であるかを正確に理解しておくこと。変更を行う動機付けの例としては以下がある:
+</para>
+
+<indexterm><primary>管理の容易性</primary></indexterm>
+<indexterm><primary>機能性</primary></indexterm>
+<indexterm><primary>運用コスト</primary></indexterm>
+<indexterm><primary>support exposure</primary></indexterm>
+<indexterm><primary>ライセンス費用</primary></indexterm>
+
+<itemizedlist>
+    <listitem><para>ネットワーク管理の容易性向上。</para></listitem>
+    <listitem><para>ユーザレベルでのよりすぐれた機能の提供。</para></listitem>
+    <listitem><para>ネットワーク運用コストの低減。</para></listitem>
+    <listitem><para>MicrosoftによるNT4サポート終了によって引き起こされるexposureの低減。</para></listitem>
+    <listitem><para>Avoid MS License 6 implications.</para></listitem>
+    <listitem><para>組織がMicrosoftに依存する事の低減。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>代替ソリューション</primary></indexterm>
+<indexterm><primary>利点</primary></indexterm>
+<indexterm><primary>本質的な価値</primary></indexterm>
+<indexterm><primary>移行</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>ADSなし</primary></indexterm>
+Samba-3はMicrosoft Windows NT4ではないことを、誰でもが知っておくようにすること。
+Samba-3はMicrosoft Windows NT4とも、それに対して利点を提供する事とも異なる、代替
+ソリューションを提供する。Samba-3は、Microsoft NT4からMicrosoft Windows 2000と
+その後継(Active Directoryサービスを使う/使わないのどちらでも)への移行における、
+本質的な価値として紹介している多くの機能を持っていないことを認識すること。
+</para>
+
+<para>
+Samba-3が提供できていないはどのようなものがあるだろうか?
+</para>
+
+<indexterm><primary>Active Directoryサーバ</primary></indexterm>
+<indexterm><primary>グループポリシーオブジェクト</primary></indexterm>
+<indexterm><primary>マシンポリシーオブジェクト</primary></indexterm>
+<indexterm><primary>ログオンスクリプト</primary></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+
+<itemizedlist>
+	<listitem><para>Active Directoryサーバ</para></listitem>
+	<listitem><para>グループポリシーオブジェクト(Active Directory中の)。</para></listitem>
+	<listitem><para>マシンポリシーオブジェクト。</para></listitem>
+	<listitem><para>Active Directory中のログオンスクリプト</para></listitem>
+	<listitem><para>Active Directory中のソフトウェアアプリケーションとアクセス制御。</para></listitem>
+</itemizedlist>
+
+<para>
+Samba-3の機能で提供していないものと、使用しているサイトでとても大きな関心があるかも
+しれないものは以下の通り:
+</para>
+
+<indexterm><primary>ownership cost</primary></indexterm>
+<indexterm><primary>Global support</primary></indexterm>
+<indexterm><primary>動的なSMBサーバ</primary></indexterm>
+<indexterm><primary>on-the-fly logon scripts</primary></indexterm>
+<indexterm><primary>on-the-fly policy files</primary></indexterm>
+<indexterm><primary>stability</primary></indexterm>
+<indexterm><primary>信頼性</primary></indexterm>
+<indexterm><primary>パフォーマンス</primary></indexterm>
+<indexterm><primary>可用性</primary></indexterm>
+<indexterm><primary>Manageability</primary></indexterm>
+<indexterm><primary>backend authentication</primary></indexterm>
+<indexterm><primary>tdbsam</primary></indexterm>
+<indexterm><primary>ldapsam</primary></indexterm>
+<indexterm><primary>シングルサインオン</primary></indexterm>
+<indexterm><primary>分散認証システム</primary></indexterm>
+
+<itemizedlist>
+	<listitem><para>より少ない所有コスト。</para></listitem>
+	<listitem><para>Global availability of support with no strings attached.</para></listitem>
+	<listitem><para>UNIX/Linuxシステム単位で1つ以上のSMB/CIFSサーバを動作できる)。</para></listitem>
+	<listitem><para>その場その場でのログオンスクリプトの作成。</para></listitem>
+	<listitem><para>その場その場でのポリシーファイルの作成。</para></listitem>
+	<listitem><para>より優れた安定性、信頼性、パフォーマンスと可用性。</para></listitem>
+	<listitem><para>SSH接続経由よる操作性。</para></listitem>
+	<listitem><para>バックエンド認証技術を自由に選べる(tdbsam,ldapsam)。</para></listitem>
+	<listitem><para>完全なシングルサインオン技術の実装機能。</para></listitem>
+	<listitem><para>絶対的に小さい広域ネットワークのバンド幅を要求するための分散認証技術機能。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>成功した移行</primary></indexterm>
+Microsoft Windows NT4からSamba-3へのネットワーク移行の前に、すべての必要な要素を考慮する。
+変更についてユーザを教育し、そうすることでユーザに受け入れられるようになり、必要な仕事の
+障害にならないようにすべきである。以下の節では、移行を成功させるための要素について説明
+している。
+</para>
+
+<sect3>
+<title>ドメインレイアウト</title>
+
+<para>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>バックアップドメインコントローラ</primary></indexterm>
+<indexterm><primary>セカンダリコントローラ</primary></indexterm>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>スタンドアロンサーバ</primary></indexterm>
+<indexterm><primary>ネットワークセキュリティ</primary></indexterm>
+<indexterm><primary>ドメインコンテキスト</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDCs</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>認証バックエンド</primary></indexterm>
+<indexterm><primary>複雑な組織</primary></indexterm>
+<indexterm><primary>LDAPデータベース</primary></indexterm>
+<indexterm><primary>マスタサーバ</primary></indexterm>
+<indexterm><primary>スレーブサーバ</primary></indexterm>
+<indexterm><primary>複数のドメイン</primary></indexterm>
+Samba-3はドメインコントローラ、バックアップドメインコントローラ(おそらく、最も
+広くセカンダリコントローラと呼ばれる)、ドメインメンバ、あるいはスタンドアロンサーバとして
+設定できる。Windowsネットワークセキュリティドメインコンテキストは、実装の前に、
+sized(?)と、よく調査を行うべきである。バックアップドメインコントローラ(BDC)と同様、
+プライマリドメインコントローラ(PDC)を配置するため、特別な注意を払う必要がある。
+Samba-3がMicrosoftの技術とは違う1つの方法は、もしもLDAP認証バックエンドを使うことを
+選択した場合、同じデータベースをいくつかの異なったドメインで使うことが出来るという
+ことである。複雑な組織において、それは、同時に多数のドメインをサポートできる、
+分散可能な(1つのマスタサーバと複数のスレーブサーバ)単一のLDAPデータベースにできる。
+Samba-3 can be configured as a domain controller, a backup domain controller (probably best called
+a secondary controller), a domain member, or a standalone server. The Windows network security
+domain context should be sized and scoped before implementation. Particular attention needs to be
+paid to the location of the Primary Domain Controller (PDC) as well as backup controllers (BDCs).
+One way in which Samba-3 differs from Microsoft technology is that if one chooses to use an LDAP
+authentication backend, then the same database can be used by several different domains. In a
+complex organization, there can be a single LDAP database, which itself can be distributed (have
+a master server and multiple slave servers) that can simultaneously serve multiple domains.
+</para>
+
+<para>
+<indexterm><primary>ネットワークバンド幅</primary></indexterm>
+デザインの観点から、1台のサーバあたりのユーザ数はドメインあたりのサーバの数と同様、
+サーバの能力とネットワークのバンド幅を考慮に入れて、スケーリングすべきである。
+</para>
+
+<para>
+<indexterm><primary>ネットワークセグメント</primary></indexterm>
+<indexterm><primary>複数のネットワークセグメント</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>ping</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>リモートセグメント</primary></indexterm>
+物理的なネットワークセグメントはいくつかのドメインを収容しているかもしれない。おのおのは、
+複数のネットワークセグメントにまたがっているかもしれない。ドメインがルーテイングされた
+セグメントにまたがっている場合、ネットワークの設計とレイアウトのパフォーマンス評価を
+テストし考慮する。複数のルーティングされたネットワークセグメントをサポートするように
+設計された、中央に位置するドメインコントローラは、パフォーマンスが悪いという問題を
+引き起こすかもしれない。リモートセグメントとPDC間のレスポンスタイム(pingのタイミング)を
+調べること。もしもそれが長い(100msよりも大きい)場合、ローカルでの認証を提供する
+ために、リモートセグメント上にBDCを配置し、制御サーバにアクセスする。
+</para>
+</sect3>
+
+<sect3>
+<title>サーバの共有とディレクトリのレイアウト</title>
+
+<para>
+<indexterm><primary>Simplicity is king</primary></indexterm>
+<indexterm><primary>よく制御されたネットワーク</primary></indexterm>
+足を付けずには破ることの出来ない、効果的なネットワーク設計のための基本原則がある。
+最も重要なルールは:よく制御されたネットワークおのおのにおいて、単純さを確保すること。
+基盤のすべての部分は、管理可能にしなければならない。それをより複雑にすると、
+システムをセキュアに保つことと機能を確保することの要求は増大するだろう。
+</para>
+
+<para>
+<indexterm><primary>ディスクスペース</primary></indexterm>
+<indexterm><primary>バックアップ</primary></indexterm>
+<indexterm><primary>テープ</primary></indexterm>
+<indexterm><primary>バックアップ</primary></indexterm>
+<indexterm><primary>すべてのバックアップの検証</primary></indexterm>
+<indexterm><primary>ディザスタリカバリ</primary></indexterm>
+どのようにデータを共有しなければならないかという性質について、心にとめておくこと。
+物理ディスクスペースレイアウトは注意深く考えられるべきである。いくつかのデータは
+バックアップが必要である。ディスクレイアウトを単純にすると、バックアップの必要性を
+記録するのはより容易になるだろう。どのメディアが必要を満たすかについて見極めること。
+テープ、CD-ROMあるいはDVD-ROMや他のオフラインストレージシステムを考慮する。最小限の
+メンテナンスを計画し、実現の用意をする。設計の中に危険な点を残さないこと。とりわけ、
+バックアップすることを忘れてはならない。バックアップし、テストし、すべてのバックアップを
+検証する。ディザスタリカバリプランを作成し、それが動くかを検証する。
+</para>
+
+<para>
+<indexterm><primary>アクセス制御の必要性</primary></indexterm>
+<indexterm><primary>グループのアクセス許可</primary></indexterm>
+<indexterm><primary>スティッキービット</primary></indexterm>
+データアクセス制御の必要性を付与するために、ユーザはグループ化されるべきである。
+ファイルとディレクトリアクセスは、グループパーミッション経由で最もよく制御でき、
+グループ制御のディレクトリ上に<quote>スティッキービット</quote>を使うと、Sambaの
+共有ユーザからのファイルアクセス時の不満を十分に防止するかもしれない。
+</para>
+
+<para>
+<indexterm><primary>ネットワーク管理者</primary></indexterm>
+<indexterm><primary>文書の設計</primary></indexterm>
+<indexterm><primary>単純なアクセス制御</primary></indexterm>
+<indexterm><primary>obtuse complexity</primary></indexterm>
+未経験のネットワーク管理者は、しばしば、ファイル、ディレクトリ、共有に対して、共有内の
+定義と同じようにアクセス制御を設定するための、手が込んだ技術を適用しようとする。
+設計と実装は単純にすること、そして、広範囲に設計を文書化すること。他の誰かが作成した
+文書を監査するようにすること。後継者が理解できないような、複雑な文書を作らないこと。
+覚えておいてほしいのは、複雑な設計と、実装を使うジョブのセキュリティは、新参の管理者が
+結び目のほぐし方を学ぶように、利用者に対して、運用障害と運用停止をもたらすかも
+しれない。アクセス制御は簡単かつ効果的にして、obtuse complexityによって中断されることの
+無いようにする。
+Inexperienced  network administrators often attempt elaborate techniques to set access
+controls on files, directories, shares, as well as in share definitions.
+Keep your design and implementation simple and document your design extensively. Have others
+audit your documentation. Do not create a complex mess that your successor will not understand.
+Remember, job security through complex design and implementation may cause loss of operations
+and downtime to users as the new administrator learns to untangle your knots. Keep access
+controls simple and effective, and make sure that users will never be interrupted by obtuse
+complexity.
+</para>
+</sect3>
+
+<sect3>
+<title>ログオンスクリプト</title>
+
+<para>
+<indexterm><primary>ログオンスクリプト</primary></indexterm>
+ログオンスクリプトは、すべてのユーザが必要に応じて共有とプリンタへの接続を得る事を
+保証する事を手助けするものである。
+</para>
+
+<para>
+ログオンスクリプトは、動的に作成でき、動作させるすべてのコマンドは、そのユーザが持つ
+権限と権利が指定される。優先する制御の設定は、グループメンバシップを使って設定
+すべきであり、グループ情報は、カスタムログオンスクリプトを作成するために使われ、
+それは、<smbconfsection name="NETLOGON"/>共有に対する
+<smbconfoption name="root preexec"/>パラメータを使う。
+</para>
+
+<para>
+<indexterm><primary>kixstart</primary></indexterm>
+いくつかのサイトでは、制御されたユーザ環境を確立するために、<command>kixstart</command>
+のようなツールを使っている。この場合、ログオンスクリプトプロセス制御のために、Google検索を
+行ってもよい。実際、ログインスクリプト経由で、ユーザが介入することなしに、
+プリンタを追加する方法について記述しているMicrosoft Knowledge Baseの記事KB189105の使用法
+を調査してもよい。
+</para>
+</sect3>
+
+<sect3>
+<title>プロファイルの移行/作成</title>
+
+<para>
+ユーザとグループのプロファイルは、デスクトッププロファイル管理という節で説明されている
+ツールを使って移行できる。
+</para>
+
+
+<para>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>NTuser.DAT</primary></indexterm>
+プロファイルはSamba-3ツール<command>profiles</command>を使って管理しても良い。このツールは、
+Samba-3ドメインのSIDに変更される、<filename>NTuser.DAT</filename>プロファイルファイル中に
+格納されるMicrosoft Windows NT形式のセキュリティ識別子(SID)を扱える。
+</para>
+</sect3>
+
+<sect3>
+<title>ユーザとグループアカウント</title>
+
+<para>
+<indexterm><primary>アカウント設定の移行</primary></indexterm>
+<indexterm><primary>ユーザの移行</primary></indexterm>
+<indexterm><primary>グループの移行</primary></indexterm>
+<indexterm><primary>map</primary></indexterm>
+Microsoft Windows NT4ドメインからSamba-3に、すべてのアカウント設定を移行することは
+可能である。ユーザとグループアカウントを移行する前に、Microsoft Windows NT4ドメインに
+存在しているグループをSamba-3中に作成することと、それを適切なUNIX/Linuxグループにマップ
+することを<emphasis>強く推奨する</emphasis>。以下の単純な助言に従い、すべてのユーザと
+グループの属性は、無事に移行すべきである。
+</para>
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>移行プロセスの手順</title>
+
+<para>
+おおよその移行プロセスは以下の通りである。
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	移行対象の、ユーザ、グループ、ポリシーとプロファイルを持つNT4 PDCがあるとする。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>netlogon共有</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+	Samba-3はnetlogon共有、プロフィル共有やその他を持つドメインコントローラとして
+	設定してある。&smb.conf;ファイルをBDCとして機能するように、
+	<parameter>domain master = No</parameter> と設定する。
+	</para></listitem>
+</itemizedlist>
+
+<procedure>
+<title>アカウント移行プロセス</title>
+
+	<step><para>
+	<indexterm><primary>pdbedit</primary></indexterm>
+	NT4 サーバマネージャを使い、Sambaサーバを古いNT4ドメイン中でBDCに設定する。
+	<emphasis>Samba must not be running.</emphasis>
+	</para></step>
+
+	<step><para>
+	<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join</tertiary></indexterm>
+	<userinput>net rpc join -S <replaceable>NT4PDC</replaceable> -w <replaceable>DOMNAME</replaceable> -U
+	Administrator%<replaceable>passwd</replaceable></userinput>
+	</para></step>
+
+	<step><para>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>vampire</tertiary></indexterm>
+	<userinput>net rpc vampire -S <replaceable>NT4PDC</replaceable> -U 
+	administrator%<replaceable>passwd</replaceable></userinput>
+	</para></step>
+
+<indexterm><primary>pdbedit</primary></indexterm>
+	<step><para><userinput>pdbedit -L</userinput></para>
+		<para>注意: ユーザは移行できただろうか?</para>
+	</step>
+
+	<step><para>
+	<indexterm><primary>net</primary><secondary>groupmap</secondary></indexterm>
+	<indexterm><primary>initGroups.sh</primary></indexterm>
+	次に、各UNIXグループをNTグループに割り当てる:
+	<filename>initGroups.sh</filename>として下記のテキストをコピーし、スクリプトに
+	  しておくと便利である。)
+	<programlisting>
+#!/bin/bash
+#### Keep this as a shell script for future re-use
+			
+# First assign well known domain global groups
+net groupmap add ntgroup="Domain Admins" unixgroup=root rid=512 type=d
+net groupmap add ntgroup="Domain Users"  unixgroup=users rid=513 type=d
+net groupmap add ntgroup="Domain Guests" unixgroup=nobody rid=514 type=d
+
+# Now for our added domain global groups
+net groupmap add ntgroup="Designers" unixgroup=designers type=d
+net groupmap add ntgroup="Engineers" unixgroup=engineers type=d
+net groupmap add ntgroup="QA Team"   unixgroup=qateam    type=d
+</programlisting>
+	</para></step>
+
+	<step><para><userinput>net groupmap list</userinput></para>
+		<para>すべてのグループが認識されたかを確認する。
+	</para></step>
+</procedure>
+
+<para>
+すべてのプロファイルの移行と、すべてのポリシファイルの移行。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>移行オプション</title>
+
+<para>
+Microsoft Windows NT4ドメイン制御からSambaベースのソリューションへの移行を行いたい
+サイトは、一般的に3つの基本的なカテゴリに適合する。
+<link linkend="majtypes">以下のテーブル</link>は、その例を表示する。
+</para>
+
+<table frame="all" id="majtypes"><title>3つの主要なサイトのタイプ</title>
+<tgroup cols="2">
+	<colspec align="left"/>
+	<colspec align="justify"/> 
+	<thead>
+	<row><entry>ユーザ数</entry><entry>説明</entry></row>
+	</thead>
+	<tbody>
+	<row><entry>&lt; 50</entry><entry><para>特段の手間暇を掛けずに単純な移行をしたい。</para></entry></row>
+	<row><entry>50 - 250</entry><entry><para>新しい機能を追加したい。いくつかの、組織内の複雑制を管理することが出来る。</para></entry></row>
+	<row><entry>&gt; 250</entry><entry><para>ソリューション/実装は規模に対応しなければならない。
+	      複雑な要求がある。組織間の調整。ほとんどの領域での専門的な知識。</para></entry></row>
+	</tbody>
+</tgroup>
+</table>
+
+<sect2>
+<title>うまくいくための計画</title>
+
+<para>
+Microsoft Windows NT4からSamba-3へ移行したいサイトには、3つの基本的な選択肢がある。
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	単純な移行 (丸ごと取り替え)。
+	</para></listitem>
+
+	<listitem><para>
+	アップグレードする移行(統合の一種でありえる)。
+	</para></listitem>
+
+	<listitem><para>
+	完全な再設計 (完全に新しいソリューション)。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+終了間際の問題を最小にするには:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	十分な時間の確保。
+	</para></listitem>
+
+	<listitem><para>
+	パニックを防ぐ。
+	</para></listitem>
+
+	<listitem><para>
+	すべての仮定のテスト。
+	</para></listitem>
+
+	<listitem><para>
+	ワークステーションの展開を含む、完全に提供されるプログラムのテスト。
+	</para></listitem>
+</itemizedlist>
+
+<para><link linkend="natconchoices">以下のテーブル</link>は、与えられた、予想される
+移行のタイプの移行の選択肢を一覧表示する。
+</para>
+
+<table frame="all" id="natconchoices"><title>移行方式による相違点の詳細</title>
+<tgroup cols="3">
+	<colspec align="justify" colwidth="1*"/>
+	<colspec align="justify" colwidth="1*"/>
+	<colspec align="justify" colwidth="1*"/>
+	<thead>
+	<row><entry>単純移行</entry><entry>アップグレード</entry><entry>再設計</entry></row>
+	</thead>
+	<tbody>
+	<row>
+	<entry><para>最低限のOS固有機能の使用</para></entry>
+	<entry><para>NT4の機能を新しいホストOSの機能に変更</para></entry>
+	<entry><para>NT4の機能を改善し、管理能力を強化</para></entry>
+	</row>
+	<row>
+	<entry><para>NT4からSamba-3にすべてのアカウントを移行</para></entry>
+	<entry><para>コピーと改善</para></entry>
+	<entry><para>認証システム(データベースの配置とアクセス)</para></entry>
+	</row>
+	<row>
+	<entry><para>最低限の操作上の変更</para></entry>
+	<entry><para>漸進的な改良</para></entry>
+	<entry><para>デスクトップ管理手法</para></entry>
+	</row>
+	<row>
+	<entry><para>最小限の移行時間</para></entry>
+	<entry><para>ユーザへのインパクトを最小化</para></entry>
+	<entry><para>デスクトップ/ユーザの制御を改善</para></entry>
+	</row>
+	<row>
+	<entry><para>運用停止を伴う移行作業</para></entry>
+	<entry><para>最大限の機能を利用</para></entry>
+	<entry><para><emphasis>管理性、拡張性、保全性、可用性に対する必要性の識別</emphasis></para></entry>
+	</row>
+	<row>
+	<entry><para>Samba-3の統合は、ユーザが有効な時に移行し、次に、制御を変更(スワップアウト)
+Integrate Samba-3, then migrate while users are active, then change of control (swap out)</para></entry>
+	<entry><para>管理操作が少ないことを有効に利用</para></entry>
+	<entry><para></para></entry>
+	</row>
+	</tbody>
+</tgroup>
+</table>
+</sect2>
+
+<sect2>
+<title>Samba-3実装の選択</title>
+
+<variablelist>
+		<varlistentry><term>認証データベース/バックエンド</term><listitem>
+		<para>
+		Samba-3は外部の認証バックエンドを使える:
+		</para>
+
+		<para>
+		<itemizedlist>
+			<listitem><para>Winbind (他のSambaかNT4/200xサーバ)。</para></listitem>
+			<listitem><para>外部サーバはActive DirectoryかNT4ドメインを使える。</para></listitem>
+			<listitem><para>ホームディレクトリの自動作成を行うために、pam_mkhomedir.soが使える。</para></listitem>
+			<listitem><para>Samba-3はローカル認証バックエンドとして: <parameter>smbpasswd</parameter>,
+				<parameter>tdbsam</parameter>, <parameter>ldapsam</parameter>が使える。
+			</para></listitem>
+		</itemizedlist></para></listitem>
+		</varlistentry>
+
+        <varlistentry><term>アクセス制御が出来る場所</term><listitem>
+		<para>
+		Sambaは以下の場所でアクセス制御を設定できる:
+		</para>
+
+<indexterm><primary>共有のACL</primary></indexterm>
+<indexterm><primary>UNIXのパーミッション</primary></indexterm>
+<indexterm><primary>POSIX ACLS</primary></indexterm>
+<indexterm><primary>共有セクションの制御</primary></indexterm>
+
+		<itemizedlist>
+			<listitem><para>共有それ自身では&smbmdash;共有ACLを使う。</para></listitem>
+			<listitem><para>ファイルシステム上では&smbmdash;ファイルとディレクトリ上でUNIXのパーミッションを使う。</para>
+			<para>注意:POLIX ACLは、ファイルシステム中でも有効に出来る。</para></listitem>
+			<listitem><para>Sambaの共有パラメータも使えるが&smbmdash;苦肉の策以外、推奨しない。</para></listitem>
+		</itemizedlist></listitem>
+        </varlistentry>
+
+        <varlistentry><term>ポリシー(移行または新しいものの作成)</term><listitem>
+		<para>
+<indexterm><primary>ポリシー</primary></indexterm>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+		レジストリの変更時には、十分に用心すること;正しいツールを使い、恒久的に
+		変更点が保存される、NT4形式の<filename>NTConfig.POL</filename>ファイルを
+		経由して変更が行われることに注意。
+<indexterm><primary>グループポリシーエディタ</primary></indexterm>
+<indexterm><primary>入れ墨効果(tattoo effect)</primary></indexterm>
+<indexterm><primary>恒久的な変更</primary></indexterm>
+		</para>
+                <itemizedlist>
+                        <listitem><para>グループポリシーエディタを使用(NT4)</para></listitem>
+                        <listitem><para>入れ墨効果(tattoo effect)に注意。</para></listitem>
+		</itemizedlist>
+                </listitem>
+        </varlistentry>
+
+        <varlistentry><term>ユーザとグループプロファイル</term><listitem>
+		<para>
+<indexterm><primary>NTUser.DAT</primary></indexterm>
+<indexterm><primary>SIDs</primary></indexterm>
+		プラットフォーム固有の場合では、ローカルから、ローミングプロファイル変更するために、
+		プラットフォームのツールを使う。SIDを変更するために新しいプロファイルツールが
+		使える(<filename>NTUser.DAT</filename>)。
+		</para>
+                </listitem>
+        </varlistentry>
+
+        <varlistentry><term>ログオンスクリプト</term><listitem>
+                <para>
+		それがどのように動くかは分かっている。
+		</para>
+                </listitem>
+        </varlistentry>
+
+
+        <varlistentry><term>ユーザとグループの、UNIX/Linuxへのマッピング</term><listitem>
+		<para>
+		<indexterm><primary>pdbedit</primary></indexterm>
+		ユーザとグループマッピングコードは新しくなった。Samba-2.2.xからSamba-3に
+		移行することになれているネットワーク管理者は、多くの問題を体験した。
+		新しいパスワードバックエンドの動作と、新しいグループマッピング機能について
+		記述している章を注意深く学習すること。
+		</para>
+			<itemizedlist>
+				<listitem><para><parameter>username map</parameter>機能が必要になるかもしれない。</para></listitem>
+				<listitem><para><command>net groupmap</command>でNT4グループをUNIXグループにつなぐ。</para></listitem>
+				<listitem><para>
+					ユーザ設定を設定/変更するために<command>pdbedit</command>を使う。
+					</para>
+
+					<para>
+					LDAPバックエンドに移行するとき、初期LDAPデータベースをLDIFにダンプ、
+					編集し、次にLDAPに再ロードするのは容易である。
+					</para></listitem>
+			</itemizedlist></listitem>
+        </varlistentry>
+
+        <varlistentry><term>OS固有のスクリプト/プログラムが必要になるかもしれない</term><listitem>
+		<para>
+		すべてのOSはそれ固有の習慣がある。設計者の体験と、予期されない副作用があるかもしれない
+		事をベースにする技術的な議論の結果がある。Windowsネットワーク管理者が引っかかる制限には
+		以下のものがある:
+		</para>
+                <itemizedlist>
+                        <listitem><para>ユーザの追加/削除: OSによる名前のサイズ制限に注意
+				(Linuxは8文字まで, NT4は254文字まで)。</para></listitem>
+                        <listitem><para>マシンの追加/削除: ドメインメンバのみに適用される
+				(注意:マシン名は16文字までに制限される)。</para></listitem>
+                        <listitem><para>NT4グループからUNIXグループへ接続するために<command>net groupmap</command>を使用。</para></listitem>
+                        <listitem><para>グループの追加/削除:OSによるサイズと特性の制限に注意。
+				Linuxは16文字まで、空白不可、大文字不可(<command>groupadd</command>)。</para></listitem>
+		</itemizedlist></listitem>
+        </varlistentry>
+
+        <varlistentry><term>移行ツール</term><listitem>
+                <para>
+				<indexterm><primary>pdbedit</primary></indexterm>
+				ドメイン制御(NT4形式)プロファイル、ポリシー、アクセス制御、セキュリティ
+				<itemizedlist>
+					 <listitem><para>Samba: <command>net, rpcclient, smbpasswd, pdbedit, profiles</command></para></listitem>
+					 <listitem><para>Windows: <command>NT4 ドメインユーザマネージャ, サーバマネージャ(NEXUS)</command></para></listitem>
+				</itemizedlist></para></listitem>
+        </varlistentry>
+</variablelist>
+
+</sect2>
+
+</sect1>
+
+</chapter>

@@ -1,0 +1,26 @@
+<samba:parameter name="force user"
+				 type="string"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータは、サービスに対する接続のすべてで、
+    デフォルトのユーザとみなされる UNIX ユーザの名前を指定する。
+    これはファイルを共有する上で便利であるが、誤って使用すると、
+    セキュリティ上の問題を引き起こす原因となるので、慎重に使用すべきである。</para>
+
+    <para> このユーザ名は接続の確立後に適用される。
+    従って、クライアントが有効なユーザ名とパスワードで接続を行う必要があることには変わりはない。
+    接続が確立すると、全てのファイル操作は強制的に「force user」で指定されたユーザの権限で実行される。
+    クライアントが接続を確立した際のユーザ名は無視される。
+    これは大変便利なことがある。</para>
+
+    <para> Samba 2.0.5 以降では、このパラメータによって
+    設定されたユーザのプライマリグループが、
+    すべてのファイル操作においてプライマリグループとして利用される。
+    Samba 2.0.5 以前では、プライマリグループは本来接続を行ったユーザのプライマリグループのまま変わらない(これはバグである)。</para>
+</description>
+
+<related>force group</related>
+<value type="default"/>
+<value type="example">auser</value>
+</samba:parameter>

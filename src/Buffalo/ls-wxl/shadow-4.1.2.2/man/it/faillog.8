@@ -1,0 +1,98 @@
+.\"     Title: faillog
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: System Management Commands
+.\"    Source: System Management Commands
+.\"
+.TH "FAILLOG" "8" "23/11/2008" "System Management Commands" "System Management Commands"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOME"
+faillog \- mostra i conteggi e imposta i limiti degli accessi falliti
+.SH "SINOSSI"
+.HP 8
+\fBfaillog\fR [\fIopzioni\fR]
+.SH "DESCRIZIONE"
+.PP
+\fBfaillog\fR
+mostra il log degli accessi falliti, contenuto nel file
+\fI/var/log/faillog\fR; può anche essere usato per impostare i conteggi e i limiti dei tentativi falliti\&. Eseguire
+\fBfaillog\fR
+senza argomenti per ottenere un elenco degli utenti che hanno fallito almeno un tentativo di accesso\&.
+.SH "OPZIONI"
+.PP
+Il comando
+\fBfaillog\fR
+accetta le seguenti opzioni:
+.PP
+\fB\-a\fR, \fB\-\-all\fR
+.RS 4
+Mostra i record degli accessi falliti per tutti gli utenti\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Mostra un messaggio di aiuto ed esce\&.
+.RE
+.PP
+\fB\-l\fR, \fB\-\-lock\-time\fR\fISEC\fR
+.RS 4
+Blocca l\'account per
+\fISEC\fR
+secondi dopo un tentativo di accesso fallito\&.
+.RE
+.PP
+\fB\-m\fR, \fB\-\-maximum\fR\fIMAX\fR
+.RS 4
+Imposta a
+\fIMAX\fR
+il numero massimo di tentativi permessi prima che l\'account venga disabilitato\&. Un valore pari a zero significa che non viene posto nessun limite sul numero di tentativi falliti\&. Per impedire un possibile attacco di tipo Denial of Service al sistema, si consiglia di impostare questo valore a 0 per
+\fIroot\fR\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-reset\fR
+.RS 4
+Azzera i conteggi degli accessi falliti per tutti gli utenti, o per un utente solo se usato con l\'opzione
+\fB\-u\fR
+\fILOGIN\fR\&. Per usare questa opzione è richiesto l\'accesso in scrittura a
+\fI/var/log/faillog\fR\&.
+.RE
+.PP
+\fB\-t\fR, \fB\-\-time\fR\fIGIORNI\fR
+.RS 4
+Mostra i record degli accessi falliti più recenti di un numero di
+\fIGIORNI\fR\&. L\'opzione
+\fB\-t\fR
+ha la precedenza sull\'uso di
+\fB\-u\fR\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-user\fR \fILOGIN\fR
+.RS 4
+Mostra il record degli accessi falliti o, se sono state usate con le opzioni
+\fB\-r\fR,
+\fB\-m\fR
+o
+\fB\-l\fR, imposta conteggi e limiti solo per l\'utente specificato da
+\fILOGIN\fR\&.
+.RE
+.SH "AVVISI/CAVEAT"
+.PP
+\fBfaillog\fR
+mostra solo gli utenti che non hanno effettuato nessun accesso corretto dopo l\'ultimo tentativo fallito\&. Un utente che abbia completato correttamente un accesso dopo l\'ultimo tentativo fallito è mostrato solo se viene richiesto esplicitamente con l\'opzione
+\fB\-u\fR
+o se viene richiesto di mostrare tutti gli utenti con l\'opzione
+\fB\-a\fR\&.
+.SH "FILE"
+.PP
+\fI/var/log/faillog\fR
+.RS 4
+Failure logging file\&.
+.RE
+.SH "VEDERE ANCHE"
+.PP
+\fBlogin\fR(1),
+\fBfaillog\fR(5)\&.

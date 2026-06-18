@@ -1,0 +1,7 @@
+/opt/osstech/var/log/samba/* {
+    notifempty
+    olddir /opt/osstech/var/log/samba/old
+    missingok
+    sharedscripts
+    copytruncate
+}

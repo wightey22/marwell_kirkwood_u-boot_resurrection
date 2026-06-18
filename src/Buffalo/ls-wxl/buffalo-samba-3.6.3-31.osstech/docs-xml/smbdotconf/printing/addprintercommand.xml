@@ -1,0 +1,57 @@
+<samba:parameter name="add printer command"
+                 context="G"
+				 type="string"
+		 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>Samba 2.2における Windows NT/2000
+	クライアントに対応した MS-RPC ベースの印刷サポートの実装にともない、
+	共有の一覧に表示される"Printers... " フォルダ中の
+	&quot;プリンタの追加&quot;ウィザード(Add Printer Wizard (APW))アイコンを利用することが可能になった。
+	APWにより、SambaやWindows NT/ 2000プリンタサーバに別のマシンからのプリンタ追加が可能となった。</para>
+		
+	<para> Sambaホストの場合、これは、下位レイヤの印刷システムにプリンタを物理的に追加できる必要があるということである。
+	<parameter moreinfo="none">add printer command</parameter> は、
+	印刷システムにプリンタを追加するとともに、
+	<filename moreinfo="none">smb.conf</filename> ファイルに対して、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> によって共有が行なわれるサービスのエントリを適切に追加するのに必要な処理を行なうスクリプトを設定する。</para>
+		
+	<para><parameter moreinfo="none">add printer command</parameter> は
+	以下のパラメータを(順番に)付加して自動的に実行される:
+	</para>
+		
+    <itemizedlist>
+	<listitem><para><parameter moreinfo="none">printer name</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">share name</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">port name</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">driver name</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">location</parameter></para></listitem>
+	<listitem><para><parameter moreinfo="none">Windows 9x driver location</parameter></para></listitem>
+    </itemizedlist>
+		
+	<para> すべてのパラメータは、一つの例外を除き、
+	Windows NT/2000 クライアントから送信される PRINTER_INFO_2 構造体から取得される。
+	&quot;Windows 9x driver location&quot;パラメータは、下位互換性を保つためにのみ提供される。
+	それ以外の構造体のフィールドは、APWの問い合わせに対する回答から生成される。
+	</para>
+
+	<para> <parameter moreinfo="none">add printer command</parameter> が実行されると、
+	<command moreinfo="none">smbd</command> は、 <filename moreinfo="none">smb.conf</filename> を再度読み込んで、
+	APWで設定された共有がすでに存在していないかを確認する。
+	共有名が不正な場合、<command moreinfo="none">smbd</command> は、
+	クライアントに対して ACCESS_DENIED エラーを返却する。</para>
+
+	<para><parameter moreinfo="none">addprinter command</parameter>は Samba が新しいプリンタが接続するポートとして設定した
+	文字列からなる1行を返却する。
+	返却されない場合、Samba は印刷共有の再読み込みを行なわない。
+    </para>
+</description>
+
+<related>deleteprinter command</related>
+<related>printing</related>
+<related>show add printer wizard</related>
+
+<value type="default"></value>
+<value type="example">/usr/bin/addprinter</value>
+</samba:parameter>

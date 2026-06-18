@@ -1,0 +1,2957 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="ntdomain">
+<chapterinfo>
+	<author>
+		<firstname>Luke</firstname><surname>Leighton</surname>
+		<affiliation><address><email>lkcl@switchboard.net</email></address></affiliation>
+	</author>
+	<author>
+		<firstname>Paul</firstname><surname>Ashton</surname>
+		<affiliation><address><email>paul@argo.demon.co.uk</email></address></affiliation>
+	</author>
+	<author>
+		<firstname>Duncan</firstname><surname>Stansfield</surname>
+		<affiliation><address><email>duncans@sco.com</email></address></affiliation>
+	</author>
+
+	<pubdate>01 November 97(version 0.0.24)</pubdate>
+</chapterinfo>
+
+<title>NTドメインにおけるRPC</title>
+
+<sect1>
+<title>概要</title>
+
+
+<para>
+この文書にはNTサーバを使わないでNTワークステーションのログオンサービスを提供するための
+情報が記述されている。これはLukeによって管理されている、
+<ulink url="http://mailhost.cb1.com/~lkcl/cifsntdomain.txt">http://mailhost.cb1.com/~lkcl/cifsntdomain.txt</ulink>
+のsgmlバージョンである。
+</para>
+
+<para>
+(NTワークステーションのTCP/IP設定中で)ワークグループの代わりにドメインを選択することは
+可能であり、必須である再起動後に、ユーザ名とパスワードを入力し、ドメインを選択すれば
+正しくログオンできる。この文書に対する、上記作業の経験からの、何らかのフィードバック
+、何らかのコメント、修正と追加事項は歓迎する。
+</para>
+
+<para>
+ここで説明するパケットはNetmon.exeによって簡単に(そしておそらくそれを使うことでより
+よく理解でき)得られる。NETLOGON、lsarpcとsrvsvcトランザクションパイプを正しくデコード
+するために、使用しているシステムに一致するNetmonのバージョンを使う必要がある。
+この文書は、NTサービスパック1の、それに適合したバージョンのNetmonから得られている。
+これは、この文書よりもより有益であろう、注釈付きのパケットトレースが生成されることを
+目的としている。
+</para>
+
+<para>
+また、NTドメインログオンサービスを完全に実装するため、NTの認証の暗号化部分を
+説明する文書も必要である。この文書は comp.protocols.smbから公開されている、
+ntsecurity.net のからの要約とsamba digestからとその他のソースからのものを使っている。
+</para>
+
+<para>
+コピーは以下にある:
+</para>
+
+<para><ulink url="http://ntbugtraq.rc.on.ca/SCRIPTS/WA.EXE?A2=ind9708;L=ntbugtraq;O=A;P=2935">http://ntbugtraq.rc.on.ca/SCRIPTS/WA.EXE?A2=ind9708;L=ntbugtraq;O=A;P=2935</ulink></para>
+
+<para><ulink url="http://mailhost.cb1.com/~lkcl/crypt.html">http://mailhost.cb1.com/~lkcl/crypt.html</ulink></para>
+
+<para>
+<ulink url="mailto:linus@incolumitas.se">Linus Nordberg</ulink>による、
+このプロトコルに関するC言語での実装は、以下にある:
+</para>
+
+<para><ulink url="http://samba.org/cgi-bin/mfs/01/digest/1997/97aug/0391.html">http://samba.org/cgi-bin/mfs/01/digest/1997/97aug/0391.html</ulink></para>
+<para><ulink url="http://mailhost.cb1.com/~lkcl/crypt.txt">http://mailhost.cb1.com/~lkcl/crypt.txt</ulink></para>
+
+<para>
+デバッグ情報の提供のためにはNT workstationのCheck Buildバージョンも必要であり、
+NETLOGON中で完全なデバッグを有効にする。これは以下のようにして、REG_SZ
+レジストリーキーを 0x1ffffff に設定することで行える:
+</para>
+
+<para><filename>HKLM\SYSTEM\CurrentControlSet\Services\Netlogon\Parameters</filename></para>
+
+<para><emphasis>不正にレジストリを編集すると、使用しているマシンを動作不能にさせる
+事になる。このプロトコルの不正な実装になる。上記の"Liability:"を参照のこと。
+</emphasis></para>
+
+<para>
+ネットワーク上の各パケットはAPI呼び出しにおいて固有のオリジンを持っていることを
+心にとめておくこと。そのため、その定義がほかの所で便利に文書化されている、
+構造体や列挙型かもしれない。
+</para>
+
+<para>
+この文書は、決して完全でも正式でもない。以下のようものだけではなく、
+抜けているところがある:
+</para>
+
+
+<orderedlist>
+
+<listitem><para>ユーザ名からRID(やその他(へのマッピング。</para></listitem>
+
+<listitem><para>ユーザIDとグループIDが何であるかということ。</para></listitem>
+
+<listitem><para>種々の、特定の定数または列挙型の正確な意味と定義。</para></listitem>
+
+<listitem><para>ワークステーションがドメインのメンバになるときの、返されるエラーコードと
+エラーコードの使用法(後で説明)。失敗時に返されるエラーコードは、ワークステーション上で
+すでにドメインのメンバになっているという表示を行わせる。
+</para></listitem>
+
+<listitem><para>ワークステーションにそのパスワードを変更させることが出来るようにする、
+NetrServerPasswordSetコマンドの暗号化の側面。このパスワードは長期でのセッションキー
+を生成するのに使われる[このコマンドを拒否するのも可能で、その場合は既定値の
+ワークステーションパスワードを保持する]。</para></listitem>
+
+</orderedlist>
+
+<sect2>
+<title>ソース</title>
+
+<simplelist>
+<member>cket Traces from Netmonitor (Service Pack 1 and above)</member>
+<member>ul Ashton and Luke Leighton's other "NT Domain" doc.</member>
+<member>FS documentation - cifs6.txt</member>
+<member>FS documentation - cifsrap2.txt</member>
+</simplelist>
+
+</sect2>
+
+<sect2>
+<title>クレジット</title>
+
+<simplelist> 
+<member>Paul Ashton: loads of work with Net Monitor; understanding the NT authentication system; reference implementation of the NT domain support on which this document is originally based.</member>
+<member>Duncan Stansfield: low-level analysis of MSRPC Pipes.</member>
+<member>Linus Nordberg: producing c-code from Paul's crypto spec.</member>
+<member>Windows Sourcer development team</member>
+</simplelist>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>注意事項と構造</title>
+
+<sect2>
+<title>注意事項</title>
+
+<orderedlist>
+<listitem><para>
+SMBトランザクションパイプ中で、いくつかの"構造体"がここで説明されていて、
+開始時に4バイト境界で整列されたSMBヘッダがある。正確に"構造体"を整列させる
+必要性は、正確には知られても、文書化されてもいない。
+</para></listitem>
+
+<listitem><para>
+UDP NETLOGON Mailslot中で、いくつかの"構造体"がここで説明されていて、開始時に、
+mailslotの先頭に2バイト境界で整列されている。
+</para></listitem>
+
+<listitem><para>
+Domain SIDはS-revision-version-auth1-auth2...authNという形式である。たとえば、
+Domain SID is of the format S-revision-version-auth1-auth2...authN.
+S-1-5-123-456-789-123-456である。ここで、5はサブバージョンでもありえる。
+</para></listitem>
+
+<listitem><para>
+参照する文字バッファが文字を含むなら、文書化されていないバッファポインタは0以外で
+なければならない。それが正確に何であるかは不明である。0x0000 0002は、バッファが
+存在することを指示するためのトリックを行っているように見える。もしも、バッファ
+ポインタがNULLの場合、構造体が参照するものはSMBデータストリームへ(あるいは から)
+置かれない。これは、経験的に得られたものであり、例えば、バッファポインタがNULLの、
+LSA SAMログオンレスポンスパケットのユーザ情報はデータストリーム中には挿入されない。
+いろいろと推測することは出来るが、バッファポインタの配列が正確になんなのかは
+未知である。
+</para></listitem>
+
+<listitem><para>
+構造体(コンテナ)の配列は、カウンタとポインタを持つように見える。もしもカウンタが
+ゼロならば、ポインタもゼロである。SMBデータストリームにさらなるデータは存在しない。
+もしも、カウンタがゼロでない場合、ポインタもゼロではない。ポインタの直後には
+また、コンテナのサブ構造体の配列が続くカウンタが来る。カウンタは最後のサブ構造体
+の後に3回目のカウンタが来る。
+</para></listitem>
+</orderedlist>
+
+</sect2>
+
+<sect2>
+<title>列挙</title>
+
+<sect3>
+<title>MSRPCヘッダタイプ</title>
+<para>msrpcパケットヘッダ中のコマンド番号</para>
+
+<variablelist>
+<varlistentry>
+	<term>MSRPC_Request:</term>
+	<listitem><para>0x00</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>MSRPC_Response:</term>
+	<listitem><para>0x02</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>MSRPC_Bind:</term>
+	<listitem><para>0x0B</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>MSRPC_BindAck:</term>
+	<listitem><para>0x0C</para></listitem>
+</varlistentry>
+</variablelist>
+</sect3>
+
+<sect3>
+<title>MSRPC パケット情報</title>
+
+<para>これらのフラグの意味は文書化されていない</para>
+
+<variablelist>
+<varlistentry>
+	<term>FirstFrag:</term>
+	<listitem><para>0x01 </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LastFrag:</term>
+	<listitem><para>0x02 </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NotaFrag:</term>
+	<listitem><para>0x04  </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>RecRespond:</term>
+	<listitem><para>0x08  </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NoMultiplex:</term>
+	<listitem><para>0x10  </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NotForIdemp:</term>
+	<listitem><para>0x20  </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NotforBcast:</term>
+	<listitem><para>0x40  </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NoUuid:</term>
+	<listitem><para>0x80 </para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>構造体</title>
+
+<sect3><title>VOID *</title>
+<para>sizeof VOID* は 32ビットである。</para>
+</sect3>
+
+<sect3><title>char</title>
+<para>sizeof char は8 ビットである。</para>
+</sect3>
+
+<sect3><title>UTIME</title>
+<para>UTIME は 32 ビットであり、1980年1月1日からの秒数を示す。cifs6.txtで説明がある (section 3.5 page, page 30)。</para>
+</sect3>
+
+<sect3><title>NTTIME</title>
+<para>NTTIME は 64 ビットである。cifs6.txtで説明がある (section 3.5 page, page 30)。</para>
+</sect3>
+
+<sect3>
+<title>DOM_SID (domain SID 構造体)</title>
+
+<variablelist>
+
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>num of sub-authorities in domain SID</para></listitem>
+</varlistentry>
+
+<varlistentry>
+	<term>UINT8</term>
+	<listitem><para>SID revision number</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8</term>
+	<listitem><para>num of sub-authorities in domain SID</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[6]</term>
+	<listitem><para>6 bytes for domain SID - Identifier Authority.</para></listitem>
+</varlistentry>
+
+<varlistentry>
+	<term>UINT16[n_subauths]</term>
+	<listitem><para>domain SID sub-authorities</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para><emphasis>注意:ドメイン SID はどこかで文書化されている。</emphasis>
+</para>
+
+</sect3>
+
+<sect3>
+<title>STR (文字列)</title>
+
+<para>STR (文字列) は char[] である: これはnull文字で終端するASCII文字列である。</para>
+
+</sect3>
+
+<sect3>
+<title>UNIHDR (UNICODE文字列ヘッダ) </title>
+
+<variablelist>
+
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>length of unicode string</para></listitem>
+</varlistentry>
+
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>max length of unicode string</para></listitem>
+</varlistentry>
+
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>4 - undocumented.</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>UNIHDR2 (UNICODE文字列ヘッダ+バッファポインタ)</title>
+
+<variablelist>
+
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>unicode string header</para></listitem>
+</varlistentry>
+
+
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>UNISTR (UNICODE文字列)</title>
+
+<variablelist>
+
+<varlistentry>
+	<term>UINT16[]</term>
+	<listitem><para>null-terminated string of unicode characters.</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>NAME (長さが指定されているUNICODE文字列)</title>
+
+<variablelist>
+
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>length of unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16[]</term>
+	<listitem><para>null-terminated string of unicode characters.</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>UNISTR2 (境界に整合してあるUNICODE文字列)</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>padding to get unicode string 4-byte aligned with the start of the SMB header.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>max length of unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - undocumented</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>length of unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16[]</term>
+	<listitem><para>string of uncode characters</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>OBJ_ATTR (オブジェクト属性)</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>0x18 - length (in bytes) including the length field.</para></listitem></varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>0 - root directory (pointer)</para></listitem></varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>0 - object name (pointer)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>0 - attributes (undocumented)</para></listitem></varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>0 - security descriptior (pointer)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - security quality of service</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>POL_HND (LSAポリシーハンドル)</title>
+
+<variablelist>
+<varlistentry>
+	<term>char[20]</term>
+	<listitem><para>policy handle</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>DOM_SID2 (ドメインSID構造体で、SIDSはUNICODEで格納される)</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>5 - SID type</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - undocumented</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR2</term>
+	<listitem><para>domain SID unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>domain SID unicode string</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para><emphasis>注意:	文字列の長さを指定示すために、どちらを使うかについて、
+UNICODE文字列ヘッダとUNICODE文字列自身との間で競合がある。これは解決されねばならないだろう。
+</emphasis></para>
+
+<para><emphasis>注意:	SIDタイプは、たとえば別名、既定のグループ等などを指示する。これは
+どこかで文書化されている。</emphasis></para>
+
+</sect3>
+
+<sect3>
+<title>DOM_RID (ドメイン RID 構造体)</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>5 - well-known SID.  1 - user SID (see ShowACLs)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>5 - undocumented</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>domain RID </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - domain index out of above reference domains</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>LOG_INFO (サーバ、アカウント、クライアント構造)</title>
+
+<para><emphasis>注意:	ログオンサーバ名は、2つの'\'で始まり、大文字である。</emphasis></para>
+
+<para><emphasis>注意:	アカウント名は、LSAリクエストチャレンジからのログオンクライアント名で、最後に$があり、大文字である。</emphasis></para>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon server unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>account name unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>sec_chan - security channel type</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon client machine unicode string</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>CLNT_SRV (サーバ、クライアント、名前構造体)</title>
+
+<para><emphasis>注意:	ログオンサーバ名は2つの'\'で始まり、大文字である。</emphasis></para>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon server unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon client machine unicode string</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>CREDS (credentials + time stamp)</title>
+
+<variablelist>
+<varlistentry>
+	<term>char[8]</term>
+	<listitem><para>credentials</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UTIME</term>
+	<listitem><para>time stamp</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>CLNT_INFO2 (サーバ、クライアント構造体、クライアント認証情報)</title>
+
+<para><emphasis>注意: 要求中にこの構造体が使われた時にはいつでも、引き続く認証検査で使われるため、
+受け取ったクライアントで計算された認証情報のコピーを取る必要がある。仮定された意図は、認証された
+要求/応答の痕跡を維持することである。</emphasis></para>
+
+<variablelist>
+<varlistentry>
+	<term>CLNT_SRV</term>
+	<listitem><para>client and server names</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>???? padding, for 4-byte alignment with SMB header.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>pointer to client credentials.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>CREDS</term>
+	<listitem><para>client-calculated credentials + client time</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>CLNT_INFO (サーバ、アカウント、クライアント構造体、クライアント認証情報)</title>
+<para><emphasis>注意: 要求中にこの構造体が使われた時にはいつでも、引き続く認証検査で使われるため、
+受け取ったクライアントで計算された認証情報のコピーを取る必要がある。仮定された意図は、認証された
+要求/応答の痕跡を維持することである。</emphasis></para>
+
+<variablelist>
+<varlistentry>
+	<term>LOG_INFO</term>
+	<listitem><para>logon account info</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>CREDS</term>
+	<listitem><para>client-calculated credentials + client time</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>ID_INFO_1 (id 情報構造体、認証レベル 1)</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>ptr_id_info_1</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>domain name unicode header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>param control</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT64</term>
+	<listitem><para>logon ID</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>user name unicode header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>workgroup name unicode header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[16]</term>
+	<listitem><para>arc4 LM OWF Password</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[16]</term>
+	<listitem><para>arc4 NT OWF Password</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>domain name unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>user name unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>workstation name unicode string</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>SAM_INFO (sam logon/logoff ID情報構造体)</title>
+
+<para><emphasis>注意: たぶん、戻される認証情報は、おそらく認証チェインが脆弱でない事を、サーバが検査するためのものである。</emphasis></para>
+
+<variablelist>
+<varlistentry>
+	<term>CLNT_INFO2</term>
+	<listitem><para>client identification/authentication info</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>pointer to return credentials.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>CRED</term>
+	<listitem><para>return credentials - ignored.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>logon level</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>switch value</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para><programlisting>
+        switch (switch_value)
+        case 1:
+        {
+            ID_INFO_1     id_info_1;
+        }
+</programlisting></para>
+
+</sect3>
+
+<sect3>
+<title>GID (グループID情報)</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>group id</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>user attributes (only used by NT 3.1 and 3.51)</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>DOM_REF (ドメインリファレンス情報)</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>num referenced domains?</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented domain name buffer pointer.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>32 - max number of entries</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>4 - num referenced domains?</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR2</term>
+	<listitem><para>domain name unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR2[num_ref_doms-1]</term>
+	<listitem><para>referenced domain unicode string headers</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>domain name unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>DOM_SID[num_ref_doms]</term>
+	<listitem><para>referenced domain SIDs</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>DOM_INFO (ドメイン情報、レベル3と5は同じ))</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>??? padding to get 4-byte alignment with start of SMB header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>domain name string length * 2</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>domain name string length * 2</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented domain name string buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>undocumented domain SID string buffer pointer</para></listitem></varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+<listitem><para>domain name (unicode string)</para></listitem></varlistentry>
+<varlistentry>
+	<term>DOM_SID</term>
+	<listitem><para>domain SID</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>USER_INFO (ユーザログオン情報)</title>
+
+<para><emphasis>注意: 16バイトのユーザセッションキーが何のためかを知ることはすてきであろう。</emphasis></para>
+
+<variablelist>
+<varlistentry>
+	<term>NTTIME</term>
+	<listitem><para>logon time</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NTTIME</term>
+	<listitem><para>logoff time</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NTTIME</term>
+	<listitem><para>kickoff time</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NTTIME</term>
+	<listitem><para>password last set time</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NTTIME</term>
+	<listitem><para>password can change time</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NTTIME</term>
+	<listitem><para>password must change time</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>username unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>user's full name unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>logon script unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>profile path unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>home directory unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>home directory drive unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>logon count</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>bad password count</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>User ID</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>Group ID</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>num groups</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer to groups.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>user flags</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[16]</term>
+	<listitem><para>user session key</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>logon server unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNIHDR</term>
+	<listitem><para>logon domain unicode string header</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented logon domain id pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[40]</term>
+	<listitem><para>40 undocumented padding bytes.  future expansion?</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - num_other_sids?</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>NULL - undocumented pointer to other domain SIDs.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>username unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>user's full name unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon script unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>profile path unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>home directory unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>home directory drive unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>num groups</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>GID[num_groups]</term>
+	<listitem><para>group info</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon server unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon domain unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>DOM_SID</term>
+	<listitem><para>domain SID</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>DOM_SID[num_sids]</term>
+	<listitem><para>other domain SIDs?</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>SH_INFO_1_PTR (レベル1共有情報文字列へのポインタ)</title>
+
+<para><emphasis>注意:	cifsrap2.txtの section5, page 10を参照。</emphasis></para>
+
+<simplelist>
+<member>0 for shi1_type indicates a  Disk.</member>
+<member>1 for shi1_type indicates a  Print Queue.</member>
+<member>2 for shi1_type indicates a  Device.</member>
+<member>3 for shi1_type indicates an IPC pipe.</member>
+<member>0x8000 0000 (top bit set in shi1_type) indicates a hidden share.</member>
+</simplelist>
+
+<variablelist>
+
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>shi1_netname - pointer to net name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>shi1_type    - type of share.  0 - undocumented.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>shi1_remark  - pointer to comment.</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>SH_INFO_1_STR (level 1 共有情報文字列)</title>
+
+<variablelist>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>shi1_netname - unicode string of net name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>shi1_remark  - unicode string of comment.</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>SHARE_INFO_1_CTR</title>
+
+<para>share container with 0 entries:</para>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - EntriesRead</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - Buffer</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>share container with > 0 entries:</para>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>EntriesRead</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>non-zero - Buffer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>EntriesRead</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SH_INFO_1_PTR[EntriesRead]</term>
+	<listitem><para>share entry pointers</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SH_INFO_1_STR[EntriesRead]</term>
+	<listitem><para>share entry strings</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>padding to get unicode string 4-byte aligned with start of the SMB header.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>EntriesRead</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - padding</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>SERVER_INFO_101</title>
+
+<para><emphasis>注意:	cifs6.txt section 6.4を参照 - その中で説明されているフィールドはここで補足する。
+例えば、以下でリストされたタイプは6.4.1で説明されているfServerTypeと同じである。</emphasis></para>
+
+<variablelist>
+<varlistentry>
+	<term>SV_TYPE_WORKSTATION</term>
+	<listitem><para>0x00000001  All workstations</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_SERVER</term>
+	<listitem><para>0x00000002  All servers</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_SQLSERVER</term>
+	<listitem><para>0x00000004  Any server running with SQL server</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_DOMAIN_CTRL</term>
+	<listitem><para>0x00000008  Primary domain controller</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_DOMAIN_BAKCTRL</term>
+	<listitem><para>0x00000010  Backup domain controller</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_TIME_SOURCE</term>
+	<listitem><para>0x00000020  Server running the timesource service</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_AFP</term>
+	<listitem><para>0x00000040  Apple File Protocol servers</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_NOVELL</term>
+	<listitem><para>0x00000080  Novell servers</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_DOMAIN_MEMBER</term>
+	<listitem><para>0x00000100  Domain Member</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_PRINTQ_SERVER</term>
+	<listitem><para>0x00000200  Server sharing print queue</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_DIALIN_SERVER</term>
+	<listitem><para>0x00000400  Server running dialin service.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_XENIX_SERVER</term>
+	<listitem><para>0x00000800  Xenix server</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_NT</term>
+	<listitem><para>0x00001000  NT server</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_WFW</term>
+	<listitem><para>0x00002000  Server running Windows for </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_SERVER_NT</term>
+	<listitem><para>0x00008000  Windows NT non DC server</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_POTENTIAL_BROWSER</term>
+	<listitem><para>0x00010000  Server that can run the browser service</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_BACKUP_BROWSER</term>
+	<listitem><para>0x00020000  Backup browser server</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_MASTER_BROWSER</term>
+	<listitem><para>0x00040000  Master browser server</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_DOMAIN_MASTER</term>
+	<listitem><para>0x00080000  Domain Master Browser server</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_LOCAL_LIST_ONLY</term>
+	<listitem><para>0x40000000  Enumerate only entries marked "local"</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SV_TYPE_DOMAIN_ENUM</term>
+	<listitem><para>0x80000000  Enumerate Domains. The pszServer and pszDomain parameters must be NULL.</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>500 - platform_id</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>pointer to name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>5 - major version</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>4 - minor version</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>type (SV_TYPE_... bit field)</para></listitem></varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>pointer to comment</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>sv101_name - unicode string of server name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>sv_101_comment  - unicode string of server comment.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>padding to get unicode string 4-byte aligned with start of the SMB header.</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>名前付きパイプトランザクション上でのMSRPC</title>
+
+<para>名前付きパイプ上のSMBトランザクションの詳細はcifs6.txtを参照。</para>
+
+<sect2>
+<title>MSRPC パイプ</title>
+
+<para>
+MSRPCは<filename>\PIPE\</filename>という名前のSMBトランザクションパイプ上で行われる。
+たとえば、パイプ名<filename>\PIPE\srvsvc</filename>でSMBopenXを送信することで、
+まず初めに16ビットのファイルハンドルを得ておかねばならない。そうすると次に
+SMB Transを実行でき、処理が終了したら、ファイルハンドル上でSMBCloseを送る必要がある。
+</para>
+
+<para>
+Trans Requestは(これについては知られていないが)1つのUINT16ではなく2つのUINT16
+セットアップパラメータと、MSRPCヘッダを含むために十分なUINT8データパラメータと
+MSRPCデータを送る必要がある。最初のUINT16セットアップパラメータはRPCを指定するために
+0x0026か、Set Named Pipe Handle Stateを指示するために、0x0001のどちらかでなければ
+ならない。2番目のUINT16パラメータは、上記で得られた、パイプ用のファイルハンドルで
+なければならない。
+</para>
+
+<para>
+Trans Request中の、0x0026 (RPC pipe)であるAPIコマンド用のデータセクションは、RPCデータが
+後に来るRPCヘッダである。0x0001のAPIコマンド(Set Named Pipe Handle state)のための
+データセクションは、2バイトである。その2バイトの中に現れるものは、0x00 0x43のみである。
+The Data section for an API Command of 0x0026 (RPC pipe) in the Trans
+Request is the RPC Header, followed by the RPC Data.  The Data section for
+an API Command of 0x0001 (Set Named Pipe Handle state) is two bytes.  The
+only value seen for these two bytes is 0x00 0x43.
+</para>
+
+<para>
+MSRPC ResponseはMSPRCヘッダ、MSRPCデータとMSRPCフッタ(訳注:tail)がある、標準
+SMB Transレスポンス内で、レスポンスデータとして送信される。
+</para>
+
+<para>
+Trans Requestが少なくとも2バイト境界(おそらく4バイト)に配置される必要があるだろうと
+いうことは、推測される。これは、SMBに対して標準的な慣習である。また、MSRPCヘッダと
+MSRPCデータの間での4バイト単位境界を含む、MSRPCヘッダの4バイト単位境界とは独立している。
+It is suspected that the Trans Requests will need to be at least 2-byte
+aligned (probably 4-byte).  This is standard practice for SMBs.  It is also
+independent of the observed 4-byte alignments with the start of the MSRPC
+header, including the 4-byte alignment between the MSRPC header and the
+MSRPC data.
+</para>
+
+<para>
+最初に、IPC$共有に対してSMBtconX接続が行われる。コネクションは、平文ではなく、
+暗号化したパスワードを使って行わなければならない。次に、SMBOpenXがパイプ上で行われる。
+次に、Set Named Pipe Handle Stateが、APCコマンドを受け取れるようにパイプがなった後に
+送られる必要がある。最後に、SMBcloseが送られる。
+</para>
+
+<para>
+解決されること:
+</para>
+
+<para>
+lkcl/01nov97において、RPCパイプのためのNULL文字で終端している\PIPE\名の後に2バイトが
+存在するように見える。今のところ分かっている値は以下の通り:</para>
+
+<para><programlisting>
+        initial SMBopenX request:         RPC API command 0x26 params:
+        "\\PIPE\\lsarpc"                  0x65 0x63; 0x72 0x70; 0x44 0x65;
+        "\\PIPE\\srvsvc"                  0x73 0x76; 0x4E 0x00; 0x5C 0x43;
+</programlisting></para>
+
+</sect2>
+
+<sect2>
+<title>ヘッダ</title>
+
+<para>[Duncan Stansfieldによる作業を受け取った後、この節は書き直される予定]</para>
+
+<para>興味深い注意:もしも、パックされたデータを0x0100 0000と設定した場合、
+すべての4バイトと2バイトワードの順番は逆転する!</para>
+
+<para>NTLSAとNETLOGON名前付きパイプのおのおのの開始は、以下で始まる:</para>
+
+<segmentedlist>
+<segtitle>オフセット</segtitle><segtitle>変数タイプ</segtitle><segtitle>変数のデータ</segtitle>
+<seglistitem><seg>00</seg><seg>UINT8</seg><seg>5 - RPC major version</seg></seglistitem>
+<seglistitem><seg>01</seg><seg>UINT8</seg><seg>0 - RPC minor version</seg></seglistitem>
+<seglistitem><seg>02</seg><seg>UINT8</seg><seg>2 - RPC response packet</seg></seglistitem>
+<seglistitem><seg>03</seg><seg>UINT8</seg><seg>3 - (FirstFrag bit-wise or with LastFrag)</seg></seglistitem>
+<seglistitem><seg>04</seg><seg>UINT32</seg><seg>0x1000 0000 - packed data representation</seg></seglistitem>
+<seglistitem><seg>08</seg><seg>UINT16</seg><seg>fragment length - data size (bytes) inc header and tail.</seg></seglistitem>
+<seglistitem><seg>0A</seg><seg>UINT16</seg><seg>0 - authentication length </seg></seglistitem>
+<seglistitem><seg>0C</seg><seg>UINT32</seg><seg>call identifier. matches 12th UINT32 of incoming RPC data.</seg></seglistitem>
+<seglistitem><seg>10</seg><seg>UINT32</seg><seg>allocation hint - data size (bytes) minus header and tail.</seg></seglistitem>
+<seglistitem><seg>14</seg><seg>UINT16</seg><seg>0 - presentation context identifier</seg></seglistitem>
+<seglistitem><seg>16</seg><seg>UINT8</seg><seg>0 - cancel count</seg></seglistitem>
+<seglistitem><seg>17</seg><seg>UINT8</seg><seg>in replies: 0 - reserved; in requests: opnum - see #defines.</seg></seglistitem>
+<seglistitem><seg>18</seg><seg>......</seg><seg>start of data (goes on for allocation_hint bytes)</seg></seglistitem>
+</segmentedlist>
+
+<sect3>
+<title>要求、レスポンス、バインドとバインド承認に対するRPC_Packet</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT8 versionmaj</term>
+<listitem><para>reply same as request (0x05)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8 versionmin</term>
+<listitem><para>reply same as request (0x00)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8 type</term>
+<listitem><para>one of the MSRPC_Type enums</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8 flags</term>
+<listitem><para>reply same as request (0x00 for Bind, 0x03 for Request)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32 representation</term>
+<listitem><para>reply same as request (0x00000010)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 fraglength</term>
+<listitem><para>the length of the data section of the SMB trans packet</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 authlength</term>
+	<listitem><para></para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32 callid</term>
+<listitem><para>call identifier. (e.g. 0x00149594)</para></listitem></varlistentry>
+<varlistentry>
+	<term>* stub USE TvPacket</term>
+<listitem><para>the remainder of the packet depending on the "type"</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>インタフェース識別</title>
+
+<para>インタフェースには番号が付けられている。同じパイプ名srvsvc上で1つより多い
+インタフェースを使う場面にはまだ出会ったことがない。</para>
+
+<para><programlisting>
+abstract (0x4B324FC8, 0x01D31670, 0x475A7812, 0x88E16EBF, 0x00000003)
+transfer (0x8A885D04, 0x11C91CEB, 0x0008E89F, 0x6048102B, 0x00000002)
+</programlisting></para>
+
+</sect3>
+
+<sect3>
+<title>RPC_Iface RW</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT8 byte[16]</term>
+<listitem><para>16 bytes of number</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32 version</term>
+<listitem><para>the interface number</para></listitem></varlistentry>
+</variablelist>
+
+
+</sect3>
+
+<sect3>
+<title>RPC_ReqBind RW</title>
+
+<para>"タイプ"がレスポンスヘッダのBINDであった場合、ヘッダの後のパケットの残りの
+"タイプ"は、BindAckであるべきである。</para>
+
+<variablelist>
+<varlistentry>
+	<term>UINT16 maxtsize</term>
+<listitem><para>maximum transmission fragment size (0x1630)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 maxrsize</term>
+<listitem><para>max receive fragment size (0x1630)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32 assocgid</term>
+<listitem><para>associated group id (0x0)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32 numelements</term>
+<listitem><para>the number of elements (0x1)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 contextid</term>
+<listitem><para>presentation context identifier (0x0)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8 numsyntaxes</term>
+<listitem><para>the number of syntaxes (has always been 1?)(0x1)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+<listitem><para>4-byte alignment padding, against SMB header</para></listitem></varlistentry>
+<varlistentry>
+	<term>* abstractint USE RPC_Iface</term>
+<listitem><para>num and vers. of interface client is using</para></listitem></varlistentry>
+<varlistentry>
+	<term>* transferint USE RPC_Iface</term>
+	<listitem><para>num and vers. of interface to use for replies</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>RPC_Address RW</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT16 length</term>
+<listitem><para>length of the string including null terminator</para></listitem></varlistentry>
+<varlistentry>
+	<term>* port USE string</term>
+<listitem><para>the string above in single byte, null terminated form</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>RPC_ResBind RW</title>
+
+<para>リプライパケット中でヘッダの後に配置されるレスポンス</para>
+
+<variablelist>
+<varlistentry>
+	<term>UINT16 maxtsize</term>
+<listitem><para>same as request</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 maxrsize</term>
+<listitem><para>same as request</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32 assocgid</term>
+<listitem><para>zero</para></listitem></varlistentry>
+<varlistentry>
+	<term>* secondaddr USE RPC_Address</term>
+<listitem><para>the address string, as described earlier</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+<listitem><para>4-byte alignment padding, against SMB header</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8 numresults</term>
+<listitem><para>the number of results (0x01)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+<listitem><para>4-byte alignment padding, against SMB header</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 result</term>
+<listitem><para>result (0x00 = accept)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 reason</term>
+<listitem><para>reason (0x00 = no reason specified)</para></listitem></varlistentry>
+<varlistentry>
+	<term>* transfersyntax USE RPC_Iface</term>
+<listitem><para>the transfer syntax from the request</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>RPC_ReqNorm RW</title>
+
+<para>
+すべての他のパケットのためのヘッダの後のパケットの残り</para>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32 allochint</term>
+<listitem><para>the size of the stub data in bytes</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 prescontext</term>
+<listitem><para>presentation context identifier (0x0)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 opnum</term>
+<listitem><para>operation number (0x15)</para></listitem></varlistentry>
+<varlistentry>
+	<term>* stub USE TvPacket</term>
+<listitem><para>a packet dependent on the pipe name (probably the interface) and the op number)</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>RPC_ResNorm RW</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32 allochint</term>
+<listitem><para># size of the stub data in bytes</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16 prescontext</term>
+<listitem><para># presentation context identifier (same as request)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8 cancelcount</term>
+<listitem><para># cancel count? (0x0)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8 reserved</term>
+<listitem><para># 0 - one byte padding</para></listitem></varlistentry>
+<varlistentry>
+	<term>* stub USE TvPacket</term>
+<listitem><para># the remainder of the reply</para></listitem></varlistentry>
+</variablelist>
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>Tail</title>
+
+<para>以下で終わる、各NTLSAとNETLOGON名前つきパイプの終了部分:</para>
+
+<variablelist>
+<varlistentry>
+	<term>......</term>
+	<listitem><para>end of data</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>return code</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title>RPC Bind / Bind Ack</title>
+
+<para>
+RPCバインドは、あるRPCパイプ(例えば\PIPE\lsarpc)と"transfer syntax"(RPC_Iface
+構造体を参照)を関連づける手続きである。これを行う目的は不明である。
+</para>
+
+<para><emphasis>Note: The RPC_ResBind SMB Transact request is sent with two uint16 setup parameters.  The first is 0x0026; the second is the file handle
+	returned by the SMBopenX Transact response.</emphasis></para>
+
+<para><emphasis>Note:	The RPC_ResBind members maxtsize, maxrsize and assocgid are the same in the response as the same members in the RPC_ReqBind.  The
+	RPC_ResBind member transfersyntax is the same in the response as
+	the</emphasis></para>
+
+<para><emphasis>Note:	The RPC_ResBind response member secondaddr contains the name of what is presumed to be the service behind the RPC pipe.  The
+	mapping identified so far is:</emphasis></para>
+
+<variablelist>
+
+<varlistentry>
+	<term>initial SMBopenX request:</term>
+	<listitem><para>RPC_ResBind response:</para></listitem>
+</varlistentry>
+
+<varlistentry>
+	<term>"\\PIPE\\srvsvc"</term>
+	<listitem><para>"\\PIPE\\ntsvcs"</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>"\\PIPE\\samr"</term>
+	<listitem><para>"\\PIPE\\lsass"</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>"\\PIPE\\lsarpc"</term>
+	<listitem><para>"\\PIPE\\lsass"</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>"\\PIPE\\wkssvc"</term>
+	<listitem><para>"\\PIPE\\wksvcs"</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>"\\PIPE\\NETLOGON"</term>
+	<listitem><para>"\\PIPE\\NETLOGON"</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para><emphasis>注意: バインド要求とバインド承認の両方におけるRPC_Packet fraglength  メンバは、RPC_Packet headerを含めて、RPCデータ全体の長さを含まなければならない。</emphasis></para>
+
+<para>Request:</para>
+
+<simplelist>
+<member>RPC_Packet</member>
+<member>RPC_ReqBind</member>
+</simplelist>
+
+<para>Response:</para>
+<simplelist>
+<member>RPC_Packet</member>
+<member>RPC_ResBind</member>
+</simplelist>
+
+</sect2>
+
+<sect2>
+<title>NTLSA トランザクション名前付きパイプ</title>
+
+<para>このパイプ上で取られる動作の順番は以下の通り:</para>
+
+<simplelist>
+<member>IPC$ share (SMBtconX)への接続を確立する。暗号化パスワードを使用。</member>
+<member>"\\PIPE\\lsarpc"という名前でRPCパイプを開く。ファイルハンドルを格納する。</member>
+<member>ファイルハンドルを使い、Named Pipe Handle stateを0x4300に設定する。</member>
+<member>LSA Open Policy要求を送る。ポリシーハンドルを格納する。</member>
+<member>ポリシーハンドルを使い、LSA Query Info Policy要求などを送る。</member>
+<member>ポリシーハンドルを使い、LSA Closeを送る。</member>
+<member>IPC$共有をクローズする。</member>
+</simplelist>
+
+<para>このパイプの定義のための、問い合わせの識別子は以下の通り:</para>
+<variablelist>
+<varlistentry>
+	<term>LSA Open Policy:</term>
+	<listitem><para>0x2c</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Query Info Policy:</term>
+	<listitem><para>0x07</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Enumerate Trusted Domains:</term>
+	<listitem><para>0x0d</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Open Secret:</term>
+	<listitem><para>0xff</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Lookup SIDs:</term>
+	<listitem><para>0xfe</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Lookup Names:</term>
+	<listitem><para>0xfd</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Close:</term>
+	<listitem><para>0x00</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title>LSAオープンポリシー</title>
+
+<para><emphasis>注意:	ポリシーハンドルはどんな好みのものでもあり得る。</emphasis></para>
+
+<sect3>
+<title>Request</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>server name - unicode string starting with two '\'s</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>OBJ_ATTR</term>
+	<listitem><para>object attributes</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>1 - desired access</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+
+<varlistentry>
+	<term>POL_HND</term>
+	<listitem><para>LSA policy handle</para></listitem>
+</varlistentry>
+
+<varlistentry>
+	<term>return</term>
+	<listitem><para>0 - indicates success</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>LSA Query Info ポリシー</title>
+
+<para><emphasis>注意:	レスポンス中のinfo classはリクエスト中のものと同じである必要がある。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>POL_HND</term>
+<listitem><para>LSA policy handle</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+<listitem><para>info class (also a policy handle?)</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>info class (same as info class in request).</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<para><programlisting>
+switch (info class)
+case 3:
+case 5:
+{
+DOM_INFO domain info, levels 3 and 5 (are the same).
+}
+
+return    0 - indicates success
+</programlisting></para>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>LSA がエミュレートする信頼するドメイン</title>
+
+<sect3>
+<title>リクエスト</title>
+
+<para>no extra data</para>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - enumeration context</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - entries read</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - trust information</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>return</term>
+	<listitem><para>0x8000 001a - "no trusted domains" success code</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>LSA Open Secret</title>
+
+<sect3>
+<title>リクエスト</title>
+
+<para>no extra data</para>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - undocumented</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - undocumented</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - undocumented</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - undocumented</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>0 - undocumented</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>return    0x0C00 0034 - "no such secret" success code</para>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>LSA Close</title>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>POL_HND</term>
+	<listitem><para>policy handle to be closed</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>POL_HND</term>
+<listitem><para>0s - closed policy handle (all zeros)</para></listitem></varlistentry>
+</variablelist>
+
+<para>return    0 - indicates success</para>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>LSA Lookup SIDS</title>
+
+<para><emphasis>注意:	レスポンス中のnum_entriesはリクエスト中のnum_entriesと同じでなければならない。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>POL_HND</term>
+	<listitem><para>LSA policy handle</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>num_entries</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented domain SID buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented domain name buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*[num_entries] undocumented domain SID pointers to be looked up.
+</term>
+<listitem><para>DOM_SID[num_entries] domain SIDs to be looked up.</para></listitem></varlistentry>
+<varlistentry>
+	<term>char[16]</term>
+	<listitem><para>completely undocumented 16 bytes.</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>DOM_REF</term>
+<listitem><para>domain reference response</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>num_entries (listed above)</para></listitem></varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>undocumented buffer pointer</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>num_entries (listed above)</para></listitem></varlistentry>
+<varlistentry>
+	<term>DOM_SID2[num_entries]</term>
+<listitem><para>domain SIDs (from Request, listed above).</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>num_entries (listed above)</para></listitem></varlistentry>
+</variablelist>
+
+<para>return                0 - indicates success</para>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>LSA ルックアップ名</title>
+
+<para><emphasis>注意:	レスポンス中のnum_entriesはリクエスト中のnum_entriesと同じでなければならない。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>POL_HND</term>
+	<listitem><para>LSA policy handle</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>num_entries</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>num_entries</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented domain SID buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented domain name buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>NAME[num_entries]</term>
+	<listitem><para>names to be looked up.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[]</term>
+	<listitem><para>undocumented bytes - falsely translated SID structure?</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>DOM_REF</term>
+<listitem><para>domain reference response</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>num_entries (listed above)</para></listitem></varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>undocumented buffer pointer</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>num_entries (listed above)</para></listitem></varlistentry>
+<varlistentry>
+	<term>DOM_RID[num_entries]</term>
+<listitem><para>domain SIDs (from Request, listed above).</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>num_entries (listed above)</para></listitem></varlistentry>
+</variablelist>
+
+<para>return                0 - indicates success</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>NETLOGON rpc トランザクション名前付きパイプ</title>
+
+<para>このパイプ上の動作の順番は以下の通り:</para>
+
+<simplelist>
+<member>IPC$ 共有 (SMBtconX)に対して接続を確立する。暗号化パスワードを使用。</member>
+<member>"\\PIPE\\NETLOGON"という名前でRPCパイプを開く。ファイルハンドルを格納する。</member>
+<member>ファイルハンドルを使い、Named Pipe Handle stateを0x4300に設定する。</member>
+<member>クライアント用のチャレンジデータを作成する。LSA Request Challengeを送信する。Server Challengeを格納する。</member>
+<member>セッションキーを計算する。LSA Auth 2 Challengeを送信する。Auth2 Challengeを格納する。</member>
+<member>Client Credsを計算して検証する。LSA Srv PW Setを送信する。Server Credsを計算、検証する。</member>
+<member>Client Credsを計算して検証する。LSA Srv Logonを送信する。Server Credsを計算、検証する。</member>
+<member>Client Credsを計算して検証する。LSA Srv Logoffを送信する。Server Credsを計算、検証する。</member>
+<member>IPC$共有をクローズする。</member>
+
+
+</simplelist>
+
+<para>このパイプの定義のための、問い合わせ識別子は以下の通り</para>
+
+<variablelist>
+<varlistentry>
+	<term>LSA Request Challenge:</term>
+	<listitem><para>0x04</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Server Password Set:</term>
+	<listitem><para>0x06</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA SAM Logon:</term>
+	<listitem><para>0x02</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA SAM Logoff:</term>
+	<listitem><para>0x03</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Auth 2:</term>
+	<listitem><para>0x0f</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>LSA Logon Control:</term>
+	<listitem><para>0x0e</para></listitem>
+</varlistentry>
+</variablelist>
+
+<sect2>
+<title>LSA Request Challenge</title>
+
+<para><emphasis>注意:	ログオンサーバ名は2つの'\'で始まり、大文字である。</emphasis></para>
+
+<para><emphasis>注意:	ログオンクライアントはマシンであり、ユーザではない。</emphasis></para>
+
+<para><emphasis>注意:	チャレンジが発行されたものに対する最初のLanManager
+    パスワードハッシュは、(小文字の)マシン名それ自身である。あとで、これを変更するであろう
+    呼び出し(LSA Server Password Set)が発行されるであろう。これらの呼び出しを抑制すると、
+    常時同じパスワードで扱うことが出来るようになる(すなわち、小文字でのマシン名のLM#)。
+    </emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon server unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>logon client unicode string</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[8]</term>
+	<listitem><para>client challenge</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>char[8]</term>
+	<listitem><para>server challenge</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>return    0 - indicates success</para>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>LSA Authenticate 2</title>
+
+<para><emphasis>注意:	リクエストとレスポンスの間で、クライアントの認証情報を計算し、
+    クライアントが計算した認証情報と比較する(この手続きは以前に受け取ったクライアントの
+    認証情報を使う)。</emphasis></para>
+
+<para><emphasis>注意:	レスポンス中のneg_flagsはリクエスト中のものと同じである。</emphasis></para>
+
+<para><emphasis>注意:	そのあとの認証パケット中で使われるという理由で、ここで受け取った
+    クライアントが計算した認証情報のコピーを取る必要がある。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>LOG_INFO</term>
+	<listitem><para>client identification info</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[8]</term>
+	<listitem><para>client-calculated credentials</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+<listitem><para>padding to 4-byte align with start of SMB header.</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>neg_flags - negotiated flags (usual value is 0x0000 01ff)</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>char[8]</term>
+	<listitem><para>server credentials.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>neg_flags - same as neg_flags in request.</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>return    0 - indicates success.  failure value unknown.</para>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>LSA Server Password Set</title>
+
+<para><emphasis>注意: 新しいパスワードはキーを生成するために古いパスワードを使って
+    DES暗号化を使うことが推測される。</emphasis></para>
+
+<para><emphasis>注意: リクエストとレスポンスの間で、クライアント認証情報を計算し、
+    クライアントが計算した認証情報と比較する(この手続きは以前に受け取ったクライアントの
+    認証情報を使う)。</emphasis></para>
+
+<para><emphasis>注意: サーバの認証情報はクライアントが計算した認証情報と、クライアント時間+1秒から構築される。</emphasis></para>
+
+<para><emphasis>注意: そのあとの認証パケット中で使われるという理由で、ここで受け取った
+    クライアントが計算した認証情報のコピーを取る必要がある。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>CLNT_INFO</term>
+	<listitem><para>client identification/authentication info</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[]</term>
+	<listitem><para>new password - undocumented.</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>CREDS</term>
+	<listitem><para>server credentials.  server time stamp appears to be ignored.</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>return    0 - indicates success; 0xC000 006a indicates failure</para>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>LSA SAM Logon</title>
+
+<para><emphasis>
+注意:	valid_user は、もしもユーザ名とパスワードハッシュが、要求されたドメインに対して
+     有効ならば、Trueである。
+</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+<variablelist>
+<varlistentry>
+	<term>SAM_INFO</term>
+	<listitem><para>sam_id structure</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>CREDS</term>
+	<listitem><para>server credentials.  server time stamp appears to be ignored.</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para><programlisting>
+if (valid_user)
+{
+	UINT16      3 - switch value indicating USER_INFO structure.
+    VOID*     non-zero - pointer to USER_INFO structure
+    USER_INFO user logon information
+
+    UINT32    1 - Authoritative response; 0 - Non-Auth?
+
+    return    0 - indicates success
+}
+else
+{
+	UINT16    0 - switch value.  value to indicate no user presumed.
+    VOID*     0x0000 0000 - indicates no USER_INFO structure.
+
+    UINT32    1 - Authoritative response; 0 - Non-Auth?
+
+    return    0xC000 0064 - NT_STATUS_NO_SUCH_USER.
+}
+</programlisting></para>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>LSA SAM Logoff</title>
+
+<para><emphasis>
+注意:	おそらく、SAM_INFO構造体は検証され、Logoffが不正な場合、
+	(現在文書化されていない)エラーコードが返される。
+</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>SAM_INFO</term>
+	<listitem><para>sam_id structure</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>undocumented buffer pointer</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>CREDS</term>
+	<listitem><para>server credentials.  server time stamp appears to be ignored.</para></listitem>
+</varlistentry>
+</variablelist>
+
+<para>return      0 - indicates success.  undocumented failure indication.</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>\\MAILSLOT\NET\NTLOGON</title>
+
+<para><emphasis>
+注意:	mailslotsはレスポンスmailslotを含み、それは送信されるべきレスポンスである。
+	ターゲットのNetBIOS名はREQUEST_NAME&lt;20&gt;であり、ここで、REQUEST_NAME
+	はリクエストを送信したマシンの名前である。
+</emphasis></para>
+
+<sect2>
+<title>PDCのためのクエリ</title>
+
+<para><emphasis>注意:	レスポンス中のNTversion, LMNTtoken, LM20tokenはリクエスト中で与えられたものと同じである。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>0x0007 - Query for PDC</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>STR</term>
+	<listitem><para>machine name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>STR</term>
+	<listitem><para>response mailslot</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>padding to 2-byte align with start of mailslot.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>machine name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>NTversion</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>LMNTtoken</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>LM20token</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT16</term>
+<listitem><para>0x000A - Respose to Query for PDC</para></listitem></varlistentry>
+<varlistentry>
+	<term>STR</term>
+<listitem><para>machine name (in uppercase)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>padding to 2-byte align with start of mailslot.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>machine name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+<listitem><para>domain name</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>NTversion (same as received in request)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+<listitem><para>LMNTtoken (same as received in request)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+<listitem><para>LM20token (same as received in request)</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>SAM Logon</title>
+
+<para><emphasis>注意: レスポンス中のマシン名は先頭に2つの'\'が付く。</emphasis></para>
+
+<para><emphasis>注意:	レスポンス中のNTversion, LMNTtoken, LM20tokenはリクエスト中のものと同じである。</emphasis></para>
+
+<para><emphasis>注意:	レスポンス中のユーザ名はおそらくリクエスト中のものと同じである。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>0x0012 - SAM Logon</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>request count</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>machine name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>user name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>STR</term>
+	<listitem><para>response mailslot</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>alloweable account</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>domain SID size</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>char[sid_size]</term>
+	<listitem><para>domain SID, of sid_size bytes.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>???? padding to 4? 2? -byte align with start of mailslot.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>NTversion</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>LMNTtoken</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>LM20token</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>0x0013 - Response to SAM Logon</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>machine name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>user name - workstation trust account</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UNISTR</term>
+	<listitem><para>domain name </para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>NTversion</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>LMNTtoken</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT16</term>
+	<listitem><para>LM20token</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>SRVSVC トランザクション名前付きパイプ</title>
+
+<para>このパイプのための定義で、クエリの識別は以下の通り:</para>
+
+<variablelist>
+<varlistentry>
+	<term>Net Share Enum</term>
+	<listitem><para>0x0f</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Net Server Get Info</term>
+	<listitem><para>0x15</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+<sect2>
+<title>Net Share Enum</title>
+
+<para><emphasis>注意:	レスポンス中のスイッチの値と共有レベルはリクエスト中のものとおそらく同じである。</emphasis></para>
+
+<para><emphasis>注意:	cifsrap2.txt (section 5)はここで、限定的に手助けとなるかもしれない。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>pointer (to server name?)</para></listitem></varlistentry>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>server name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT8[]</term>
+	<listitem><para>padding to get unicode string 4-byte aligned with the start of the SMB header.</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>share level</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>switch value</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>pointer to SHARE_INFO_1_CTR</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SHARE_INFO_1_CTR</term>
+	<listitem><para>share info with 0 entries</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+<listitem><para>preferred maximum length (0xffff ffff)</para></listitem></varlistentry>
+</variablelist>
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>share level</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>switch value</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+<listitem><para>pointer to SHARE_INFO_1_CTR</para></listitem></varlistentry>
+<varlistentry>
+	<term>SHARE_INFO_1_CTR</term>
+<listitem><para>share info (only added if share info ptr is non-zero)</para></listitem></varlistentry>
+</variablelist>
+
+<para>return            0 - indicates success</para>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>Net Server Get Info</title>
+
+<para><emphasis>注意:	levelはリクエスト中のものと同じである。</emphasis></para>
+
+<sect3>
+<title>リクエスト</title>
+
+<variablelist>
+<varlistentry>
+	<term>UNISTR2</term>
+	<listitem><para>server name</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>switch level</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>レスポンス</title>
+
+<variablelist>
+<varlistentry>
+	<term>UINT32</term>
+	<listitem><para>switch level</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>VOID*</term>
+	<listitem><para>pointer to SERVER_INFO_101</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>SERVER_INFO_101</term>
+<listitem><para>server info (only added if server info ptr is non-zero)</para></listitem></varlistentry>
+</variablelist>
+
+<para>return            0 - indicates success</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>NTドメイン認証における暗号化の側面</title>
+
+<sect2>
+<title>定義</title>
+
+<variablelist>
+<varlistentry>
+<term>Add(A1,A2)</term>
+<listitem><para>Intel byte ordered addition of corresponding 4 byte words in arrays A1 and A2</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>E(K,D)</term>
+<listitem><para>DES ECB encryption of 8 byte data D using 7 byte key K</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>lmowf()</term>
+<listitem><para>Lan man hash</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>ntowf()</term>
+<listitem><para>NT hash</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>PW</term>
+<listitem><para>md4(machine_password) == md4(lsadump $machine.acc) ==
+pwdump(machine$) (initially) == md4(lmowf(unicode(machine)))
+</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>ARC4(K,Lk,D,Ld)</term>
+<listitem><para>ARC4 encryption of data D of length Ld with key K of length Lk</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>v[m..n(,l)]</term>
+<listitem><para>subset of v from bytes m to n, optionally padded with zeroes to length l</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>Cred(K,D)</term>
+<listitem><para>E(K[7..7,7],E(K[0..6],D)) computes a credential</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>Time()</term>
+<listitem><para>4 byte current time</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>Cc,Cs</term>
+<listitem><para>8 byte client and server challenges Rc,Rs: 8 byte client and server credentials</para></listitem>
+</varlistentry>
+
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title>プロトコル</title>
+
+<programlisting>
+C-&gt;S ReqChal,Cc
+S-&gt;C Cs
+</programlisting>
+
+<programlisting>
+C &amp; S compute session key Ks = E(PW[9..15],E(PW[0..6],Add(Cc,Cs)))
+</programlisting>
+
+<programlisting>
+C: Rc = Cred(Ks,Cc)
+C-&gt;S Authenticate,Rc
+S: Rs = Cred(Ks,Cs), assert(Rc == Cred(Ks,Cc))
+S-&gt;C Rs
+C: assert(Rs == Cred(Ks,Cs))
+</programlisting>
+
+<para>
+ドメインへの参加において、クライアントはオプションとしてそのパスワードを変更しようと
+し、ドメインコントローラはレジストリの設定に依存して、その更新を抑制するかもしれない。
+これは以降毎週毎に起きるであろう。
+</para>
+
+<programlisting>
+C: Tc = Time(), Rc' = Cred(Ks,Rc+Tc)
+C-&gt;S ServerPasswordSet,Rc',Tc,arc4(Ks[0..7,16],lmowf(randompassword())
+C: Rc = Cred(Ks,Rc+Tc+1)
+S: assert(Rc' == Cred(Ks,Rc+Tc)), Ts = Time()
+S: Rs' = Cred(Ks,Rs+Tc+1)
+S-&gt;C Rs',Ts
+C: assert(Rs' == Cred(Ks,Rs+Tc+1))
+S: Rs = Rs'
+</programlisting>
+
+<para>
+ユーザ: パスワードがPのユーザUはドメインにログオンしようとする(ワークステーションと
+ドメインのような付随的なデータは省略される)
+</para>
+
+<programlisting>
+C: Tc = Time(), Rc' = Cred(Ks,Rc+Tc)
+C-&gt;S NetLogonSamLogon,Rc',Tc,U,arc4(Ks[0..7,16],16,ntowf(P),16), arc4(Ks[0..7,16],16,lmowf(P),16)
+S: assert(Rc' == Cred(Ks,Rc+Tc)) assert(passwords match those in SAM)
+S: Ts = Time()
+</programlisting>
+
+<programlisting>
+S-&gt;C Cred(Ks,Cred(Ks,Rc+Tc+1)),userinfo(logon script,UID,SIDs,etc)
+C: assert(Rs == Cred(Ks,Cred(Rc+Tc+1))
+C: Rc = Cred(Ks,Rc+Tc+1)
+</programlisting>
+
+</sect2>
+
+<sect2>
+<title>コメント</title>
+
+<para>
+最初のドメインへの参加において、マシンパスワードがよく知られた値であるように、
+セッションキーは、ネットワーク上で盗聴している誰にでも、計算することが出来た。
+マシンがリブートするまで、パスワードと同等の、NTとLMの一方向関数による暗号化
+パスワードを、このセッションキーは使うであろう。このマシンが2回目にリブートする
+前にログインする任意のユーザは、パスワードと同等のものがばれてしまうであろう。
+もちろん、新しいマシンのパスワードはとにかくこの時点でばれてしまう。
+</para>
+
+<para>
+ログオンスクリプト、プロファイルパスと、SIDのような戻り情報は、TCPチェックサム以外の
+何かによって保護されるように見えない。
+</para>
+
+<para>
+サーバのタイムスタンプは無視されるように見える。
+</para>
+
+<para>
+クライアントは、それに対する使用法が分からない、SamLogonリクエスト中で
+ReturnAuthenticatorを送る。しかし、その時間はサーバによって戻されるタイムスタンプ
+として使われる。
+</para>
+
+<para>
+パスワードのOMFは解読できる暗号でネットワーク上に送信すべきでない。SAM中のowf値を
+使う同じ機能でサーバが計算するARC4(Ks,md4(owf))を使って送るべきである。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>SIDとRID</title>
+
+<para>
+SIDとRIDはどこかで詳細に説明がある。
+</para>
+
+<para>
+SIDはNTセキュリティID(DOM_SID構造参照)である。これらは以下の形式を取る:
+</para>
+
+<simplelist>
+<member>revision-NN-SubAuth1-SubAuth2-SubAuth3... </member>
+<member>revision-0xNNNNNNNNNNNN-SubAuth1-SubAuth2-SubAuth3...</member>
+</simplelist>
+
+<para>
+現在、SIDのリビジョンは1である。
+Sub-Authoritiesは相対ID(RID)として知られている。
+</para>
+
+<sect2>
+<title>よく知られているSID</title>
+
+<sect3>
+<title>ユニバーサルによる知られているSID</title>
+
+<variablelist>
+<varlistentry>
+	<term>Null SID</term>
+	<listitem><para>S-1-0-0</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>World</term>
+	<listitem><para>S-1-1-0</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Local</term>
+	<listitem><para>S-1-2-0</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Creator Owner ID</term>
+	<listitem><para>S-1-3-0</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Creator Group ID</term>
+	<listitem><para>S-1-3-1</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Creator Owner Server ID</term>
+	<listitem><para>S-1-3-2</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Creator Group Server ID</term>
+	<listitem><para>S-1-3-3</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>(Non-unique IDs)</term>
+	<listitem><para>S-1-4</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3>
+<title>NTにおけるよく知られているSID</title>
+
+<variablelist>
+<varlistentry>
+	<term>NT Authority</term>
+	<listitem><para>S-1-5</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Dialup</term>
+	<listitem><para>S-1-5-1</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Network</term>
+	<listitem><para>S-1-5-2</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Batch</term>
+	<listitem><para>S-1-5-3</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Interactive</term>
+	<listitem><para>S-1-5-4</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Service</term>
+<listitem><para>S-1-5-6</para></listitem></varlistentry>
+<varlistentry>
+	<term>AnonymousLogon(aka null logon session)</term>
+	<listitem><para>S-1-5-7</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>Proxy</term>
+<listitem><para>S-1-5-8</para></listitem></varlistentry>
+<varlistentry>
+	<term>ServerLogon(aka domain controller account)</term>
+	<listitem><para>S-1-5-8</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>(Logon IDs)</term>
+	<listitem><para>S-1-5-5-X-Y</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>(NT non-unique IDs)</term>
+	<listitem><para>S-1-5-0x15-...</para></listitem>
+</varlistentry>
+<varlistentry>
+	<term>(Built-in domain)</term>
+	<listitem><para>s-1-5-0x20</para></listitem>
+</varlistentry>
+</variablelist>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>よく知られているRID</title>
+
+<para>
+RIDはsub-authorityであり、SIDの一部か、グループRIDの場合は、DOM_GID構造の一部であり、
+USER_INFO_1構造ではLSA SAMログオンレスポンスの中である。
+A RID is a sub-authority value, as part of either a SID, or in the case
+of Group RIDs, part of the DOM_GID structure, in the USER_INFO_1
+structure, in the LSA SAM Logon response.
+</para>
+
+<sect3>
+<title>よく知られたRIDユーザ</title>
+
+<segmentedlist>
+<segtitle>Groupname</segtitle>
+<segtitle>????</segtitle>
+<segtitle>RID</segtitle>
+<seglistitem><seg>DOMAIN_USER_RID_ADMIN</seg><seg>0x0000</seg><seg>01F4</seg></seglistitem>
+<seglistitem><seg>DOMAIN_USER_RID_GUEST</seg><seg>0x0000</seg><seg>01F5</seg></seglistitem>
+</segmentedlist>
+
+</sect3>
+
+<sect3>
+<title>よく知られたRIDグループ</title>
+
+<segmentedlist>
+<segtitle>Groupname</segtitle>
+<segtitle>????</segtitle>
+<segtitle>RID</segtitle>
+<seglistitem><seg>	DOMAIN_GROUP_RID_ADMINS</seg><seg>0x0000</seg><seg>0200</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_GROUP_RID_USERS</seg><seg>0x0000</seg><seg>0201</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_GROUP_RID_GUESTS</seg><seg>0x0000</seg><seg>0202</seg></seglistitem>
+</segmentedlist>
+
+</sect3>
+
+<sect3>
+<title>よく知られたRID別名</title>
+
+<segmentedlist>
+<segtitle>Groupname</segtitle>
+<segtitle>????</segtitle>
+<segtitle>RID</segtitle>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_ADMINS</seg><seg>0x0000</seg><seg>0220</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_USERS</seg><seg>0x0000</seg><seg>0221</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_GUESTS</seg><seg>0x0000</seg><seg>0222</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_POWER_USERS</seg><seg>0x0000</seg><seg>0223</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_ACCOUNT_OPS</seg><seg>0x0000</seg><seg>0224</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_SYSTEM_OPS</seg><seg>0x0000</seg><seg>0225</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_PRINT_OPS</seg><seg>0x0000</seg><seg>0226</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_BACKUP_OPS</seg><seg>0x0000</seg><seg>0227</seg></seglistitem>
+<seglistitem><seg>	DOMAIN_ALIAS_RID_REPLICATOR</seg><seg>0x0000</seg><seg>0228</seg></seglistitem>
+</segmentedlist>
+
+</sect3>
+</sect2>
+</sect1>
+</chapter>

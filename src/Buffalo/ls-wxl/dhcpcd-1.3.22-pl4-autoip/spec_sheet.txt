@@ -1,0 +1,41 @@
+AutoIP実装機能
+
+■概要
+dhcpcd-1.3.22-pl4 にAutoIP機能を付けたもの
+
+■動作環境
+HG-HLAN （BigEndian環境なら動作するはず、LittleEndian対応はやっていません）
+
+■必要なライブラリ
+libpcap
+
+■設定ファイル他
+/etc/dhcpc/autoip-eth0.info
+これが存在する場合のみAutoIPが機能します、ファイル内にはAutoIPで設定されたIPがテキストで
+書かれていますが、動作上は何の意味もありません。
+
+/etc/init.d/rService
+IPが変更になった場合再起動が必要なサービスの再起動スクリプトを格納
+
+/etc/dhcpc/autoip-eth0.cache
+ファイル内にはAutoIPで設定されたIPがバイナリで格納されています。AutoIP時はこのIPで
+最初に設定しようとします。
+
+
+■動作の流れ
+
+通常DHCPクライアント動作
+a.1. DHCP Discover 失敗すると(b.1)
+a.3  前回設定されたIPと異なる場合サービススクリプト起動
+a.2. DHCP IP取得後 Renewまでタイマーで待機
+(DHCPのその他パケットは失敗すると(a.1)に戻ります)
+
+AutoIP時の動作
+b.1 /etc/dhcpc/autoip-eth0.cacheから以前設定されたIPを取得
+b.2 (b.1)で保存されたIPが無ければランダムでIP決定
+b.3 ARPを送り自分と同じIPの機器を検索(同じIPの別の機器が合った場合ランダムでIPを変更して再チェック)
+b.4 前回設定されたIPと異なる場合サービススクリプト起動
+b.5 DHCPリトライまで待機。この間ARPパケットを監視し、Senderに同じIPの機器が合った場合は(a.1)にジャンプ
+b.6 10秒後 (a.1)にジャンプ
+
+END

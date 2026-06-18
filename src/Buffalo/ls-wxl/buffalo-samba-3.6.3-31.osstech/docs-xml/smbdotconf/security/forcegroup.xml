@@ -1,0 +1,39 @@
+<samba:parameter name="force group"
+                 context="S"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>group</synonym>
+<description>
+    <para> このパラメータには、
+    このサービスに接続するすべてのユーザのデフォルトの所属グループと見なされる UNIX のグループ名を指定する。
+    このパラメータを使うと、サービス上のファイルに対するアクセスの際のパーミッションチェックには、
+    ここで指定したグループを用いることができるため、ファイル共有を行う際に便利である。
+    この設定を行うことで、
+    このサービス内において提供するファイルやディレクトリに対して指定されたグループ名にパーミッションを割り当てることにより、
+    Samba の管理者がこれらのファイルの共有を許可/不許可にすることができるようになる。</para>
+
+    <para> Samba 2.0.5 以降では、このパラメータの機能が拡張されている。
+    '+' 文字からはじまるグループ名が設定されていた場合、
+    現在共有にアクセスしているユーザが設定されたグループのメンバーだった場合のみ、
+    そのグループをユーザのデフォルトのプライマリグループに設定する。
+    この動作により、該当のグループに予め所属しているユーザのみが、
+    そのグループを所有者とするファイルを作成する設定を行うことが可能となる。
+    これにより、所有権の設定をより細かく行なうことが可能となる。
+    たとえば、<filename moreinfo="none">force group = +sys</filename> という設定を行った場合、
+    sys グループに所属しているユーザが Samba の 共有 にアクセスした際にのみ、
+    デフォルトのプライマリグループが sys に設定される。
+    その他すべてのユーザは、通常のプライマリグループのままとなる。
+    </para>
+
+    <para>
+    <smbconfoption name="force user"/> 
+    パラメータも設定されていた場合、
+    <parameter moreinfo="none">force group</parameter> で指定されたグループより、
+    <parameter moreinfo="none">force user</parameter> で指定されたユーザのプライマリグループの方が優先される。</para>
+</description>
+
+<related>force user</related>
+
+<value type="default"/>
+<value type="example">agroup</value>
+</samba:parameter>

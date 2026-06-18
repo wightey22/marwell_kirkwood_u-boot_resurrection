@@ -1,0 +1,15 @@
+<samba:parameter name="nt pipe support"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータにより、
+    <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が
+    Windows NT のクライアントに対して、 Windows NT の SMB 固有の
+    <constant>IPC$</constant> パイプへの接続を許可するかどうかが制御される。
+    これは開発者のデバッグオプションであり、意識する必要はない。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

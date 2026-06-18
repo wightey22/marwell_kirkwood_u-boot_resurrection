@@ -1,0 +1,15 @@
+<samba:parameter name="-valid"
+		 context="S"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、共有が有効であり、使用可能かどうかを制御する。
+	このパラメータを false に設定した場合、いかなる方法を用いても、共有を表示したり、共有に対してアクセスしたりすることができなくなる。
+	</para>
+
+	<para>
+	このオプションは一般ユーザが利用すべきものではなく、開発者の利便性のために設けられている。
+	Samba はこのオプションを内部的に用いて、共有が削除されたことを記録している。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

@@ -1,0 +1,16 @@
+<samba:parameter name="map system"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> このパラメータは、DOSのシステムファイル属性を
+	UNIXのグループ実行権ビットに割り当てるかどうかを決定する。</para>
+
+	<para> このパラメータを利用する場合は、
+	グループ実行権ビットがマスクされないように(010というアクセス権を含むように)、
+	<smbconfoption name="create mask"/> パラメータを設定することが必要となることに注意。
+	詳細は、<smbconfoption name="create mask"/> パラメータを参照のこと。
+	</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

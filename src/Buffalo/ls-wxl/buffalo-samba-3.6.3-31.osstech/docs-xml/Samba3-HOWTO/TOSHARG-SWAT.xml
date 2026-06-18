@@ -1,0 +1,642 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="SWAT">
+<chapterinfo>
+	&author.jht;
+	<pubdate>April 21, 2003</pubdate>
+</chapterinfo>
+
+<title>SWAT: Samba Web 管理ツール</title>
+
+<para>
+<indexterm><primary>設定ツール</primary></indexterm>
+<indexterm><primary>SWAT</primary></indexterm>
+<indexterm><primary>Webベースの設定</primary></indexterm>
+SWATの有用性に関連しては、数多くの様々な意見がある。完璧な設定ツールを作ろうとする
+試みはとても大変な事なのにもかかわらず、個人的な興味の対象として存在している。
+SWATはSambaをWebベースで設定するためのツールである。これは、Sambaを簡単に設定する
+ための手助けとなりえるウィザードであり、場面に応じて各&smb.conf;パラメータの
+ヘルプをWebベースで表示し、現在の接続状況をモニタリングする機能を提供し、ネットワーク
+全体の、Microsoft Windowsネットワークパスワード管理ができる。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>internetworking super daemon</primary></indexterm>
+SWATはSambaシステムの一部である。基本となるプログラム名は<command>swat</command>であり、
+これはinetdのようなスーパーデーモンによって起動される。詳細は
+<link linkend="xinetd">説明の節</link>を参照のこと。
+</para>
+
+<para>
+<indexterm><primary>マニュアル</primary></indexterm>
+SWATは特定のバージョンのSambaによってサポートされる、パラメータを使うために、
+Sambaコンポーネント全体を使う。Samba外部のツールとユーティリティとは異なり、
+SWATは常時Sambaパラメータが変更されることに追従している。SWATは各設定パラメータに
+対して、場面に応じて、<command>マニュアル</command>ページのエントリから、直接
+ヘルプを提供する。
+</para>
+
+<para>
+<indexterm><primary>文書化</primary></indexterm>
+<indexterm><primary>設定ファイル</primary></indexterm>
+<indexterm><primary>内部順</primary></indexterm>
+ネットワーク管理者の何人かは、設定ファイル中にシステムの説明を書き込むことは良いアイデア
+だと思っている人もいるが、そういう人にとって、SWATは常にひどいツールである。SWATは、
+何らかの中間的な形式でも、設定ファイルに格納しない。というよりは、パラメータの設定のみを
+書き込む。SWATが&smb.conf;ファイルをディスクに書き込むときには、既定値の設定以外の
+パラメータのみを書き込む。結果、パラメータと同じように、すべてのコメントは保持されず、
+&smb.conf;ファイル中から無くなってしまう。おまけに、パラメータは内部での順番に
+書き戻される。
+</para>
+
+<note><para>
+<indexterm><primary>コメントの削除</primary></indexterm>
+SWATを使う前には、&smbmdash; SWATは、書き込んだであろうすべてのコメントを削除した、完全に
+最適化されたファイルで、&smb.conf;ファイルを完全に置き換え、ファイルには既定値の設定以外の
+設定のみが書かれる。
+</para></note>
+
+</sect1>
+
+<sect1>
+<title>ガイドラインと技術的なTips</title>
+
+<para>
+<indexterm><primary>国際化サポート</primary></indexterm>
+この節では、どのようにSWATが動くかせるかという仕掛けの背景にある、秘密の闇を明らかにする
+事と、どのようにセキュアに出来るかということと、どのように国際化のサポートを解決するか
+という事を説明する。
+</para>
+
+<sect2>
+<title>SWATインストールの有効か</title>
+
+<para>
+<indexterm><primary>SWATバイナリサポート</primary></indexterm>
+SWAT操作のためにホストシステムを設定する試みの前にやるべきである、ごく最初のステップは、
+それがインストールされているかを調べることである。これは、ある人にとっては取るに足らない
+ことに見えるかもしれないが、いくつかのLinuxディストリビューションでは、
+ディストリビューションメディア上で、SWATを含む、インストール可能なバイナリパッケージを
+提供しているにもかかわらず、SWATを既定値ではインストールしていない。
+</para>
+
+<para>
+<indexterm><primary>swat</primary></indexterm>
+SWATがインストールされていることを確認したら、すべてのサポートしているテキストとWeb
+ファイルと同じように、インストールされているバイナリ<command>swat</command>ファイルを
+有効化することが必要である。過去、多くのOSディストリビューションが、
+<command>swat</command>バイナリ実行形式ファイルがインストールされているのにも
+かかわらず、サポートに必要なファイルを含めることに失敗している。
+</para>
+
+<para>
+<indexterm><primary>inetd</primary></indexterm>
+<indexterm><primary>xinetd</primary></indexterm>
+最後に、SWATが完全にインストールされたと思ったら、使用しているOSプラットフォームで
+使われているinetd系スーパーデーモン(inetdかxinetd)用の制御ファイルで、SWATが
+有効になっているかを調べてほしい。
+</para>
+
+<sect3>
+<title><command>SWAT</command>ファイルの配置</title>
+
+<para>
+<indexterm><primary>/usr/local/samba/bin</primary></indexterm>
+<indexterm><primary>/usr/sbin</primary></indexterm>
+<indexterm><primary>/opt/samba/bin</primary></indexterm>
+SWATがインストールされたかを検証するため、最初に、システム上の<command>swat</command>
+バイナリファイルを捜す。それはおそらく以下のディレクトリ配下にあるだろう:</para>
+<para><simplelist>
+	<member><filename>/usr/local/samba/bin</filename> &smbmdash; 既定値のSambaでの位置</member>
+	<member><filename>/usr/sbin</filename> &smbmdash; ほとんどのLinuxシステムでの既定値の位置</member>
+	<member><filename>/opt/samba/bin</filename></member>
+</simplelist>
+</para>
+
+<para>
+実際の位置はOSベンダの選択か、Sambaをコンパイルしてインストールした管理者の決定によって
+大きく変わる。
+</para>
+
+<para>
+<command>swat</command>バイナリファイルを見つけるために使う方法にはいろいろある。
+以下の方法を使うと便利である。
+</para>
+
+<para>
+<indexterm><primary>swat</primary></indexterm>
+<indexterm><primary>OSサーチパス</primary></indexterm>
+<indexterm><primary>swatコマンドラインオプション</primary></indexterm>
+もしも、<command>swat</command>が現在のOSサーチパス中にあるならば、それを見つけるのは
+簡単である。以下のように、<command>swat</command>が、どのようなコマンドラインオプションを
+持っているかを調べてみればよい:
+<screen>
+frodo:~ # swat -?
+Usage: swat [OPTION...]
+  -a, --disable-authentication         Disable authentication (demo mode)
+
+Help options:
+  -?, --help                           Show this help message
+  --usage                              Display brief usage message
+
+Common samba options:
+  -d, --debuglevel=DEBUGLEVEL          Set debug level
+  -s, --configfile=CONFIGFILE          Use alternative configuration file
+  -l, --log-basename=LOGFILEBASE       Basename for log/debug files
+  -V, --version                        Print version
+</screen>
+</para>
+
+</sect3>
+
+<sect3>
+<title>SWATサポートファイルの配置</title>
+
+<para>
+<command>swat</command>がサーチパス中に見つかったならば、ファイルがどこに
+配置されているかを識別するのは簡単である。これを行う簡単な別解は以下の通り:
+<screen>
+frodo:~ # whereis swat
+swat: /usr/sbin/swat /usr/share/man/man8/swat.8.gz
+</screen>
+</para>
+
+<para>
+もしも上記による調査で、<command>swat</command>バイナリを見つけるのに失敗したら、
+他の方法が必要である。以下が使える:
+<screen>
+frodo:/ # find / -name swat -print
+/etc/xinetd.d/swat
+/usr/sbin/swat
+/usr/share/samba/swat
+frodo:/ #
+</screen>
+</para>
+
+<para>
+この一覧は、このサーバにインストールされているinetd系スーパーデーモン
+<command>xinetd</command>の制御ファイルを表示している。SWATバイナリファイルの位置は
+<filename>/usr/sbin/swat</filename>であり、それがサポートしているファイルはディレクトリ
+<filename>/usr/share/samba/swat</filename>配下にあることを表示している。
+</para>
+
+<para>
+次に、<command>swat</command>が使うサポートファイルがどこにあるかを調べる。これは
+以下のやり方で行う:
+<screen>
+frodo:/ # strings /usr/sbin/swat | grep "/swat"
+/swat/
+...
+/usr/share/samba/swat
+frodo:/ #
+</screen>
+</para>
+
+<para>
+この一覧の中にある<filename>/usr/share/samba/swat/</filename>エントリは、サポートファイルの
+位置である。このディレクトリ配下にサポートファイルが存在しているかを調べるべきである。
+以下は一覧の例である:
+<screen>
+jht@frodo:/> find /usr/share/samba/swat -print
+/usr/share/samba/swat
+/usr/share/samba/swat/help
+/usr/share/samba/swat/lang
+/usr/share/samba/swat/lang/ja
+/usr/share/samba/swat/lang/ja/help
+/usr/share/samba/swat/lang/ja/help/welcome.html
+/usr/share/samba/swat/lang/ja/images
+/usr/share/samba/swat/lang/ja/images/home.gif
+...
+/usr/share/samba/swat/lang/ja/include
+/usr/share/samba/swat/lang/ja/include/header.nocss.html
+...
+/usr/share/samba/swat/lang/tr
+/usr/share/samba/swat/lang/tr/help
+/usr/share/samba/swat/lang/tr/help/welcome.html
+/usr/share/samba/swat/lang/tr/images
+/usr/share/samba/swat/lang/tr/images/home.gif
+...
+/usr/share/samba/swat/lang/tr/include
+/usr/share/samba/swat/lang/tr/include/header.html
+/usr/share/samba/swat/using_samba
+...
+/usr/share/samba/swat/images
+/usr/share/samba/swat/images/home.gif
+...
+/usr/share/samba/swat/include
+/usr/share/samba/swat/include/footer.html
+/usr/share/samba/swat/include/header.html
+jht@frodo:/>
+</screen>
+</para>
+
+<para>
+もしも必要とされるファイルが内ならば、SWATを使う前に、それらを入手してインストールする
+必要がある。
+</para>
+
+</sect3>
+</sect2>
+
+<sect2 id="xinetd">
+<title>SWATを使用できるように有効化する</title>
+
+<para>
+SWATはネットワークスーパーデーモン経由で動くようにインストールすべきである。
+使用しているUNIX/Linuxシステムが持っているものに依存するので、
+<command>inetd</command>か<command>xinetd</command>ベースのシステムのどちらかを使う。
+</para>
+
+<para>
+ネットワークスーパーデーモンの機能と配置はOSの実装により変わる。制御ファイルは
+<filename>/etc/inetd.conf</filename>かディレクトリ<filename>/etc/[x]inet[d].d</filename>か
+同様の位置に置くことが可能である。
+</para>
+
+<para>
+古い形式のファイルに対する制御エントリは以下の通り:
+<indexterm><primary>swat</primary><secondary>有効化</secondary></indexterm>
+</para>
+
+
+<para><programlisting>
+	# swat is the Samba Web Administration Tool
+	swat stream tcp nowait.400 root /usr/sbin/swat swat
+</programlisting></para>
+
+<para>
+新しい形式でのxintd用制御ファイルは以下の通り:
+</para>
+
+<para>
+<programlisting>
+# default: off
+# description: SWAT is the Samba Web Admin Tool. Use swat \
+#              to configure your Samba server. To use SWAT, \
+#              connect to port 901 with your favorite web browser.
+service swat
+{
+	port    = 901
+	socket_type     = stream
+	wait    = no
+	only_from = localhost
+	user    = root
+	server  = /usr/sbin/swat
+	log_on_failure  += USERID
+	disable = no
+}
+</programlisting>
+上記の中で、<parameter>disable</parameter>の既定値の設定は<constant>yes</constant>である。
+これは、SWATが無効になっていることを意味する。SWATを有効にするには、上記のように、
+このパラメータを<constant>no</constant>に設定する。
+</para>
+
+<para>
+<indexterm><primary>swat</primary></indexterm>
+<indexterm><primary>/usr/sbin</primary></indexterm>
+<indexterm><primary>/usr/share/samba/swat</primary></indexterm>
+<indexterm><primary>/usr/local/samba/swat</primary></indexterm>
+上記の例は両方とも<command>swat</command>バイナリがディレクトリ
+<filename>/usr/sbin</filename>に配置されていることを仮定している。上記に補足すると、
+SWATは他の制御情報と同じように、自身のヘルプファイルをそこからロードするディレクトリ
+アクセス点として使う。多くのLinuxシステムにおけるこのための既定値の位置は、
+<filename>/usr/share/samba/swat</filename>である。Sambaが使う既定値の位置は、
+<filename>/usr/local/samba/swat</filename>である。
+</para>
+
+<para>
+<indexterm><primary>SWAT permission allowed</primary></indexterm>
+<indexterm><primary>パスワード変更機能</primary></indexterm>
+SWATへアクセスするとログオンを要求される。もしも非rootユーザでSWATにログオンすると、
+パスワード変更機能へのアクセスと同じように、一定の設定範囲にのみアクセスが許可される。
+非rootユーザが見えるボタンは、<guibutton>HOME</guibutton>、<guibutton>STATUS</guibutton>、
+<guibutton>VIEW</guibutton>と<guibutton>PASSWORD</guibutton>である。この場合に変更
+可能なページは<guibutton>PASSWORD</guibutton>だけである。
+</para>
+
+<para>
+<emphasis>root</emphasis>ユーザでSWATにログオンすると、完全な修正、更新権限を得られる。
+表示されるものは、<guibutton>HOME</guibutton>, <guibutton>GLOBALS</guibutton>, 
+<guibutton>SHARES</guibutton>, <guibutton>PRINTERS</guibutton>,
+<guibutton>WIZARD</guibutton>, <guibutton>STATUS</guibutton>, <guibutton>VIEW</guibutton>
+と<guibutton>PASSWORD</guibutton>である。
+</para>
+
+</sect2>
+
+<sect2>
+<title>SSLを使うSWATのセキュア化</title>
+
+
+<para>
+<indexterm><primary>SSL</primary></indexterm>
+<indexterm><primary>swat</primary><secondary>security</secondary></indexterm>
+多くの人が、Sambaをリモートから安全に管理することが出来るために、どのように
+SSLを使うSWATを設定するかについて問い合わせしている。以下はMarkus Kriegerの
+好意による、そのやりかたである。
+</para>
+
+<para>
+SWAT設定の変更点は以下のようになる:
+</para>
+
+<procedure>
+	<step><para>
+<indexterm><primary>OpenSSL</primary></indexterm>
+	OpenSSLをインストールする。
+	</para></step>
+
+	<step><para>
+<indexterm><primary>certificate</primary></indexterm>
+<indexterm><primary>private key</primary></indexterm>
+	証明書(ertificate)とプライベートキーを生成する。
+<indexterm><primary>/usr/bin/openssl</primary></indexterm>
+<screen>
+&rootprompt;<userinput>/usr/bin/openssl req -new -x509 -days 365 -nodes -config \
+	/usr/share/doc/packages/stunnel/stunnel.cnf \
+	-out /etc/stunnel/stunnel.pem -keyout /etc/stunnel/stunnel.pem</userinput>
+</screen></para></step>
+
+	<step><para>
+	[x]inetdからSWATエントリを削除する。
+	</para></step>
+
+	<step><para>
+<indexterm><primary>stunnel</primary></indexterm>
+	<command>stunnel</command>を起動する。
+
+<screen>
+&rootprompt;<userinput>stunnel -p /etc/stunnel/stunnel.pem -d 901 \
+	 -l /usr/local/samba/bin/swat swat </userinput>
+</screen></para></step>
+</procedure>
+
+<para>
+その後、単純に、URL
+<ulink noescape="1" url="https://myhost:901">https://myhost:901</ulink>
+を使ってSWATにアクセスし、証明書を受け付け、SSL接続を確立する。
+</para>
+
+</sect2>
+
+<sect2>
+<title>SWAT国際化サポートの有効化</title>
+
+<para>
+SWATは、使用しているWebブラウザの言語設定に一致するように、そのメッセージを表示するよう
+設定できる。これは、HTTPリクエストのAccept-LanguageヘッダでSWATに通知される。
+</para>
+
+<para>
+この機能を有効にするには以下のように行う:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	適切な<command>msg</command>ファイルを、Sambaの<filename>source/po</filename>
+	ディレクトリから、$LIBDIRにインストールする。
+	</para></listitem>
+
+	<listitem><para>
+	ブラウザの言語設定を設定する。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>msg ファイル</primary></indexterm>
+<indexterm><primary>日本語</primary></indexterm>
+<indexterm><primary>フランス語</primary></indexterm>
+<indexterm><primary>英語</primary></indexterm>
+<command>msg</command>ファイルの名前はブラウザによって送られる言語IDと同じである。
+例えば、英語は<emphasis>en</emphasis>、日本語は<emphasis>ja</emphasis>、
+フランス語は<emphasis>fr</emphasis>である。
+</para>
+
+<para>
+<indexterm><primary>locale</primary></indexterm>
+メッセージのいくつかが気に入らないか、使用しているロケール用の<command>msg</command>
+ファイルがない場合、単に<command>en.msg</command>ファイルを、
+<quote>使用している言語の ID.msg</quote>ファイル用のディレクトリにコピーし、各
+<quote>msgstr</quote>に適切な文字列を埋める。例えば、<filename>it.msg</filename>を
+イタリア語の<command>msg</command>ファイルにするには、以下のようにする:
+<screen>
+msgid "Set Default"
+msgstr "Imposta Default"
+</screen>
+<indexterm><primary>msg</primary></indexterm>
+以下同様である。もしも間違いを見つけたか、新しい<command>msg</command>ファイルを作成
+したならば、連絡いただければ、次のSambaリリース中に入れることを考えます。
+<command>msg</command>ファイルはUTF-8でエンコードされるべきである。
+</para>
+
+<para>
+<indexterm><primary>UTF-8 エンコーディング</primary></indexterm>
+もしも有効にした場合、この機能と<smbconfoption name="display charset"/>がブラウザの
+設定と一致していなかった場合、SWATは不正なメッセージを表示するかもしれないことに注意。
+将来のSambaのバージョンでは、SWATは常時UTF-8でエンコードされたメッセージを表示する
+だろう。そうなれば、これを&smb.conf;ファイルのパラメータとして設定する必要はなくなる。
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>概要と簡単な紹介</title>
+
+<para>
+SWATはSambaの設定に使え、Windowsネットワークの問題を解決するために便利な文書のように、
+この本(ドキュメント)の内容のような、重要な参考資料への便利なリンクを得られる、
+便利なツールである。
+</para>
+
+<sect2>
+<title>SWAT ホームページ</title>
+
+<para>
+SWATタイトルページは最新のSamba文書を参照する機能を提供する。オライリーの
+<quote>Using Samba</quote>という本と同様、Samba3-HOWTO(この文書)のように、
+Sambaの各コンポーネントのマニュアルページはこのページからアクセス可能である。
+</para>
+
+<para>
+Sambaの設定を検証したい管理者は、診断ツールのマニュアルページから有益な情報を得ても良い。
+それらはSWATホームページからも入手可能である。診断ツールのうち、このページで言及されて
+いないが、特に便利なものは
+<ulink url="http://www.ethereal.com/"><command>ethereal</command></ulink>(訳注:今は
+wireshark)である。
+
+</para>
+
+<warning><para>
+SWATは<emphasis>デモ</emphasis>モードで動かすように設定できる。これは、認証なしにSWATを
+動かし、完全な管理機能が使えてしまうため推奨しない。このモードでは、root特権で通常の
+操作をするように&smb.conf;を変更できる。SWATでこの機能を使うためのオプションは、
+<option>-a</option>フラグである。
+<emphasis>これを動作中の環境で使ってはならない</emphasis>。
+</para></warning>
+
+</sect2>
+
+<sect2>
+<title>全体(Global)の設定</title>
+
+<para>
+<guibutton>グローバル(GLOBALS)</guibutton>ボタンは、&smb.conf;中のグローバルパラメータの
+設定が出来るページを表示する。パラメータによって2レベルの画面がある:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	<guibutton>基本</guibutton> &smbmdash; 共通設定オプションを表示する。
+	</para></listitem>
+
+	<listitem><para>
+	<guibutton>詳細</guibutton> &smbmdash; より複雑な環境で必要な設定オプションを表示する。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<guibutton>基本</guibutton>編集機能から他に変更するには、<guibutton>詳細</guibutton>
+ボタンをクリックする。ラジオボタンをクリックすることで行っても良い。次に、
+<guibutton>変更</guibutton>ボタンをクリックする。
+</para>
+
+<para>
+パラメータをどこか変更した後は、他の場所に移る前に、<guibutton>変更</guibutton>
+ボタンを押すようにすること。そうしないと変更結果は失われる。
+</para>
+
+<note><para>
+SWATは場面に応じたヘルプを提供する。各パラメータが何であるかを調べるには、単に、
+設定パラメータの左にある<guibutton>ヘルプ</guibutton>リンクをクリックする。
+</para></note>
+
+</sect2>
+
+<sect2>
+<title>共有設定</title>
+
+<para>
+現在設定されている共有の操作は、単に<guibutton>共有の選択</guibutton>と
+<guibutton>共有の削除</guibutton>ボタンの間にあるプルダウンボタンをクリックし、
+操作したい共有を選択する。設定を編集するには、
+<guibutton>共有の選択</guibutton>ボタンをクリックする。共有を削除するには、
+単に<guibutton>共有の削除</guibutton>ボタンをクリックする。
+</para>
+
+<para>
+新しい共有を作るためには、<guibutton>共有の作成</guibutton>ボタンの隣に行き、
+テキストフィールドに作成する共有の名前を入力し、次に
+<guibutton>共有の作成</guibutton>ボタンをクリックする。
+</para>
+
+</sect2>
+
+<sect2>
+<title>プリンタ設定</title>
+
+<para>
+現在設定されているプリンタの操作は、単に<guibutton>プリンタの選択</guibutton>と
+<guibutton>プリンタの削除</guibutton>ボタンの間にあるプルダウンボタンをクリックし、
+操作したいプリンタを選択する。設定を編集するには、
+<guibutton>プリンタ選択</guibutton>ボタンをクリックする。共有を削除するには、単に、
+<guibutton>プリンタの削除</guibutton>ボタンをクリックする。
+</para>
+
+<para>
+新しいプリンタを作るためには、<guibutton>プリンタの作成</guibutton>ボタンの隣に行き、
+テキストフィールドに作成する共有の名前を入力し、次に
+<guibutton>プリンタの作成</guibutton>ボタンをクリックする。
+</para>
+
+</sect2>
+
+<sect2>
+<title>SWATウィザード</title>
+
+<para>
+SWATウィザードの目的は、Microsoft系をよく知っているネットワーク管理者が、最小の手間で
+Sambaを設定することである。
+</para>
+
+<para>
+ウィザードページは、完全に最適化した形式で&smb.conf;ファイルを再書き込みするツールである。
+これは、<guibutton>Commit</guibutton>ボタンを押したときにも起きる。2つの違いは、
+<guibutton>Rewrite</guibutton>ボタンは今まで行った変更を無視するのに対し、
+<guibutton>Commit</guibutton>ボタンは今まで行ったすべての変更を反映するということである。
+</para>
+
+<para>
+<guibutton>Edit</guibutton>ボタンでは、動作するSambaサーバを作成するために必要と思われる
+最小限のオプションの編集(設定)ができる。
+</para>
+
+<para>
+最後に、SambaサーバがWINSサーバ、WINSクライアントとして参加、あるいはWINSサポートなし
+の、どれかタイプかに設定出来ることを決める、限定されたオプションが用意されている。
+あるボタンをクリックすることで、ユーザのホームディレクトリの表示(あるいは表示中止)を
+選択できる。
+</para>
+
+</sect2>
+
+<sect2>
+<title>ステータスページ</title>
+
+<para>
+ステータスページは現的な目的で提供される。最初に、これはSambaデーモンの制御を行う。
+Sambaサーバ環境下で作成できるデーモンは、&smbd;, &nmbd;と &winbindd;である。
+</para>
+
+<para>
+デーモンは、個別、あるいは全体をまとめたグループで制御できる。さらに、自動的に
+画面のリフレッシュを行うタイミングを設定しても良い。Microsoft Windowsクライアントが
+Sambaとやりとりをするように、新しいsmbdプロセスは継続して起動される。自動画面
+リフレッシュ機能は、最小の効果で変更の状態を追従できる。
+</para>
+
+<para>
+最後に、ステータスページはロックされたかもしれないファイルを解放するために、特定の
+smbdクライアント接続を終了する事に使うことも出来る。
+</para>
+
+</sect2>
+
+<sect2>
+<title>表示(View)ページ</title>
+
+<para>
+表示(View)ページは、最適化された&smb.conf;を閲覧するためと、もしもマゾヒストな
+場合、すべてのグローバル設定パラメータとその値を見ることもできる。
+</para>
+
+</sect2>
+
+<sect2>
+<title>パスワード変更ページ</title>
+
+<para>
+パスワード変更ページは、ローカルマシン上のMicrosoft Windows ネットワークユーザの、
+作成、変更、無効化と再有効化ができる便利なツールである。ユーザアカウントのローカル
+パスワードを変更するのにもこのツールを使える。
+</para>
+
+<para>
+非rootユーザでログオンした場合、新しい(二度打ちする)パスワードと同様古いパスワードも
+入力しなければならない。<emphasis>root</emphasis>でログオンした場合、新しいパスワード
+のみが必要である。
+</para>
+
+<para>
+このツールのよくある使い方は、リモートのMicrosoft Windowsサーバ群に対してユーザパスワードを
+変更するということである。
+</para>
+
+</sect2>
+</sect1>
+
+</chapter>

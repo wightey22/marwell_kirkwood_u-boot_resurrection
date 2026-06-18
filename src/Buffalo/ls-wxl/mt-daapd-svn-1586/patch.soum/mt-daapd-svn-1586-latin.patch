@@ -1,0 +1,39 @@
+--- scan-mp3.c.orig	2010-03-03 18:09:35.000000000 +0900
++++ scan-mp3.c		2010-02-24 15:21:14.000000000 +0900
+@@ -336,7 +336,7 @@
+     return ret;
+ }
+ 
+-static unsigned char* get_utf8_text(const id3_ucs4_t* native_text) {
++static unsigned char* get_utf8_text(const id3_ucs4_t* native_text, signed long encoding) {
+     unsigned char* utf8_text = NULL;
+     char * in, * in8, * iconv_buf;
+     iconv_result rc;
+@@ -365,7 +365,13 @@
+         /* (2) try cp932 -> utf8 */
+         rc = do_convert("UTF-8", "CP932", in, strlen(in), iconv_buf, MAX_ICONV_BUF);
+         if (rc == ICONV_OK) {
+-            utf8_text = (unsigned char*)iconv_buf;
++            // utf8_text = (unsigned char*)iconv_buf;
++            if (encoding == ID3_FIELD_TEXTENCODING_ISO_8859_1) {
++	        utf8_text = iconv_buf;
++            } else {
++                utf8_text = (unsigned char *)id3_ucs4_utf8duplicate(native_text);
++	        free(iconv_buf);
++            }
+         } else if (rc == ICONV_TRYNEXT) {
+             /* (3) try euc-jp -> utf8 */
+             rc = do_convert("UTF-8", "EUC-JP", in, strlen(in), iconv_buf, MAX_ICONV_BUF);
+@@ -464,7 +470,11 @@
+                     utf8_text=(char *)id3_ucs4_latin1duplicate(native_text);
+                 } else {
+ #ifdef USE_CP932
+-                    utf8_text=(char *)get_utf8_text(native_text);
++//                    utf8_text=(char *)get_utf8_text(native_text);
++                    if (pid3frame->fields[0].type == ID3_FIELD_TYPE_TEXTENCODING)
++                        utf8_text = get_utf8_text(native_text, pid3frame->fields[0].number.value);
++                    else
++                        utf8_text = get_utf8_text(native_text, ID3_FIELD_TEXTENCODING_ISO_8859_1);
+ #else
+                     utf8_text=(char *)id3_ucs4_utf8duplicate(native_text);
+ #endif

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="cifs.upcall.8">
+
+
+<refmeta>
+        <refentrytitle>cifs.upcall</refentrytitle>
+        <manvolnum>8</manvolnum>
+        <refmiscinfo class="source">Samba</refmiscinfo>
+        <refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+        <refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+        <refname>cifs.upcall</refname>
+        <refpurpose>CIFSのためのユーザ空間upcallヘルパ</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+        <cmdsynopsis>
+                <command>cifs.upcall</command>
+                <arg choice="opt">--trust-dns|-t</arg>
+                <arg choice="opt">--version|-v</arg>
+                <arg choice="req">keyid</arg>
+        </cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+        <title>説明</title>
+
+        <para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+        <manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+<para>cifs.upcallは、Linux CIFSクライアントファイルシステムのためのユーザ空間ヘルパプログラムである。kernelがそれ自身では簡単にはできないような、さまざまな機能をkernelに代わって行う。このプログラムはkernelから呼び出されてこれらの機能を実行し、その結果を(kernelに)返す。</para>
+
+<para>cifs.upcallはほとんどの場合、kernelがrequest-key<manvolnum>8</manvolnum>で特定のキータイプを呼び出す際に実行されることを想定して作られている。コマンドラインから直接起動できるようにはなっているものの、その方法で呼び出される事は基本的に想定していない。</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+	<variablelist>
+		<varlistentry>
+		<term>-c</term>
+		<listitem><para>このオプションは廃止予定で、現在は無視される。</para></listitem>
+		</varlistentry>
+		<varlistentry>
+		<term>--trust-dns|-t</term>
+		<listitem><para>krb5 upcallと一緒に、サービスプリンシパルのホスト部として使われる名前は、UNCのホスト名の部分が初期値となる。このオプションは、ホスト名を得るためにサーバのネットワークアドレスを逆引きすることをupcallプログラムに許可する。</para>
+		<para>これは、信頼しているDNSよりもセキュアでない。このオプションを使うとき、アタッカがDNSを乗っ取り、まったく異なったサーバにクライアントがマウントするような偽装をすることが可能になる。代わりにすべての考えうるホスト名に対してサーバプリンシパルをKDCに追加する事が望ましいが、このオプションはそれが不可能な時のために存在している。既定値はこの形式でのホスト名の逆引きを信頼しない。
+ 		</para></listitem>
+		</varlistentry>
+		<varlistentry>
+		<term>--version|-v</term>
+		<listitem><para>バージョン番号を表示して終了する。</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>KEYCTLのための構成方法</title>
+	<para>cifs.upcallは、request-key callout プログラム経由でkernelから呼ばれるようにデザインされている。このため、request-keyに対して、どこから、どのようにこのプログラムを呼び出すかを指示してやらなければならない。現在のcifs.upcallプログラムは2つのキータイプを扱う:</para>
+
+	<variablelist>
+		<varlistentry>
+		<term>cifs.spnego</term>
+		<listitem><para>このキータイプはkerberosセッションキーを検索する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>dns_resolver</term>
+		<listitem><para>このキータイプは、ホスト名をIPアドレスに変換(解決)する。</para></listitem>
+		</varlistentry>
+	</variablelist>
+
+	<para>CIFSがこのプログラムを便利に使えるように、request-key.conf<manvolnum>5</manvolnum>中にエントリを設定する必要がある。以下はそれぞれのキータイプのためのエントリの例である:</para>
+<programlisting>
+#OPERATION  TYPE           D C PROGRAM ARG1 ARG2...
+#=========  =============  = = ================================
+create      cifs.spnego    * * /usr/local/sbin/cifs.upcall %k
+create      dns_resolver   * * /usr/local/sbin/cifs.upcall %k
+</programlisting>
+<para>
+それぞれのフィールドについての詳細は<citerefentry><refentrytitle>request-key.conf<manvolnum>5</manvolnum></refentrytitle></citerefentry>を参照のこと。</para>
+</refsect1>
+
+<refsect1>
+        <title>参照</title>
+        <para>
+	<citerefentry><refentrytitle>request-key.conf</refentrytitle>
+        <manvolnum>5</manvolnum></citerefentry>,
+	<citerefentry><refentrytitle>mount.cifs</refentrytitle>
+        <manvolnum>8</manvolnum></citerefentry>
+	</para>
+</refsect1>
+
+<refsect1>
+        <title>著者</title>
+
+	<para>Igor Mammedovはcifs.upcallプログラムを書いた。</para>
+	<para>Jeff Laytonはこのマニュアルページを書いた。</para>
+	<para>Linux CIFS VFSのメンテナはSteve Frenchである。</para>
+        <para><ulink url="mailto:linux-cifs-client@lists.samba.org">Linux
+		CIFSメーリングリスト</ulink>は、これらのプログラムに対して質問をするのにふさわしい場所である。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.4.3-3.5.3  対応のものである。</para>
+        <para>このドキュメントの Samba 3.2.4-3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>太田俊哉(ribbon@samba.gr.jp)</para></listitem>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+</refentry>

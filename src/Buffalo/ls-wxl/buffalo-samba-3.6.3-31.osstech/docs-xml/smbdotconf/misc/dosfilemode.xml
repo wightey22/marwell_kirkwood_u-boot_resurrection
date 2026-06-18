@@ -1,0 +1,22 @@
+<samba:parameter name="dos filemode"
+		 context="S"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>Samba の既定の動作では、ファイルやディレクトリの所有者のみが
+	  アクセス権を変更できるという、UNIX的な仕様になっている。しかし、この仕様が
+	  DOS/Windows のユーザを混乱させてしまうことも多い。このパラメータを有効に
+	  することによって、(何らかの手段によって)ファイルに書き込み権のあるユーザは、
+	  パーミッション(ACLを含む)の変更もできるようになる。ファイルの所有グループに
+	  所属しているユーザは、グループに対して読み込み権限しか与えられていない場合は
+	  パーミッションの変更を行なうことができないことに注意。ファイルやディレクトリの
+	  所有者を変更することも可能である。
+
+	  ネイティブなWindowsデータをメタデータとして格納する、VFSモジュールacl_xattrか
+	  acl_tdbは、ロードされるどのような共有に対しても、WindowsのACLを正しく
+	  エミュレートするために、このオプションを自動的にオンにする事が要求される
+	  ことに注意。
+	</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

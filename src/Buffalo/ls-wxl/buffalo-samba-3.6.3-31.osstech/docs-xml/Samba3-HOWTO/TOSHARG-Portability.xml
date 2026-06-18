@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="Portability">
+<chapterinfo>
+	&author.jelmer;
+	&author.jht;
+	<!-- この文書がベースとしているテキストファイルに著者名がない何人か他
+	の人々 -->
+</chapterinfo>
+
+<title>移植性</title>
+
+<para>
+<indexterm><primary>プラットフォーム</primary></indexterm>
+<indexterm><primary>互換性</primary></indexterm>
+Samba は広い範囲のプラットフォームで機能する。しかし、すべてのプラットフォー
+ムの提供するインタフェースが常に互換性があるとは限らない。
+この章は Samba のコンパイルと利用についてプラットフォームに特化した情報を含む。
+</para>
+
+<sect1>
+<title>HPUX</title>
+
+<para>
+<indexterm><primary>/etc/logingroup</primary></indexterm>
+<indexterm><primary>/etc/group</primary></indexterm>
+(歴史的な理由により)HPでは、補助グループの実装が非標準である。
+グループファイルには<filename>/etc/group</filename> と 
+<filename>/etc/logingroup</filename>の2つがある。
+システムは、UIDから番号(訳注:GIDのことか)を前者のファイルを使用して割り当てるが、
+initgroups()は後者を参照する。
+コツを知っている大抵のシステム管理者は、シンボリックリンク
+<filename>/etc/group</filename> を <filename>/etc/logingroup</filename> へ張る
+(ここに記述することができない愚鈍な理由でハードリンクでは機能しない)。
+initgroups()は、<filename>/etc/logingroup</filename>の中で所属しているグループ
+に不正なIDがあればエラーを出す。
+ここで言う不正なIDとは <constant>[0..UID_MAX]</constant>の範囲を超えた場合
+であり、HP-UX の<constant>UID_MAX</constant>は現在のところ60000である
+(訳注:HPのページで見る限り、現在は2147483647)。
+この範囲は、-2 と 65534 を除外している。これは通常 <constant>nobody</constant>の
+GIDである。
+</para>
+
+<para>
+もしこの問題に遭遇した場合、initgroups()に失敗するプログラムを実行している
+ユーザが、許可された範囲外の GID のグループユーザでないことを確認すること。
+</para>
+
+<para>
+このことは、HPのマニュアルページ setgroup(2)とpasswd(4)に記述されている。
+</para>
+
+<para>
+<indexterm><primary>gcc</primary></indexterm>
+<indexterm><primary>ANSI コンパイラ</primary></indexterm>
+HP-UXでは、gccまたはHP ANSIコンパイラを利用しなければならない。
+HP-UXに付属する無償のコンパイラは ANSI に準拠していないためSambaをコンパイ
+ルできない。
+</para>
+
+</sect1>
+
+<sect1>
+<title>SCO UNIX</title>
+
+<para>
+もし古いバージョンのSCO UNIXを稼働させているのなら、Sambaを正常に
+機能させるためには、TCP/IPの重要なパッチを入手する必要があるだろう。
+そのパッチがないと、Sambaを利用している際に転送データが破損する。
+</para>
+
+<para>
+必要とするパッチは UOD385 Connection Drivers SLSである。
+SCO<ulink noescape="1" url="ftp://ftp.sco.com/">ftp.sco.com</ulink> から
+ディレクトリSLSの中にある、ファイル uod385a.Z と uod385a.ltr.Z が当該のものである。
+</para>
+
+<para>
+ここで提供される情報は、SCO UNIXの古いバージョンを参照している。
+もしより新しいSCO UNIX のバイナリが必要ならば、インストール可能なパッケージを
+入手するためSCOに連絡すること。
+インストールするバイナリのためプラットフォームが最新であることも、SCOで確認
+しなければならない。
+これは、インストール作業にてデータ破損を避けるために重要なことである。
+SCO UNIX製品用にSambaをビルドする場合、 Samba のソースに大幅なパッチが
+必要となるかもしれない。
+SCO から直接バイナリパッケージを入手する方がとても容易である。
+</para>
+
+</sect1>
+
+<sect1>
+<title>DNIX</title>
+
+<para>
+DNIX は seteuid() と setegid() に問題がある。これらのルーチンはSambaが正しく
+機能するために必要である。しかし、それらはいくつかの理由によりDNIX の Cライブラリ
+から抜け落ちている。
+</para>
+
+<para>
+この理由により、Sambaはincludes.hのDNIXセクションにて、既定値でNO_EIDマクロを
+定義している。この問題について、限られた方法ではなんとか機能する。しかし理想からは
+程遠く、いくつかの事柄はまだ正しく機能しないだろう。
+</para>
+
+<para> 
+この問題を正しく解決するため、以下の2つの関数をアセンブルする必要がある。
+そしてそれらをCライブラリに加えるか、Sambaにリンクすること。
+以下のコードを <filename>setegid.s</filename> の中に記述する。
+</para>
+
+<para><programlisting>
+        .globl  _setegid
+_setegid:
+        moveq   #47,d0
+        movl    #100,a0
+        moveq   #1,d1
+        movl    4(sp),a1
+        trap    #9
+        bccs    1$
+        jmp     cerror
+1$:
+        clrl    d0
+        rts
+</programlisting></para>
+
+<para>
+以下を <filename>seteuid.s</filename> の中に記述すること。
+</para>
+
+<para><programlisting>
+        .globl  _seteuid
+_seteuid:
+        moveq   #47,d0
+        movl    #100,a0
+        moveq   #0,d1
+        movl    4(sp),a1
+        trap    #9
+        bccs    1$
+        jmp     cerror
+1$:
+        clrl    d0
+        rts
+</programlisting></para>
+
+<para>
+ファイル作成後、これを以下のようにアセンブルする。
+</para>
+
+<screen>
+&prompt;<userinput>as seteuid.s</userinput>
+&prompt;<userinput>as setegid.s</userinput>
+</screen>
+
+<para>
+その結果、<filename>seteuid.o</filename> と　<filename>setegid.o</filename>
+が作成される。
+</para>
+
+<para>
+次に、SambaのMakefileにて、DNIXセクションの中のLIBSM行にそれらを加える。
+LIBSM行は、以下のものに多少似た形になるだろう。
+</para>
+
+<para><programlisting>
+LIBSM = setegid.o seteuid.o -ln
+</programlisting></para>
+
+<para>
+次に、<filename>includes.h</filename> の DNIX セクションから
+</para>
+
+<para><programlisting>
+#define NO_EID
+</programlisting></para>
+
+<para>の行を削除する。</para>
+
+</sect1>
+
+<sect1>
+<title>Red Hat Linux</title>
+
+<para>
+Red Hat Linuxのいくつかのバージョンでは、既定値を指定してインストールする間に、
+以下のようなエントリを <filename>/etc/hosts</filename> に追加する。
+<programlisting>
+127.0.0.1 loopback "hostname"."domainname"
+</programlisting>
+</para>
+
+<para>
+<indexterm><primary>ループバックインタフェース</primary></indexterm>
+これは Samba にループバックインタフェースへループバックすることを引き起こす。
+結果として、 Samba は他の PC と正常に通信することに失敗する。
+ひいてはマスターブラウズリストの保有者とマスターブラウザ
+が誰なのか正常にネゴシエートすることも失敗するだろう。
+</para>
+
+<para>
+修正措置: 127.0.0.1 で始まる行の中で "loopback" という語の後のエントリを削除する。
+</para>
+</sect1>
+
+<sect1>
+<title>AIX: シーケンシャル先読み</title>
+<!-- William Jojo <jojowil@hvcc.edu> からのメールより -->
+<para>
+シーケンシャル先読みを無効にすると、相対的に高度なマルチプログラミング
+(多数の smbd プロセスや他の負荷との混合)、充分でない物理メモリ、またはより遅い
+ディスク技術がある場合に、Sambaの効率を著しく改善できる。
+これらは AIX に高いウエイト値の原因となる。
+シーケンシャル先読みを無効にすることは、またシステム上の他の負荷に対して反作用
+を及ぼすことがあるため、他のアプリケーションへのインパクトを評価する必要がある。
+</para>
+
+<para>
+IBMによって提供される既定値の利用が推奨される。しかし多数のウエイトタイム
+を経験した場合、以下のコマンドで先読みを無効にすることを試すこと。
+</para>
+
+<para>
+AIX 5.1 とそれ以前: <userinput>vmtune -r 0</userinput>
+</para>
+
+<para>
+AIX 5.2 とそれ以降の jfs ファイルシステム: <userinput>ioo -o minpgahead=0</userinput>
+</para>
+
+<para>
+AIX 5.2 とそれ以降の jfs2 ファイルシステム: <userinput>ioo -o j2_minPageReadAhead=0</userinput>
+</para>
+
+<para>
+もし、jfsとjfs2ファイルシステムが同一ホスト上に混合する場合、単純に
+双方のiooコマンドを利用する。
+</para>
+</sect1>
+
+<sect1>
+<title>Solaris</title>
+
+<sect2>
+<title>ロックの改善</title>
+
+<para>
+Solaris上でSambaを稼働させて、F_SETLKW64/fcntlにまつわる問題を経験
+している人たちがいる。
+ビルトインのファイルロック機構はスケーラブルではなかった。
+プロセスがファイルのロックを試行するループへ入り込むまで、効率が低下するだろう。
+それは、ロックを試行し、失敗し、そして再び試行する。
+ロックする試みは、許可が与えられる前に失敗する。
+目に見える兆候は CPU を一握りのプロセスが占有することであり、もしもそれらが
+信頼されるのであれば、F_SETLKW64 のループから抜け出せなくなるだろう。
+</para>
+
+<para>
+このバグを修正するために必要な最新のパッチを Sun のサポートに確認すること。
+Solaris 2.6 向けのパッチリビジョンは 105181-34 、
+Solaris 8 向けは 108528-19 、
+Solaris 9 向けは 112233-04 である。
+パッチをインストールした後、 Samba を再び構成しリビルドすることを推奨する。
+</para>
+
+<para>この件について報告した Joe Meslovich に感謝する。</para>
+
+</sect2>
+
+<sect2 id="winbind-solaris9">
+<title>Solaris9上の Winbind</title>
+<para>
+Solaris 9 のnsswitchは、Winbind NSS モジュールの利用を拒絶する。
+この振る舞いは、
+<ulink 
+url="http://sunsolve.sun.com/search/advsearch.do?collection=PATCH&amp;type=collections&amp;max=50&amp;language=en&amp;queryKey5=112960;rev=14&amp;toDocument=yes">112960-14</ulink>
+というSUNによるパッチにて修正されている。
+</para>
+</sect2>
+</sect1>
+
+</chapter>

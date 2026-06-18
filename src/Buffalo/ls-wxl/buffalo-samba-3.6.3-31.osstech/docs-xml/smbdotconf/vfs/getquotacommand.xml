@@ -1,0 +1,49 @@
+<samba:parameter name="get quota command"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para><command>get quota command</command> は Samba が実行されている OS 上で、API が提供されていない場合に限り使用すべきである。
+	</para>
+
+	<para>このオプションは、必ず <command>./configure --with-sys-quotas</command> が指定されているときのみ有効である。
+	もしくは Linux において <command>./configure --with-quotas</command> が指定され、システムにクオータの API が存在し、機能する場合にのみ使用できる。</para>
+
+	<para>このパラメータは、指定されたディレクトリが存在するパーティションについて、指定されたユーザやグループのクオータ情報を取得するスクリプトへのパスを指定する。
+	</para>
+
+	<para>このスクリプトは三つの引数をとる:</para>
+
+	<itemizedlist>
+		<listitem><para>ディレクトリ</para></listitem>
+		<listitem><para>問い合わせのタイプ</para></listitem>
+		<listitem><para>ユーザの uid もしくはグループの gid</para></listitem>
+	</itemizedlist>
+
+	<para>問い合わせのタイプは以下のいずれかの値をとる:</para>
+
+	<itemizedlist>
+		<listitem><para>1 - ユーザのクオータ</para></listitem>
+		<listitem><para>2 - ユーザのデフォルトのクオータ (uid = -1)</para></listitem>
+		<listitem><para>3 - グループのクオータ</para></listitem>
+		<listitem><para>4 - グループのデフォルトのクオータ (gid = -1)</para></listitem>
+	</itemizedlist>
+
+	<para>スクリプトの出力は、以下の要素をスペースで区切った1行の形式で行なわれる:</para>
+
+	<itemizedlist>
+		<listitem><para>要素1 - クオータフラグ (0 = クオータは無効、 1 = クオータは有効、 2 = クオータは有効で使用を強制されている)</para></listitem>
+		<listitem><para>要素2 - 現在の使用済ブロック数</para></listitem>
+		<listitem><para>要素3 - ブロック数のソフトウェア的な上限</para></listitem>
+		<listitem><para>要素4 - ブロック数のハードウェア的な上限</para></listitem>
+		<listitem><para>要素5 - 現在の使用済 inode 数</para></listitem>
+		<listitem><para>要素6 - inode 数のソフトウェア的な上限</para></listitem>
+		<listitem><para>要素7 - inode 数のハードウェア的な上限</para></listitem>
+		<listitem><para>要素8(オプション) - ブロックあたりのバイト数(デフォルト1024)</para></listitem>
+	</itemizedlist>
+</description>
+<related>set quote command</related>
+<value type="default"></value>
+<value type="example">/usr/local/sbin/query_quota</value>
+</samba:parameter>

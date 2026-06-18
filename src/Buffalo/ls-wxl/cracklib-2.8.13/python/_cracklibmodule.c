@@ -1,0 +1,149 @@
+/*
+ * A Python binding for cracklib.
+ *
+ * Parts of this code are based on work Copyright (c) 2003 by Domenico
+ * Andreoli.
+ *
+ * Copyright (c) 2008 Jan Dittberner <jan@dittberner.info>
+ *
+ * This file is part of cracklib.
+ *
+ * cracklib is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * cracklib is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Prua; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
+ */
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include PYTHON_H
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+#include "../lib/crack.h"
+
+#ifdef HAVE_PTHREAD_H
+static pthread_mutex_t cracklib_mutex = PTHREAD_MUTEX_INITIALIZER;
+#define LOCK() pthread_mutex_lock(&cracklib_mutex)
+#define UNLOCK() pthread_mutex_unlock(&cracklib_mutex)
+#else
+#define LOCK()
+#define UNLOCK()
+#endif
+
+#define DICT_SUFFIX ".pwd"
+
+static char _cracklib_FascistCheck_doc [] =
+	"arguments: passwd, dictpath (optional)\n"
+	"\n"
+	"  passwd - password to be checked for weakness\n"
+	"  dictpath - full path name to the cracklib dictionary database\n"
+	"\n"
+	"if dictpath is not specified the default dictionary database\n"
+	"will be used.\n"
+	"\n"
+	"return value: the same password passed as first argument.\n"
+	"\n"
+	"if password is weak, exception ValueError is raised with argument\n"
+	"set to the reason of weakness.\n"
+;
+
+static PyObject *
+_cracklib_FascistCheck(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    int i;
+    char *candidate, *dict;
+    const char *result;
+    struct stat st;
+    char *keywords[] = {"pw", "dictpath", NULL};
+    char *dictfile;
+
+    self = NULL;
+    candidate = NULL;
+    dict = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s|s", keywords,
+                                     &candidate, &dict))
+    {
+        PyErr_SetString(PyExc_ValueError, "error parsing arguments");
+        return NULL;
+    }
+
+    if (candidate == NULL)
+    {
+        PyErr_SetString(PyExc_ValueError, "first argument was not a string!");
+        return NULL;
+    }
+    if (dict != NULL)
+    {
+        if (dict[0] != '/')
+        {
+            PyErr_SetString(PyExc_ValueError,
+                            "second argument was not an absolute path!");
+            return NULL;
+        }
+        dictfile = malloc(strlen(dict) + sizeof(DICT_SUFFIX));
+        if (dictfile == NULL)
+        {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, dict);
+            return NULL;
+        }
+        sprintf(dictfile, "%s" DICT_SUFFIX, dict);
+        if (lstat(dictfile, &st) == -1)
+        {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError, dict);
+            free(dictfile);
+            return NULL;
+        }
+        free(dictfile);
+    } else
+    {
+        if (lstat(DEFAULT_CRACKLIB_DICT DICT_SUFFIX, &st) == -1)
+        {
+            PyErr_SetFromErrnoWithFilename(PyExc_OSError,
+                                           DEFAULT_CRACKLIB_DICT);
+            return NULL;
+        }
+    }
+
+    LOCK();
+    result = FascistCheck(candidate, dict ? dict : DEFAULT_CRACKLIB_DICT);
+    UNLOCK();
+
+    if (result != NULL)
+    {
+    	PyErr_SetString(PyExc_ValueError, result);
+        return NULL;
+    }
+    return Py_BuildValue("s", candidate);
+}
+
+static PyMethodDef
+_cracklibmethods[] =
+{
+    {"FascistCheck", _cracklib_FascistCheck, METH_VARARGS | METH_KEYWORDS,
+     _cracklib_FascistCheck_doc},
+    {NULL, NULL},
+};
+
+static char _cracklib_doc[] =
+    "Python bindings for cracklib.\n"
+    "\n"
+    "This module enables the use of cracklib features from within a Python\n"
+    "program or interpreter.\n"
+;
+
+void
+init_cracklib(void)
+{
+    Py_InitModule3("_cracklib", _cracklibmethods, _cracklib_doc);
+}

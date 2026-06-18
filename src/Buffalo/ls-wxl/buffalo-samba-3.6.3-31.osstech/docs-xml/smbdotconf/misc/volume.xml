@@ -1,0 +1,12 @@
+<samba:parameter name="volume"
+		 context="S"
+		 type="string"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータにより、共有のボリュームラベルの設定が可能になる。
+	これは、特定のボリューム名が必要なインストールプログラムを格納した CD-ROM を共有する際に便利である。
+	</para>
+</description>
+
+<value type="default"><comment>the name of the share</comment></value>
+</samba:parameter>

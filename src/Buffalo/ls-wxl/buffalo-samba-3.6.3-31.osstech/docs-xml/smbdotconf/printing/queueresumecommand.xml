@@ -1,0 +1,33 @@
+<samba:parameter name="queueresume command"
+                 context="S"
+				 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、印刷キューを再開させるために、
+	サーバ上で実行するコマンドを指定する。
+	これは、前述したパラメータ
+    (<smbconfoption name="queuepause command"/>)
+    によって一時停止された動作を再開させるコマンドになる。</para>
+ 
+	<para> このコマンドは、引数としてプリンタ名をとり、
+	印刷キューにある印刷ジョブを再度プリンタへ送信させるために印刷キューを再開する機能を持つ
+	プログラムまたはスクリプトである必要がある。</para>
+
+	<para> Windows 95 や Windows NTでは、
+	「プリンタ」ウインドウからこのコマンドを発行することができるが、
+	Windows for Workgroups ではこのコマンドがサポートされていない。</para>
+
+	<para> コマンド中に <parameter moreinfo="none">%p</parameter>
+    が指定された場合は、プリンタ名がそこに引数として置かれる。
+    それ以外の場合、プリンタ名はコマンド文字列の最後におかれる。
+    </para>
+
+	<para>
+	サーバ上で PATH 環境変数が設定されていない場合を想定して、
+	コマンドをフルパスで記述することが推奨される。
+	</para>
+</description>
+<value type="default"></value>
+<value type="example">enable %p</value>
+</samba:parameter>

@@ -1,0 +1,15 @@
+<samba:parameter name="client schannel"
+                 context="G"
+                 basic="1"
+				 type="boolean-auto"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータはクライアントが netlogon セキュアチャネルの使用を有効にするか、もしくは要求するかを制御する。
+    <smbconfoption name="client schannel">no</smbconfoption> はセキュアチャネルを有効にしない。
+    <smbconfoption name="client schannel">auto</smbconfoption> はセキュアチャネルを有効にするが、強制はしない。
+    <smbconfoption name="client schannel">yes</smbconfoption> 
+    はサーバが netlogon セキュアチャネルを理解できない場合、アクセスを許可しない。</para>
+</description>
+<value type="default">auto</value>
+<value type="example">yes</value>
+</samba:parameter>

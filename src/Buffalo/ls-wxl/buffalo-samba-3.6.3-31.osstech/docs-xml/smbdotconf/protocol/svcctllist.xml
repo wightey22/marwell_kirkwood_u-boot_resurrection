@@ -1,0 +1,21 @@
+<samba:parameter name="svcctl list"
+		 type="string"
+                 context="G"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    このパラメータにより、smbd が Win32 の ServiceControl API 経由で
+    UNIX 側のサービスを起動、停止させる際に用いられる起動スクリプトの一覧を定義する。
+    これにより、Windows の管理者が Microsoft Management Console 
+    プラグインを用いて Samba サーバ上が動作する UNIX サービスを制御することが可能となる。</para>
+
+    <para>
+    管理者は、Samba の $(libdir) 以下に <filename>svcctl</filename> というディレクトリを作成して、
+    <filename>/etc/init.d/</filename> に存在する起動スクリプトのシンボリックリンクを作成しておく必要がある。
+    シンボリックリンク名は、 <parameter>svcctl list</parameter>
+    パラメータに記載した名称と同一にしておくこと。
+    </para>
+</description>
+<value type="default"/>
+<value type="example">cups postfix portmap httpd</value>
+</samba:parameter>

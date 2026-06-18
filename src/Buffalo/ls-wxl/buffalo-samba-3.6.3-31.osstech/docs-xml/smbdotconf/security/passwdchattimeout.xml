@@ -1,0 +1,14 @@
+<samba:parameter name="passwd chat timeout"
+                 context="G"
+				 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> この整数値により、smbd が passwd chat script の実行を待機する時間を秒単位で指定する。
+    最初の応答が受信されて以降のやりとりは、
+    この値の 1/10 の時間で応答される必要がある。
+    デフォルトは 2 秒である。</para>
+</description>
+
+<value type="default">2</value>
+</samba:parameter>

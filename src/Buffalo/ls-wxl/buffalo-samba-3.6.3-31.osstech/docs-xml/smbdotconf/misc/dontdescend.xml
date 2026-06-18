@@ -1,0 +1,19 @@
+<samba:parameter name="dont descend"
+	         context="S"
+			 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>システムに存在するディレクトリには、
+	クライアントに参照させたくないものや、
+	無限に深い(再帰的)なものが存在する(たとえば Linux での <filename moreinfo="none">/proc</filename>)。
+	このパラメータは常に空のように見せかけるサーバ側のディレクトリをコンマで区切って指定する。
+	</para>
+
+	<para>Samba が要求する「dont descend」の書式は一定ではない。
+	たとえば <filename moreinfo="none">/proc</filename> ではなく <filename moreinfo="none">./proc</filename> でなければならないかもしれない。
+	実験してみるのが最良の方法である。 :-)
+	</para>
+</description>
+<value type="default"></value>
+<value type="example">/proc,/dev</value>
+</samba:parameter>

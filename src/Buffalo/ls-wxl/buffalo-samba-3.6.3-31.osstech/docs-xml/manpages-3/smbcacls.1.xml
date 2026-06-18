@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbcacls.1">
+
+<refmeta>
+	<refentrytitle>smbcacls</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbcacls</refname>
+	<refpurpose>Windows NT 上のファイルやディレクトリの ACL の取得や設定</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbcacls</command>
+		<arg choice="req">//server/share</arg>
+		<arg choice="req">filename</arg>
+		<arg choice="opt">-D acls</arg>
+		<arg choice="opt">-M acls</arg>
+		<arg choice="opt">-a acls</arg>
+		<arg choice="opt">-S acls</arg>
+		<arg choice="opt">-C name</arg>
+		<arg choice="opt">-G name</arg>
+		<arg choice="opt">--numeric</arg>
+		<arg choice="opt">-t</arg>
+		<arg choice="opt">-U username</arg>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-d</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>smbcacls</command> は、SMB ファイル共有内の ACL
+	(Access Control Lists) を操作するプログラムである。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<para><command>smbcacls</command> コマンドでは以下のオプションが
+	利用可能である。ACL の形式は、ACL FORMAT セクションで記述する。</para>
+
+	<variablelist>
+		<varlistentry>
+		<term>-a acls</term>
+		<listitem><para>ACL リストで指定された ACL を追加する。既存の ACL
+		は変更されない。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-M acls</term>
+		<listitem><para>コマンドラインで指定された ACL の mask 値
+		(パーミッション) を変更する。ACL リストに指定された ACL が存在しない場合、その ACL 毎にエラーが出力される。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-D acls</term>
+		<listitem><para>コマンドラインで指定された ACL を削除する。ACL
+		ACL リストに指定された ACL が存在しない場合、その ACL 毎にエラーが
+		出力される。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-S acls</term>
+		<listitem><para>このコマンドは、コマンドラインで指定された ACL
+		のみをファイルに設定する。その他の全ての ACL は削除される。
+		呼び出しを成功させるためには、指定する ACL に最低限リビジョン、タイプ、
+		所有者とグループが含まれている必要がある。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-U username</term>
+		<listitem><para>指定されたサービスに接続する際に利用するユーザ名を
+		指定する。ユーザ名が "username" の形式で与えられた場合、<citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry> で指定されたワークグループが用いられ、ユーザには
+		パスワード入力を求めるプロンプトが表示される。"username%password"
+		もしくは "DOMAIN\username%password" を指定した場合、パスワードや
+		ワークグループ名は指定されたものが用いられる。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-C name</term>
+		<listitem><para>
+		<parameter>-C</parameter> オプションを利用することで、
+		ファイルやディレクトリの所有者を name で指定したアカウントに変更することが可能である。
+		name は S-1-x-y-z 形式の sid で指定するか、
+		最初の引数で指定したサーバが認識可能な名前で指定する。</para>
+
+		<para>このコマンドは -M OWNER:name の短縮形になる。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-G name</term>
+		<listitem><para>ファイルやディレクトリのグループ所有者は、<parameter>
+		-G</parameter> オプションを利用することで指定した name
+		に変更することが可能である。名前は S-1-x-y-z 形式の sid で指定するか、
+		先頭の引数で指定したサーバが認識可能な name で指定する。</para>
+		
+		<para>このコマンドは -M OWNER:name の短縮形になる。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>--numeric</term>
+		<listitem><para>このオプションは、全ての ACL 情報を数値形式で
+		表示させる。デフォルトでは、SID は名前に、ACE の type と mask は、
+		可読性のある文字列形式に変換される。 </para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-t</term>
+		<listitem><para>
+		実際に処理は行わず、指定した引数の正当性を検証する。
+		</para></listitem>
+		</varlistentry>
+				
+		&stdarg.help;
+		&stdarg.server.debug;
+		&popt.common.samba;
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>ACL FORMAT</title>
+
+	<para>ACL の形式は、コンマか改行記号で 1 つ以上の ACL エントリを区切ったもの
+	である。ACL エントリは以下のいずれかの形式をとる: </para>
+
+<para><programlisting> 
+REVISION:&lt;revision number&gt;
+OWNER:&lt;sid or name&gt;
+GROUP:&lt;sid or name&gt;
+ACL:&lt;sid or name&gt;:&lt;type&gt;/&lt;flags&gt;/&lt;mask&gt;
+</programlisting></para>
+  
+	<para>REVISION は、セキュリティディスクリプタに対する内部的な Windows
+	NT ACL のリビジョンを表す。特に指定されない場合のデフォルトは 1 である。
+	1 以外の値を指定した場合は、挙動がおかしくなることがある。</para>
+
+	<para>OWNER と GROUP はオブジェクトの所有者およびグループの sid を指定する。
+	SID が S-1-x-y-z の形式で指定された場合はそのまま用いられ、
+	それ以外の場合、指定された名前はファイルやディレクトリが存在するサーバに
+	よって解析される。</para>
+
+	<para>ACL は SID に対して与えられるパーミッションを指定する。この SID も
+	S-1-x-y-z の形式で指定するか、名前で指定することが可能で、後者の場合、
+	ファイルやディレクトリが存在するサーバによって解析される。 type, flag, mask
+	の値は、SIDに対して与えられたアクセスの種類を指定する。</para>
+
+	<para>
+	typeは SID に対する許可および拒否に対応する(訳注: 実際は type は ALLOWED か DENIED を指定し、それぞれ SID に対するアクセス許可および拒否に対応する、が正しい(fumiya))。
+	flag の値はファイルの ACL の場合通常 0 であり、ディレクトリの ACL の場合は通常
+	9 か 2 である。 共通的な flags は以下の通りである: </para>
+
+	<itemizedlist> 
+		<listitem><para><constant>#define SEC_ACE_FLAG_OBJECT_INHERIT     	0x1</constant></para></listitem>
+		<listitem><para><constant>#define SEC_ACE_FLAG_CONTAINER_INHERIT  	0x2</constant></para></listitem>
+		<listitem><para><constant>#define SEC_ACE_FLAG_NO_PROPAGATE_INHERIT     0x4</constant></para></listitem>
+		<listitem><para><constant>#define SEC_ACE_FLAG_INHERIT_ONLY       	0x8</constant></para></listitem>
+ 	</itemizedlist>
+  
+	<para>現在のところ flag の値は 10 進数もしくは 16
+	進数でのみ指定することができる。</para>
+ 
+	<para>mask は SID に対して与えられたアクセス権を表現する値である。それは 10
+	進数もしくは 16 進数で設定するか、NT のファイルパーミッションと同じ名称である
+	以下の文字列のうちの一つを利用して設定することができる。</para>
+
+	<itemizedlist>
+		<listitem><para><emphasis>R</emphasis> - 読みとりの許可 </para></listitem>
+		<listitem><para><emphasis>W</emphasis> - 書き込みの許可</para></listitem>
+		<listitem><para><emphasis>X</emphasis> - オブジェクトの実行</para></listitem>
+		<listitem><para><emphasis>D</emphasis> - オブジェクトの削除</para></listitem>
+		<listitem><para><emphasis>P</emphasis> - パーミッションの変更</para></listitem>
+		<listitem><para><emphasis>O</emphasis> - 所有権の取得</para></listitem>
+	</itemizedlist>
+
+	<para>以下の複合パーミッションも指定可能である:</para>
+
+	<itemizedlist>
+		<listitem><para><emphasis>READ</emphasis> - 'RX'
+		パーミッションと等価である。
+		</para></listitem>
+		<listitem><para><emphasis>CHANGE</emphasis> - 'RXWD'
+		パーミッションと等価である。
+		</para></listitem>
+		<listitem><para><emphasis>FULL</emphasis> - 'RWXDPO'
+		パーミッションと等価である。
+		</para></listitem>
+	</itemizedlist>
+	</refsect1>
+
+<refsect1>
+	<title>終了ステータス</title>
+
+	<para><command>smbcacls</command> コマンドは、操作が成功したか、
+	その他の結果になったかに応じた戻り値を設定する。 
+	戻り値は、以下の値のいずれかになる。</para>
+
+	<para>操作が成功した場合、<command>smbcacls</command> は戻り値として 0
+	を返す。もし <command>smbcacls</command> が指定したサーバに接続できなかったか、
+	ACL を取得または設定する際にエラーが発生した場合、戻り値として 1 が返される。
+	コマンドライン引数の解析に失敗した場合は、戻り値として 2 が返される。</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba バージョン 3用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team によって、Linux
+	カーネルの開発と同様のオープンソースプロジェクトとして開発が行なわれている。
+	</para>
+	
+	<para><command>smbcacls</command> は Andrew Tridgell と Tim Potter
+	によって書かれた。</para>
+	
+	<para> Samba 2.2 における DocBook 形式への変換は、Gerald Carter
+	によって行なわれた。Samba 3.0 における DocBook XML 4.2 形式への変換は、
+	Alexander Bokovoy によって行われた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.0 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 - Samba 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>たかはしもとのぶ (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+
+</refentry>

@@ -1,0 +1,13 @@
+<samba:parameter name="comment"
+                 context="S"
+				 type="string"
+                 basic="1" advanced="1" share="1" print="1" developer="1" 
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+        <para>これは、クライアントから「ネットワークコンピュータ」や <command moreinfo="none">net view</command> コマンド経由でサーバ上で利用可能な共有を一覧する際に、共有名の横に表示される文字列である。</para>
+
+    <para>コンピュータ名の横に表示される文字列を設定したい場合は、<smbconfoption name="server string"/> パラメータを参照のこと。</para>
+</description>
+<value type="default"><comment>コメント文字列なし</comment></value>
+<value type="example">Fred's Files</value>
+</samba:parameter>

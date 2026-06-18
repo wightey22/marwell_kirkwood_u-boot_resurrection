@@ -1,0 +1,26 @@
+#!/bin/sh
+
+VG=closure
+VOLUME=root
+SNAPSIZE=100m
+EMAIL=tytso@mit.edu
+
+TMPFILE=`mktemp -t e2fsck.log.XXXXXXXXXX`
+
+set -e
+START="$(date +'%Y%m%d%H%M%S')"
+lvcreate -s -L ${SNAPSIZE} -n "${VOLUME}-snap" "${VG}/${VOLUME}"
+if nice logsave -as $TMPFILE e2fsck -p -C 0 "/dev/${VG}/${VOLUME}-snap" && \
+   nice logsave -as $TMPFILE e2fsck -fy -C 0 "/dev/${VG}/${VOLUME}-snap" ; then
+  echo 'Background scrubbing succeeded!'
+  tune2fs -C 0 -T "${START}" "/dev/${VG}/${VOLUME}"
+else
+  echo 'Background scrubbing failed! Reboot to fsck soon!'
+  tune2fs -C 16000 -T "19000101" "/dev/${VG}/${VOLUME}"
+  if test -n "$RPT-EMAIL"; then 
+    mail -s "E2fsck of /dev/${VG}/${VOLUME} failed!" $EMAIL < $TMPFILE
+  fi
+fi
+lvremove -f "${VG}/${VOLUME}-snap"
+rm $TMPFILE
+

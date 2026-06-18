@@ -1,0 +1,269 @@
+.\"     Title: newusers
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Команды управления системой
+.\"    Source: Команды управления системой
+.\"
+.TH "newusers" "8" "11/23/2008" "Команды управления системой" "Команды управления системой"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "НАЗВАНИЕ"
+newusers \- обновляет и создаёт новые учётные записи пользователей в пакетном режиме
+.SH "СИНТАКСИС"
+.HP 9
+\fBnewusers\fR [\fInew_users\fR]
+.SH "ОПИСАНИЕ"
+.PP
+Программа
+\fBnewusers\fR
+читает файл с парами имя пользователя/нешифрованный пароль и использует эту информацию для обновления группы существующих или создания новых учётных записей\&. Каждая строка имеет формат стандартного файла паролей (смотрите
+\fBpasswd\fR(5)) за исключением:
+.PP
+\fIpw_passwd\fR
+.RS 4
+Это поле будет зашифровано и использовано как новое значение шифрованного пароля\&.
+.RE
+.PP
+\fIpw_gid\fR
+.RS 4
+Это поле должно содержать имя (или номер)\&. Пользователь будет добавлен в эту группу\&. Если указан числовой идентификатор или имя несуществующей группы, то будет создана новая группа с данным именем и номером\&.
+.RE
+.PP
+\fIpw_dir\fR
+.RS 4
+Будет проверено существование каталога с именем значения данного поля и если такого каталога нет, то он будет создан\&. Владельцем каталога будет назначен обновляемый или создаваемый пользователь\&.
+.RE
+.PP
+Данная команда предназначена для работы в крупных системных средах, где за один раз заводится несколько учётных записей\&.
+.SH "ПАРАМЕТРЫ"
+.PP
+The options which apply to the
+\fBnewusers\fR
+command are:
+.PP
+\fB\-c\fR, \fB\-\-crypt\-method\fR
+.RS 4
+Use the specified method to encrypt the passwords\&.
+.sp
+The available methods are DES, MD5, NONE, and SHA256 or SHA512 if your libc support these methods\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-system\fR
+.RS 4
+Create a system account\&.
+.sp
+System users will be created with no aging information in
+\fI/etc/shadow\fR, and their numeric identifiers are choosen in the
+\fBSYS_UID_MIN\fR\-\fBSYS_UID_MAX\fR
+range, defined in
+\fIlogin\&.defs\fR, instead of
+\fBUID_MIN\fR\-\fBUID_MAX\fR
+(and their
+\fBGID\fR
+counterparts for the creation of groups)\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-sha\-rounds\fR
+.RS 4
+Use the specified number of rounds to encrypt the passwords\&.
+.sp
+The value 0 means that the system will choose the default number of rounds for the crypt method (5000)\&.
+.sp
+A minimal value of 1000 and a maximal value of 999,999,999 will be enforced\&.
+.sp
+You can only use this option with the SHA256 or SHA512 crypt method\&.
+.sp
+By default, the number of rounds is defined by the SHA_CRYPT_MIN_ROUNDS and SHA_CRYPT_MAX_ROUNDS variables in
+\fI/etc/login\&.defs\fR\&.
+.RE
+.SH "ПРЕДОСТЕРЕЖЕНИЯ"
+.PP
+Файл с входными данными должен быть защищён, так как в нём содержатся не шифрованные пароли\&.
+.PP
+PAM is not used to update the passwords\&. Only
+\fI/etc/passwd\fR
+and
+\fI/etc/shadow\fR
+are updated, and the various checks or options provided by PAM modules are not used\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBENCRYPT_METHOD\fR (string)
+.RS 4
+This defines the system default encryption algorithm for encrypting passwords (if no algorithm are specified on the command line)\&.
+.sp
+It can take one of these values:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fIDES\fR
+(default)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fIMD5\fR
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fISHA256\fR
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'\fISHA512\fR
+.RE
+.IP "" 4
+.sp
+Note: this parameter overrides the
+\fBMD5_CRYPT_ENAB\fR
+variable\&.
+.sp
+Note: if you use PAM, it is recommended to set this variable consistently with the PAM modules configuration\&.
+.RE
+.PP
+\fBGID_MAX\fR (number), \fBGID_MIN\fR (number)
+.RS 4
+Range of group IDs used for the creation of regular groups by
+\fBuseradd\fR,
+\fBuseradd\fR, or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.PP
+\fBMD5_CRYPT_ENAB\fR (boolean)
+.RS 4
+Indicate if passwords must be encrypted using the MD5\-based algorithm\&. If set to
+\fIyes\fR, new passwords will be encrypted using the MD5\-based algorithm compatible with the one used by recent releases of FreeBSD\&. It supports passwords of unlimited length and longer salt strings\&. Set to
+\fIno\fR
+if you need to copy encrypted passwords to other systems which don\'t understand the new algorithm\&. Default is
+\fIno\fR\&.
+.sp
+This variable is superceded by the
+\fBENCRYPT_METHOD\fR
+variable or by any command line option used to configure the encryption algorithm\&.
+.sp
+This variable is deprecated\&. You should use
+\fBENCRYPT_METHOD\fR\&.
+.sp
+Note: if you use PAM, it is recommended to set this variable consistently with the PAM modules configuration\&.
+.RE
+.PP
+\fBPASS_MAX_DAYS\fR (number)
+.RS 4
+Максимальное число дней использования пароля\&. Если пароль старее этого числа, то будет запущена процедура смены пароля\&. Если значение не задано, то предполагается значение \-1 (то есть возможность ограничения не используется)\&.
+.RE
+.PP
+\fBPASS_MIN_DAYS\fR (number)
+.RS 4
+Максимальное число дней между изменениями пароля\&. Любая смена пароля ранее заданного срока выполнена не будет\&. Если значение не задано, то предполагается значение \-1 (то есть возможность ограничения не используется)\&.
+.RE
+.PP
+\fBPASS_WARN_AGE\fR (number)
+.RS 4
+Число дней за которое начнёт выдаваться предупреждение об устаревании пароля\&. Нулевое значение означает, что предупреждение выдаётся в день устаревания, при отрицательном значении предупреждение выдаваться не будет\&. Если значение не задано, выдача предупреждения отключается\&.
+.RE
+.PP
+\fBSHA_CRYPT_MIN_ROUNDS\fR (number), \fBSHA_CRYPT_MAX_ROUNDS\fR (number)
+.RS 4
+When
+\fBENCRYPT_METHOD\fR
+is set to
+\fISHA256\fR
+or
+\fISHA512\fR, this defines the number of SHA rounds used by the encryption algorithm by default (when the number of rounds is not specified on the command line)\&.
+.sp
+With a lot of rounds, it is more difficult to brute forcing the password\&. But note also that more CPU resources will be needed to authenticate users\&.
+.sp
+If not specified, the libc will choose the default number of rounds (5000)\&.
+.sp
+The values must be inside the 1000\-999999999 range\&.
+.sp
+If only one of the
+\fBSHA_CRYPT_MIN_ROUNDS\fR
+or
+\fBSHA_CRYPT_MAX_ROUNDS\fR
+values is set, then this value will be used\&.
+.sp
+If
+\fBSHA_CRYPT_MIN_ROUNDS\fR
+>
+\fBSHA_CRYPT_MAX_ROUNDS\fR, the highest value will be used\&.
+.RE
+.PP
+\fBSYS_GID_MAX\fR (number), \fBSYS_GID_MIN\fR (number)
+.RS 4
+Range of group IDs used for the creation of system groups by
+\fBuseradd\fR,
+\fBgroupadd\fR, or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBSYS_UID_MAX\fR (number), \fBSYS_UID_MIN\fR (number)
+.RS 4
+Range of user IDs used for the creation of system users by
+\fBuseradd\fR
+or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBUID_MAX\fR (number), \fBUID_MIN\fR (number)
+.RS 4
+Range of user IDs used for the creation of regular users by
+\fBuseradd\fR
+or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBUMASK\fR (number)
+.RS 4
+Задаёт начальное значение маски доступа\&. Если не указано, то маска доступа устанавливается в 022\&.
+.RE
+.SH "ФАЙЛЫ"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+содержит информацию о пользователях
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+содержит защищаемую информацию о пользователях
+.RE
+.PP
+\fI/etc/group\fR
+.RS 4
+содержит информацию о группах
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+содержит защищаемую информацию о группах
+.RE
+.PP
+\fI/etc/login\&.defs\fR
+.RS 4
+содержит конфигурацию подсистемы теневых паролей
+.RE
+.SH "СМОТРИТЕ ТАКЖЕ"
+.PP
+\fBlogin.defs\fR(5),
+\fBpasswd\fR(1),
+\fBuseradd\fR(8)\&.

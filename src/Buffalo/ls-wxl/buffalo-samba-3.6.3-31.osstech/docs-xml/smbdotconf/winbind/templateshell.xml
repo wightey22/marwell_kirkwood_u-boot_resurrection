@@ -1,0 +1,14 @@
+<samba:parameter name="template shell"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>NT ドメインのユーザに対応するユーザ情報を作成する際、 
+	  <citerefentry><refentrytitle>winbindd</refentrytitle>
+	  <manvolnum>8</manvolnum></citerefentry>デーモンは、
+	  このパラメータによってユーザのログインシェルを設定する。</para>
+</description>
+
+<value type="string">/bin/false</value>
+</samba:parameter>

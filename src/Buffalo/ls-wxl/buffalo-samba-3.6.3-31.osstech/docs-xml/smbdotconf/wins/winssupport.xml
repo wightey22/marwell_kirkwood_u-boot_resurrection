@@ -1,0 +1,12 @@
+<samba:parameter name="wins support"
+	type="boolean"
+                 context="G"
+                 basic="1" advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	<para>この真偽値パラメータにより、 Samba の <citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> プロセスを WINS サーバして機能させるかどうかが設定される。複数サブネットに及ぶネットワークを構築しており、いずれかの <command moreinfo="none">nmbd</command> を WINS サーバとして機能させようとしない限り、このパラメータを <constant>yes</constant> にしないこと。</para>
+        <para>ネットワーク上の複数のマシンで、このパラメータを <constant>yes</constant> に設定することが<emphasis>絶対に</emphasis>ないように注意すること。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

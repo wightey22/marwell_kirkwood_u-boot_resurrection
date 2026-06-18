@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_dirsort.8">
+
+<refmeta>
+	<refentrytitle>vfs_dirsort</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_dirsort</refname>
+	<refpurpose>ディレクトリの内容をソートする</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = dirsort</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である.</para>
+
+	<para><command>vfs_dirsort</command> モジュールはディレクトリのエントリを
+    クライアントに送る前にアルファベット順にソートする.</para>
+
+	<para>このモジュールを有効にすると、大きなディレクトリを処理する場合
+    パフォーマンスに影響することがあることに注意して欲しい。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+
+	<para>すべての共有についてディレクトリをソートする:</para>
+
+<programlisting>
+        <smbconfsection name="[global]"/>
+	<smbconfoption name="vfs objects">dirsort</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルはSambaのバージョン3.3(訳注:3.3.6以降)に対応している
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+    <para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+    Tridgell によって作成された。現在 Samba は Samba Team に
+    よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+    として開発が行なわれている。</para>
+</refsect1>
+
+<refsect1>
+    <title>日本語訳</title>
+    <para>このドキュメントは、Samba 3.3.6 - 3.5.3 対応のもので>ある。</para>
+    <para>このドキュメントの翻訳は
+        <itemizedlist>
+            <listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+        </itemizedlist>
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

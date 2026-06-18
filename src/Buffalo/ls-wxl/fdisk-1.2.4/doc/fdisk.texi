@@ -1,0 +1,483 @@
+\input texinfo   @c -*-texinfo-*-
+@setfilename fdisk.info
+@settitle GNU fdisk User's Manual
+
+@set UPDATED 19 August 2006
+@set UPDATED-MONTH August 2006
+@set EDITION 0.0.1
+@set VERSION 0.0.1
+
+
+@comment @documentencoding ISO-8859-1
+
+@set lq ``
+@set rq ''
+
+@ifnottex @c texi2pdf don't understand copying and insertcopying ???
+@c modifications must also be done in the titlepage
+@copying
+Copyright @copyright{} 2006
+Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+@end copying
+@c WTF does the info get the copying output and the plaintext output not ????
+@ifplaintext
+@insertcopying
+@end ifplaintext
+@end ifnottex
+
+
+@titlepage
+@title GNU fdisk User Manual
+@subtitle GNU fdisk, version @value{VERSION}, @value{UPDATED}
+@author Leslie Patrick Polzer @email{polzer@@gnu.org}
+@author Milko Krasnomirov Krachounov @email{exabyte@@3mhz.net}
+
+@c @page
+@c @vskip 0pt plus 1filll
+
+@c modifications must also be done in the copying block
+Copyright @copyright{} 2006
+Free Software Foundation, Inc.
+
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled ``GNU
+Free Documentation License''.
+@end titlepage
+
+
+@dircategory GNU partitioning software
+@direntry
+* fdisk: (fdisk).                          GNU fdisk User Manual
+@end direntry
+
+@ifnottex
+@node Top
+@top GNU fdisk User Manual
+@c WTF doesn't texi2html include the titlepage?
+@ifhtml
+@insertcopying 
+@end ifhtml
+
+This document describes the use of GNU Cfdisk, a curses based program
+for creating, destroying, resizing, checking and copying hard drive
+partitions, and the file systems on them.
+@end ifnottex
+
+@shortcontents
+
+@menu
+* About::
+* Using fdisk::
+* Bugs::
+* See also::
+* Copying this manual::
+@end menu
+
+
+@node About
+@chapter About
+@menu
+* Name::
+@end menu
+
+@node Name
+@section Name
+
+GNU fdisk @minus{} menu driven partition table manipulator, similar to Linux
+fdisk. It has two variants, lfdisk and gfdisk, lfdisk aims to be close to 
+Linux fdisk, while gfdisk supports the more advanced disk operations like
+partition resizing. When fdisk is called, the default is to run gfdisk. 
+
+@node Using fdisk
+@chapter Using fdisk
+
+@menu
+* Invoking fdisk::
+* Overview::
+* Options::
+* Commands and usage::
+* Units::
+@end menu
+
+@node Invoking fdisk
+@section Invoking fdisk
+
+@b{fdisk [options] [device]}
+
+@node Overview
+
+@section Overview
+
+Hard disks can be divided into logical disks called @i{partitions}
+(or @i{disk slices} in the BSD world), which are described in a @i{partition table}, 
+which is also called a @i{disklabel}.
+
+For ordinary use, like file storage or operation system installation, you
+will most likely need at least one partition, although with most modern operating system,
+you might also want to create several partitions, including one for swap space. For example,
+you usually create a seperate partition for home directories. For more information on what
+partitions you need for your operating system, look at its installation manual.
+
+@b{GNU fdisk} is a menu driven program for creating and editing partition tables.
+It has support for DOS and MAC type partition tables, BSD and SUN type disklabels
+and others.
+
+On most GNU/Linux distributions @i{device} is usually one of the following:
+
+@c ---------------------------------------------------------------------
+@display
+@c ---------------------------------------------------------------------
+@quotation
+/dev/hda
+/dev/hdb
+/dev/sda
+/dev/sdb
+
+@end quotation
+@end display
+
+IDE disks are usually using /dev/hd[a-h] for device names, SCSI disks - /dev/sd[a-p].
+The partitions will take the device name followed by the partition number, e.g.
+/dev/hda1. If you are using a GNU/Linux operating system, you can see
+@i{/usr/src/linux/Documentation/devices.txt} for more infomation on
+device naming.
+
+A DOS type partition table can have up to four `primary' partitions, which get
+numbers 1-4. One of the primary partitions may be used as an `extended' partition,
+which is used as a container for more partitions, which are called `logical' and
+take numbers starting from 5.
+
+A BSD/SUN type disklabel can hold up to 8 partitions, and an IRIX/SGI type disk label,
+called `dvh' in fdisk, can hold up to 16.
+
+@node Options
+
+@section Options
+
+@table @code
+@item @b{@minus{}h, @minus{}@minus{}help}
+Displays a help message.
+
+@item @b{@minus{}v, @minus{}@minus{}version}
+Displays the program's version.
+
+@item @b{@minus{}L, @minus{}@minus{}linux-fdisk}
+Turns  on  Linux  fdisk  compatibility mode. This is the same as running lfdisk.
+In this mode, only disk operations supported by Linux fdisk will be available.
+
+@item @b{@minus{}G, @minus{}@minus{}gnu-fdisk}
+Turns off Linux fdisk compatibility mode. You will be able to perform more
+operations on the disk - create on a partition, resize, move or copy a partition,
+with the filesystem on it, or automatically detect deleted partitions.
+
+@item @b{@minus{}i, @minus{}@minus{}interactive}
+Where necessary, prompts for user intervention. This is the default, when the
+program is started at a terminal.
+
+@item @b{@minus{}p, @minus{}@minus{}script}
+Never prompts for user intervention. This is the default, when the program is
+not started at a terminal, when it is called from another program. You can use
+this mode for scripting, fdisk tries to perform the select the most suitable
+choice in every case.
+
+@item @b{@minus{}l, @minus{}@minus{}list}
+Lists the partition table on the specified  device  and  exits.  If
+there  is  no  device  specified, lists the partition tables on all
+detected devices.
+
+@item @b{@minus{}r, @minus{}@minus{}raw-list}
+Displays a hex dump of the partition table of the disk, similar to the way Linux fdisk displays the raw data in the partition table, using the "print the raw data in the partition table" from the expert menu.
+
+@item @b{@minus{}u, @minus{}@minus{}unit-sector}
+Use sectors, instead of cylinders for a default unit.
+
+@item @b{@minus{}s, @minus{}@minus{}size=}@i{DEVICE}
+Displays the size of the partition on @i{DEVICE} is printed on the standard output.
+
+@item @b{@minus{}t, @minus{}@minus{}list-partition-types}
+Displays a list of supported partition types and features.
+
+@end table
+
+The following options are available only in lfdisk, for Linux fdisk compatibility.
+
+@table @code
+@item @b{@minus{}b, @minus{}@minus{}sector-size=}@i{SIZE}
+Specify the sector size of the disk. Valid values are 512, 1024 and
+2048. Should be used only on older kernels, which don't  guess  the
+correct sector size.
+
+
+@item @b{@minus{}C, @minus{}@minus{}cylinders=}@i{CYLINDERS}
+Specify  the  number of cylinders of the disk. Currently does nothing, it is left
+for Linux fdisk compatibility
+
+@item @b{@minus{}H, @minus{}@minus{}heads=}@i{HEADS}
+Specify the number of heads of the disk. Reasonable values are  255
+or 16.
+
+@item @b{@minus{}S, @minus{}@minus{}sectors=}@i{SECTORS}
+Specify  the number of sectors per track. A reasonable value is 63.
+
+@end table
+
+
+@node Commands and usage
+
+@section Commands and usage
+
+When @b{GNU fdisk} is started, a simple command line interface is displayed. 
+A list with the available commands and a short description can displayed by entering
+@b{m}. More detailed information about every command is given below. Most operations
+are not performed immediately, but only after the user decides to write the partition
+table to the disk. Those that need to write to the disk immediately, warn the user
+about it and are only available when not running in Linux fdisk compatibility mode.
+The default unit used is cylinder and can be changed to sector. Partition sizes
+can be specified in any other available unit, though. See the next section for 
+more information.
+
+@table @code
+@item @b{m}
+A command obsoleted by reading this manual.
+
+@item @b{p}
+Displays the partition table on the disk. It shows information like
+the start and end of the partitions, and their partition number. This
+is needed for using most of the commands below, so it is a good idea
+to list the partition table before using them. The start and end of
+the partition are displayed in the unit that you have selected for
+fdisk, while the size is displayed in blocks.
+
+@item @b{a}
+Toggles the bootable flag on a partition. On a DOS partition table type
+the partition with the bootable flag is the one that the system will boot
+from if there is no a boot manager in the master record. Make sure you 
+have a bootable partition, and it is indeed bootable. You will be
+asked for a partition number.
+
+@item @b{d}
+Delete the selected partition so you can use it to create another partition on the free space left by it.
+
+
+
+@item @b{n}
+Creates a new partition on some free space in the partition table. You will be 
+asked for the type of partition you want to create, and you can enter @b{p} for
+primary, @b{e} for extended or @b{l} for logical. Make sure that you select a type, 
+that can be created in the position that you want to create it. You can create
+logical partition only inside the extended. You will be asked about the start
+and end of the partition. If you put a @i{+} before the end, it will be regarded
+as size. You can also specify the start and end or size in a different unit,
+please check the next section for more information. If you are using gfdisk, 
+you will also be asked about the filesystem type and whether you want to create
+a filesystem on the partition. If you don't want to select a filesystem type,
+just select the default and you can later change the system type with the
+@b{t} command.
+
+@item @b{o}
+Creates a new empty DOS partition table. Use this command if you want to
+start the partition table on the disk from scratch, deleting all the partitions
+that are currently residing on it.
+
+@item @b{s}
+Creates a new empty SUN disklabel. If you are using a disk with a SUN disklabel, 
+use this command if you want to start the partition table on the disk from scratch,
+deleting all the partitions that are currently residing on it.
+
+@item @b{l}
+Lists the known filesystem types for the partition table or disklabel on the disk.
+This is not about the supported filesystem types, but about the way the disklabel
+marks the filesystem that is supposed to be residing on the partition. It can
+differ from the real filesystem, although it is not recommended.
+
+@item @b{t}
+Changes the filesystem type of a partition. This does not touch the actual filesystem
+on the partition, it just changes the field in the partition table that marks
+the filesystem that is supposed to be residing on the partition. If you are 
+running gfdisk, when you select a filesystem during the creation of a new
+partition, the most appropriate value for this field is selected.
+
+@item @b{w}
+Writes the partition table to the disk, notifies the operating system about the
+changes and quits the program. If fdisk wasn't able to notify the OS, you
+will have to restart the computer in order to use the new partition table.
+
+@item @b{q}
+Quits the program without saving the changes.
+
+@item @b{x}
+Displays a menu with extra operations, which are described below.
+@end table
+
+There is a menu with extra functionality in GNU fdisk. In gfdisk, it
+will include the specific to gfdisk commands. Everything is described below.
+
+The extra commands in lfdisk include
+
+@table @code
+@item @b{f}
+Fixes the order of the partitions in the partition table. This is
+useful, when for example on an DOS partition table, the partitions have
+a wrong order and you want to order them in order they are placed on
+the disk.
+@item @b{b}
+Moves the beginning of the data in the partition. Asks for a new start
+of the partition and then changes the partition geometry.
+
+@item @b{c}
+Changes the number of the cylinders of the disk. 
+
+@item @b{h}
+Changes the number of the heads of the disk.
+
+@item @b{s}
+Changes the number of the sectors per track of the disk. 
+@end table
+
+
+The extra commands in gfdisk include
+@table @code
+@item @b{h}
+Checks the consistency of the filesystem.  It is useful to see whether
+it is safe to perform operations like resize on the partitions. It
+performs a very basic check on the filesystem, so if you want to make
+a more thorough test or fix the errors on the filesystem, you should an
+external utility like e2fsck for ext2 or reiserfsck for reiserfs. Please
+note that the check is limited on some filesystem types (ext2, ext3 and
+reiserfs at the time of writing of the manual), but if the partition
+contains errors resize will gracefully fail without destroying the filesystem.
+
+@item @b{v}
+Moves the partition to another location on the disk. It asks for the number 
+of the partition you want to move. This command works in the same
+way as the new partition command and asks same questions, see above.
+The new location can't overlap with the current location. If this is what
+you need, you should try using the resize function, instead. Moving the
+partition requires that all changes you made so far are written to the disk. 
+
+@item @b{c}
+Rescues a partition with a supported filesystem, that has been deleted. 
+You specify the start and end of the region where you want to look for
+the start of the partition.
+
+@item @b{z}
+Resizes the partition and its filesystem, if supported. You will be asked
+for the number of the partition, and the new size and end. Some
+supported filesystem types require that the start of the partition
+stays fixed. This command requires that all changes you made so far
+are written to the disk.
+
+@item @b{o}
+Copies another partition over an already created partition on the disk.
+You can copy a partition from a different disk. You will be
+asked for the device of the disk that you want to copy from and the
+number of the partitions on both disks. This requires that all
+changes you made so far are written to the disk.
+
+@item @b{k}
+Creates a new file system on the selected partition. You will be asked
+to choose the filesystem type. The filesystem field in the partition table
+or disklabel is updated automatically. Please note that this requires that all
+changes you made so far are commited to the disk. If there is already
+a filesystem on the partition, it will be destroyed.
+@end table
+
+@node Units
+
+@section Units
+While you can select either cylinders or sectors as display units, 
+you can specify the positions and sizes in units of your choice,
+by entering the size followed by the unit. This is a list of the units
+that are available. Please note, that at the time of writing, using some
+of the units, like percent, as a position or size is broken.
+
+ @table @code
+
+@item @b{compact}
+Display each size in the most suitable unit from B, kB, MB, GB and TB.
+
+@item @b{B}
+One byte
+
+@item @b{kB }
+One kilobyte (1,000 bytes)
+
+@item @b{MB}
+One megabyte (1,000,000 bytes)
+
+@item @b{GB}
+One gigabyte (1,000,000,000 bytes)
+
+@item @b{TB}
+One terabyte (1,000,000,000,000 bytes)
+
+@item @b{KiB}
+One kilo binary byte (1,024 bytes)
+
+@item @b{MiB}
+One mega binary byte (1,048,576 bytes)
+
+@item @b{GiB}
+One giga binary byte (1,073,741,824 bytes)
+
+@item @b{TiB}
+One tera binary byte (1,099,511,627,776 bytes)
+
+@item @b{s}
+One sector. It depends on the sector size of the disk. You can use it if you want to see or choose the exact size in sectors.
+
+@item @b{%}
+One percent from the size of the disk
+
+@item @b{cyl}
+One cylinder. It depends on the cylinder size.
+
+@item @b{chs}
+Use CHS display units.
+
+@end table
+
+@node Bugs
+
+@chapter Bugs
+Before editing a BSD disklabel, the partition with  the  disklabel  should
+already exist on the disk and be detected by the OS. If you have created a BSD-type
+partition, you need to write the changes to the disk. If fdisk fails to notify 
+the OS about the changes in partition table, you need to restart your computer.
+As fdisk tries to guess the device holding the BSD disklabel, it might fail to
+edit it at all, even if the OS has detected it. In this case you are adviced to
+simply open the device with fdisk directly. It is possible that it doesn't work
+on some operating systems.
+
+
+Getting the size of a partition with -s might fail, if fdisk fails to guess the disk device, for the same reasons as with the previous bug.
+
+@node See also
+
+@chapter See also
+
+@b{cfdisk}@r{(8),}
+@b{mkfs}@r{(8),}
+@b{parted}@r{(8)}
+
+@node Copying this manual
+@appendix Copying this manual
+
+@menu
+* GNU Free Documentation License::  License for copying this manual
+@end menu
+
+@include fdl.texi
+
+@bye
+

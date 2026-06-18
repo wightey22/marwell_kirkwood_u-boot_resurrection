@@ -1,0 +1,17 @@
+<samba:parameter name="max wins ttl"
+				 type="integer"
+                 context="G"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このオプションは、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が WINS サーバとして動作している
+    (<smbconfoption name="wins support">yes</smbconfoption>) 
+    <command moreinfo="none">nmbd</command>に登録される NetBIOS
+    名の最大のTTL(time to live)を秒単位で指定する。
+    このパラメータを変更する必要はないであろう。
+    デフォルトは6日(518400秒)である。</para>
+</description>
+<related>min wins ttl</related>
+<value type="default">518400</value>
+</samba:parameter>

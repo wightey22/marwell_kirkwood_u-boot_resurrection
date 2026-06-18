@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="idmap_hash.8">
+
+<refmeta>
+	<refentrytitle>idmap_hash</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>idmap_hash</refname>
+	<refpurpose>Samba の Winbind 用 idmap_hash バックエンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<title>説明</title>
+	<para>idmap_hash プラグインは、ドメインのユーザやグループの SID を
+        31 ビットの uid と gid に対応付けるためのハッシュアルゴリズムを
+        実装している。このプラグインは nss_info API も実装しているので、
+        smb.conf で &quot;winbind normlaize names&quot; と
+        &quot;winbind nss info&quot; パラメータ経由で有効になっていれば、
+        ローカル名のマッピングファイルをサポートするのにも使える。
+	</para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>IDMAP オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>name_map</term>
+		<listitem><para>
+            nss_info API で使われる名前の対応付けファイルの絶対パスを
+            指定する。このファイルのエントリは
+            &quot;<replaceable>unix 名</replaceable>
+            = <replaceable>修飾ドメイン名</replaceable>&quot; の
+            形式で記述する。ユーザ名とグループ名両方の対応付けがサポート
+            されている。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+	<para>以下は、idmap と nss_info 情報を取り出すために idmap_hash 
+        プラグインを使った例である。
+	</para>
+
+	<programlisting>
+	[global]
+	idmap backend = hash
+	idmap uid = 1000-4000000000
+	idmap gid = 1000-4000000000
+
+	winbind nss info = hash
+	winbind normalize names = yes
+	idmap_hash:name_map = /etc/samba/name_map.cfg
+	</programlisting>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+    オリジナルの Samba ソフトウェアと関連ユーティリティは、Andrew Tridgell
+    により書かれた。Samba は現在 Samba チームの元で、Linux のカーネルと
+    同様にオープンソースソフトウェアとして開発されている。
+	</para>
+</refsect1>
+
+<refsect1>
+    <title>日本語訳</title>
+    <para>このマニュアルページは Samba 3.3.2 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの翻訳は
+    <itemizedlist>
+        <listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+    </itemizedlist>
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

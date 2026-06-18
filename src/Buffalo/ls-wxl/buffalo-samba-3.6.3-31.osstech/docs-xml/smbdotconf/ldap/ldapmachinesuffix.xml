@@ -1,0 +1,18 @@
+<samba:parameter name="ldap machine suffix"
+		context="G"
+		advanced="1"
+		developer="1"
+		type="string"
+		xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+
+<description>
+	<para>このパラメータはマシンアカウントが LDAP ツリーのどこに
+	追加されるかを指定する。もしこのパラメータが設定されていない場合、
+	<smbconfoption name="ldap suffix"/> の値が代わりに使用される。
+	サフィックスの文字列には、<smbconfoption name="ldap suffix"/>
+	の文字列が付加されるため、相対 DN で指定を行なうこと。</para>
+</description>
+
+<value type="default"/>
+<value type="example">ou=Computers</value>
+</samba:parameter>

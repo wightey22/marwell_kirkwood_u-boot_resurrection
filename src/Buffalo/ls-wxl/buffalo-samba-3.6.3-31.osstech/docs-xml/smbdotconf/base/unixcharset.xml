@@ -1,0 +1,17 @@
+<samba:parameter name="unix charset"
+	context="G"
+	type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+        <para>Samba が動作する UNIX マシンで使われている文字コードを指定する。
+    この情報は、Samba が SMB クライアントの使用している文字コードと文字列の変換を行なうために必要である。
+	</para>
+
+    <para>
+    ここで設定した文字コードは、Samba から実行するスクリプトの引数にも用いられる。
+    </para>
+</description>
+<value type="default">UTF8</value>
+<value type="example">ASCII</value>
+</samba:parameter>

@@ -1,0 +1,20 @@
+# Note: As this file is sitting in ${top_builddir},
+#           ${top_builddir} ~= ${pcfiledir}
+#	and ${top_srcdir}   ~= ${pcfiledir}/.
+# Note: This referes to directory matches, not to string matches.
+# Note: ${pcfiledir} already is an absolute path name, so there is
+#       no much sense prepending a ${pc_top_builddir} before it.
+
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+VERSION=2.4.10
+driverdir=${libdir}/libgphoto2/2.4.10
+
+Name: libgphoto2
+Description: Library for easy access to digital cameras
+URL: http://gphoto.org/proj/libgphoto2/
+Version: ${VERSION}
+Requires: libgphoto2_port >= 0.7.2, libexif >= 0.6.13
+Libs: ${pcfiledir}/libgphoto2/libgphoto2.la -lm
+Cflags: -I${pcfiledir}/.

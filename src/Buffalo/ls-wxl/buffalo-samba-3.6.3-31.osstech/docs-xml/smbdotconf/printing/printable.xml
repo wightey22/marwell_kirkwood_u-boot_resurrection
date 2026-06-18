@@ -1,0 +1,18 @@
+<samba:parameter name="printable"
+                 context="S"
+				 print="1"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>print ok</synonym>
+<description>
+    <para>このパラメータが
+	<constant>yes</constant> の場合に、
+	クライアントから指定されたディレクトリにスプールファイルを書き込むことが可能になる。</para>
+		
+	<para> 印刷可能(printable)なサービスでは、
+	(ユーザがUNIX上に権限をもっている限り)印刷データをスプールファイルに書き込むことが常に可能となることに注意。
+        <smbconfoption name="read only"/> パラメータは、
+	リソースに対する印刷以外のアクセスにのみ影響する。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

@@ -1,0 +1,9 @@
+<samba:parameter name="browseable" context="S" type="boolean"
+                 basic="1" advanced="1" print="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>browsable</synonym>
+<description>
+    <para> このパラメータは、net view コマンドやブラウズリスト中に現れる利用可能な共有の一覧にこの共有を表示させるかどうかを制御する。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

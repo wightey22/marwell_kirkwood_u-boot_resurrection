@@ -1,0 +1,20 @@
+<samba:parameter name="follow symlinks"
+	         context="S"
+			 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータにより、Samba の管理者は、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>
+	がシンボリックリンクを追跡する処理を共有単位で禁止することが可能になる。
+	このパラメータを <constant>no</constant> に設定した場合、
+	シンボリックリンクのファイルやディレクトリの追跡する処理が抑制される(ユーザにはエラーが返却される)。
+	このオプションは、ユーザが自分のホーム・ディレクトリに 
+	<filename moreinfo="none">/etc/passwd</filename> へのシンボリックリンクを追加するのを防止したりする効果がある。
+	ただし、わずかながらファイル名の検索が遅くなるだろう。</para>
+
+	<para>このオプションはデフォルトで有効になっている
+	(つまり、<command moreinfo="none">smbd</command> はシンボリックリンクを追跡する)。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

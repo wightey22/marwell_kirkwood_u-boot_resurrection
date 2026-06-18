@@ -1,0 +1,82 @@
+.\"     Title: sg
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Polecenia użytkowników
+.\"    Source: Polecenia użytkowników
+.\"
+.TH "SG" "1" "11/23/2008" "Polecenia użytkowników" "Polecenia użytkowników"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAZWA"
+sg \- execute command as different group ID
+.SH "SKŁADNIA"
+.HP 3
+\fBsg\fR [\-] [group\ [\-c]\ command]
+.SH "OPIS"
+.PP
+The
+\fBsg\fR
+command works similar to
+\fBnewgrp\fR
+but accepts a command\&. The command will be executed with the
+\fI/bin/sh\fR
+shell\&. With most shells you may run
+\fBsg\fR
+from, you need to enclose multi\-word commands in quotes\&. Another difference between
+\fBnewgrp\fR
+and
+\fBsg\fR
+is that some shells treat
+\fBnewgrp\fR
+specially, replacing themselves with a new instance of a shell that
+\fBnewgrp\fR
+creates\&. This doesn\'t happen with
+\fBsg\fR, so upon exit from a
+\fBsg\fR
+command you are returned to your previous group ID\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBSYSLOG_SG_ENAB\fR (boolean)
+.RS 4
+Enable "syslog" logging of
+\fBsg\fR
+activity\&.
+.RE
+.SH "PLIKI"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informacja o kontach użytkowników\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informacje chronione o użytkownikach\&.
+.RE
+.PP
+\fI/etc/group\fR
+.RS 4
+Informacje o grupach użytkowników\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informacje chronione o grupach użytkowników\&.
+.RE
+.SH "ZOBACZ TAKŻE"
+.PP
+
+\fBid\fR(1),
+\fBlogin\fR(1),
+\fBnewgrp\fR(1),
+\fBsu\fR(1),
+\fBgpasswd\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)

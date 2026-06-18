@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="profiles.1">
+
+<refmeta>
+	<refentrytitle>profiles</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>profiles</refname>
+	<refpurpose>レジストリファイルの中の SID の値を表示、
+	変更するユーティリティ</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>profiles</command>
+		<arg choice="opt">-v</arg>
+		<arg choice="opt">-c SID</arg>
+		<arg choice="opt">-n SID</arg>
+		<arg choice="req">file</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは、<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>profiles</command> は、Windows のレジストリファイル中の SID の値を表示、変更するユーティリティである。
+	現在は、Windows NT しかサポートしていない。
+	</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>file</term>
+		<listitem><para>表示や編集を行うレジストリファイル。
+		</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-v,--verbose</term>
+		<listitem><para>メッセージを冗長にする。	
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-c SID1 -n SID2</term>
+		<listitem><para><filename>file</filename> の中にある全ての
+		SID1 を SID2 に変更する。
+		</para></listitem>
+		</varlistentry>
+
+		&stdarg.help;
+		
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba バージョン 3
+	のものである。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作られた。Samba は現在 Linux カーネルが
+	開発されているような方法でのオープンソースプロジェクトである
+	Samba Team によって開発された。</para>
+	
+	<para>profiles のマニュアルページは Jelmer Vernoij によって作られた。</para>
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.0 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>たかはし もとのぶ (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>

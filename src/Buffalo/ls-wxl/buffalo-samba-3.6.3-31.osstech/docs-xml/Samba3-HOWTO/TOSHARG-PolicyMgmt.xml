@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="PolicyMgmt">
+<chapterinfo>
+	&author.jht;
+    <pubdate>April 3 2003</pubdate>
+</chapterinfo>
+
+<title>システムとアカウントポリシー</title>
+
+<para>
+<indexterm><primary>検証</primary></indexterm>
+この章では、Sambaメーリングリストの投稿者による、個人的な経験と知識に由来する知識の
+現状について要約する。投稿された情報を再構築する前に、すべての効果に、与えられた情報
+を検証することが行われた。この検証を通じては、追加の情報はカバーされていないので、
+それも提供している。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>グループポリシー</primary></indexterm>
+<indexterm><primary>users</primary></indexterm>
+<indexterm><primary>groups</primary></indexterm>
+Microsoft Windows NT 3.5が発表された時、ホットな新しい話題は、ユーザとグループに対する
+グループポリシーの実装であった。次にMicrosoft Windows NT4が来て、いくつかのサイトがこの
+機能を適用し始めた。どうやって知ったかって?数多くの<quote>ドジな</quote>(あるいは
+間違った)管理者はそれを行い、解決のために助けを求めたからである。
+</para>
+
+<para>
+<indexterm><primary>グループポリシー</primary></indexterm>
+<indexterm><primary>グループポリシーオブジェクト</primary><see>GPO</see></indexterm>
+<indexterm><primary>GPOs</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>group policy objects</primary><see>GPOs</see></indexterm>
+Windows  2000とActive Directoryがリリースを待っている間、管理者はグループポリシーは
+すばらしいというメッセージを聞かされ続けた。グループポリシーにより管理コストの低減が
+可能となり、確かに利用者にとってありがたい点もある。しかし、Windows 200xの
+Active Directory と GPO によるユーザとコンピュータ管理機能の活用は遅々として
+進まなかった。これは、2000年から2001年にかけてのSambaメーリングリストにおける
+過去ログにおいて、GPOに関連した投稿や、GPOをSambaの環境でどのように複製するのかと
+いった投稿がほとんどなかったことからも明らかであった。
+</para>
+
+<para>
+<indexterm><primary>exploit opportunities</primary></indexterm>
+トラフィック量から判断すると、2002年中盤以降は、GPO は多くのサイトでデプロイメント(運用)
+の一部として普通に用いられるようになった。
+本章では、ユーザのデスクトップとネットワーク上のクライアントワークステーションの
+自動制御を可能とするために用いることが可能な、テクニックと方法についておさらいする
+(記載する)。
+</para>
+
+</sect1>
+
+<sect1>
+<title>システムポリシーの作成と運用</title>
+
+<para>
+<indexterm><primary>NETLOGON</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>レジストリ</primary></indexterm>
+<indexterm><primary>affect users</primary></indexterm>
+Microsoft Windowsプラットフォーム配下、特にMicrosoft NT4とMicrosoft Windows 95の
+リリースに従ったものは、ドメインコントローラのNETLOGON共有中に配置できるタイプの
+ファイルを作成することが可能である。クライアントがネットワークにログオンすると、
+このファイルは読み取られ、その内容で、クライアントマシンのレジストリの変更を開始する。
+このファイルはユーザ、ユーザのグループかマシンに影響するレジストリを変更させる
+ことを許可する。
+</para>
+
+<para>
+<indexterm><primary>Config.POL</primary></indexterm>
+<indexterm><primary>poledit.exe</primary></indexterm>
+<indexterm><primary>ポリシーエディタ</primary></indexterm>
+Microsoft Windows 9x/Meようには、このファイルは<filename>Config.POL</filename>と
+しなければならず、ポリシーエディタとしてよく知られている
+<filename>poledit.exe</filename>というツールを使って作成できる。ポリシーエディタは
+Windows 98インストール用CD-ROMで提供されているが、Microsoft Windows Meでは提供
+されなくなった。Microsoft Windowsネットワーク管理者からのコメントによると、
+これはMicrosoft Windows Me リソースキットに含まれるようになったとのこと。
+</para>
+
+<para>
+<indexterm><primary>システムポリシーエディタ</primary></indexterm>
+Microsoft Windows NT4サーバ製品には、
+<guimenu>スタート -> プログラム -> 管理ツール</guimenu>配下に
+<emphasis>システムポリシーエディタ</emphasis>が含まれている。
+Microsoft Windows NT4とその後のクライアント用に、このファイルは
+<filename>NTConfig.POL</filename>という名前にしなければならない。
+</para>
+
+<para>
+<indexterm><primary>MMC</primary></indexterm>
+Microsoft Windows 2000からは、Microsoft管理コンソールすなわちMMCが新たに導入された。
+このツールは、ネットワークアクセスとセキュリティ管理方法に対して、永遠に
+止めることのないマイクロソフト社の歩みの中から生まれた新しい潮流である。
+マイクロソフト社の新製品や新技術が登場するたびに、以前の常識が覆され、複雑化したツールと
+方法が新たに生み出されるように見える。
+マイクロソフト社の立場からすると、MMCは進歩である。しかし、機能の進歩には
+大きな代償が伴っているのだ。
+</para>
+
+<para>
+<indexterm><primary>ネットワークポリシー</primary></indexterm>
+<indexterm><primary>システムポリシー</primary></indexterm>
+<indexterm><primary>プロファイル</primary></indexterm>
+<indexterm><primary>ポリシー</primary></indexterm>
+ネットワークとシステムポリシーの設定に着手する前に、
+<ulink url="http://www.microsoft.com/ntserver/techresources/management/prof_policies.asp">
+Implementing Profiles and Policies in Windows NT 4.0</ulink>
+という、MicrosoftのWebサイトで提供されている文書を読むことを強く推奨する(訳注:現存しない)。
+これらは、四で理解すべきである、古いものに対する大量の追加文書である。
+<quote>グループポリシー</quote>をMicrosoftのWebサイト上で探してみること。
+</para>
+
+<para>
+以下で説明するものは、いくつかの有用な注意事項に関する短い議論である。ここで提供される
+情報は不完全であることを警告する&smbmdash;。
+</para>
+
+	<sect2>
+	<title>Windows 9x/ME ポリシー</title>
+
+	<para>
+<indexterm><primary>グループポリシーエディタ</primary></indexterm>
+<indexterm><primary>tools\reskit\netadmin\poledit</primary></indexterm>
+	Windows 9x/Meは以下でWindows 98のグループポリシーエディタを使ってグループ
+	プロファイルを作成する必要があるとする。これはオリジナルの完全なWindows 98
+	インストールCD-ROM配下の<filename>tools\reskit\netadmin\poledit</filename>
+	ディレクトリ中にある。プログラムの追加と削除機能を使ってこれをインストールし、
+	次に、<guiicon>Have Disk</guiicon>をクリックする。
+	</para>
+
+
+	<para>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+<indexterm><primary>Config.POL</primary></indexterm>
+	ユーザポリシーまたは<filename>マイドキュメント</filename>などの位置を指定する
+	ポリシーファイルを作成するために、グループポリシーエディタを使う。次に、
+	<smbconfsection name="[NETLOGON]"/>共有のrootに配置する必要がある、
+	<filename>Config.POL</filename>というファイルにこれらの設定をセーブする。
+	もしもWindows98がSambaドメインにログオンするように設定されていたならば、これは
+	自動的にこのファイルを読み、ログオンしようとするマシンの、Windows 9x/Me
+	レジストリを更新する。
+	</para>
+
+	<para>
+	さらなる詳細はWindows98リソースキットの文書中で説明されている。
+	</para>
+
+	<para>
+<indexterm><primary>registry</primary></indexterm>
+	もしも、正しい手順を踏まない場合、時々Windows 9x/Meはレジストリの正当性を検査し、
+	各Windows 9x/Meマシンに格納されているレジストリのバックアップコピーから、その
+	設定をリストアする。そのため、時々、オリジナルの設定に戻ってしまうと言うことに
+	気がつくだろう。
+	</para>
+
+	<para>
+<indexterm><primary>grouppol.inf</primary></indexterm>
+<indexterm><primary>Group Policy</primary></indexterm>
+	グループポリシーを適用するために、Windows 9x/Me用のグループポリシーハンドラを
+	インストールする。Windows 98 CD-ROMの
+	<filename>\tools\reskit\netadmin\poledit</filename>を参照。
+	<filename>grouppol.inf</filename>をダブルクリックして、Windows 9x/Meにグループ
+	ポリシーをインストールする。不幸にも、これはグループポリシーを使うWindows 98/Me
+	マシンすべてで行う必要がある。
+	</para>
+
+	</sect2>
+	<sect2>
+	<title>Windows NT4形式のポリシーファイル</title>
+
+	<para>
+<indexterm><primary>ntconfig.pol</primary></indexterm>
+<indexterm><primary>poledit.exe</primary></indexterm>
+<indexterm><primary>ポリシーエディタ</primary></indexterm>
+<indexterm><primary>ドメインプロファイル</primary></indexterm>
+	<filename>ntconfig.pol</filename>を作成あるいは編集するために、NT4サーバには
+	同梱されているが、NTワークステーションには含まれていない、
+	<command>poledit.exe</command>というNTサーバポリシーエディタを使う必要がある。
+	NT4ワークステーションにもポリシーエディタはあるが、ドメインポリシーを作成する
+	のには適していない。さらに、Windows 95のポリシーエディタはNT4ワークステーション
+	あるいはサーバにインストールできるが、NTクライアントではこれは動作しない。
+	しかし、NTサーバからのファイルはNT4ワークステーション上でも問題なく動く。
+	</para>
+
+	<para>
+<indexterm><primary>poledit.exe</primary></indexterm>
+<indexterm><primary>common.adm</primary></indexterm>
+<indexterm><primary>winnt.adm</primary></indexterm>
+<indexterm><primary>c:\winnt\inf</primary></indexterm>
+	<filename>poledit.exe</filename>, <filename>common.adm</filename>と
+	<filename>winnt.adm</filename>を必要とする。2つの<filename>*.adm</filename>
+	ファイルを<filename>c:\winnt\inf</filename>に配置するのは、プログラムが他の場所を
+	指定されない限り既定値で探しに行く場所であるので、都合がよい。このディレクトリは
+	通常<quote>hidden</quote>である。
+	</para>
+
+	<para>
+<indexterm><primary>ポリシーエディタ</primary></indexterm>
+<indexterm><primary>Nt4sp6ai.exe</primary></indexterm>
+<indexterm><primary>poledit.exe</primary></indexterm>
+<indexterm><primary>Zero Administration Kit</primary></indexterm>
+	Windows NTポリシーエディタは、Windows NT4.0のサービスパック3(とそれ以降)にも
+	同梱されている。<command>servicepackname /x</command>を使ってファイルを
+	解凍する。&smbmdash;たとえばサービスパック6aでは<command>Nt4sp6ai.exe /x</command>
+	である。ポリシーエディタ<command>poledit.exe</command>と関連するテンプレート
+	ファイル (*.adm)が解凍される。office97用のテンプレートファイルとポリシーエディタの
+	コピーをダウンロードすることも可能である。他の場所としては、Microsoftから
+	ダウンロードできるZero Administration Kitがあげられる。
+	</para>
+
+		<sect3>
+		<title>腐ったレジストリ</title>
+
+			<para>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+<indexterm><primary>HKEY_LOCAL_MACHINE</primary></indexterm>
+		NT4形式ベースのポリシーの変更で、大量の設定は自動的にユーザのログオフでは
+		戻されない。<filename>NTConfig.POL</filename>ファイル中にある設定は
+		クライアントマシンのレジストリに適用され、細かな項目がたくさんある
+		HKEY_LOCAL_MACHINEキーへの適用は、明示的に戻されない限りそのままになる。
+		これは入れ墨として知られている。これはその下部に対して重大な影響を及ぼす
+		事が可能となり、管理者は後々そのマシンのを管理する能力を失わないように、
+		とても注意しなければならない。
+			</para>
+
+		</sect3>
+	</sect2>
+	<sect2>
+	<title>Microsoft Windows 200x/XP Professionalのポリシー</title>
+
+	<para>
+<indexterm><primary>レジストリ</primary></indexterm>
+	Windows NTpシステムポリシーは、NT4形式のドメイン中のメンバである、ユーザ、
+	グループとコンピュータ(クライアントワークステーション)に指定するレジストリ
+	パラメータの設定が出来る。このようなポリシーファイルはMicrosoft Windows 200x/XP
+	でも動作する。
+	</para>
+
+	<para>
+	Microsoft Windows 2000では、最近新たにNT4形式のポリシーと比べて上位互換の機能を
+	提供する、形式のグループポリシーを導入した。もちろん、ポリシーを作るツールは
+	異なり、それを実装するメカニズムはもっと改良されている。
+	</para>
+
+	<para>
+	<indexterm><primary>GPOs</primary></indexterm>
+<indexterm><primary>管理用テンプレート</primary></indexterm>
+	古いNT4形式のレジストリベースポリシーは、Microsoft Windows 2000/XP GPO中では
+	<emphasis>管理用テンプレート(Administrative Templates)</emphasis>として
+	知られている。前者は種々のセキュリティ設定の設定機能、インターネット
+	エクスプローラの設定の強制、ユーザデスクトップ(スタートメニュー中に現れる
+	メニュー項目に設定されるのと同じような<filename>マイドキュメント</filename>
+	ファイルの配置を含む)の変更と外観の切り替え(redirect)を含む。
+	追加の新しい機能は、特定のWindowsアプリケーションソフトを特定のユーザ/グループに
+	有効化する事を行うことである。
+	</para>
+
+	<para>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+<indexterm><primary>NETLOGON</primary></indexterm>
+<indexterm><primary>local registry values</primary></indexterm>
+	思い出してほしいが、NT4のポリシーファイルは<filename>NTConfig.POL</filename>
+	という名前で、ドメインコントローラ上のNETLOGON共有のルートに格納される。Windows NT4
+	ユーザはユーザ名とパスワードを入力し、ログオンを行うドメイン名を選択する。ログオン
+	プロセス処理の間、クライアントマシンは、認証サーバ上のNETLOGON共有から
+	<filename>NTConfig.POL</filename>を読み、このファイル中にある設定に従い、ローカルの
+	レジストリ値を変更する。
+	</para>
+
+	<para>
+<indexterm><primary>SYSVOL</primary></indexterm>
+<indexterm><primary>NETLOGON</primary></indexterm>
+<indexterm><primary>replicated</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>グループポリシーコンテナ</primary><see>GPC</see></indexterm>
+<indexterm><primary>グループポリシーテンプレート</primary><see>GPT</see></indexterm>
+<indexterm><primary>replicated SYSVOL</primary></indexterm>
+	Windows 200x GPOは機能がたくさんある。これらは、NETLOGON共有には格納されないが、
+	一部はActive Directoryそれ自身にWindows200x ポリシーファイルとして格納され、
+	残りはSYSVOLフォルダと呼ばれる共有(かつ複製される)ボリューム中に格納される。
+	このフォルダはすべてのActive Directoryドメインコントローラ上に存在する。
+	Active Directoryそれ自身に格納される部分は、グループポリシーコンテナ(GPC)と
+	呼ばれ、SYSVOLと呼ばれる複製された共有中に格納されるものは、グループポリシー
+	テンプレート(GPT)として知られる。
+	</para>
+
+	<para>
+<indexterm><primary>GPOs</primary></indexterm>
+	NT4クライアントでは、ポリシーファイルは読み取られるが、各ユーザがネットワークに
+	ログオンする時のみ実行される。Microsoft Windows 200xポリシーは、もっと
+	複雑である。&smbmdash;GPOはクライアントマシン起動時(マシン固有の部分)で処理、
+	適用され、ユーザがネットワークにログオンする時、ユーザ個別の部分が適用される。
+	Microsoft Windows 200x形式のポリシー管理では、各マシンあるいはユーザは、
+	限りなく多くの、同時に適用可能な(かつ、適用される)ポリシーセット(GPO)の適用を
+	受けるかもしれない。NT4形式のポリシーファイルでは、これと同様の能力をもつものは
+	存在しない。
+	</para>
+
+		<sect3>
+		<title>Windows 200x/XPポリシーの管理</title>
+
+		<para>
+		<indexterm><primary>GPOs</primary></indexterm>
+		<indexterm><primary>システムポリシーエディタ</primary></indexterm>
+<indexterm><primary>poledit.exe</primary></indexterm>
+<indexterm><primary>MMC snap-in</primary></indexterm>
+<indexterm><primary>Poledit</primary></indexterm>
+		<application>システムポリシーエディタ</application>というツールを使う代わりに、
+		通常はPoledit(バイナリファイルは<command>poledit.exe</command>)を使い、
+		以下のように、
+		<application>Microsoftマネジメントコンソール</application><acronym>(MMC)</acronym>
+		スナップインを使って、<acronym>GPOs</acronym>の作成と管理を行う:
+		<procedure>
+			<step><para>
+			Windows 200x/XPメニューから
+			<guimenu>スタート->プログラム->管理ツール</guimenu>とたどり、
+			<guimenuitem>Active Directoryユーザとコンピュータ</guimenuitem>
+			というMMCスナップインを選択する。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>organizational unit</primary><see>OU</see></indexterm>
+			管理したいドメインまたはorganizational unit (OU)を選択し、次に、
+			そのオブジェクトのコンテキストメニューを開くために右クリックし、
+			<guibutton>プロパティ</guibutton>を選択する。
+			</para></step>
+
+			<step><para>
+			<guilabel>グループポリシー</guilabel>タブ上で左クリックし、次に、
+			新規タブ上で左クリックする。作成したい新しいポリシーの名前を
+			入力する。
+			</para></step>
+
+			<step><para>
+			<guilabel>編集</guilabel>タブで左クリックし、GPOを作成するために
+			必要なステップを開始する。
+			</para></step>
+		</procedure>
+
+		<para>
+		すべてのポリシー設定オプションはポリシー管理テンプレートを使用する
+		ことによって制御される。NT4と同様Windows 200xでも、これらのファイルは
+		拡張子として.admを使う。しかしながら、.admファイルはNT4とWindows 200x
+		間で相互交換可能ではないことに注意。後者は拡張された定義を行えるような
+		たくさんの新しい機能を導入している。どのように.admファイルをプログラム
+		するかについて説明することは、この文書の範囲外である。それについては、
+		使用しているMicrosoft Windowsの、特定のバージョンに対する
+		Microsoft Windowsリソースキットを参照のこと。
+		</para>
+
+		<note>
+		<para>
+<indexterm><primary>gpolmig.exe</primary></indexterm>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+<indexterm><primary>resource kit</primary></indexterm>
+		Microsoft Windows 2000リソースキットには、<command>gpolmig.exe</command>
+		というツールが入っている。このツールはNT4の<filename>NTConfig.POL</filename>
+		ファイルをWindows 200x形式のGPOに変換するのに使える。どのようにこの強力な
+		ツールを使うかについては十分に注意すること。特定の使用に関する情報については、
+		リソースキットのマニュアルを参照してほしい。
+		</para>
+		</note>
+
+		</para>
+		</sect3>
+
+		<sect3>
+		<title>固有のシステムポリシーテンプレート</title>
+
+		<para>
+		過去一年にわたって、Windows システムポリシーのための固有のテンプレートの
+		作成に関するいくつかの議論があった。Sambaメーリングリスト上での最近の
+		通知は言及に値する。
+		</para>
+
+		<para>
+		Mike Petersenは彼が作成したテンプレートファイルの有効性を通知した。この
+		固有のシステムポリシーエディタテンプレートは、SambaのようなSMBサーバから
+		Microsoft Windows ワークステーションを問題なく制御することができる。
+		このテンプレートは、いくつかのネットワーク上でテストされたが、
+		もしも、それらのポリシーについて何らかの問題を見つけたか、追加のポリシーに
+		関する何らかの案があったとしたら、mgpeter@pcc-services.comまでメールを
+		送って教えてほしい。このテンプレートはWindows XP用の数多くのポリシーを
+		含み、業務用の環境ではもっとよく動くようになっている。
+		</para>
+
+		<para>
+		さらなる情報については、
+		<ulink url="http://www.pcc-services.com/custom_poledit.html">Petersen</ulink>
+		Computer Consulting Webサイトを参照してほしい。テンプレートファイルへの
+		ダウンロードリンクがある。
+		</para>
+
+		</sect3>
+	</sect2>
+</sect1>
+
+<sect1>
+<title>アカウント/ユーザポリシーの管理</title>
+
+<para>
+<indexterm><primary>ポリシー</primary></indexterm>
+<indexterm><primary>ポリシーファイル</primary></indexterm>
+<indexterm><primary>レジストリの設定</primary></indexterm>
+ポリシーは、特定のユーザの設定か、ユーザのグループの設定を定義できる。結果のポリシー
+ファイルには、ポリシーファイルを使う、すべてのユーザ、グループとコンピュータ用の
+レジストリ設定が含まれる。各ユーザ、グループあるいはコンピュータ用にポリシーファイルを
+分けることは不要である。
+</para>
+
+<para>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+もしも、認証されたドメインコントローラから自動的にダウンロードされるポリシーファイルを
+作成したら、<filename>NTConfig.POL</filename>と名前を付けるべきである。システム管理者には
+ポリシーファイルの改名オプションがあり、Windows NTベースのワークステーションを
+変更することで、マニュアルパス経由でポリシーファイルのするためにコンピュータを制御する。
+手動でレジストリを変更するか、システムポリシーエディタを塚'ってこれを行うことが出来る。
+これは、各マシンがその固有のポリシーファイルを持つようなローカルパスでも問題ないが、
+もしも、すべてのマシンに対して変更が必要であれば、各ワークステーションに対して個別に
+行わなければならない。
+</para>
+
+<para>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+<indexterm><primary>NETLOGON</primary></indexterm>
+Windows NT4/200x/XPマシンがネットワークにログオンするとき、クライアントは、
+<filename>NTConfig.POL</filename>ファイルが存在するかどうかを、認証するドメイン
+コントローラ上のNETLOGON共有中で捜す。もしも存在するならば、それをダウンロードし、
+解析し、レジストリのユーザ部分に適用する。
+</para>
+
+<para>
+<indexterm><primary>GPOs</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+<indexterm><primary>NT4形式のポリシー更新</primary></indexterm>
+Microsoft Windows Active DirectoryドメインにログオンするMicrosoft Windows 200x/XP
+クライアントはActive Directoryそれ自身に定義され格納されるGPOを使って、さらに
+ポリシーの設定を要求するかもしれない。ADのGPOを使う最も重要な利点は、
+レジストリを<emphasis>汚染する</emphasis>効果がない言うことである。
+これは<filename>NTConfig.POL</filename>(NT4)形式のポリシー更新の使用と比較して
+考慮すべき利点である。
+</para>
+
+<para>
+<indexterm><primary>アカウント制限</primary></indexterm>
+<indexterm><primary>共通の制限</primary></indexterm>
+さらに追加で、ユーザプロファイルと結合して動作する方法で、システムあるいは
+グループポリシー経由で、設定あるいは強制されるかもしれないアクセス制御の
+追加においてMicrosoft Windows NT4/200x/XP下のユーザ管理環境は、ユーザ単位の
+アカウント制限が手cきょうされるのと同様に、ドメイン単位でもできる。
+よく使われる共通の制限は以下のものがある:
+</para>
+
+<para>
+<indexterm><primary>アカウント制御</primary></indexterm>
+<itemizedlist>
+	<listitem><para>ログオン時間</para></listitem>
+	<listitem><para>パスワードのエージング</para></listitem>
+	<listitem><para>特定のマシンからのログオンのみ許可</para></listitem>
+	<listitem><para>アカウントタイプ(ローカルまたはグローバル)</para></listitem>
+	<listitem><para>ユーザの権限</para></listitem>
+</itemizedlist>
+</para>
+
+<para>
+<indexterm><primary>ドメインユーザマネージャ</primary></indexterm>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+Samba-3.0.20は、まだMicrosoft Windows NT4/200x/XPで共通なすべてのアカウント制御を実装
+していない。Microsoft Windows NTp用のドメインユーザマネージャを使って多くの制御を
+設定する間、パスワード満了機能のみが現在使える。現時点で残りの制御の大半は、実際の
+制御を提供するように、完了されるかもしれないダミーのルーチンである。NT4ドメイン
+ユーザマネージャを使うか<filename>NTConfig.POL</filename>中でパラメータが
+設定できることから、誤解してはいけない。
+</para>
+
+</sect1>
+<sect1>
+<title>管理ツール</title>
+
+<para>
+グループポリシーを作成するか管理しようと思っている人は誰でも、いくつかのツールについて
+慣れておく必要がある。以下の節では、余りメンテナンスをしないユーザ環境を作成するための
+手助けとなる、主要なツールについて説明する。
+</para>
+
+	<sect2>
+	<title>SambaのEditregツールセット</title>
+
+	<para>
+	<indexterm><primary>editreg</primary></indexterm>
+	<indexterm><primary>NTUser.DAT</primary></indexterm>
+	<indexterm><primary>NTConfig.POL</primary></indexterm>
+	<command>editreg</command>と呼ばれる新しいツールが開発中である。このツールは、
+	ユーザとグループプロファイル中に格納される(<filename>NTUser.DAT</filename>と
+	呼ばれる)レジストリファイルを編集するのに使える。<filename>NTConfig.POL</filename>
+	ファイルは<filename>NTUser.DAT</filename>ファイルと同じ構造を持ち、このツールを
+	使って編集できる。<command>editreg</command>は、<filename>NTConfig.POL</filename>
+	ファイルをテキスト形式でセーブすることが出来るように意図し、拡張された機能を含む
+	新しい<filename>NTConfig.POL</filename>ファイルを構築する事を出来るように作成されて
+	いる。この機能を実現するのは困難であることは分かっているので、もしもこの機能が
+	実現しなくとも驚かないでほしい。公に使える機能は、このツールの正式版がリリースされた
+	時に公開される。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>Windows NT4/200x</title>
+
+	<para>
+<indexterm><primary>regedt32.exe</primary></indexterm>
+<indexterm><primary>グループポリシーエディタ</primary></indexterm>
+<indexterm><primary>MMC</primary></indexterm>
+	Microsoft Windows環境からこれらのタイプの制御を設定するために使えるかもしれない
+	ツールは、NT4ドメインユーザマネージャ、NT4システムおよびグループポリシーエディタ、
+	およびレジストリエディタ(regedit32.exe)である。Microsoft Windows 200x/XP配下では
+	これは、MMCに対して適切な<quote>スナップイン</quote>、レジストリエディタ、および、
+	もしかするとNT4システムとグループポリシーエディタを使って行える。
+	</para>
+	</sect2>
+
+	<sect2>
+	<title>Samba PDC</title>
+
+	<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>pdbedit</primary></indexterm>
+<indexterm><primary>NET</primary></indexterm>
+<indexterm><primary>rpcclient</primary></indexterm>
+	Sambaドメインコントローラでは、ユーザアカウントとポリシー情報の管理のための
+	以下の新しいツールが含まれている:
+	With a Samba domain controller, the new tools for managing user account and policy information include:
+	<command>smbpasswd</command>, <command>pdbedit</command>, <command>net</command>, と <command>rpcclient</command>。
+	管理者はこれらのツールのマニュアルページを読み、使用法に慣れるべきである。
+	</para>
+
+	</sect2>
+</sect1>
+
+<sect1>
+<title>システムスタートアップとログオン処理の概要</title>
+
+<para>
+以下は、システムの処理の順番と、システムの再起動とユーザログオンの一部として処理される、
+処理の順番を説明する試みである:
+</para>
+
+<orderedlist>
+	<listitem><para>
+<indexterm><primary>リモートプロシジャーコールシステムサービス</primary><see>RPCSS</see></indexterm>
+<indexterm><primary>multiple universal naming convention provider</primary><see>MUP</see></indexterm>
+	ネットワークが起動し、次にリモートプロシジャーコールシステムサービス(RPCSS)と
+	multiple universal naming convention provider (MUP)が起動する。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>GPOs</primary></indexterm>
+	Active Directory を使う場合、GPOの整列された一覧がダウンロードされて適用される。
+	リストは以下のGPOを含んでいても余韻
+<itemizedlist>
+	<listitem><para>ディレクトリ中のマシンの配置を適用(Apply to the location of machines in a directory)。</para></listitem>
+	<listitem><para>設定が変更されたときのみ適用(Apply only when settings have changed)。</para></listitem>
+	<listitem><para>適用範囲の設定に依存:local,site,domain,organizational unitなど。</para></listitem>
+</itemizedlist>
+	どのデスクトップユーザインタフェースも、上記が処理されるまで提供されない。
+	</para></listitem>
+
+	<listitem><para>
+	スタートアップスクリプトの実行(既定値ではhiddenとsynchronous)。
+	</para></listitem>
+
+	<listitem><para>
+	ログオンを行うためのキーボード操作(Ctrl-Alt-Del)。
+	</para></listitem>
+
+	<listitem><para>
+	ユーザの認証情報が検証され、ユーザプロファイルがロードされる(ポリシー設定に依存)。
+	</para></listitem>
+
+	<listitem><para>
+	ユーザGPOの整列された一覧を入手する。一覧の内容は、以下の点で何が含まれているかに依存する:
+
+<itemizedlist>
+	<listitem><para>ユーザがドメインのメンバか、結果、特別なポリシーの適用を受けるか?</para></listitem>
+	<listitem><para>Loopback enablement, and the state of the loopback policy (併合または置換)。</para></listitem>
+	<listitem><para>Active Directoryそれ自身の位置</para></listitem>
+	<listitem><para>GPOの一覧が変更されたか?もしも変更されていないならば、処理は不要である。</para></listitem>
+</itemizedlist>
+	</para></listitem>
+
+	<listitem><para>
+	Active Directoryからのユーザポリシーが適用される。注意:いくつか種類がある。
+	</para></listitem>
+
+	<listitem><para>
+	ログオンスクリプトが動く。Windows 200xとActive Directoryから新規に、ログオン
+	スクリプトはGPOをベースにして得られるかもしれない(hiddenとsynchronouslyに実行)。
+	NT4形式のログオンスクリプトは通常のウィンドウで動作する。
+	</para></listitem>
+
+	<listitem><para>
+	GPOから決定されたユーザインタフェースが提供される。注意:Sambaドメイン中では
+	(NT4ドメインのように)、マシン(システム)ポリシーは起動時に適用される。
+	ユーザポリシーはログオン時に適用される。
+	</para></listitem>
+</orderedlist>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+ポリシーに関連する問題は、診断するのがとても難しく、さらに修正するのがもっと難しい
+可能性がある。以下の項目は、基本的な問題のみを示している。
+</para>
+
+<sect2>
+<title>ポリシーが動かない</title>
+
+<para>
+<quote><filename>Config.POL</filename>ファイルを作成し、<emphasis>NETLOGON</emphasis>
+共有に置いた。が、Windows XP Proマシンでは、それが見えていないような感じで、何ら
+違いがなかった。Windows 98では正しく動作したが、Windows XP Proにアップグレードして
+からはもはや動かなくなった。何かヒントはないか?</quote>
+</para>
+
+<para>
+ポリシーファイルはWindows 9x/MeとMicrosoft Windows NT4/200x/XPベースのプラットフォーム
+の間では互換性がない。<filename>NTConfig.POL</filename>というファイルをNT4の
+グループポリシーエディタで作成する必要があり、そうすると、Microsoft Windows XP Pro
+クライアント用の正しい形式になる。
+</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

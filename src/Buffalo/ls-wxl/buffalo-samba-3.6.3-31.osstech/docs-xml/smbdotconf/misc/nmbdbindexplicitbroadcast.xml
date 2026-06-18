@@ -1,0 +1,18 @@
+<samba:parameter name="nmbd bind explicit broadcast"
+	         context="G"
+		 advanced="1" developer="1"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  このオプションは<citerefentry><refentrytitle>nmbd</refentrytitle>
+	  <manvolnum>8</manvolnum></citerefentry>に、ローカルサブネットの
+	  ブロードキャストアドレスに、明示的にバインドすることを行わせる。これは、
+	  <smbconfoption name="socket address"/>オプションと組み合わせた場合に、
+	  nmbdが正しく動くようにするのに必要である。このオプションをnoにする
+	  必要はない。
+	</para>
+</description>
+
+<value type="default">yes</value>
+</samba:parameter>

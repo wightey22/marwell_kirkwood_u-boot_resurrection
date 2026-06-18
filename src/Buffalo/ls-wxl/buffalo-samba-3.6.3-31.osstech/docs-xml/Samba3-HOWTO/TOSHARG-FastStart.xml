@@ -1,0 +1,1342 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="FastStart">
+<chapterinfo>
+	&author.jht;
+</chapterinfo>
+
+<title>手軽な始め方: 短気な方への手引き</title>
+
+<para>
+Samba HOWTO文書中に含めるものについての最初に提案を受けた時、
+だれかが問い合わせのためのサンプル設定をたくさん書いた&smbmdash;。これは、
+動いているシステムからたくさんのエッセンスを提示することに由来するたくさんの
+価値を失わないで行う事が甚だしく難しい。それがドキュメントに抜けているもので
+ある。それをカバーする章の内容の中に設定の可能性の広範囲な説明がある。この
+章は、要求されたことに対する処方であると思いたい。
+</para>
+
+<para>
+この章中の情報は、ほとんど完成したこの本のオリジナルバージョンの後に書かれた
+<quote>Samba-3 by Example</quote>という本と比較してとてもまばらである。
+<quote>Samba-3 by Example</quote>は最初の版の最終稿をレビューした結果を
+フィードバックしたものである。読者フィードバックが、オリジナルのレビュアによ
+り反映が行われることを見ることは興味深かった。どの場合にも、経験ある
+ネットワーク管理者がそこから得るものと同様、何が新しいかをより理解する
+ための基礎的な調査に1ヶ月半かかった。<quote>Samba-3 by Example</quote>は
+その調査の結果である。この本のいくつかのページで提供されているものは、より
+包括的に<quote>Samba-3 by Example</quote>の第二版でカバーしている。
+両方のほんの第二版は同じ時期にリリースされた。
+</para>
+
+<para>
+まとめると、<quote>公式のSamba-3 HOWTO &amp; リファレンスガイド</quote>は
+自動車修理工の修理ガイドと同等のものとして意図されている。
+<quote>Samba-3 by Example</quote>は、どのように車を運転するかを説明する
+ドライバ向けのガイドと同等である。もしもネットワークの設定例を完全にしたい
+のであれば、
+<ulink url="http://www.samba.org/samba/docs/Samba3-ByExample.pdf">Samba-3 by
+Example</ulink>を参照すること。
+</para>
+
+<sect1>
+<title>機能と利点</title>
+
+<para>
+基本的な動作するシステムを作成するために、Sambaは最小限の設定しか必要としない。
+この節では、簡単なものから複雑なものへ、おのおのを動かすために必要とされる
+設定ファイルの変更とすべてのステップを順番に提供する。徹底的に設定された
+システムは、追加の高機能な機能を使うだろう。それらの追加機能はこの文書の
+残りの部分で触れられている。
+</para>
+
+<para>
+ここで使っている例は、数多くの人が設定の例のために要求したものに依っている。
+すべての識別子は問題がないようにしてあり、非現実的な存在しないサイトへ
+何らかの形で似ていることは計画的に行われている。
+</para>
+
+</sect1>
+
+<sect1>
+<title>例題サイトの説明</title>
+
+<para>
+最初の設定例中では、例外的な、簡単なシステム要求の場合を考えてみる。
+ほとんど取り組みを必要としないものを複雑にしようとする真の誘惑がある。
+</para>
+
+<para>
+<link linkend="anon-ro"></link> はCD-ROMイメージを提供するのに十分かも
+しれないサーバのタイプか、ネットワーククライアントが使う用途向けの参考
+文書を提供する。この設定は
+<link linkend="StandAloneServer"></link>、<link linkend="RefDocServer"></link>
+でも取り上げている。この設定の目的は、ゲストも含めて誰でもリードオンリで
+アクセスできる共有ボリュームを提供することである。
+</para>
+
+<para>
+2番目の例は、コンピュータ上にインストールされた正しいプリンタドライバを
+持つのと同じくらい長く、誰でも印刷できるプリントサーバのための最低限の
+設定である。これは
+<link linkend="StandAloneServer"></link>, <link linkend="SimplePrintServer"></link>
+で説明されているものと同じである。
+</para>
+
+<para>
+次の例は、システム上にアカウントを持つユーザのみがアクセス可能な、安全な
+オフィス用ファイル/プリントサーバである。このサーバはワークグループの
+ファイル/プリントサーバととてもよく似ているが、匿名でアクセスするマシンより
+はより安全である。このタイプのシステムは、一般的に小さなオフィスの用途に
+適合している。サー派はネットワークログオン機能、ドメイン制御を提供しない。
+その代わりにネットワーク経由のストレージデバイス(NAS)とプリントサーバである。
+</para>
+
+<para>
+最後の例は存在するMicrosoft Windowsネットワークを統合するか、それを完全に
+置き換えるより複雑なシステムである。これらはSambaドメイン制御(PDC/BDC)と
+同様なドメインメンバサーバとリモートの場所中にあるブランチオフィスでの、
+大きな分散ネットワーク中で詳細が説明されるものをカバーする。
+</para>
+
+</sect1>
+
+<sect1>
+<title>動く例</title>
+
+<para>
+設定の例はSambaが動くために必要なすべてをカバーするためにデザインされている。
+それはこのテキストの範囲を明らかに超えている、基本的なOSプラットフォームの
+設定をカバーしていない。
+</para>
+
+<para>
+また、OSベンダによって提供されているパッケージにか、他の手段で
+Sambaが正しくインストールされていることも仮定している。
+</para>
+
+	<sect2>
+	<title>スタンドアロンサーバ</title>
+
+	<para>
+	<indexterm><primary>サーバタイプ</primary><secondary>スタンドアロン</secondary></indexterm>
+	スタンドアロンサーバであるということは、それがドメインコントローラでないこと、
+	ドメイン制御下に参加していないと言う事実以上のことを何も暗示しない。これは
+	単純で、ワークグループ風のサーバであるか、ドメインセキュリティ管理下のメンバ
+	であることができる。
+	</para>
+
+	<para>
+	  例題が作成されている間、真のビジネスオフィスが、そのオフィスの大きさが
+	  増えたり必要に応じて変わるようなことが起こると思うかもしれないのと同じ
+          ように、システムガソのすばらしい能力に向かって進歩するすべての試みが行
+	  われた。
+	</para>
+
+		<sect3 id="anon-ro">
+		<title>匿名リードオンリ文書サーバ</title>
+
+		<para>
+		<indexterm><primary>リードオンリ</primary><secondary>サーバ</secondary></indexterm>
+		このタイプのサーバの目的は、共有リソース上にある任意の文書やファイルを
+		任意のユーザに有効にさせることである。共有リソースはCD-ROMでもファイル
+		領域でも可能である。
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+			ファイルシステムの共有位置は<filename>/export</filename>である。
+			</para></listitem>
+
+			<listitem><para>
+			すべてのファイルはJack Baumbachと呼ばれるユーザが所有している。
+			Jackのログイン名は<emphasis>jackb</emphasis>である。そのパス
+			ワードは<emphasis>m0r3pa1n</emphasis>である。 &smbmdash;
+			もちろんこれは例として使っているものである。すべての、この
+			文書の読者がこのことを知っているため、実環境でこれを使っては
+			いけない。
+			</para></listitem>
+		</itemizedlist>
+
+		<procedure>
+		<title>インストール手順: リードオンリサーバ</title>
+			<step><para>
+			ユーザをシステムに登録する(ユーザのホームディレクトリも作る):
+<screen>
+&rootprompt;<userinput>useradd -c "Jack Baumbach" -m -g users -p m0r3pa1n jackb</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+			ディレクトリを作りパーミッションと所有者を設定する:
+<screen>
+&rootprompt;<userinput>mkdir /export</userinput>
+&rootprompt;<userinput>chmod u+rwx,g+rx,o+rx /export</userinput>
+&rootprompt;<userinput>chown jackb.users /export</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+			<filename>/export</filename>ディレクトリに共有したいファイルをコピーする。
+			</para></step>
+
+			<step><para>
+			
+			<link linkend="anon-example">匿名リードオンリサーバ設定</link>で
+			表示されているSamba設定ファイル(<filename>/etc/samba/smb.conf</filename>)を
+			インストールする。
+			</para></step>
+
+<example id="anon-example">
+<title>匿名リードオンリサーバ設定</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">HOBBIT</smbconfoption>
+<smbconfoption name="security">share</smbconfoption>
+
+<smbconfsection name="[data]"/>
+<smbconfoption name="comment">Data</smbconfoption>
+<smbconfoption name="path">/export</smbconfoption>
+<smbconfoption name="read only">Yes</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+			<step><para>
+			以下のコマンドを実行して設定ファイルをテストする:
+<screen>
+&rootprompt;<userinput>testparm</userinput>
+</screen>
+                        代替として、<filename>smb.conf.master</filename>と呼ばれるマスタ
+                        設定ファイルから操作している場合、以下のコマンドシーケンスの方が
+                        より適切である:
+<screen>
+&rootprompt; cd /etc/samba
+&rootprompt; testparm -s smb.conf.master > smb.conf
+&rootprompt; testparm
+</screen>
+                        何らかのエラーメッセージが出力されるかもしれないことに注意。
+                        エラー出力がない場合にのみ先に進むこと。上記の設定ファイルで
+                        生成される典型的な出力の例は以下の通り:
+<screen>
+Load smb config files from /etc/samba/smb.conf
+Processing section "[data]"
+Loaded services file OK.
+Server role: ROLE_STANDALONE
+Press enter to see a dump of your service definitions
+<userinput>[Press enter]</userinput>
+
+# Global parameters
+[global]
+	workgroup = MIDEARTH
+	netbios name = HOBBIT
+	security = share
+
+[data]
+	comment = Data
+	path = /export
+	read only = Yes
+	guest only = Yes
+</screen>
+			</para></step>
+
+			<step><para>
+                        OSプラットフォームに適した方法でSambaを起動する。その方法は
+			プラットフォーム依存である。Sambaを起動することに関するそれ
+			以上の情報は、<link linkend="startingSamba">Starting Samba</link>
+			を参照のこと。
+			</para></step>
+
+			<step><para>
+			Microsoft Windowsクライアントをワークグループ
+			<emphasis>MIDEARTH</emphasis>に設定し、コンピュータ名を
+			ROBBINSに設定し再起動し、数分待ち、Windowsエクスプローラ
+			を開いてマイネットワークをクリックする。そこにマシンHOBBIT
+			がある。このマシンアイコンをクリックすると、
+			<emphasis>data</emphasis>共有が現れる。共有をクリック後、
+			<filename>/export</filename>ディレクトリ中にある、以前に
+			そこにおいたファイルが現れる。
+			</para></step>
+		</procedure>
+
+		<para>
+		上記の情報(#グローバルパラメータ以下)は
+		<filename>/etc/samba/smb.conf</filename>ファイルの完全な内容を提供
+		する。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>匿名の読み書き可能な文書サーバ</title>
+
+		<para>
+		<indexterm><primary>匿名</primary><secondary>読み書きサーバ</secondary></indexterm>
+                以前の例からこの設定を発展系と見なすべきである。違いは、共有アクセスが
+		jackbというユーザIDに、プライマリグループがjackbに強制的に設定されると
+		いうことである。その他1つの改善点は、ユーザjackbを
+		<filename>smbpasswd</filename>に追加することが出来るということである。
+		これを行うのには以下を実行する:
+<screen>
+&rootprompt;<userinput>smbpasswd -a jackb</userinput>
+New SMB password: <userinput>m0r3pa1n</userinput>
+Retype new SMB password: <userinput>m0r3pa1n</userinput>
+Added user jackb.
+</screen>
+		<filename>smbpasswd</filename>ファイルへのこのユーザの追加は、エクス
+		プローラのプロパティにおいて所有者が<emphasis>User Unknown</emphasis>
+		の代わりに<emphasis>jackb</emphasis>が表示されると言うことである。
+		</para>
+
+		<para>
+		完全な変更後の&smb.conf;ファイルは<link linkend="anon-rw"/>である。
+		</para>
+
+<example id="anon-rw">
+<title>変更後の匿名の読み書き可能な設定の smb.conf</title>
+<smbconfblock>
+<smbconfcomment>Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">HOBBIT</smbconfoption>
+<smbconfoption name="security">SHARE</smbconfoption>
+
+<smbconfsection name="[data]"/>
+<smbconfoption name="comment">Data</smbconfoption>
+<smbconfoption name="path">/export</smbconfoption>
+<smbconfoption name="force user">jackb</smbconfoption>
+<smbconfoption name="force group">users</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+		</sect3>
+
+		<sect3>
+		<title>匿名プリントサーバ</title>
+
+		<para>
+		<indexterm><primary>匿名</primary><secondary>プリントサーバ</secondary></indexterm>
+		匿名プリントサーバは2つの目的で提供される:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+			1つの所から、すべてのプリンタに印刷を許可する。
+			</para></listitem>
+
+			<listitem><para>
+			制限された数のプリンタに対するアクセスのため、たくさんの
+			ユーザのためにネットワークのトラフィック輻輳を減らす。
+			</para></listitem>
+		</itemizedlist>
+
+		<para>
+		最も単純な匿名印刷サーバ中で、Windowsワークステーション上での正しい
+		プリンタドライバのインストール要求は共通である。この場合、プリント
+		サーバはスプーラに対して印刷ジョブを単に渡すだけに設定され、
+		スプーラはプリンタに対して素通しになるように設定される。別の言い方
+		をすると、プリントスプーラはプリンタに対して渡されたデータストリーム
+		をフィルタリングもなんらかの処理もしない。
+		</para>
+
+		<para>
+		この設定中で、プリンタの追加ウィザードを使うのは好ましくなく、
+		また、自動ドライバダウンロードを行うのも望まない。そのため、
+		以下の設定でそれを無効にする。
+		<link linkend="anon-print"></link>は結果の &smb.conf;ファイルである。
+		</para>
+
+<example id="anon-print">
+<title>匿名プリントサーバのsmb.conf</title>
+<smbconfblock>
+<smbconfcomment>Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">LUTHIEN</smbconfoption>
+<smbconfoption name="security">share</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+<smbconfoption name="disable spoolss">Yes</smbconfoption>
+<smbconfoption name="show add printer wizard">No</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="printable">Yes</smbconfoption>
+<smbconfoption name="use client driver">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+</smbconfblock>
+</example>
+
+		<para>
+		上記の設定は理想的なものではない。よりよい機能を使っておらず、
+		故意にエレガントではない解決方法を提示している。しかし、これは
+		基本であり、これで印刷は出来る。SambaはCUPSによって提供される
+		直接印刷APIを使える。CUPSライブラリを、Sambaコンパイル時に指定
+		してリンクした場合、既定値の印刷システムはCUPSになる。princap name
+		がCUPSを指定した場合、Sambaはすべての印刷機能のためにCUPSに直接
+		通信を行うため、CUPSライブラリAPIを使う。
+		<parameter>printing</parameter>の値をSYSVかBSDに設定して外部印刷
+		コマンドを強制的に使うことが可能で、パラメータ
+		<parameter>printcap name</parameter>の値はCUPS以外の何かに設定
+		しなければならない。この場合、Windowsクライアントに対して有効に
+		させるためのプリンタの一覧が含まれている任意のファイルの名前を設定
+		する。
+		</para>
+
+		<note><para>
+		Windowsユーザはローカルプリンタのインストールが必要で、ドライバの
+		インストール後に通常使うプリンタを切り替える。通常使うプリンタは
+		そのマシン上のネットワークプリンタに設定できる。
+		</para></note>
+
+		<para>
+		ディレクトリ<filename>/var/spool/samba</filename>が使えるように
+		なっていることを確かめておくこと。以下の手順はこれを達成するため
+		に行わなければならない:
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+			ディレクトリはスーパーユーザ(root)のユーザとグループに属さねば
+                        ならない:
+<screen>
+&rootprompt;<userinput>chown root.root /var/spool/samba</userinput>
+</screen>
+			</para></listitem>
+
+			<listitem><para>
+			ディレクトリのパーミッションは以下のようにスティッキービット
+			を設定して「その他」をRWに設定しなければならない:
+<screen>
+&rootprompt;<userinput>chmod a+twrx /var/spool/samba</userinput>
+</screen>
+                スティッキービット設定の目的は、一時印刷ファイルを所有していない
+                ユーザが誤用で制御を得てしまう可能性を防止するためである。
+			</para></listitem>
+		</itemizedlist>
+
+
+		<note><para>
+		<indexterm><primary>MIME</primary><secondary>raw</secondary></indexterm>
+		<indexterm><primary>素通し印刷</primary></indexterm>
+		CUPSが有効になっているシステムで、中間のCUPSプリントフィルタ処理なしで、
+		直接プリンタに生データを渡す機能がある。このモードの操作を使うことが
+		要求される場合、生データを印刷するデバイスを設定することが必要である。
+		また、<filename>/etc/mime.conv</filename>と
+		<filename>/etc/mime.types</filename>ファイル中のraw mime ハンドラを
+		有効にする必要もある。<link linkend="cups-raw"></link>を参照のこと。
+		</para></note>
+
+		</sect3>
+
+		<sect3>
+
+		<title>セキュアな読み書き可能ファイルと印刷サーバ</title>
+
+		<para>
+		続いて、簡単なシステムからやや複雑なサーバの例に説明を進めよう。
+		</para>
+
+		<para>
+		新しいサーバは認証されたユーザのみ(すなわち、ローカルアカウントを持つ)が、
+		ホームディレクトリと同様にファイルを保存できる共用データ領域を必要とする。
+		また、誰でも使える1つのプリンタも提供する。
+		</para>
+
+		<para>
+		この仮想の環境(このデータを入手するための盗聴は無いものとする)中で、
+		使うのに難しくない、<emphasis>十分な安全性</emphasis>を持つ簡単な環境に
+		サイトは依存する。
+		</para>
+
+		<para>
+		サイトユーザは Jack Baumbach, Mary Orvilleと Amed Sehkahである。おのおのは
+		パスワード(これ以降の例では表示しない)を持つ。Maryはプリンタ管理者で、
+		共通の共有中のファイルの所有者である。
+		</para>
+
+		<para>
+		この設定は既定値である<emphasis>ユーザレベルのセキュリティ</emphasis>を
+		ベースとしていて、<filename>/etc/samba/smbpasswd</filename>中に
+		Windows互換の暗号化パスワードを格納している。この設定にするための既定値
+		の&smb.conf;エントリは
+		<smbconfoption name="passdb backend">smbpasswd, guest</smbconfoption>である。
+		これが既定値になっているので、設定ファイルにこれを記述する必要はない。
+		guest バックエンドはSamba設定ファイル中で指定されるか否かに関わらす、
+		有効なpassdb backendに追加されることに注意。
+		</para>
+
+
+		<procedure>
+		<title>セキュアなオフィスサーバのインストール</title>
+			<step><para>
+		<indexterm><primary>オフィスサーバ</primary></indexterm>
+			すべてのユーザをOSに追加する:
+<screen>
+&rootprompt;<userinput>useradd -c "Jack Baumbach" -m -g users -p m0r3pa1n jackb</userinput>
+&rootprompt;<userinput>useradd -c "Mary Orville" -m -g users -p secret maryo</userinput>
+&rootprompt;<userinput>useradd -c "Amed Sehkah" -m -g users -p secret ameds</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+			<link linkend="OfficeServer"/>中で示されているようにSambaの &smb.conf;を設定する。
+			</para></step>
+
+<example id="OfficeServer">
+<title>セキュアなオフィスサーバのsmb.conf</title>
+<smbconfblock>
+<smbconfcomment>Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">OLORIN</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+<smbconfoption name="disable spoolss">Yes</smbconfoption>
+<smbconfoption name="show add printer wizard">No</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+
+<smbconfsection name="[homes]"/>
+<smbconfoption name="comment">Home Directories</smbconfoption>
+<smbconfoption name="valid users">%S</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfsection name="[public]"/>
+<smbconfoption name="comment">Data</smbconfoption>
+<smbconfoption name="path">/export</smbconfoption>
+<smbconfoption name="force user">maryo</smbconfoption>
+<smbconfoption name="force group">users</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="printer admin">root, maryo</smbconfoption>
+<smbconfoption name="create mask">0600</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="printable">Yes</smbconfoption>
+<smbconfoption name="use client driver">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+</smbconfblock>
+</example>
+
+			<step><para>
+			Microsoft Windowsパスワードデータベースに新規ユーザを追加する:
+<screen>
+&rootprompt;<userinput>smbpasswd -a root</userinput>
+New SMB password: <userinput>bigsecret</userinput>
+Reenter smb password: <userinput>bigsecret</userinput>
+Added user root.
+
+&rootprompt;<userinput>smbpasswd -a jackb</userinput>
+New SMB password: <userinput>m0r3pa1n</userinput>
+Retype new SMB password: <userinput>m0r3pa1n</userinput>
+Added user jackb.
+
+&rootprompt;<userinput>smbpasswd -a maryo</userinput>
+New SMB password: <userinput>secret</userinput>
+Reenter smb password: <userinput>secret</userinput>
+Added user maryo.
+
+&rootprompt;<userinput>smbpasswd -a ameds</userinput>
+New SMB password: <userinput>mysecret</userinput>
+Reenter smb password: <userinput>mysecret</userinput>
+Added user ameds.
+</screen>
+			</para></step>
+
+			<step><para>
+			CUPS Webインタフェースを使ってプリンタをインストールする。生データを
+			印刷するデバイスとしてMicrosoft Windowsクライアントで共有するプリンタ
+			をインストールするようにすること。
+			</para></step>
+
+			<step><para>
+			OSの管理インタフェースを使ってSambaを起動する。それは以下の方法でも
+			手動で可能である:
+			<indexterm><primary>smbd</primary></indexterm>
+			<indexterm><primary>nmbd</primary></indexterm>
+			<indexterm><primary>starting samba</primary><secondary>smbd</secondary></indexterm>
+			<indexterm><primary>starting samba</primary><secondary>nmbd</secondary></indexterm>
+<screen>
+&rootprompt;<userinput> nmbd; smbd;</userinput>
+</screen>
+                        両方のアプリケーションは自動的にdaemonとして動く。daemonモードで開始
+                        することを強制する、パラノイド的な<constant>-D</constant>フラグを追加
+                        することも可能である。
+			</para></step>
+
+			<step><para>
+			<filename>/export</filename>ディレクトリを設定する:
+<screen>
+&rootprompt;<userinput>mkdir /export</userinput>
+&rootprompt;<userinput>chown maryo.users /export</userinput>
+&rootprompt;<userinput>chmod u=rwx,g=rwx,o-rwx /export</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+			Sambaが正しく動いているかを調べる:
+<screen>
+&rootprompt;<userinput>smbclient -L localhost -U%</userinput>
+Domain=[MIDEARTH] OS=[UNIX] Server=[Samba-3.0.20]
+
+Sharename      Type      Comment
+---------      ----      -------
+public         Disk      Data
+IPC$           IPC       IPC Service (Samba-3.0.20)
+ADMIN$         IPC       IPC Service (Samba-3.0.20)
+hplj4          Printer   hplj4
+
+Server               Comment
+---------            -------
+OLORIN               Samba-3.0.20
+
+Workgroup            Master
+---------            -------
+MIDEARTH             OLORIN
+</screen>
+                        以下のエラーメッセージはSambaが動作していないことを示している:
+<screen>
+&rootprompt; smbclient -L olorin -U%
+Error connecting to 192.168.1.40 (Connection refused)
+Connection to olorin failed
+</screen>
+			</para></step>
+
+			<step><para>
+			ユーザmaryoでOLORINに接続する:
+<screen>
+&rootprompt;<userinput>smbclient //olorin/maryo -Umaryo%secret</userinput>
+OS=[UNIX] Server=[Samba-3.0.20]
+smb: \> <userinput>dir</userinput>
+.                              D        0  Sat Jun 21 10:58:16 2003
+..                             D        0  Sat Jun 21 10:54:32 2003
+Documents                      D        0  Fri Apr 25 13:23:58 2003
+DOCWORK                        D        0  Sat Jun 14 15:40:34 2003
+OpenOffice.org                 D        0  Fri Apr 25 13:55:16 2003
+.bashrc                        H     1286  Fri Apr 25 13:23:58 2003
+.netscape6                    DH        0  Fri Apr 25 13:55:13 2003
+.mozilla                      DH        0  Wed Mar  5 11:50:50 2003
+.kermrc                        H      164  Fri Apr 25 13:23:58 2003
+.acrobat                      DH        0  Fri Apr 25 15:41:02 2003
+
+		55817 blocks of size 524288. 34725 blocks available
+smb: \> <userinput>q</userinput>
+</screen>
+			</para></step>
+		</procedure>
+
+			<para>
+			ここまでのことで、設定の基礎を会得したかと思う。これからはより複雑な
+			例を見ていく。この節の残りの部分は、いままでの例で説明した手順の部分
+			は省略する。
+			</para>
+
+		</sect3>
+
+	</sect2>
+
+	<sect2>
+	<title>ドメインメンバサーバ</title>
+
+	<para>
+	<indexterm><primary>サーバタイプ</primary><secondary>ドメインメンバ</secondary></indexterm>
+	ここでは、経理部門が幸せにできるような、最も簡単なサーバ設定を題材にする。ユーザは
+	会計担当で、小難しい要求をしてくることに注意しよう。この部門のために1台のサーバ予算
+	がある。
+	</para>
+
+	<para>
+	ネットワークは社内情報サービスグループ(Information Services Group (ISG))で管理され、そこ
+	に所属しているものとする。内部の製作は典型的な中規模の組織である。いつでもユーザの追加削
+	除を行っているという理由でISGを運営しているのがHuman Resources is of the opinion。
+        また、スタッフのために基本的なネットワークリソースアクセスを得るために、部門の管理者は
+	死力を尽くして戦わなければならない。けれども経理部門は違い、彼らは性格に彼らがほしい
+	ものを手に入れる。そのため、これは場面を設定すべきである。
+	</para>
+
+	<para>
+        ここでは最後の例からのユーザを使うことにする。経理部門にはその部門のユーザが使える
+	汎用プリンタがある。また、小切手を印刷するための権限を持つ人のそばにその人だけが
+	使える小切手印刷プリンタもある。最高会計責任者(CFO)はオフィス内の個人用収納場所
+	中に配置して完全にそのプリンタの使用を制限したいと望んでいる。そのため、それは
+	ネットワークプリンタである必要がある。
+	</para>
+
+	<para>
+	経理部門は中央のアプリケーションサーバから動かさなければならない
+	<emphasis>SpytFull</emphasis>という会計アプリケーションを使っている。ソフトウェア
+	は1台のサーバだけで動かすようにライセンスされていて、底にはワークステーション
+	コンポーネントがなく、マップされた共有で動く。データはUNIXベースのSQLバックエンド
+	にある。UNIXの専門家はそれをみて、それはUNIX屋の問題ではないと言う。
+	</para>
+
+	<para>
+	経理部門のマネージャ(maryo)はフォームレター(いやなメール)のために分離したファイル
+	格納領域と同じような汎用ファイリングシステムを希望している。フォームレター領域は
+	マネージャを除いてすべての経理スタッフにはリードオンリにすべきである。汎用ファイ
+	リングシステムは、経理のチームのメンバの、その人固有の階層構造ファイル領域を持つ
+	必要があるが、マネージャにはすべての領域にアクセスできることを希望している。各
+	ユーザは、個人に関連したファイルのための固有のホーム領域を持つが、それは部門の
+	作業に関連しない。
+	</para>
+	
+		<sect3>
+		<title>設定例</title>
+		
+		<para>
+		サーバ<emphasis>valinor</emphasis>は会社のドメインのメンバサーバである。
+		経理部門はローカルサーバのみを持つ。ユーザのアカウントはドメインコント
+		ローラ上にあり、そこにはデスクトッププロファイルとすべてのネットワーク
+		ポリシファイルがある。
+		</para>
+
+		<procedure>
+			<step><para>
+			UNIX/Linuxサーバにユーザを追加してはならない。すべては中央の
+			ドメインで行う。
+			</para></step>
+
+			<step><para>
+			<link linkend="fast-member-server">メンバサーバのsmb.conf
+			(globals)</link>と
+			<link linkend="fast-memberserver-shares">メンバサーバのsmb.conf (shares
+			and services)</link>と一致するように&smb.conf;を設定する。
+			</para></step>
+
+<example id="fast-member-server">
+<title>メンバサーバのsmb.conf (Globals)</title>
+<smbconfblock>
+<smbconfcomment>Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">VALINOR</smbconfoption>
+<smbconfoption name="security">DOMAIN</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+<smbconfoption name="disable spoolss">Yes</smbconfoption>
+<smbconfoption name="show add printer wizard">No</smbconfoption>
+<smbconfoption name="idmap uid">15000-20000</smbconfoption>
+<smbconfoption name="idmap gid">15000-20000</smbconfoption>
+<smbconfoption name="winbind use default domain">Yes</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+</smbconfblock>
+</example>
+
+<example id="fast-memberserver-shares">
+<title>メンバサーバのsmb.conf (Shares and Services)</title>
+<smbconfblock>
+<smbconfsection name="[homes]"/>
+<smbconfoption name="comment">Home Directories</smbconfoption>
+<smbconfoption name="valid users">%S</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfsection name="[spytfull]"/>
+<smbconfoption name="comment">Accounting Application Only</smbconfoption>
+<smbconfoption name="path">/export/spytfull</smbconfoption>
+<smbconfoption name="valid users">@Accounts</smbconfoption>
+<smbconfoption name="admin users">maryo</smbconfoption>
+<smbconfoption name="read only">Yes</smbconfoption>
+
+<smbconfsection name="[public]"/>
+<smbconfoption name="comment">Data</smbconfoption>
+<smbconfoption name="path">/export/public</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="printer admin">root, maryo</smbconfoption>
+<smbconfoption name="create mask">0600</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="printable">Yes</smbconfoption>
+<smbconfoption name="use client driver">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+</smbconfblock>
+</example>
+
+			<step><para>
+			<indexterm><primary>net</primary><secondary>rpc</secondary></indexterm>
+			ドメインに参加する。注意:このステップが終わるまでSambaを起動してはいけない!
+<screen>
+&rootprompt;<userinput>net rpc join -Uroot%'bigsecret'</userinput>
+Joined domain MIDEARTH.
+</screen>
+			</para></step>
+
+			<step><para>
+			<command>winbind</command>が設定されて動いている任意のシステム上で
+			<command>nscd</command> daemonを停止する(シャットダウンする)ことを必ず行うこと。
+			</para></step>
+
+			<step><para>
+			OSプラットフォームの通常の方法で、Sambaを起動する。
+			手動で動かしたい場合は、rootになって以下の手順で起動する:
+			<indexterm><primary>smbd</primary></indexterm>
+			<indexterm><primary>nmbd</primary></indexterm>
+			<indexterm><primary>winbindd</primary></indexterm>
+			<indexterm><primary>starting samba</primary><secondary>smbd</secondary></indexterm>
+			<indexterm><primary>starting samba</primary><secondary>nmbd</secondary></indexterm>
+			<indexterm><primary>starting samba</primary><secondary>winbindd</secondary></indexterm>
+<screen>
+&rootprompt;<userinput>nmbd; smbd; winbindd;</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+			winbind経由でユーザとグループ名を解決するために、システム上にあるネーム
+			サービススイッチ(NSS)制御ファイルを設定する。
+			<filename>/etc/nsswitch.conf</filename>中の以下の行を編集する。
+<programlisting>
+passwd: files winbind
+group:  files winbind
+hosts:  files dns winbind
+</programlisting>
+			</para></step>
+
+			<step><para>
+			<command>wbinfo</command>に対するパスワードを以下の方法で設定する:
+<screen>
+&rootprompt;<userinput>wbinfo --set-auth-user=root%'bigsecret'</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+		        ドメインユーザとグループの認証が以下を実行することで正しく解決されるかを
+			検証すること:
+<screen>
+&rootprompt;<userinput>wbinfo -u</userinput>
+MIDEARTH\maryo
+MIDEARTH\jackb
+MIDEARTH\ameds
+...
+MIDEARTH\root
+
+&rootprompt;<userinput>wbinfo -g</userinput>
+MIDEARTH\Domain Users
+MIDEARTH\Domain Admins
+MIDEARTH\Domain Guests
+...
+MIDEARTH\Accounts
+</screen>
+			</para></step>
+
+			<step><para>
+			<command>winbind</command>が動作しているかをチェックすること。以下は、
+			<command>getent</command>システムユーティリティ経由で正しいユーザ名の
+			解決を行っている例である:
+<screen>
+&rootprompt;<userinput>getent passwd maryo</userinput>
+maryo:x:15000:15003:Mary Orville:/home/MIDEARTH/maryo:/bin/false
+</screen>
+			</para></step>
+
+			<step><para>
+			A final test that we have this under control might be reassuring:
+<screen>
+&rootprompt;<userinput>touch /export/a_file</userinput>
+&rootprompt;<userinput>chown maryo /export/a_file</userinput>
+&rootprompt;<userinput>ls -al /export/a_file</userinput>
+...
+-rw-r--r--    1 maryo    users       11234 Jun 21 15:32 a_file
+...
+
+&rootprompt;<userinput>rm /export/a_file</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+			ここまでで設定はほぼ終わり、この後、このサイト用にディレクトリ
+			構造を設定する:
+<screen>
+&rootprompt;<userinput>mkdir -p /export/{spytfull,public}</userinput>
+&rootprompt;<userinput>chmod ug=rwxS,o=x /export/{spytfull,public}</userinput>
+&rootprompt;<userinput>chown maryo.Accounts /export/{spytfull,public}</userinput>
+</screen>
+			</para></step>
+		</procedure>
+
+		</sect3>
+
+	</sect2>
+
+	<sect2>
+	<title>ドメインコントローラ</title>
+
+
+	<para>
+	<indexterm><primary>サーバタイプ</primary><secondary>ドメインコントローラ</secondary></indexterm>
+	この節の残りの部分は、ドメイン制御の設定に焦点を当てる。以下は2つの実装方法の例である。
+	ここでの例は、簡単に作れるが、ちゃんと動くものを提示するのが目的であることを思い出して
+	ほしい。この本の残りではより大きな機能性とそれに付随する複雑性に注目する機会を手助け
+	するべきである。
+	</para>
+
+	<para>
+	ドメインコントローラの設定は新しいtdbsamパスワードバックエンドを使う簡単な設定
+	で達成できる。このタイプの設定は小さなオフィスに適しているが、拡張性が制限され
+	ていて(複製が出来ない)、ドメインの大きさと複雑さが増大するとパフォーマンスが
+	下がることが予想される。
+	</para>
+
+	<para>
+	tdbsamの使用は、PDC以外の必要性がないサイトにのみ最適である。ドメインが大きく
+	なると、追加のドメインコントローラが必要となるのは必定である。Microsoftネット
+	ワーク環境に過小なリソースを提供しようと試みてはいけない;ドメインコントローラは
+	基本的な認証サービスを提供する。以下は過小なリソースでのドメインコントロール
+	環境の症状である:
+	</para>
+
+	<itemizedlist>	
+		<listitem><para>
+		 ドメインログオンが断続的に失敗する。
+		</para></listitem>
+
+		<listitem><para>
+		ドメインメンバサーバ上のファイルアクセスが断続的に失敗し、
+		パーミッション拒否エラーメッセージが出る。
+		</para></listitem>
+	</itemizedlist>
+
+	<para>
+	より拡張性のあるドメインコントロール認証バックエンドオプションは、
+	Microsoft Active DirectoryかLDAPベースのバックエンドを使うことである。
+	Samba-3はドメインメンバサーバとして両方のオプションを提供する。PDC
+	として、Samba-3はActive Directoryで有効な機能の完全な代替を提供でき
+	ない。Samba-3は拡張性のあるLDAPベースの PDC/BDCソリューションを提供
+	できる。
+	</para>
+
+	<para>
+	tdbsam認証バックエンドは、外部手段を除いて、データベースの内容を複製
+	する機能は提供していない(すなわち、独立したSamba-3のためのSAM複製
+	手順はない)。
+	</para>
+
+	<note><para>
+	もしも1つ以上のドメインコントローラが必要ならば、tdbsam認証バックエンドは
+	使えない。
+	</para></note>
+
+		<sect3>
+		<title>例: エンジニアリングオフィス</title>
+
+		<para>
+		ここで提供するエンジニアリングオフィスのネットワークサーバは、新しい
+		tdbsamパスワードバックエンドの使い方をデモするように設計されている。
+		tdbsam機能はSamba-3で取り入れられた。Microsoft Windows NT4で可能な
+		たくさんのユーザとマシンアカウント制御を提供するように設計された。
+		小さなネットワーク中で使うのには、これは安全である。
+		</para>
+
+		<procedure>
+			<step><para>
+			tdbsamパスワードバックエンドを使う動作するPDCの設定は、
+			<link linkend="fast-engoffice-global">エンジニアリングオフィスのsmb.conf
+			(globals)</link>と
+			<link linkend="fast-engoffice-shares">エンジニアリングオフィスのsmb.conf
+			(shares and services)</link>にある:
+			<indexterm><primary>pdbedit</primary></indexterm>
+			</para></step>
+
+<example id="fast-engoffice-global">
+<title>エンジニアリングオフィスのsmb.conf (globals)</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">FRODO</smbconfoption>
+<smbconfoption name="passdb backend">tdbsam</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+<smbconfoption name="add user script">/usr/sbin/useradd -m %u</smbconfoption>
+<smbconfoption name="delete user script">/usr/sbin/userdel -r %u</smbconfoption>
+<smbconfoption name="add group script">/usr/sbin/groupadd %g</smbconfoption>
+<smbconfoption name="delete group script">/usr/sbin/groupdel %g</smbconfoption>
+<smbconfoption name="add user to group script">/usr/sbin/groupmod -A %u %g</smbconfoption>
+<smbconfoption name="delete user from group script">/usr/sbin/groupmod -R %u %g</smbconfoption>
+<smbconfoption name="add machine script">/usr/sbin/useradd -s /bin/false -d /var/lib/nobody %u</smbconfoption>
+<smbconfcomment>注意: 以下は既定値のログオンスクリプトを指定する。</smbconfcomment>
+<smbconfcomment>ユーザ単位のログオンスクリプトは、pdbeditを使って、ユーザアカウント中で指定できる。</smbconfcomment>
+<smbconfoption name="logon script">scripts\logon.bat</smbconfoption>
+<smbconfcomment>This sets the default profile path. Set per user paths with pdbedit</smbconfcomment>
+<smbconfoption name="logon path">\\%L\Profiles\%U</smbconfoption>
+<smbconfoption name="logon drive">H:</smbconfoption>
+<smbconfoption name="logon home">\\%L\%U</smbconfoption>
+<smbconfoption name="domain logons">Yes</smbconfoption>
+<smbconfoption name="os level">35</smbconfoption>
+<smbconfoption name="preferred master">Yes</smbconfoption>
+<smbconfoption name="domain master">Yes</smbconfoption>
+<smbconfoption name="idmap uid">15000-20000</smbconfoption>
+<smbconfoption name="idmap gid">15000-20000</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+</smbconfblock>
+</example>
+
+<example id="fast-engoffice-shares">
+<title>エンジニアリングオフィスのOffice smb.conf (shares and services)</title>
+<smbconfblock>
+<smbconfsection name="[homes]"/>
+<smbconfoption name="comment">Home Directories</smbconfoption>
+<smbconfoption name="valid users">%S</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfcomment>Printing auto-share (makes printers available thru CUPS)</smbconfcomment>
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="printer admin">root, maryo</smbconfoption>
+<smbconfoption name="create mask">0600</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="printable">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfsection name="[print$]"/>
+<smbconfoption name="comment">Printer Drivers Share</smbconfoption>
+<smbconfoption name="path">/var/lib/samba/drivers</smbconfoption>
+<smbconfoption name="write list">maryo, root</smbconfoption>
+<smbconfoption name="printer admin">maryo, root</smbconfoption>
+
+<smbconfcomment>Needed to support domain logons</smbconfcomment>
+<smbconfsection name="[netlogon]"/>
+<smbconfoption name="comment">Network Logon Service</smbconfoption>
+<smbconfoption name="path">/var/lib/samba/netlogon</smbconfoption>
+<smbconfoption name="admin users">root, maryo</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfcomment>For profiles to work, create a user directory under the path</smbconfcomment>
+<smbconfcomment> shown. i.e., mkdir -p /var/lib/samba/profiles/maryo</smbconfcomment>
+<smbconfsection name="[Profiles]"/>
+<smbconfoption name="comment">Roaming Profile Share</smbconfoption>
+<smbconfoption name="path">/var/lib/samba/profiles</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+<smbconfoption name="profile acls">Yes</smbconfoption>
+
+<smbconfcomment>Other resource (share/printer) definitions would follow below.</smbconfcomment>
+</smbconfblock>
+</example>
+
+			<step><para>
+			OSで提供されているツールを使って、必要に応じUNIXグループを作成する:
+<screen>
+&rootprompt;<userinput>groupadd ntadmins</userinput>
+&rootprompt;<userinput>groupadd designers</userinput>
+&rootprompt;<userinput>groupadd engineers</userinput>
+&rootprompt;<userinput>groupadd qateam</userinput>
+</screen>
+			</para></step>
+
+			<step><para>
+			OSで提供されている適当なツールを使ってシステム上にユーザアカウントを
+			作成する。同時にユーザ毎のホームディレクトリを作っておくこと。Samba
+			環境で使うときに要求されるグループのファイル、ディレクトリ、プリンタ
+			のアクセス制御に対し、ユーザを追加する。
+			</para></step>
+
+
+			<step><para>
+			<indexterm><primary>net</primary><secondary>groupmap</secondary></indexterm>
+			<indexterm><primary>initGroups.sh</primary></indexterm>
+			このシェルスクリプトを動かしてNTグループにおのおののUNIXグループを割り当
+			てる(スクリプトの名前は<filename>initGroups.sh</filename>とする)。
+<screen>
+#!/bin/bash
+#### Keep this as a shell script for future re-use
+			
+# First assign well known groups
+net groupmap add ntgroup="Domain Admins" unixgroup=ntadmins rid=512 type=d
+net groupmap add ntgroup="Domain Users"  unixgroup=users rid=513 type=
+net groupmap add ntgroup="Domain Guests" unixgroup=nobody rid=514 type=d
+
+# Now for our added Domain Groups
+net groupmap add ntgroup="Designers" unixgroup=designers type=d
+net groupmap add ntgroup="Engineers" unixgroup=engineers type=d
+net groupmap add ntgroup="QA Team"   unixgroup=qateam    type=d
+</screen>
+			</para></step>
+
+			<step><para>
+			<smbconfsection name="[NETLOGON]"/> 共有中で使うための
+			<filename>scripts</filename>ディレクトリを作成する:
+<screen>
+&rootprompt;<userinput>mkdir -p /var/lib/samba/netlogon/scripts</userinput>
+</screen>
+                        使用するログオンスクリプト(バッチまたはcmdスクリプト)をこの
+                        ディレクトリに配置する。
+			</para></step>
+		</procedure>
+
+		<para>
+		上記の設定で、ファイル共有とプリンタ共有を必要に応じて追加しなければ
+		ならない、基本的なPDCシステムが提供される。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>大きな組織の場合</title>
+
+		<para>
+		この節では、LDAPベースの認証バックエンドを使うSamba-3の設定の簡単な
+		紹介を行う。このことを行う主旨は、より高次のレベルのスケーラビリティ
+		に適合するのを可能にするための、とても分散した環境と同じように、
+		PDC/BDCホストを可能にすることを提供することである。
+		</para>
+
+			<sect4>
+			<title>プライマリドメインコントローラ</title>
+
+			<para>
+			これは、LDAP認証バックエンドを使うSamba-3 PDCを動かすための
+			最小限の設定例である。OSが正しく設定されていることを仮定して
+			いる。
+			</para>
+
+			<para>
+			Idealx スクリプト(か同等のもの)が、LDAPベースのPOSIXとSambaSamAccount
+			を管理するのに必要である。Idealxスクリプトはサイト
+			<ulink url="http://www.idealx.org">Idealx</ulink>からダウンロードする
+			ことが出来る。また、Sambaのリリースtarファイルから得ることも出来る。
+			Linuxディストリビューションは、Idealxスクリプトを
+			<filename>/usr/share/doc/packages/sambaXXXXXX/examples/LDAP/smbldap-tools</filename>
+			ディレクトリにインストールする傾向がある。
+			Idealxスクリプトバージョン<constant>smbldap-tools-0.9.1</constant>は
+			よく動作することが知られている。
+			</para>
+
+			<procedure>
+				<step><para>
+				Sambaのソース<filename>~/examples/LDAP/samba.schema</filename>
+				から入手し、<filename>/etc/openldap/schema/</filename>
+				ディレクトリにそれをコピーする。
+				</para></step>
+
+				<step><para>
+				LDAPサーバを設定する。この例はOpenLDAP 2.1.xに対応している。
+				The <filename>/etc/openldap/slapd.conf</filename> file.
+				<indexterm><primary>/etc/openldap/slapd.conf</primary></indexterm>
+<title>Example slapd.conf File</title>
+<screen>
+# Note commented out lines have been removed
+include         /etc/openldap/schema/core.schema
+include         /etc/openldap/schema/cosine.schema
+include         /etc/openldap/schema/inetorgperson.schema
+include         /etc/openldap/schema/nis.schema
+include         /etc/openldap/schema/samba.schema
+
+pidfile         /var/run/slapd/slapd.pid
+argsfile        /var/run/slapd/slapd.args
+
+database        bdb
+suffix          "dc=quenya,dc=org"
+rootdn          "cn=Manager,dc=quenya,dc=org"
+rootpw          {SSHA}06qDkonA8hk6W6SSnRzWj0/pBcU3m0/P
+# The password for the above is 'nastyon3'
+
+directory     /var/lib/ldap
+
+index   objectClass     eq
+index cn                      pres,sub,eq
+index sn                      pres,sub,eq
+index uid                     pres,sub,eq
+index displayName             pres,sub,eq
+index uidNumber               eq
+index gidNumber               eq
+index memberUid               eq
+index   sambaSID              eq
+index   sambaPrimaryGroupSID  eq
+index   sambaDomainName       eq
+index   default               sub
+</screen>
+				</para></step>
+
+				<step><para>
+				<filename>initdb.ldif</filename>ファイルを作成する:
+				<indexterm><primary>initdb.ldif</primary></indexterm>
+<programlisting>
+# Organization for SambaXP Demo
+dn: dc=quenya,dc=org
+objectclass: dcObject
+objectclass: organization
+dc: quenya
+o: SambaXP Demo
+description: The SambaXP Demo LDAP Tree
+
+# Organizational Role for Directory Management
+dn: cn=Manager,dc=quenya,dc=org
+objectclass: organizationalRole
+cn: Manager
+description: Directory Manager
+
+# Setting up the container for users
+dn: ou=People, dc=quenya, dc=org
+objectclass: top
+objectclass: organizationalUnit
+ou: People
+
+# Set up an admin handle for People OU
+dn: cn=admin, ou=People, dc=quenya, dc=org
+cn: admin
+objectclass: top
+objectclass: organizationalRole
+objectclass: simpleSecurityObject
+userPassword: {SSHA}0jBHgQ1vp4EDX2rEMMfIudvRMJoGwjVb
+# The password for above is 'mordonL8'
+</programlisting>
+				</para></step>
+
+				<step><para>
+				LDAPデータベース中に初期データを投入する:
+<screen>
+&rootprompt;<userinput>slapadd -v -l initdb.ldif</userinput>
+</screen>
+				</para></step>
+
+				<step><para>
+				OSにインストールされている方法か適当なツールを使ってLDAP
+				サーバを起動する。
+				</para></step>
+
+				<step><para>
+				<filename>/usr/local/sbin</filename>ディレクトリ中にIdealx
+				スクリプトファイルをインストールし、システム設定に合わせて、
+				smbldap_conf.pmを設定する。
+				</para></step>
+
+				<step><para>
+				このバックエンドを制御する&smb.conf;ファイルの例は
+				<link linkend="fast-ldap">PDC用のLDAPバックエンドを使うsmb.conf</link>
+				にある。必要に応じて追加する。
+				</para></step>
+
+<example id="fast-ldap">
+<title>PDC用のLDAPバックエンドを使うsmb.conf</title>
+<smbconfblock>
+<smbconfcomment>Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">FRODO</smbconfoption>
+<smbconfoption name="passdb backend">ldapsam:ldap://localhost</smbconfoption>
+<smbconfoption name="username map">/etc/samba/smbusers</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+<smbconfoption name="add user script">/usr/local/sbin/smbldap-useradd -m '%u'</smbconfoption>
+<smbconfoption name="delete user script">/usr/local/sbin/smbldap-userdel %u</smbconfoption>
+<smbconfoption name="add group script">/usr/local/sbin/smbldap-groupadd -p '%g'</smbconfoption>
+<smbconfoption name="delete group script">/usr/local/sbin/smbldap-groupdel '%g'</smbconfoption>
+<smbconfoption name="add user to group script">/usr/local/sbin/smbldap-groupmod -m '%u' '%g'</smbconfoption>
+<smbconfoption name="delete user from group script">/usr/local/sbin/smbldap-groupmod -x '%u' '%g'</smbconfoption>
+<smbconfoption name="set primary group script">/usr/local/sbin/smbldap-usermod -g '%g' '%u'</smbconfoption>
+<smbconfoption name="add machine script">/usr/local/sbin/smbldap-useradd -w '%u'</smbconfoption>
+<smbconfoption name="logon script">scripts\logon.bat</smbconfoption>
+<smbconfoption name="logon path">\\%L\Profiles\%U</smbconfoption>
+<smbconfoption name="logon drive">H:</smbconfoption>
+<smbconfoption name="logon home">\\%L\%U</smbconfoption>
+<smbconfoption name="domain logons">Yes</smbconfoption>
+<smbconfoption name="os level">35</smbconfoption>
+<smbconfoption name="preferred master">Yes</smbconfoption>
+<smbconfoption name="domain master">Yes</smbconfoption>
+<smbconfoption name="ldap suffix">dc=quenya,dc=org</smbconfoption>
+<smbconfoption name="ldap machine suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap user suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap group suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap idmap suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap admin dn">cn=Manager</smbconfoption>
+<smbconfoption name="ldap ssl">no</smbconfoption>
+<smbconfoption name="ldap passwd sync">Yes</smbconfoption>
+<smbconfoption name="idmap uid">15000-20000</smbconfoption>
+<smbconfoption name="idmap gid">15000-20000</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+</smbconfblock>
+</example>
+
+				<step><para>
+				<filename>secrets.tdb</filename>ファイルにLDAPパスワードを
+				追加すると、SambaはLDAPデータベースを更新できるようになる:
+<screen>
+&rootprompt;<userinput>smbpasswd -w mordonL8</userinput>
+</screen>
+				</para></step>
+
+				<step><para>
+				必要に応じてユーザとグループを追加する。Sambaツールを使った
+				ユーザとグループの追加は必要に応じて、自動的にLDAPバックエ
+				ンドとOSに追加される。
+				</para></step>
+
+			</procedure>
+
+			</sect4>
+
+			<sect4>
+			<title>バックアップドメインコントローラ</title>
+
+			<para>
+			<link linkend="fast-bdc"/> ではBDCの設定例を示している。&smb.conf;
+			ファイルがBDC上で必要でないsmbldap-toolsスクリプトを&smbmdash;
+			指定していないことに注意。必要に応じて追加の共有とプリンタを
+			追加する。
+			</para>
+
+			<procedure>
+				<step><para>
+				BDCが固有のLDAPサーバを持つかどうかを決める。もしもBDCが
+				LDAPサーバであるならば、以下の&smb.conf;を示されたように
+				変更する。既定値の
+				<link linkend="fast-bdc">リモートのLDAPを使うBDCのsmb.conf</link>
+				中の設定は、中央のLDAPサーバを使う。
+				</para></step>
+
+<example id="fast-bdc">
+<title>リモートのLDAPを使うBDCのsmb.conf</title>
+<smbconfblock>
+<smbconfcomment>Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">GANDALF</smbconfoption>
+<smbconfoption name="passdb backend">ldapsam:ldap://frodo.quenya.org</smbconfoption>
+<smbconfoption name="username map">/etc/samba/smbusers</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+<smbconfoption name="logon script">scripts\logon.bat</smbconfoption>
+<smbconfoption name="logon path">\\%L\Profiles\%U</smbconfoption>
+<smbconfoption name="logon drive">H:</smbconfoption>
+<smbconfoption name="logon home">\\%L\%U</smbconfoption>
+<smbconfoption name="domain logons">Yes</smbconfoption>
+<smbconfoption name="os level">33</smbconfoption>
+<smbconfoption name="preferred master">Yes</smbconfoption>
+<smbconfoption name="domain master">No</smbconfoption>
+<smbconfoption name="ldap suffix">dc=quenya,dc=org</smbconfoption>
+<smbconfoption name="ldap machine suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap user suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap group suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap idmap suffix">ou=People</smbconfoption>
+<smbconfoption name="ldap admin dn">cn=Manager</smbconfoption>
+<smbconfoption name="ldap ssl">no</smbconfoption>
+<smbconfoption name="ldap passwd sync">Yes</smbconfoption>
+<smbconfoption name="idmap uid">15000-20000</smbconfoption>
+<smbconfoption name="idmap gid">15000-20000</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+</smbconfblock>
+</example>
+
+				<step><para>
+				<link linkend="fast-bdc"/>中にあるようにNETLOGONとPROFILES
+				ディレクトリを設定する。
+				</para></step>
+			</procedure>
+
+			</sect4>
+
+		</sect3>
+
+	</sect2>
+
+</sect1>
+
+</chapter>

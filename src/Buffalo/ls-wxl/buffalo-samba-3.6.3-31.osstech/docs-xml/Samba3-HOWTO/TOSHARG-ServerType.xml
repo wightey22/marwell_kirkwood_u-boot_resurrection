@@ -1,0 +1,891 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="ServerType">
+<chapterinfo>
+	&author.tridge;
+	&author.jelmer;
+	&author.jht;
+</chapterinfo>
+
+<title>サーバタイプとセキュリティモード</title>
+
+<para>
+<indexterm><primary>migrate</primary></indexterm>
+<indexterm><primary>セキュリティモード</primary></indexterm>
+この章では、Sambaで設定可能なサーバのタイプに関する情報を提供する。Sambaへのマイグレーションか、
+単に使いたいと思っているMicrosoft ネットワーク管理者は、Microsoft Windows管理者にわかりやすい
+言葉で、Sambaの文脈においてその意味を知りたいはずである。これは、サーバそれ自身をどのように
+設定するかという詳細を得る前に重要なセキュリティモードの機能を定義すると同様に重要であること
+を意味する。
+</para>
+
+<para>
+この章では、Microsoftサーバとクライアントにどのように関連することと、Sambaのセキュリティモードが
+できることについての概要を提供する。
+</para>
+
+<para>
+しばしば聞かれる質問は、<quote>なぜSambaを使うのか</quote>である。ほとんどの章は、機能と利便性
+に注目した節を含んでいる。情報がこの質問に答える手助けを提供することを希望している。しかし、
+我々は公正で合理的であることを望むので、すべての機能がSambaに対して好ましいとは限らないことを
+警告する。利便性は競合他社の方にあるかもしれない。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+2人の人が汚れた道を歩いていたとき、1人が突然小さな赤い石を蹴飛ばした。それは
+彼のつま先を傷つけ、サンダルに突き刺さった。彼は石を取り去り、苦しみと激怒
+のあまりののしった。もう1人は石を見て、<quote>これはガーネットだ。これを
+貴重な宝石に変えられる。そして、いつの日かこれはプリンセスを非常に幸福に
+するだろう!</quote>
+</para>
+
+<para>
+この物語の教訓:2人の人は同じ石に対して2つの非常に異なった観点を持っていた。それと
+同じかどうかにかかわらず、Sambaはその石と似ている。正しく扱えばとても優れた宝物に
+なるが、それに関わる時間を持つことが出来ないことを強いられるならば、それは非常に
+不愉快なものになる。
+</para>
+
+<para>
+<indexterm><primary>UNIX</primary><secondary>server</secondary></indexterm>
+<indexterm><primary>相互運用性</primary></indexterm>
+SambaはUNIXサーバとMicrosoft Windows 3.xクライアントのための相互運用性を提供する
+ためのプロジェクトとして開始された。それは、ささやかなスタートから大きく成長し、
+いまや巨大システムに適合する機能を提供するようになった。しかし若干の問題点も
+ある。このような節ではその両方について触れる。
+</para>
+
+<para>
+そのため、この章で説明されている機能の利点は何であろうか?
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	<indexterm><primary>ドメイン</primary><secondary>コントローラ</secondary></indexterm>
+	Samba-3はMicrosoft Windows NT4 ドメインコントローラを置き換えられる。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>active directory</primary></indexterm>
+	Samba-3はネイティブのMicrosoft Active Directoryドメインと同じように
+	NT4スタイルのMicrosoft Windows NT4スタイルのドメインとのすぐれた相
+	互運用性を提供する。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>ドメイン間</primary><secondary>信頼関係</secondary></indexterm>
+	Samba-3は完全なNT4スタイルのドメイン間の信頼関係を許可する。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>認証</primary></indexterm>
+	<indexterm><primary>セキュリティ</primary><secondary>モード</secondary></indexterm>
+	SambaはMicrosoft Windows NT4ドメインコントローラで出来るよりも
+	より柔軟性のある認証機能を許可するセキュリティモードを持っている。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>アカウント</primary><secondary>データベース</secondary><tertiary>バックエンド</tertiary></indexterm>
+	<indexterm><primary>encrypted</primary></indexterm>
+	Samba-3は複数の同時アクセス可能なアカウントデータベースバックエンドを
+	使える(暗号化パスワードはWindowsネットワーキングのために固有となる形
+	式でアカウントデータベース中に格納される)。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>replicated</primary></indexterm>
+	アカウントデータベースバックエンドは複数の方法で複製され配布される。
+	これは、Samba-3がMicrosoft Windows NT4よりもより優れた柔軟性を与え、
+	多くの場合、Microsoft Windows 200xのActive Directory ドメインよりも
+	かなり便利なユーティリティとなる。
+	</para></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1>
+<title>サーバタイプ</title>
+
+
+<para>
+<indexterm><primary>サーバタイプ</primary></indexterm>
+Microsoftネットワークの管理者はしばしば3つの異なったタイプのサーバを参照する:
+</para>
+
+<itemizedlist>
+	<listitem><para>ドメインコントローラ</para>
+		<itemizedlist>
+			<listitem><para>Primary Domain Controller (PDC)</para></listitem>
+			<listitem><para>Backup Domain Controller (BDC)</para></listitem>
+			<listitem><para>ADS Domain Controller</para></listitem>
+		</itemizedlist>
+	</listitem>
+	<listitem><para>ドメインメンバサーバ</para>
+		<itemizedlist>
+			<listitem><para>Active Directory Domain Server</para></listitem>
+			<listitem><para>NT4 Style Domain Domain Server</para></listitem>
+		</itemizedlist>
+	</listitem>
+	<listitem><para>スタンドアロンサーバ</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>ドメイン</primary><secondary>制御</secondary></indexterm>
+<indexterm><primary>ドメイン</primary><secondary>メンバ</secondary></indexterm>
+<indexterm><primary>ドメイン制御</primary><secondary>primary</secondary></indexterm>
+<indexterm><primary>ドメイン制御</primary><secondary>backup</secondary></indexterm>
+ドメイン制御を扱っている節(<link linkend="samba-pdc">ドメイン制御</link>), 
+バックアップのドメイン制御(<link linkend="samba-bdc">バックアップドメイン制御</link>),と 
+ドメインメンバシップ(<link linkend="domain-member">ドメインメンバシップ</link>)は
+3つのサーバの役割のためのSambaの設定に言及する適切な情報を提供する。Sambaドメイン
+セキュリティの実装のための基礎を作るために、それらの章のそれぞれについて、精通
+しておくことを強く推奨する。
+</para>
+
+<para>
+<indexterm><primary>スタンドアロン</primary></indexterm>
+スタンドアロンサーバはアカウント管理が独立している。<emphasis>スタンドアロン</emphasis>
+サーバとして設定することがサーバにとって何を意味するかについてのより広い評価を
+得るために、<link linkend="StandAloneServer">スタンドアロンサーバ</link>を参照のこと。
+</para>
+
+</sect1>
+
+<sect1>
+<title>Sambaセキュリティモード</title>
+
+
+<para>
+<indexterm><primary>セキュリティモード</primary></indexterm>
+<indexterm><primary>セキュリティ</primary></indexterm>
+この節では、Sambaのセキュリティモードの機能と目的について説明する。おのおののモードの
+ためにMicrosoft Windows クライアントを設定する方法と同様におのおののセキュリティモード
+についてどのようにSambaが実装しているかを正確に理解することは、ユーザの不満と管理者の
+心労をとても減らすだろう。
+</para>
+
+<para>
+<indexterm><primary>Server Message Block</primary><see>SMB</see></indexterm>
+<indexterm><primary>Common Internet Filesystem</primary><see>CIFS</see></indexterm>
+Microsoft Windows ネットワークはもともとServer Message Block(SMB)プロトコルと
+呼ばれていたプロトコルを使っている。1996年あたりから、プロトコルは
+Common Internet Filesystem(CIFS)プロトコルとしてより知られるようになった。
+</para>
+
+<para>
+<indexterm><primary>セキュリティレベル</primary></indexterm>
+<indexterm><primary>セキュリティモード</primary></indexterm>
+<indexterm><primary>ユーザレベル</primary></indexterm>
+<indexterm><primary>共有レベル</primary></indexterm>
+SMB/CIFSネットワークにおいては、<emphasis>ユーザレベル</emphasis>と
+<emphasis>共有レベル</emphasis>という2つのセキュリティのみがある。それらをまとめて
+<emphasis>セキュリティレベル</emphasis>として参照する。それら2つのセキュリティレベル
+の実装において、SambaはMicrosoft Windows NT4/200xサーバでは出来ない柔軟性を提供する。
+実際、Sambaは<emphasis>共有レベル</emphasis>のセキュリティを1つの方法で実装しているが、
+<emphasis>ユーザレベル</emphasis>のセキュリティについては4つの方法で実装している。
+それらをまとめて、Sambaでのセキュリティレベルの実装を
+<emphasis>セキュリティモード</emphasis>と呼ぶ。それらは、
+<emphasis>share</emphasis>, <emphasis>user</emphasis>, <emphasis>domain</emphasis>,
+<emphasis>ADS</emphasis>と<emphasis>server</emphasis>モードとして知られている。
+それらはこの章で解説されている。
+</para>
+
+<para>
+セッションのセットアップ時にクライアントに対してSMBサーバは動作しているサーバの
+セキュリティレベルを伝える。それはシェアレベルとユーザレベルという2つのオプション
+である。2つのうちのどちらかをクライアントが受け取り、それは、クライアントがそれ
+自身を認証するときに試みる方法に影響する。それはSambaサーバをセキュリティ化する
+方法には直接(たいして)影響しない。これは奇妙に聞こえるが、それはSMBのクライアント/
+サーバアプローチに適合する。SMB中では、すべてはクライアントによって開始され、
+制御され、サーバはクライアントに対して、何が有効で、どのような動作が許可されるか
+のみを通知できる。
+</para>
+
+<para>
+<literal>client</literal>という語は、たとえばWindowsワークステーション、Windows
+サーバ、あるいはその他の平凡なSMBまたはCIFSクライアントアプリケーション(たとえば
+<command>smbclient</command>)のような、SMB/CIFSサーバによって提供されるサービスを
+使うものすべてのエージェントを参照する。
+</para>
+
+<sect2>
+<title>ユーザレベルのセキュリティ</title>
+
+<para>
+<indexterm><primary>ユーザレベル</primary></indexterm>
+それが簡単なため、最初にユーザレベルのセキュリティを説明する。ユーザレベルの
+セキュリティでは、クライアントはプロトコルネゴシエーションを伴って、直接
+セッションセットアップ要求を送信する。この要求はユーザ名とパスワードを提供
+する。サーバはそのユーザ名/パスワードペアを受け取るか拒否するかのどちらか
+を行う。この段階で、サーバはクライアントが結局接続しようと試みる共有が
+何であるかを知るすべはなく、そのため、<emphasis>許可/拒否</emphasis>
+について、以下の2つ以外をベースと出来ない:
+</para>
+
+<orderedlist>
+<listitem><para>ユーザ名/パスワード ペア</para></listitem>
+<listitem><para>クライアントマシンの名前</para></listitem>
+</orderedlist>
+
+<para>
+<indexterm><primary>認証(credentials)</primary></indexterm>
+もしもサーバがユーザ名/パスワードペア認証を許可するならば、クライアントは、
+その先パスワード指定なしで(<emphasis>tree connection</emphasis>を使って)
+共有をマウントできることを仮定する。クライアントは、すべてのアクセス権限が
+最初の<emphasis>session setup</emphasis>中で指定したユーザ名/パスワード認証
+セットであることを仮定する。
+</para>
+
+<para>
+<indexterm><primary>session setup</primary></indexterm>
+複数の<emphasis>session setup</emphasis>要求をクライアントが送信することも
+可能である。サーバが返信するとき、そのユーザ名/パスワードペアのための、
+認証タグとして使うために、<emphasis>uid</emphasis>を送る。クライアントは
+この方法で複数の認証コンテキストを操作することが可能である(このことを行う
+アプリケーションの例としてはWinDDがある)。
+</para>
+
+<para>
+<indexterm><primary>LanManager</primary></indexterm>
+<indexterm><primary>case-preserving</primary></indexterm>
+<indexterm><primary>case-insensitive</primary></indexterm>
+<indexterm><primary>upper-case</primary></indexterm>
+<indexterm><primary>lower-case</primary></indexterm>
+Windowsネットワークユーザアカウント名は大文字小文字に依存しない。すなわち、
+アカウント名中の大文字小文字はすべて同一視されると言うことである。また、
+大文字小文字の状態は保存されるが、大文字小文字の状態は関係ないということ
+である。Windows NT 3.10より前のWindowsとLanManagerシステムは、大文字小文字
+の状態を保存する必要がない、大文字小文字を無視するパスワードを使っていた。
+すべてのWindows NT ファミリシステムはパスワードについて、大文字小文字を保
+存し、それを意識するように取り扱う。
+</para>
+
+<sect3>
+<title>設定例</title>
+
+<para>
+ユーザレベルのセキュリティを実現する &smb.conf; の例は以下の通り:
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="security">user</smbconfoption>
+</smbconfblock></para>
+
+<para>
+これはSamba-2.2.xの既定値である。
+</para>
+
+</sect3>
+
+</sect2>
+<sect2>
+<title>共有レベルのセキュリティ</title>
+
+<para>
+<indexterm><primary>共有レベル</primary></indexterm>
+<indexterm><primary>mount</primary></indexterm>
+共有レベルのセキュリティ中では、クライアント自身の認証はおのおのの共有毎に
+分離している。クライアントはおのおのの tree connection要求(共有マウント)
+と共にパスワードを送るが、この操作で明示的にユーザ名を送らない。クライアント
+は、おのおのの共有にパスワードが関連づけられ、ユーザから独立していることを
+期待する。これは、Sambaは、ユーザ名がSMBサーバに明示的に送られないために、
+クライアントが使いたいとしているユーザ名をSambaが考えなければならないこと
+を意味する。たとえばNTのような、いくつかの商用SMBサーバは共有レベルの
+セキュリティ中に直接共有とパスワードを関連づけるが、Sambaはいつでも、
+共有/パスワードペアではなく、認証に使ったユーザ名/パスワードペアを使う
+UNIX認証スキームを使う。
+</para>
+
+<para>
+Microsoftネットワーキングとの類似点を理解するために、パスワードあり/なし
+でリードオンリまたはフルアクセスできる共有フォルダを作成できる、Microsoft 
+Windows 9x/Meについて考えてみる。
+</para>
+
+<para>
+多くのクライアントは、サーバが共有レベルのセキュリティであったとしても、
+session setup要求を送る。それらは通常有効なユーザ名を送るがパスワードは
+送らない。Sambaは有効なユーザ名リスト中にこのユーザ名を記憶する。クライアント
+がtree connection要求を次に発行するとき、接続しようとする共有名の名前
+(ホームディレクトリに有用)をこのリストに追加もし、&smb.conf;ファイル中の
+<smbconfoption name="user"/>パラメータ中にリストされているユーザもである。
+次にパスワードが、それらの可能なユーザ名に対して順番にチェックされる。
+もしも一致したものが見つかれば、クライアントはそのユーザとして認証される。
+</para>
+
+<para>
+<indexterm><primary>ネームサービススイッチ</primary><see>NSS</see></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>nsswitch.conf</primary></indexterm>
+使用可能なユーザ名のリストが提供されていない場合、Sambaは、標準のアカウント
+データベースから、そのユーザに対して提供されるパスワードとユーザアカウントを
+UNIXのシステムコールを使って探し出すことを行う。システムがネームサービススイッチ
+(NSS)機能を持っていない場合、そのような検索は<filename>/etc/passwd</filename>
+データベースを対象として行う。NSSが有効なシステムの場合、検索は、
+<filename>nsswitch.conf</filename>ファイル中で指定されたライブラリを通じて
+行う。ライブラリを指定するそのファイル中のエントリは以下の通り:
+<screen>
+passwd: files nis ldap
+shadow: files nis ldap
+group: files nis ldap
+</screen>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>/etc/group</primary></indexterm>
+<indexterm><primary>NIS</primary></indexterm>
+以下の例(実際に使われるようなものではないが)では、検索は、
+<filename>/etc/passwd</filename>と <filename>/etc/group</filename>に対して
+行われ、見つからなければ NISでチェックし、次にLDAPでチェックする。
+</para>
+
+<sect3>
+<title>設定例</title>
+
+<para>
+共有レベルのセキュリティを設定する&smb.conf; パラメータは以下の通り:
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="security">share</smbconfoption>
+</smbconfblock></para>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>ドメインセキュリティモード(ユーザレベルのセキュリティ)</title>
+
+<para>
+<indexterm><primary>ドメイン</primary><secondary>コントローラ</secondary></indexterm>
+<indexterm><primary>security</primary><secondary>controllers</secondary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>ログオン</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+ドメインセキュリティは、すべてのユーザとグループアカウントを、中央の共有されている
+アカウントリポジトリに保存するメカニズムを提供する。中央のアカウントリポジトリは
+ドメイン(セキュリティ)コントローラ間で共有される。ドメインコントローラとして振る舞う
+サーバはドメインに対するセキュリティコンテキストに参加するすべてのマシンに、認証と
+確認サービスを提供する。プライマリドメインコントローラ(PDC)はセキュリティアカウント
+データベースの完全性を管理するための責任を負うサーバである。バックアップドメイン
+コントローラ(BDC)はドメインログオンと認証サービスのみを提供する。通常、BDCはPDCが
+行うよりもより反応性がよいネットワークログオン要求を提供する。
+</para>
+
+<para>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>信頼されたアカウント</primary></indexterm>
+<indexterm><primary>trust</primary><secondary>account</secondary></indexterm>
+<indexterm><primary>ドメイン</primary><secondary>セキュリティ</secondary></indexterm>
+<indexterm><primary>ドメイン</primary><secondary>コントローラ</secondary></indexterm>
+Sambaが<smbconfoption name="security">domain</smbconfoption>モードで動作中の時、
+Sambaサーバはドメインセキュリティ信頼アカウント(マシンアカウント)を持ち、ドメイン
+コントローラに対してすべての認証要求をパススルーする。別の言い方をすると、この設定は、
+実際、それがドメインコントローラとして振る舞う場合にも、Sambaサーバをドメインメンバ
+サーバにする。ドメインセキュリティに参加するすべてのマシンはセキュリティデータベース
+中にマシンアカウントを持たなければならない。
+</para>
+
+<para>
+<indexterm><primary>アカウント</primary><secondary>データベース</secondary></indexterm>
+<indexterm><primary>マシン</primary><secondary>アカウント</secondary></indexterm>
+<indexterm><primary>NetBIOS</primary><secondary>名</secondary></indexterm>
+<indexterm><primary>NetBIOS</primary></indexterm>
+ドメインセキュリティ環境ないで、セキュリティアーキテクチャの基盤は、ユーザレベルの
+セキュリティを使う。ドメインメンバであるマシンは開始時に認証を行わなければならない。
+アカウントデータベース内にあるアカウントエントリの一部であるマシンアカウントは、
+その名前がマシンのNetBIOS名であり、パスワードはランダムに生成され、ドメインコントローラ
+と他のマシンの両方に知られている。もしもマシンアカウントがセットアップ中に認証
+されなければ、ユーザは、それが認証できないため、そのマシンを使ってドメインにログオン
+できない。マシンアカウントはマシン信頼アカウントとして参照される。
+</para>
+
+<para>
+ドメインメンバの設定には以下の3つのパターンがある:
+</para>
+
+<orderedlist>
+	<listitem><para>プライマリドメインコントローラ(PDC) - ドメインに1つのみ。</para></listitem>
+	<listitem><para>バックアップドメインコントローラ(BDC) - ドメインに複数配置可能。</para></listitem>
+	<listitem><para>ドメインメンバサーバ(DMS) - ドメインに複数配置可能。</para></listitem>
+</orderedlist>
+
+<para>
+<indexterm><primary>DMS</primary></indexterm>
+それぞれについて別の節で解説する。まずはじめに、もっとも関心のある基本的なDMSの設定について
+説明する。
+</para>
+
+<sect3>
+<title>設定例</title>
+<para><emphasis>
+Sambaをドメインメンバサーバとする
+</emphasis></para>
+
+
+<para>
+<indexterm><primary>サーバタイプ</primary><secondary>ドメインメンバ</secondary></indexterm>
+この方法は&smb.conf;ファイル中に以下のパラメータを必要とする:
+<smbconfblock>
+<smbconfoption name="security">domain</smbconfoption>
+<smbconfoption name="workgroup">&example.workgroup;</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+この方法を動作させるために、SambaサーバはMicrosoft Windows NTセキュリティドメイン
+にジョインする必要がある。これは以下の方法で行う:
+<indexterm><primary>net</primary><secondary>rpc</secondary></indexterm>
+<indexterm><primary>ドメインメンバの</primary><secondary>ジョイン</secondary></indexterm>
+</para>
+
+
+<procedure>
+        <step><para>Microsoft Windows NT ドメインコントローラ上で、サーバマネージャを
+	つかい、Sambaサーバのマシンアカウントを追加する。
+        </para></step>
+
+        <step><para>UNIX/Linuxシステム上で以下を実行する:</para>
+	
+			<para><screen>&rootprompt;<userinput>net rpc join -U administrator%password</userinput></screen></para>
+		</step>
+</procedure>
+
+<note><para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+Samba-2.2.4とそれ以降の Samba 2.2.x 系列では、以下を実行することで、Windows NT4スタイル
+ドメインへの自動ジョインが可能である:
+<screen>
+&rootprompt;<userinput>smbpasswd -j <replaceable>DOMAIN_NAME</replaceable> -r <replaceable>PDC_NAME</replaceable> \
+	 -U Administrator%<replaceable>password</replaceable></userinput>
+</screen>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join</tertiary></indexterm>
+Samba-3では同じことを以下の方法で行う:
+<screen>
+&rootprompt;<userinput>net rpc join -U Administrator%<replaceable>password</replaceable></userinput>
+</screen>
+Samba-3では<replaceable>DOMAIN_NAME</replaceable>か<replaceable>PDC_NAME</replaceable>
+を指定する必要はないので、&smb.conf;ファイルの設定からこれをわかるようにする(訳注:訳があやしい)。
+</para></note>
+
+<para>
+<indexterm><primary>invalid shell</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>/bin/false</primary></indexterm>
+Windowsドメインコントローラによってアカウントが認証される時に、UIDを割り当てるため、
+このモードを使う認証は、おのおののユーザに対する標準UNIXアカウントがあることを要求
+する。このアカウントは、<filename>/etc/passwd</filename>エントリ中で不正なシェルと
+して設定するような方法で、Microsoft Windows以外のクライアントによってログオンする
+ことをブロックすることができる。ユーザアカウントに対して不正なシェルを割り当てる
+最も良い方法は、シェルに<filename>/bin/false</filename>を割り当てることである。
+</para>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+ドメインコントローラは、利便性のために任意の場所に配置できる。BDCを配置する推奨は、
+物理ネットワーク毎に配置し、もしもPDCがリモートネットワークセグメントにあるならば、
+WINS(詳細は<link linkend="NetworkBrowsing">ネットワークのブラウジング</link>を参照)を
+使うのが基本である。
+</para>
+
+<para>
+Sambaサーバ上でWindowsユーザにUIDを割り当てる別の方法は、
+<link linkend="winbind">Winbind</link>と
+<link linkend="winbind">Winbind: Use of Domain Accounts</link>にある。
+</para>
+
+<para>
+ドメインメンバシップについてのより詳細な情報は
+<link linkend="domain-member">Domain Membership</link>を参照のこと。
+</para>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>ADS セキュリティモード(ユーザレベルのセキュリティ)</title>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>native mode</primary></indexterm>
+Samba-2.2とSamba-3の両方は、NT4スタイルのRPCベースのセキュリティを使って
+Active Directoryドメインに参加することが出来る。これは、ドメインがネイティブ
+モードで動作しているときに可能である。ネイティブモードのActive Directory
+は完全にNT4スタイルのドメインメンバを許可する。これは世間一般の考えに反して
+である。
+</para>
+
+<para>
+もしも、Active DirectoryをSamba-3と一緒に使っているとき、ネイティブなAD
+メンバとしてジョインできる。なぜそれを望むか?NT互換の認証プロトコルの使用
+をセキュリティポリが禁止するかもしれない。Windows2000とそれ以降のすべての
+マシンはKerberosを使用している。この場合、NT4スタイルのドメインとしての
+SambaはNT互換の認証データを引き続き要求する。ADメンバモード中のSambaは、
+Kerberosチケットを受け取ることが出来る。
+</para>
+
+<para>
+<indexterm><primary>realm</primary></indexterm>
+<indexterm><primary>mixed mode</primary></indexterm>
+Microsoft WindowsのActive Directoryサービス(ADS)を使うサイトは、以下の
+用語の重要性に気づくべきである:
+<literal>native mode</literal> と <literal>mixed mode</literal>の ADS操作。
+ The term
+<literal>realm</literal>という単語はKerberosベースのセキュリティアーキテクチャ
+(Microsoft ADSによって使われるような)を説明するのに使われる。
+</para>
+
+<sect3>
+<title>設定例</title>
+
+<para><smbconfblock>
+<smbconfoption name="realm">your.kerberos.REALM</smbconfoption>
+<smbconfoption name="security">ADS</smbconfoption>
+</smbconfblock></para>
+
+<para>
+以下のパラメータを必要としても良い:
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="password server">your.kerberos.server</smbconfoption>
+</smbconfblock></para>
+
+<para>
+この設定オプションの参考情報として、
+<link linkend="domain-member">ドメインメンバシップ</link>と
+<link linkend="ads-member">Samba ADS ドメインメンバシップ</link>を参照してほしい。
+</para>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>サーバセキュリティ(ユーザレベルのセキュリティ)</title>
+
+<para>
+サーバ席モードはドメインメンバサーバとして振る舞うのが出来ない場合に残されている
+ものである。この機能を使わないことを強く推奨する。サーバセキュリティモードは
+以下のような多数の欠点がある:
+</para>
+
+<itemizedlist>
+	<listitem><para>Microsoft Windows NT4/200xパスワードサーバ上でアカウントロックアウトの可能性。</para></listitem>
+	<listitem><para>Lack of assurance that the password server is the one specified.</para></listitem>
+	<listitem><para>リモートでプロファイルを格納するときに特に必要な、Winbindと一緒に動かない。</para></listitem>
+	<listitem><para>このモードはパスワードサーバに対して接続をオープンにでき、また長期間それとオープンしたままにできる</para></listitem>
+	<listitem><para>突然リモートのパスワードサーバが停止したときに、不正にSambaサーバのセキュリティを壊す。</para></listitem>
+	<listitem><para>このモードでは、Sambaサーバのために属するドメイン中のパスワードサーバにセキュリティアカウントがない(訳注:訳が微妙)。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>session setup</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+サーバセキュリティモード中で、Sambaサーバはクライアントに、ユーザレベルセキュリティ
+であることを報告する。クライアントは次に以前に説明したようにsession setupを行う。
+Sambaサーバはユーザ名/パスワードペアをクライアントから得、クライアントから得た
+ユーザ名/パスワードペアと正確に同じものを送って
+<smbconfoption name="password server"/>にログインしようとする。もしもサーバが
+ユーザレベルのセキュリティで動作していて、パスワードを受け入れるならば、Samba
+はクライアントからの接続を許可する。このパラメータは
+<smbconfoption name="password server"/>としてSambaサーバを、別のSMBサーバを使う
+ことができるようになる。
+</para>
+
+<para>
+<indexterm><primary>セキュリティレベル</primary></indexterm>
+<indexterm><primary>暗号化</primary></indexterm>
+どのセキュリティレベルであるかとクライアントに告げるとき、これらすべての開始時に
+もしも暗号化をサポートしているのであrばそのこともクライアントに告げる。もしも
+そうであれば、クライアントに対して乱数を使った暗号化キーを送信する。クライアント
+は暗号化形式ですべてのパスワードを送る。Sambaは既定値でこのタイプの暗号化を
+サポートする。
+</para>
+
+<para>
+パラメータ<smbconfoption name="security">server</smbconfoption>は
+<emphasis>user mode</emphasis>で動いていることをSambaがクライアントに報告する
+ことを意味するが、実際には別のユーザモードサーバに対してすべての認証要求を渡す。
+これは、真の認証サーバを差す追加の<smbconfoption name="password server"/>
+パラメータを必要とする。真の認証サーバは別のSambaサーバでも、Windows NT
+サーバでもよく、後者は標準で暗号化パスワードをサポートしている。
+</para>
+
+<note><para>
+<indexterm><primary>パスワードサーバ</primary></indexterm>
+<indexterm><primary>ワークグループ</primary></indexterm>
+<emphasis>server security mode</emphasis>でSambaサーバが動作しているとき、
+パラメータ<emphasis>password server</emphasis>をターゲットの認証サーバの
+正確なNetBIOSマシン名に設定することは必要である。Sambaは、ターゲットの認証
+サーバの選択は任意であり、ドメイン名から決定できないという理由で、NetBIOS
+名前検索からこれを決定できない。本質的に、
+<emphasis>サーバセキュリティモード</emphasis>のSambaサーバはワークグループ
+モードとして知られているものとして動作している。
+</para></note>
+
+<sect3>
+<title>設定例</title>
+<para><emphasis>
+Microsoft Windows NTを認証サーバとして使う
+</emphasis></para>
+
+<para>
+この方法は&smb.conf;ファイル中に以下のパラメータを追記することになる:
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="encrypt passwords">Yes</smbconfoption>
+<smbconfoption name="security">server</smbconfoption>
+<smbconfoption name="password server">"NetBIOS_name_of_a_DC"</smbconfoption>
+</smbconfblock></para>
+
+
+<para>
+ユーザ名/パスワードペアが正しいかどうかを確認する2つの方法がある。
+1つは提供された認証メッセージングプロセスの一部としてリプライ情報を使う
+ことであり、もう1つはエラーコードを使うことである。
+</para>
+
+<para>
+<indexterm><primary>bogus</primary></indexterm>
+<indexterm><primary>lockout</primary></indexterm>
+このモードの設定の悪い点は、セキュリティの観点でSambaが偽のユーザ名と偽の
+パスワードをパスワードサーバに送る可能性があることと、もしもリモートの
+サーバが偽のユーザ名と偽のパスワードの認証拒否に失敗すると代替の認証か
+承認作業が使われてしまうと言うことである。数回の認証の繰り返し後にサイト
+がパスワードロックを使う場合、これはユーザをロックアウトしてしまう。
+</para>
+
+<para>
+認証要求でのこのモードの使用はユーザが標準UNIXアカウントがあることを必要と
+する。このアカウントは非SMB/CIFSクライアントからのログオンを防止するために
+ブロックすることが出来る。
+</para>
+
+</sect3>
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>パスワードの検査</title>
+
+<para>
+Microsoft Windows クライアントはチャレンジ/レスポンス認証モデル(NTLMv1と
+NTLMv2として知られる)の一部としての暗号化パスワードか、単独か、あるいは
+単純なパスワードベースの認証のための平文パスワードを使うことが出来る
+(訳注:aloneがよく分からない)。これはSMBプロトコルで実現され、パスワード
+は平文または暗号化されてネットワーク経由で渡されるが、同じ認証要求では
+両方は使われない。
+</para>
+
+<para>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+<indexterm><primary>暗号化</primary></indexterm>
+暗号化パスワードが使われるとき、以下の2つの方法でユーザが入力した
+パスワードは暗号化される:
+</para>
+
+<itemizedlist>
+        <listitem><para>unicodeのパスワード文字列をMD4でハッシュ。
+	これはNTハッシュとして知られているものである。
+        </para></listitem>
+
+        <listitem><para>パスワードは大文字化され、14バイトに短縮
+	される。この文字列に5バイトのNULL文字が追加され、"magic"
+	な8バイト値に暗号化するために、2つの56ビットDESキー形式
+	に分割される。結果はLanManハッシュという16ビットの値である。
+        </para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>平文</primary><secondary>パスワード</secondary></indexterm>
+Microsoft Windows 95 サービスパック1より前とWindows NT バージョン3.xとバージョン
+4.0のサービスパック3より前では、パスワード認証のどちらかのモードを使う。すべての
+それより後のMicrosoft Windowsバージョンはもはや既定値で平文パスワードをサポート
+しない。
+</para>
+
+<para>
+<indexterm><primary>キャッシュされた</primary><secondary>パスワード</secondary></indexterm>
+Microsoft Windows クライアントは10分またはそれより長くアイドルな時にネットワーク
+マッピングを切断するという習性がある。切断した、マップされたドライブ接続を
+使うためにユーザが試みるとき、クライアントはキャッシュされたパスワードの
+コピーを使って再接続する。
+</para>
+
+<para>
+Microsoftが既定値のパスワードモードを変更したとき、平文パスワードのキャッシュ
+サポートをやめた。これは、平文パスワードを使うためにレジストリパラメータを修正
+したときに、それは動くようになるが、もしもリモートの認証サーバが暗号化パスワード
+をサポートしないときに、切断されたサービスのマッピングを試みるときに失敗する
+ことを意味する。そのようなクライアントで平文パスワードを再度有効にすることは
+良い考えではないと確かに言える。
+</para>
+
+<para>
+以下のパラメータは、平文テキストでの認証を使うときに、Windows 9x/Meクライアントが
+大文字化したユーザ名とパスワードをSMBサーバに送る前に問題になる時に使うことが
+できるものである:
+</para>
+
+
+<?latex \newpage ?>
+<smbconfblock>
+<smbconfoption name="password level"><replaceable>integer</replaceable></smbconfoption>
+<smbconfoption name="username level"><replaceable>integer</replaceable></smbconfoption>
+</smbconfblock>
+
+<para>
+既定値では、Sambaはローカルのシステムアカウントデータベース中でユーザ名を検索する前に
+ユーザ名を小文字に変更する。これは、UNIXユーザ名が慣習的に小文字のみで構成されている
+ことによるためであり、<smbconfoption name="username-level"/>パラメータは滅多に必要と
+さない。
+</para>
+
+<para>
+<indexterm><primary>平文</primary></indexterm>
+しかしながら、UNIXシステム上のパスワードはしばしば大文字小文字を混ぜた文字で構成され
+ている。これは、平文認証を使ってSambaサーバに接続しようとするWindows 9x/Meクライアント
+上でのユーザのために、<smbconfoption name="password level"/>が、パスワードに現れること
+が<emphasis>出来る</emphasis>大文字の最大数を設定しなければならないことを意味する。
+もしもサーバのOSが伝統的なDESバージョンを使うcrypt()を使うならば、
+<smbconfoption name="password level"/>を8に設定することは、結果としてWindowsユーザ
+にとって、大文字小文字を無視したパスワードとして見える。これはまた、一致するまで
+(あるいはすべての組み合わせが失敗するまで)1つ1つ、Sambaがパスワード文字列の組み合わせ
+を試みるために、より長いログイン時間がかかるという結果となる。
+</para>
+
+<para>
+最も適用するのによいオプションは、Sambaが使われている所はどこでも、暗号化パスワード
+をサポートすることを有効にすることである。平文パスワードを使うためにレジストリを
+変更する試みは、結局はユーザの苦情と不便を導くことになるだろう。
+</para>
+
+</sect1>
+
+<sect1>
+<title>共通のエラー</title>
+
+<para>
+我々はいつでも間違いを犯す。正しい場所で正しい時間と同じくらいの長さで間違いを犯す
+のは問題ない(訳注:意味がよく取れない)。製品版での重要な障害は重要視されるが、
+ラボでの開発バージョンにおいてのバグは期待されるものである。
+</para>
+
+<para>
+Sambaメーリングリスト上の議論の題名となる共通の誤解と間違いを見てみよう。
+その多くは、Samba実装を試みる前にあなたの宿題としてその多くが回避可能である。
+そのいくつかは、英語を母国語としない人にとって、潜在的に曖昧で、とても紛らわしい
+多くのフレーズを持つ英文の誤解釈の結果である。
+</para>
+
+<sect2>
+<title>何がSambaをサーバにするか?</title>
+
+<para>
+ある人たちにとって、Sambaのセキュリティモードの性質は明白であるが、
+それでも完全に間違っている(訳注:意味取れない)。
+<smbconfoption name="security">server</smbconfoption>はSambaがサーバとして
+動くと言うことを意味していることを仮定している。が、違う。この設定は、
+Sambaが、別のSmBサーバがユーザ認証サーバだけの提供元として使うことを
+<emphasis>試みる</emphasis>ことを意味している。
+</para>
+
+<para>
+Sambaはセキュリティモードが選択されたとしてもサーバである。Sambaが
+ドメインセキュリティコンテキストの外で使われた場合、既定値にセキュリティ
+モードをしておくのが最適である。Samba-3の既定値では、ユーザモードの
+セキュリティを使う。
+</para>
+
+</sect2>
+
+<sect2>
+<title>何がSambaをドメインコントローラにするか?</title>
+
+<para>
+<indexterm><primary>サーバモード</primary></indexterm>
+&smb.conf; パラメータ <smbconfoption name="security">domain</smbconfoption>は
+実際にSambaをドメインコントローラとして振る舞わさせるのではない。この設定は
+Sambaがドメインメンバになることを期待することを意味する。より詳細については
+<link linkend="samba-pdc">PDCとしてのSamba</link>を参照のこと。
+</para>
+
+</sect2>
+
+<sect2>
+<title>何がSambaをドメインメンバにするか?</title>
+
+<para>
+想像してみよう!So many others do. But whatever you do,
+<smbconfoption name="security">user</smbconfoption>はSambaをドメインメンバ
+として振る舞わせることを考えてはいけない。保証期限が切れる前に製造者の
+マニュアルを読みなさい。より詳細については、
+<link linkend="domain-member">ドメインメンバシップ</link>を参照のこと。
+</para>
+
+</sect2>
+
+
+<sect2>
+<title>常時パスワードサーバへの接続不可</title>
+
+<para><quote>
+なぜ、server_validate()は単に、パスワードサーバに対する接続を再接続しないで
+あきらめるのか?私はSMBプロトコルに詳しくはないが、たぶん、クラスタサーバ
+プロセスはそのクライアントワークステーションの方に、パスワードサーバから
+渡されたセッションキーを渡し、それはクライアントから送信されたパスワード
+ハッシュが、セッションキーが異なるそのあとの接続で動作しないことを意味する。
+(訳注:ちょっと不安)そのため、server_validate()は中断しなければならない。
+</quote></para>
+
+<para>
+本当に。それは、なぜ <smbconfoption name="security">server</smbconfoption>
+が全くひどいハックである理由である。認証をパススルーすることが分かっている、
+<smbconfoption name="security">server</smbconfoption>モードである、
+<smbconfoption name="security">domain</smbconfoption>を使ってほしい。
+</para>
+
+</sect2>
+
+<sect2>
+<title>スタンドアロンサーバはドメインコントローラに変換された &smbmdash; が、ユーザのアカウントが動作しない</title>
+
+<para><quote>
+DOMAINに入ろうとしたとき、イベントログに
+<emphasis>tried credentials DOMAIN/username; effective credentials SERVER/username</emphasis>が表示された。
+</quote></para>
+
+<para>
+通常これはSambaサーバがドメインコントローラとして設定される前にユーザかマシン
+アカウントが作成されたことによるものである。サーバがドメインコントローラになる
+まえに作成されたアカウントは、<emphasis>ローカルの</emphasis>アカウントであり、
+SERVERドメイン中のメンバとして見えるものとしてに認証され、Windows 2000とそれ
+以降の中のローカルユーザアカウントとほとんど同じである。Sambaサーバがドメイン
+コントローラになったとに作成されたアカウントは、 <emphasis>ドメイン</emphasis>
+アカウントであり、DOMAINメンバのメンバとして認証される。
+</para>
+
+<para>
+これは、<command>pdbedit -L -v username</command>コマンドをを発行することによって
+確かめられる。もしも、これがDOMAINという結果を出したならば、アカウントはドメイン
+アカウントであり、もしもSERVERであれば、そのアカウントはローカルアカウントである。
+</para>
+
+<para>
+これを解決する最も簡単な方法は、アカウントを削除し再作成することである。しかしながら、
+この方法は、ユーザプロファイルの確率に問題を引き起こすかもしれない。
+<command>pdbedit -u username -I DOMAIN</command>コマンドを使うことも出来る。
+ドメインに一致するためにユーザSIDとプライマリグループSIDを変更する必要がある
+かもしれない。
+</para>
+
+</sect2>
+
+</sect1>
+
+</chapter>

@@ -1,0 +1,18 @@
+<samba:parameter name="usershare template share"
+	         context="G"
+		 basic="1" advanced="1"
+		 type="string"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>ユーザ定義共有では、path 、 guest ok といった幾つかのパラメータしか設定できないが、
+	このパラメータにより、ユーザ定義共有を既存の共有から「複製」することが可能となる。
+	「usershare template share」に既存の共有名が設定されていた場合、作成されるすべてのユーザ定義共有では、既定値としてこの共有に設定されたパラメータが用いられる。
+	</para>
+	<para>
+	対象となる共有には、「-valid = False」の設定をテンプレートの設定として行なっておくことで、実際のファイル共有として機能しないようにしておくことができる。
+	これにより、ユーザ定義共有のテンプレートとして用いつつ、その共有が実際に公開されないようにできる。
+	</para>
+</description>
+<value type="default">NULL</value>
+<value type="example">template_share</value>
+</samba:parameter>

@@ -1,0 +1,27 @@
+<samba:parameter name="write cache size"
+                 context="S"
+		 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この数値パラメータを 0 以外に設定すると、
+    Sambaは oplock された各ファイルに対してメモリキャッシュを作成するようになる
+   (oplock されないファイルに対しては <emphasis> 行なわれない </emphasis>。
+    クライアントがディスクへの書き出しを直接要求していない書き込みは全て、
+    可能な限りこのキャッシュに蓄積される。
+    キャッシュはキャッシュに適さない位置からの書き込みが行なわれた時か、
+    ファイルがクライアントによってクローズされた時に書き出される。
+    データがキャッシュ中に存在していれば、
+    ファイルからの読み出しにキャッシュが使用される。</para>
+
+    <para> Sambaは、このキャッシュにより、
+    RAID ディスクに対して適切な書き込みサイズでクライアントからの書き込みを処理できるようになり
+   (例えば、書き込みサイズをRAIDのストライプサイズに合わせる)、
+    ディスクサブシステムがボトルネックとなっているが、
+    ユーザ空間のプログラム向けの空きメモリがあるシステムのパフォーマンスを向上させることができる。</para>
+
+    <para>この数値パラメータにより、(oplock を行なったファイル単位での) 
+    キャッシュサイズがバイト単位で指定される。</para>
+</description>
+<value type="default">0</value>
+<value type="example">262144<comment> 1 ファイルあたり 256k のキャッシュサイズ</comment></value>
+</samba:parameter>

@@ -1,0 +1,23 @@
+<samba:parameter name="wins server"
+                 context="G"
+		 type="boolean"
+                 basic="1" advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、 <citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> が名前を登録する WINS サーバの IP アドレス(もしくはDNS名: IPアドレスが望ましい)を指定する。ネットワークに WINS サーバが存在している場合は、このパラメータを WINS サーバの IP アドレスに設定すること。</para>
+
+	<para>複数サブネットからなるネットワークの場合は、このパラメータで WINS サーバを指定すべきである。</para>
+
+	<para>複数の名前空間が存在している場合、各々の WINS サーバに「タグ」をつけることが可能である。同じタグのついたサーバ内では 1 台の(動作中の)サーバに対してのみ、名前の問い合わせが行なわれる。タグはコロンによって IP アドレスと区切られる。
+	</para>
+
+	<note><para>複数のサブネットからなるネットワークで、サブネット越しのブラウジングを正しく機能させたい場合は、 Samba で WINS サーバの設定を行なう必要がある。</para></note>
+
+	<para>Samba3-HOWTO の Network Browsing 章を参照のこと。</para>
+</description>
+<value type="default"></value>
+<value type="example">mary:192.9.200.1 fred:192.168.3.199 mary:192.168.2.61
+	<comment>この例では、名前の問い合わせを行なう際に、 192.9.200.1 に最初に問い合わせが行なわれる。応答がなかった場合は、 192.168.2.61 に問い合わせが行なわれる。いずれのサーバからにも名前が存在しなかった場合、 192.168.3.199 に対して問い合わせが行なわれる。</comment></value>
+<value type="example">192.9.200.1 192.168.2.61</value>
+</samba:parameter>

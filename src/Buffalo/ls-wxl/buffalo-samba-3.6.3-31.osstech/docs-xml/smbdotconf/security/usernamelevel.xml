@@ -1,0 +1,25 @@
+<samba:parameter name="username level"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションは、 DOS クライアントの多くが送信する大文字化されたユーザ名から、
+    Samba が本当の UNIX のユーザ名を「推測」する際の手助けを行う。
+    デフォルトの場合、 Samba は全て小文字のユーザ名、
+    先頭の文字のみを大文字にしたユーザ名を順に試しても、
+    UNIX マシン上に該当するユーザ名がない場合は処理を失敗させる。</para>
+
+    <para>このパラメータに 0 以外の値を指定することで、この処理を変更できる。
+    このパラメータは、UNIX 側のユーザ名を確認する際に大文字が幾つ入ったユーザ名の組合せまで確認を行なうかを決定するものである。
+    大きい数字を指定する程、多くの組合せが確認されるため、
+    ユーザ名の確認作業は遅くなる。
+    このパラメータは、UNIX マシン上に
+    <constant>AstrangeUser
+    </constant>といった名前が存在する際に使用すること。</para>
+
+    <para>このパラメータは、ユーザ名の大文字、小文字が区別される UNIX システムでのみ必要である。</para>
+</description>
+<value type="default">0</value>
+<value type="example">5</value>
+</samba:parameter>

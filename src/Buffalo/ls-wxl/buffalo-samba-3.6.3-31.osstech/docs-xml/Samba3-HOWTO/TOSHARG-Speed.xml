@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="speed">
+
+<chapterinfo>
+	<author>
+		<firstname>Paul</firstname><surname>Cochrane</surname>
+		<affiliation>
+			<orgname>Dundee Limb Fitting Centre</orgname>
+			<address><email>paulc@dth.scot.nhs.uk</email></address>
+		</affiliation>
+	</author>
+	&author.jelmer;
+	&author.jht;
+</chapterinfo>
+
+<title>Sambaパフォーマンスチューニング</title>
+
+<sect1>
+<title>比較</title>
+
+<para>
+SamvaサーバーはクライアントとTCP通信を使用しているため、パフォーマンスを上げるには
+同じプロトコルを使用しているプログラムと比べてみるべきである。最も簡単に入手できる
+TCPを使用したファイル転送プログラムは、FTPもしくは他のTCPベースのSMBサーバである。
+</para>
+
+<para>
+もしNTやWindows Workgroups serverに対して実験してみたいなら、クライアントかサーバの
+TCP以外は無効にする必要がある。
+そうしないとNetBEUIのようなまったく違うプロトコルが使われ、比較は意味がない。
+</para>
+
+<para>
+通常、SambaプラットフォームがFTPと同じぐらいの理論上の転送速度で動作することが解る
+だろう。速度はそのシステムの環境次第だが、NFSよりかは相当早い。
+</para>
+
+<para>
+何人かは、SambaとNovell、NFS又はWindows NTとの間での比較を行った。そのうちの
+いくつかの場合は、Sambaの動作は一番よく、ほかの場合は一番悪かった。最も
+大きな要素は、Samba対他のシステムではなく、種々のシステムで使用しているハードウェアと
+ドライバであると推測している。同じようなハードウェアで、Sambahaは他のシステムと、
+速度の点において競合できうる。
+</para>
+
+</sect1>
+
+<sect1>
+<title>ソケットオプション</title>
+
+<para>
+いくつかのオプションは、SambaのようなTCPベースのサーバのパフォーマンスに
+大きな影響を与える。
+</para>
+
+<para>
+Sambaが使うソケットオプションは、<option>-O</option>をコマンド行に指定するか、
+&smb.conf; 
+ファイルに記述できる。
+</para>
+
+<para>
+&smb.conf; のマニュアルページの<smbconfoption name="socket options"/>に、
+どのように記述するか、推奨は何かがが書いてある。
+</para>
+
+<para>
+ソケットオプションを正しく設定すれば大きくパフォーマンスを改善できるが、
+間違って設定すると同じくらいパフォーマンスが悪くなる。正しい設定は、
+使用するネットワークにとても依存する。
+</para>
+
+<para>
+TCP_NODELAYは多くのネットワークにおいて、単独で大きな違いを引き起こす。
+多くの人々が<smbconfoption name="socket options">TCP_NODELAY</smbconfoption>を
+追加することで、Sambaのreadパフォーマンスを2倍にしたと報告している。
+MicrosoftのTCP/IPスタックがTCP ACKを送るのが遅いためだというのが一番良い説明だろう。
+</para>
+
+<para>
+<parameter>socket options = SO_RCVBUF=8192</parameter> をsmb.confの中に書き込む
+ことで、Sambaのループバックアダプタ(IP Address 127.0.0.1)のパフォーマンスが
+ひどく下がるという報告がある。<parameter>socket options</parameter>を設定する前に、
+サーバ上で定量的に計測することを強く推奨する。
+</para>
+
+</sect1>
+
+<sect1>
+<title>読み取りサイズ</title>
+
+<para>
+<smbconfoption name="read size"/>オプションは、ディスクのR/WとネットワークのR/Wの
+同時動作に影響する。
+いくつかのSMBコマンド(currently SMBwrite, SMBwriteXとSMBreadbraw)で転送されている
+データ量がこの値より大きかったとき、サーバはネットワークからそのパケットを受け取る前に
+データを書き込む。もしくは、SMBreadrawコマンドの場合、全てのデータをディスクから
+読む前にネットワークに書き込む。
+</para>
+
+<para>
+この並列動作は、ディスクアクセスとネットワークアクセスがほぼ同じ速度の場合に
+最も効果があり、どちらか片方がとても早い場合にはあまり効果がない。
+</para>
+
+<para>
+既定値は16384である。最適値を決めるために多少試験してみたが、最適値はシステム間で非常に
+大きく違うようである。65536以上の値には意味が無く、不必要にメモリを割り当ててしまう。
+</para>
+
+</sect1>
+
+<sect1>
+<title>Max Xmit</title>
+
+<para>
+起動時にクライアントとサーバとの間で、ほぼすべてのコマンドサイズを制限する、
+<parameter>maximum transmit</parameter>値の調停を行う。
+sambaが調停する最大値を&smb.conf;に<smbconfoption name="max xmit"/>
+オプションを使うことで設定できる。
+これはSambaが受け取るSMBリクエストの最大値であり、クライアントが受け取る
+最大値ではない。クライアントのmaximum受信サイズはクライアントからSambaに
+送られ、Sambaはその値を信頼する。
+</para>
+
+<para>
+既定値では65536バイトに設定されているが、より小さい値の方がよいという場合もありうる。
+2048より小さい値にすると、重大な問題を引き起こす可能性がある。殆どの場合、
+既定値が最適である。
+</para>
+
+</sect1>
+
+<sect1>
+<title>ログレベル</title>
+
+<para>
+<smbconfoption name="debug level"/>として設定できるログレベルを2より大きくすると、
+大幅にパフォーマンスが低下する。
+これはサーバが各操作後ににログをフラッシュし、それがとても時間がかかるためである。
+</para>
+</sect1>
+
+<sect1>
+<title>Read Raw</title>
+
+<para>
+<smbconfoption name="read raw"/>操作は、最適化された、レイテンシの小さい、
+ファイル読み取り操作の為に設計されている。サーバはそれをサポートしなくてもよいが、
+Sambaは<smbconfoption name="read raw"/>サポートをオプションとしていて、
+規定値では有効になっている。
+
+</para>
+
+<para>
+ある場合、クライアントは<smbconfoption name="read raw"/>をうまく扱えず、
+従来の読み取り操作を使うよりも、それを使うことで実際にはパフォーマンスが落ちる
+こととなり、そのため、<smbconfoption name="read raw">no</smbconfoption>を
+試して、ネットワーク上で何が起きるかを観察しても良い。それはパフォーマンスを
+下げるか上げるか、あるいは何も起きないかもしれない。テストすることで真実が
+わかる。
+</para>
+
+</sect1>
+
+<sect1>
+<title>Write Raw</title>
+
+<para>
+<smbconfoption name="write raw"/>操作は、最適化された、レイテンシの小さい、
+ファイル読み取り操作の為に設計されている。サーバはそれをサポートしなくてもよいが、
+Sambaは<smbconfoption name="read raw"/>サポートをオプションとしていて、
+規定値では有効になっている。
+</para>
+
+<para>
+多くの場合、<smbconfoption name="write raw"/>をパラメータを変更しようとした場合、
+変更すると通常よりも速度が遅くなる。
+
+</para>
+
+</sect1>
+
+<sect1>
+<title>ログインが遅い</title>
+
+<para>
+ログインが遅い場合は、多くの場合パスワードチェックのためである。
+最も小さい実用的な<smbconfoption name="password level"/>は、これを改善する。
+</para>
+
+</sect1>
+
+<sect1>
+<title>クライアントのチューニング</title>
+
+<para>
+大抵の場合、スピードの問題はクライアントに原因がある。(Windows for Workgroupsのような)
+クライアントはたいていの場合、TCPパフォーマンスをより改善できる。
+<link linkend="Other-Clients">Sambaとその他のCIFSクライアント</link>中の、
+各種クライアントについての節をチェックすること。
+</para>
+
+</sect1>
+
+<sect1>
+<title>Linuxカーネルを変更した事によるSambaパフォーマンス問題</title>
+
+<para>
+あるユーザーがメーリングリストに次のように発言した。
+</para>
+
+<blockquote>
+<para>
+<indexterm><primary>Gentoo</primary></indexterm>
+<indexterm><primary>ネットワークが遅い</primary></indexterm>
+私はGentooの上でSamba 2.2.8aを動かしています。
+最近私はカーネルのバージョンを<filename>linux-2.4.19-gentoo-r10</filename>から
+<filename>linux-2.4.20-wolk4.0s</filename>に変更しました。すると、Sambaの
+パフォーマンスに問題が生じました。多くの人々はおそらく
+<quote>普通のソース(kernel)に移行しろ!</quote>」と言うでしょう。
+もちろん私は試しましたが、上手くいきませんでした。
+私は100MBのLANと２台のコンピュータ(LinuxとWindows2000)を使っています。
+LinuxサーバーでDivxファイルの入ったフォルダを共有し、クライアント(Windows2000)で
+LAN経由で再生していました。2.4.19カーネルにする前は全てが上手く動いていましたが、
+現在では動画は固まって止まってしまいます。サーバーからWindowsへファイルを移動させようと
+しましたが、それもとても遅いです。
+</para>
+</blockquote>
+
+<para>
+それに対してこのような返答があった。
+</para>
+
+<blockquote>
+<para>
+<indexterm><primary>ifconfig</primary></indexterm>
+<indexterm><primary>フレーミングエラー</primary></indexterm>
+<indexterm><primary>コリジョン</primary></indexterm>
+mii-toolを持ってきて、NIC上の全二重の設定をチェックするとよいでしょう。
+私はこれはデータリンク層の問題で、アプリケーション層の問題ではないと思います。
+また、ifconfigを動かし、そのフレーミングエラー、コリジョン、その他を調べ、
+ethenetが問題ないのかを見ましょう。
+</para>
+</blockquote>
+
+</sect1>
+
+<sect1>
+<title>壊れたtdbファイル</title>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>mbd kept spawning</primary></indexterm>
+<indexterm><primary>/var/locks/*.tdb</primary></indexterm>
+我々のSambaPDCサーバは、3年間の間問題なく500以上のユーザ[Windows NT/XP]で3TBのデータを
+ホスティングしていました。現在ではすべての共有がとても遅いです。親プロセスのsmbdは
+継続してプロセスを起動していて、(通常なら平均で250なのに)1600以上のSMDBプロセスが
+起動しています。これによってSUN E3500が2回壊れています。
+幾たびもの調査の後、<command>rm /var/locks/*.tdb</command>を実行することにしました。
+その結果、再び良好に動作しました。
+</para>
+
+<para>
+<emphasis>質問:</emphasis>*.tdbファイルを最良の状態に保持する何らかの方法はあるので
+しょうか?あるいは、どのようにしたら、素早く破壊状態を検出できるのでしょうか?
+</para>
+
+<para>
+<indexterm><primary>tdbbackup</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<emphasis>答え:</emphasis> はい、nmdbの停止と起動のたびに<command>tdbbackup</command>を
+実行してください。
+</para>
+
+<para>
+<emphasis>質問:</emphasis>さらに言及したいこととして、サービスのレイテンシは削除前より
+かなり遅くなったように見えます。最高速度を保持する良いアイデアはありませんか?
+</para>
+
+<para>
+<emphasis>答え:</emphasis>はい、同じ質問が前にありました。
+</para>
+
+</sect1>
+
+<sect1>
+<title>Sambaのパフォーマンスがとても悪い</title>
+
+<para>
+<indexterm><primary>パフォーマンスが悪い</primary></indexterm>
+MYOB Premier操作とそのデータファイルへのアクセスにおいて、とても不可解な徴候を
+経験したと、あるサイトは報告した。そのファイルへのいくつかの操作で40秒から45秒の
+時間がかかった。
+</para>
+
+<para>
+<indexterm><primary>プリンタモニタ</primary></indexterm>
+<indexterm><primary>pauses</primary></indexterm>
+Windowsクライアント上でプリンタモニタープログラムを走らせたところ、この問題が発生した。
+ログから、1秒ごとに休止状態が発生していることが分かりました。
+</para>
+
+<para>
+<indexterm><primary>ネットワークアクセス</primary></indexterm>
+<indexterm><primary>printing now</primary></indexterm>
+モニタソフトウエアを止めたところ、ネットワーク速度が普通(早い状態に)戻りました。
+再びモニタソフトウエアを起動させたところ、再び遅くなりました。
+プリンターはCanon LBP-810で
+ and the relevant task wassomething like CAPON (not sure on spelling). 
+
+モニタソフトウエアは、クライアントが印刷中、"印刷中"を表示している。
+</para>
+
+<para>
+Windowsのクリーンインストールと、他のソフトを何度も段階的にインストールすることによって、
+発見した。
+</para>
+
+<para>
+この話の教訓:すべてをチェックしなさい(他のソフトウェアも含めて)!
+</para>
+
+</sect1>
+
+</chapter>

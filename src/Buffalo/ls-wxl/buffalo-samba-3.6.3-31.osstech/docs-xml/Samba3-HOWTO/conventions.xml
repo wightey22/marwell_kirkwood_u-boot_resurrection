@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sect1 PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+
+  <sect1>
+    <title>凡例</title>
+
+    <para>
+    以下の表記方法がこの本を通じて使用される:
+    </para>
+
+    <itemizedlist>
+      <listitem>
+	<para>
+	TOSHARG2 は、<quote>公式Samba-3
+	HOWTOとリファレンスガイド第二版</quote> 編集者: John H. Terpstra and Jelmer R. Vernooij,
+	Publisher: Prentice Hall, ISBN: 0131882228 の省略形として使われる。
+	</para>
+      </listitem>
+
+      <listitem>
+	<para>
+	S3bE2 は、 <quote>Samba-3 by
+Example第二版</quote> 
+	編集者: John H. Terpstra, Publisher: Prentice Hall, ISBN: 013188221X の
+略として使われる。
+	</para>
+      </listitem>
+
+      <listitem>
+        <para>
+        ディレクトリとファイル名はmonoフォントである。たとえば、
+        <filename>/etc/pam.conf</filename> となる。
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+	実行ファイル名は太字となる。たとえば <command>smbd</command> である。
+	</para>
+      </listitem>
+
+      <listitem>
+        <para>
+        メニュー項目とボタンは太字となるたとえば、
+<guibutton>Next</guibutton> をクリック である。
+        </para>
+      </listitem>
+
+      <listitem>
+        <para>
+        選択メニューは以下のように表示される:
+	<menuchoice>
+		<guimenu>スタート</guimenu>
+		<guimenuitem>コントロールパネル</guimenuitem>
+		<guimenuitem>管理ツール</guimenuitem>
+		<guimenuitem>Active Directory Users and Computers</guimenuitem>
+	</menuchoice>
+       </para>
+      </listitem>
+    </itemizedlist>
+
+  </sect1>
+

@@ -1,0 +1,16 @@
+<samba:parameter name="copy" context="S" hide="1" xmlns:samba="http://www.samba.org/samba/DTD/samba-doc" type="string">
+<description>
+	<para>このパラメータにより、サービスエントリの「複製」
+	が可能となる。指定されたサービスの設定が単純に現在のサービスへと複製される。
+	現在のセクションに設定されているパラメータは、
+	複製元のセクションの設定を上書きする。</para>
+
+	<para>この機能を使うと、「ひな型(template)」となるサービスを作成した上で、
+	同様の設定のサービスを単純に作成するということが可能となる。
+	複製元のサービスは、
+	設定ファイル内で複製先のサービスより前に記述する必要があることに注意。</para>
+</description>
+
+<value type="default"></value>
+<value type="example">otherservice</value>
+</samba:parameter>

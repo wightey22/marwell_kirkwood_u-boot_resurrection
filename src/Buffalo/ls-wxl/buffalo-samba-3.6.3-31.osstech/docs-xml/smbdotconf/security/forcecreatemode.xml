@@ -1,0 +1,23 @@
+<samba:parameter name="force create mode"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータは、Samba によって作成されたファイルのパーミッションに 
+    <emphasis>必ず</emphasis >設定される UNIX のパーミッションビットを指定する。
+    これは、ファイルの作成時時に、ファイルのパーミッションビットに対して、
+    このパラメータの値でビット単位のOR 演算を行なうことで実現される。
+    このパラメータの既定値は(8進で)000である。
+    このパラメータの値がビット単位の OR 演算に用いられるのは、
+    <parameter moreinfo="none">create mask</parameter> パラメータの適用後である。</para>
+
+    <para>下記の例は、作成されるすべてのファイルに対し、
+    グループ(group)とその他のユーザ(others)の読み込みと実行ビットと、
+    所有者(user)の読み込み/書き込み/実行ビットが必ず付与されるようにする。</para>
+</description>
+
+<related>create mask</related>
+<related>inherit permissions</related>
+
+<value type="default">000</value>
+<value type="example">0755</value>
+</samba:parameter>

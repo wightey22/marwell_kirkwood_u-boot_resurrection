@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="findsmb.1">
+
+<refmeta>
+	<refentrytitle>findsmb</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>findsmb</refname>
+	<refpurpose>サブネット内で SMB 名前問合わせに応答したマシンの情報を一覧表示する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>findsmb</command>
+		<arg choice="opt">subnet のブロードキャストアドレス</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>解説</title>
+	
+	<para>この perl スクリプトは <citerefentry>
+	<refentrytitle>Samba</refentrytitle><manvolnum>7</manvolnum></citerefentry>
+	システムの一部である。</para>
+
+	<para><command>findsmb</command> はサブネット内で、 SMB 名前問合わせ
+        リクエストに応答したマシンに関するいくつかの情報を表示する perl 
+        スクリプトである。
+	情報を取得するために <citerefentry><refentrytitle>nmblookup</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	と <citerefentry><refentrytitle>smbclient</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+	を利用している。
+	</para>
+</refsect1>		
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-r</term>
+	        <listitem><para><command>findsmb</command> がリモートマシンに
+                登録されている Netbios 名を取得するときに、Windows95 に
+	        含まれているバグを考慮するかどうか決定する。
+	        このオプションは、Windows 95 や Windows 98 の動作している
+                マシンのみに有効な機能であるので、デフォルトでは無効に
+                なっている。
+	        もしこのオプションが指定されると、<citerefentry><refentrytitle>nmblookup</refentrytitle><manvolnum>1</manvolnum></citerefentry> は、 <constant>-B</constant> オプションを指定して呼び出される。</para></listitem>
+		</varlistentry>
+		<varlistentry>
+		<term>subnet のブロードキャストアドレス</term>
+	        <listitem><para>このオプションが指定されなければ、<command>
+	        findsmb</command> は <citerefentry><refentrytitle>findsmb</refentrytitle><manvolnum>1</manvolnum></citerefentry> が動作しているマシンのサブネットを探索する。
+	        ここでの値は<citerefentry><refentrytitle>nmblookup</refentrytitle><manvolnum>1</manvolnum></citerefentry> へ <constant>-B</constant> オプションの一部として渡される。</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>使用例</title>
+
+<para><command>findsmb</command>は、最初の <command>nmblookup</command>
+に対して応答を返したすべてのマシンについて、IP アドレス、NetBIOS 名、
+ワークグループ名、オペレーティングシステム、SMB サーバーのバージョン
+といった情報を一覧表示する。</para>
+
+        <para>ワークグループのローカルマスタブラウザには、マシンのワークグループ名の前に'+'が付く。ワークグループのドメインマスタブラウザには、マシンのワークグループ名の前に'*'が付く。Windows for Workgroups、Windows95、Windows98 が動作しているマシンに関しては、オペレーティングシステムやサーバのバージョンに関する情報は何も表示されない。</para>
+
+        <para><constant>-r</constant> オプションを指定する場合は、<citerefentry><refentrytitle>nmbd</refentrytitle><manvolnum>8</manvolnum></citerefentry> が動作していない状態で実行しなければならない。
+
+        もし、システム上で <command>nmbd</command> が動作している場合、マシンのIPアドレスとDNS名だけしか取得できない。
+        Windows 95 や Windows 98 の動作しているマシンから正常な情報を取得するためには、<command>nmbd</command>が動作していないマシンで、<constant>-r</constant>オプションを指定して、コマンドを root で実行しなければならない。</para>
+
+	<para>例えば、<constant>-r</constant> オプションを指定せずに <command>findsmb</command> コマンドを実行すると、次のような出力を得られるだろう。</para>
+
+<programlisting>
+IP ADDR         NETBIOS NAME   WORKGROUP/OS/VERSION 
+--------------------------------------------------------------------- 
+192.168.35.10   MINESET-TEST1  [DMVENGR]
+192.168.35.55   LINUXBOX      *[MYGROUP] [Unix] [Samba 2.0.6]
+192.168.35.56   HERBNT2        [HERB-NT]
+192.168.35.63   GANDALF        [MVENGR] [Unix] [Samba 2.0.5a for IRIX]
+192.168.35.65   SAUNA          [WORKGROUP] [Unix] [Samba 1.9.18p10]
+192.168.35.71   FROGSTAR       [ENGR] [Unix] [Samba 2.0.0 for IRIX]
+192.168.35.78   HERBDHCP1     +[HERB]
+192.168.35.88   SCNT2         +[MVENGR] [Windows NT 4.0] [NT LAN Manager 4.0]
+192.168.35.93   FROGSTAR-PC    [MVENGR] [Windows 5.0] [Windows 2000 LAN Manager]
+192.168.35.97   HERBNT1       *[HERB-NT] [Windows NT 4.0] [NT LAN Manager 4.0]
+</programlisting>
+
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは、Samba バージョン 3 向けに記述されている。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry>
+	<refentrytitle>nmbd</refentrytitle><manvolnum>8</manvolnum>
+	</citerefentry>、
+	<citerefentry><refentrytitle>smbclient</refentrytitle><manvolnum>1</manvolnum>
+	</citerefentry>、<citerefentry><refentrytitle>nmblookup</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+      Tridgell によって作られた。Samba は現在、Linux カーネルが開発されているような方法でのオープンソースプロジェクトである Samba Team によって開発されている。</para>
+	
+	
+      <para>オリジナルの Samba のマニュアルページは Karl Auer によって書かれた。マニュアルページのソースは YODL 形式(別の、優秀なオープンソースソフトウェアで、<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">ftp://ftp.icce.rug.nl/pub/unix/</ulink>にある)で変換され、Jeremy Allison によって Samba 2.0 リリースのために更新された。
+      Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。 
+      Samba 3.0 のための DocBook XML 4.2 形式の変換は Alexander Bokovoy によって行われた。
+      </para>
+</refsect1>
+<refsect1>
+        <title>日本語訳</title>
+        <para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は、武田 保真によって行なわれた。</para>
+        <para>Samba 3.0.23 - Samba 3.0.24 対応の翻訳は、たかはしもとのぶ(monyo@samba.gr.jp) によって行なわれた。</para>
+        <para>Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉(ribbon@samba.gr.jp) によって行なわれた。</para>
+</refsect1>
+</refentry>
+

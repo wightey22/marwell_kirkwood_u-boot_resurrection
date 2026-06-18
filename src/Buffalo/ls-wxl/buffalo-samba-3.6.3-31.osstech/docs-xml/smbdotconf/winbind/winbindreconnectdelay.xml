@@ -1,0 +1,16 @@
+<samba:parameter name="winbind reconnect delay"
+                 context="G"
+				 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは<citerefentry><refentrytitle>winbindd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>デーモンがドメインコントローラ
+	に接続できない場合に再接続要求を行う間隔を秒単位で指定する。
+	</para>
+	
+	
+</description>
+
+<value type="default">30</value>
+</samba:parameter>

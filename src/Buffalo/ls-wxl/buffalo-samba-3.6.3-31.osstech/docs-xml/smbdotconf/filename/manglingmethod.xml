@@ -1,0 +1,18 @@
+<samba:parameter name="mangling method"
+		 context="G"
+		 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> 短縮名を生成する際に利用するアルゴリズムを指定する。
+	「hash」と「hash2」という2つの値を指定することが可能である。
+	「hash」は Samba 2.2.x での既定値であり、長年 Samba で利用されてきた方式である。
+	「hash2」は新しい方式であり、現在の既定値である。これは、
+	(名前の重複の発生が低減される点で)より優れたアルゴリズムといえる。
+	Win32 アプリケーションの多くが短縮名を記憶しているため、
+	新しいアルゴリズムへの変更は、
+	こうしたアプリケーションの再インストールが必要になる可能性があるという点で、安易に行なうべきではない。</para>
+</description>
+<value type="default">hash2</value>
+<value type="example">hash</value>
+</samba:parameter>

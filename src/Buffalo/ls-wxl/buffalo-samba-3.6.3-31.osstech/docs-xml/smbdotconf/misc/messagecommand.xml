@@ -1,0 +1,67 @@
+<samba:parameter name="message command"
+	         context="G"
+			 type="string"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> このパラメータは、サーバが WinPopup 形式のメッセージを受信した際に、どのようなコマンドを実行するかを指定する。</para>
+
+	<para> 一般的には、
+	何らかの形でメッセージを配送するコマンドを指定する。
+	これをどのようにして行なうかは、発想次第である。</para>
+
+	<para>以下に一例を示す:
+<programlisting>
+<command moreinfo="none">message command = csh -c 'xedit %s;rm %s' &amp;</command>
+</programlisting>
+	</para>
+
+	<para> これは、 <command moreinfo="none">xedit</command>を利用してメッセージを配送し、
+	その後メッセージを削除する。<emphasis> コマンドは、
+	すぐに制御を戻すようにすることが必須であることに注意すること</emphasis>。
+	最後に '&amp;' をつけたのは、そのためである。
+	コマンドを実行後すぐに制御が戻らないと、PC はメッセージ送信後フリーズしてしまう(うまくいけば、30 秒後に回復することになるだろう)。</para>
+
+	<para> 全てのメッセージは、グローバルなゲストユーザの権限で配送される。
+	コマンド中では、標準の変数を利用できるが、
+	<parameter>%u</parameter> は機能しない(<parameter>%U</parameter> を利用するのが適切であろう)。</para>
+
+	<para> 標準の変数以外に、
+	以下に示す変数を利用することが可能である:</para>
+
+	<itemizedlist>
+		<listitem><para><parameter moreinfo="none">%s</parameter> =
+		メッセージを含むファイル名</para></listitem>
+			
+		<listitem><para><parameter moreinfo="none">%t</parameter> = 
+		メッセージの送信先(通常はサーバ名)</para></listitem>
+
+		<listitem><para><parameter moreinfo="none">%f</parameter> = 
+		メッセージの送り元のユーザ</para></listitem>
+	</itemizedlist>
+
+	<para> このコマンドにより、
+	メールを送るなど、さまざまな動作が考えられる。
+	おもしろいアイデアを思いついたら教えて欲しい。</para>
+
+	<para> 以下はメッセージをrootへのメールとして送信する方法である:
+<programlisting>
+<command moreinfo="none">message command = /bin/mail -s 'message from %f on %m' root &lt; %s; rm %s</command>
+</programlisting>
+	</para>
+
+	<para> message command が指定されていない場合、
+	メッセージは配送されず、Sambaは送信者にエラーの発生を通知する。
+	ただし、WfWg はエラーコードを無視して配送を行ない、
+	メッセージの配送を報告する。
+	</para>
+
+	<para>メッセージを単に削除したい場合は、以下のように設定すること:
+<programlisting>
+<command moreinfo="none">message command = rm %s</command>
+</programlisting>
+	</para>
+</description>
+<value type="default"></value>
+<value type="example">csh -c 'xedit %s; rm %s' &amp;</value>
+</samba:parameter>

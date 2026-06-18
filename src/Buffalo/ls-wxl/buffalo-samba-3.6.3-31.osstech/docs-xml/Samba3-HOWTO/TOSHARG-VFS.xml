@@ -1,0 +1,1001 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="VFS">
+<chapterinfo>
+	&author.jelmer;
+	&author.jht;
+	&author.tpot;
+	<author><firstname>Simo</firstname><surname>Sorce</surname><contrib>original vfs_skel README</contrib></author>
+	<author><firstname>Alexander</firstname><surname>Bokovoy</surname><contrib>original vfs_netatalk docs</contrib></author>
+	<author><firstname>Stefan</firstname><surname>Metzmacher</surname><contrib>Update for multiple modules</contrib></author>
+	<author><firstname>Ed</firstname><surname>Riddle</surname><contrib>original shadow_copy docs</contrib></author>
+</chapterinfo>
+<title>スタッカブルVFSモジュール</title>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>Virtual File System</primary><see>VFS</see></indexterm>
+<indexterm><primary>modules</primary></indexterm>
+<indexterm><primary>ロードされたモジュール</primary></indexterm>
+Samba-3から、スタッカブルVFS(バーチャルファイルシステム)モジュールがサポートされる。
+SambaはUNIXファイルシステムへのアクセスリクエストの一つ一つを、ロードされた
+VFSモジュールに渡す。この章は、Sambaのソースに附属のモジュールについて説明すると同時に、
+一部の外部モジュールについても言及する。
+</para>
+
+
+</sect1>
+
+<sect1>
+<title>議論</title>
+
+<para>
+<indexterm><primary>IRIX</primary></indexterm>
+<indexterm><primary>GNU/Linux</primary></indexterm>
+異なるシステムでは異なる方法で共用ライブラリーをコンパイルしリンクするので、これらの
+モジュールが、プラットフォームディストリビューションのバイナリSambaパッケージと共に
+供給されない場合、モジュールをコンパイルするのが困難になるかもしれない。これらの
+モジュールは、GNU/Linux及びIRIXに関してテスト済みである。
+</para>
+
+<para>
+<indexterm><primary>VFSモジュール</primary></indexterm>
+<indexterm><primary>モジュール</primary></indexterm>
+<indexterm><primary>recycle bin</primary></indexterm>
+VFS モジュールを使用するには、以下の例に類似した共有を作成すること。重要なパラメータは、
+一つ以上のVFSモジュールを名前順に一覧表示できる<smbconfoption name="vfs objects"/>
+パラメータである。例えば、ファイルへのアクセスをすべてログに取り、削除されたファイルを
+ゴミ箱に入れるには、<link linkend="vfsrecyc">VFSモジュールを使うsmb.confの例</link>を
+参照のこと:
+</para>
+
+<example id="vfsrecyc">
+<title>VFSモジュールを使うsmb.confの例</title>
+<smbconfblock>
+<smbconfsection name="[audit]"/>
+<smbconfoption name="comment">Audited /data directory</smbconfoption>
+<smbconfoption name="path">/data</smbconfoption>
+<smbconfoption name="vfs objects">audit recycle</smbconfoption>
+<smbconfoption name="writeable">yes</smbconfoption>
+<smbconfoption name="browseable">yes</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>ウィルススキャナ</primary></indexterm>
+<indexterm><primary>スキャナモジュール</primary></indexterm>
+<indexterm><primary>recycle bin</primary></indexterm>
+モジュールは指定された順に使用される。例えば、ウィルススキャナモジュールとごみ箱
+モジュールを両方使用したいとする。この場合、ファイルに関して他のアクションが
+取られる前に、最初にウィルスを検知するよう、ウィルススキャナモジュールを最初の
+モジュールとし、このモジュールが最初に動くようにすべきである。
+The modules are used in the order in which they are specified.  Let's say that you want to both have a virus
+scanner module and a recycle bin module. It is wise to put the virus scanner module as the first one so that
+it is the first to get run and may detect a virus immediately, before any action is performed on that file.
+<smbconfoption name="vfs objects">vscan-clamav recycle</smbconfoption>
+</para>
+
+<para>
+<indexterm><primary>/usr/local/samba/lib/vfs</primary></indexterm>
+<indexterm><primary>/usr/lib/samba/vfs</primary></indexterm>
+SambaはSambaをインストールしたサーバのrootディレクトリ中の<filename>/lib</filename>
+からいくつかのモジュールをロードしようとする(通常は
+<filename>/usr/lib/samba/vfs</filename>か<filename>/usr/local/samba/lib/vfs</filename>)。
+</para>
+
+<para>
+<indexterm><primary>モジュール</primary></indexterm>
+<indexterm><primary>VFS</primary></indexterm>
+<indexterm><primary>複数のモジュール</primary></indexterm>
+<indexterm><primary>複数のVFS</primary></indexterm>
+いくつかのモジュールは同じ共有に対して二度使用できる。これは
+<link linkend="multimodule">複数のVFSモジュールを使用するsmb.confの例</link>の
+ような設定で可能となる。
+
+<example id="multimodule">
+<title>複数のVFSモジュールを使用するsmb.confの例</title>
+<smbconfblock>
+<smbconfsection name="[test]"/>
+<smbconfoption name="comment">VFS TEST</smbconfoption>
+<smbconfoption name="path">/data</smbconfoption>
+<smbconfoption name="writeable">yes</smbconfoption>
+<smbconfoption name="browseable">yes</smbconfoption>
+<smbconfoption name="vfs objects">example:example1 example example:test</smbconfoption>
+<smbconfoption name="example1: parameter">1</smbconfoption>
+<smbconfoption name="example:  parameter">5</smbconfoption>
+<smbconfoption name="test:     parameter">7</smbconfoption>
+</smbconfblock>
+</example>
+</para>
+
+</sect1>
+
+<sect1>
+<title>含まれるモジュール</title>
+
+	<sect2>
+	<title>audit</title>
+
+		<para>
+<indexterm><primary>ファイルアクセスの監査</primary></indexterm>
+		syslog機能へのファイルアクセスを監査するシンプルなモジュールである。 以下の操作のログが取られる:
+		<itemizedlist>
+			<listitem><para>share</para></listitem>
+			<listitem><para>connect/disconnect</para></listitem>
+			<listitem><para>directory opens/create/remove</para></listitem>
+			<listitem><para>file open/close/rename/unlink/chmod</para></listitem>
+		</itemizedlist>
+		</para>
+
+	</sect2>
+
+	<sect2>
+	<title>default_quota</title>
+
+	<para>
+	このモジュールは、Samba-3サーバ上で格納される既定値のquota値を、Windowsのエクスプローラの
+	GUI画面で設定できるようにする。この試みはLinuxファイルシステムでユーザとグループに対する
+	quotaを格納する場合のみだが、それは既定値を持たない。
+	</para>
+
+	<para>
+	Sambaは既定値としてNO_LIMITをquotaの既定値として返し、それは更新できない。このモジュールを
+	使うと、ユーザに対するquotaレコード中でWindowsクライアントに表示される既定値のquota値を
+	格納できる。既定値では、通常quota制限がrootには適用されないため、rootユーザが既定値として
+	利用される。
+	</para>
+
+	<para>
+	このモジュールには&smb.conf;ファイル中で2つのパラメータを設定する。おのおのの既定値の
+	プレフィックスは<quote>default_quota</quote>である。これは、以下のようにして、
+	<emphasis>vfs modules</emphasis>パラメータ中でモジュールをロードしたときに上書きできる:
+<screen>
+vfs objects = default_quota:myprefix
+</screen>
+	</para>
+
+	<para>
+	default_quotasモジュールに対して指定することが出来るパラメータのエントリは以下の通り:
+	</para>
+
+	<variablelist>
+		<varlistentry>
+            <term>myprefix:uid</term>
+			<listitem><para>
+			既定値のユーザquotaを格納するために使われるquotaレコードのためのuidを
+			指定する整数値。
+			</para>
+
+			<para>
+			既定値は0(ルートユーザ)。使用例は以下の通り:
+<screen>
+vfs objects = default_quota
+default_quota:	uid = 65534
+</screen>
+			上記の例では<constant>myprefix</constant>が省略され、そのため、既定値の
+			プレフィックスはモジュールの名前になる。<constant>myprefix</constant>
+			パラメータが指定されると、上記は以下のように書き換えられる:
+<screen>
+vfs objects = default_quota:myprefix
+myprefix:	uid = 65534
+</screen>
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+            <term>myprefix:uid nolimit</term>
+			<listitem><para>
+			既定値のquota値がユーザのレコードとしても表示される場合か、
+			<constant>NO_LIMIT</constant>が、<parameter>prefix:uid</parameter>パラメータに
+			よって指定されたユーザとしてWindowsクライアントに表示される場合、この
+			パラメータは論理値となる。
+			</para>
+
+			<para>
+			既定値は<constant>yes</constant>である(NO_LIMITが表示される)。使用例は以下の通り:
+<screen>
+vfs objects = default_quota:myprefix
+myprefix:	uid nolimit = no
+</screen>
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>myprefix:gid</term>
+			<listitem><para>
+			このパラメータは<parameter>prefix>:uid</parameter>と同じように整数値を引数と
+			して取るが、グループquotaであるところが違う。注意:グループquotaはWindows
+			エクスプローラではサポートされていない。
+			</para>
+
+			<para>
+			既定値は0である(rootグループ)。使用例は以下の通り:
+<screen>
+vfs objects = default_quota
+default_quota:	gid = 65534
+</screen>
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>myprefix:gid nolimit</term>
+			<listitem><para>
+			このパラメータは、<parameter>prefix>:uid nolimit</parameter>と同じように
+			真理値を取るが、グループquotaであることが違う。注意:グループquotaは
+			Windowsエクスプローラではサポートされていない。
+			</para>
+
+			<para>
+			既定値は<constant>yes</constant>(NO_LIMITが表示される)。使用例は以下の通り:
+<screen>
+vfs objects = default_quota
+default_quota:	uid nolimit = no
+</screen>
+			</para></listitem>
+		</varlistentry>
+	</variablelist>
+
+	<para>
+	複数のパラメータを組み合わせた使用例は以下の通り:
+<screen>
+...
+vfs objects = default_quota:quotasettings
+quotasettings:	uid nolimit = no
+quotasettings:	gid = 65534
+quotasettings:	gid nolimit = no
+...
+</screen>
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>extd_audit</title>
+
+		<para>
+<indexterm><primary>audit module</primary></indexterm>
+<indexterm><primary>extd_audit module</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+		このモジュールは上記の<command>audit</command>モジュールとほぼ同じで
+		あるが、監査ログをsyslogと<command>smbd</command>のログファイルに送る
+		事が異なる。このモジュールの<smbconfoption name="log level"/>は
+		&smb.conf;ファイル中で設定する。
+		</para>
+
+		<para>
+		有効な設定と記録される情報を<link linkend="xtdaudit">下記のテーブル</link>中に示す。
+		</para>
+
+		<table frame="all" id="xtdaudit">
+			<title>拡張監査ログの情報内容</title>
+		<tgroup cols="2" align="center">
+			<thead>
+			<row><entry align="center">ログレベル</entry><entry>ログ内容 - ファイルとディレクトリ操作</entry></row>
+			</thead>
+			<tbody>
+			<row><entry align="center">0</entry><entry align="left">ディレクトリの作成、削除、Unlink</entry></row>
+			<row><entry align="center">1</entry><entry align="left">ディレクトリのオープン/改名、ファイル名の変更、パーミッション/ACLの変更</entry></row>
+			<row><entry align="center">2</entry><entry align="left">ファイルのオープン&amp;クローズ</entry></row>
+			<row><entry align="center">10</entry><entry align="left">最大のデバッグレベル</entry></row>
+			</tbody>
+		</tgroup>
+		</table>
+
+		<sect3>
+		<title>監査の設定</title>
+
+		<para>
+<indexterm><primary>logging</primary></indexterm>
+		この監査ツールはたいていの人が容易に認知するよりもより自由度が高い。
+		有用なログ情報を記録するためのいくつかの方法がある。
+		</para>
+
+		<itemizedlist>
+			<listitem><para>すべてのトランザクションを記録するためにsyslogが使える。
+					これは、&smb.conf;ファイル中に
+					<parameter>syslog = 0</parameter>を設定することで無効に出来る。</para></listitem>
+			<listitem><para>xがログレベルである<parameter>log level = 0 vfs:x</parameter>
+					を&smb.conf;ファイル中に設定することによりすべてのロードされた
+					VFSモジュールに対して既定値のログファイル
+					(<filename>log.smbd</filename>)をログの出力として使える。これは、
+					ログレベルで指定された、VFSモジュールの動作のすべてのログが
+					有効になっているが、通常のログは無効にする。</para></listitem>
+			<listitem><para>ユーザ単位、クライアントマシン単位などで詳細なログを取れる。
+					これは、<parameter>log file</parameter>の特別な設定方法と
+					上記を一緒にすることを要求する。</para>
+					<para>ユーザ単位とマシン単位の詳細なログの例は、
+					<smbconfoption name="log file">/var/log/samba/%U.%m.log</smbconfoption>
+					のようにして行う。
+					</para></listitem>
+		</itemizedlist>
+
+		<para>
+		監査情報は、しばしば長い期間保存する必要はある。ログファイルがローテート
+		されないように、&smb.conf;ファイル中で<smbconfoption name="max log size">0</smbconfoption>
+		を設定するのは必須である。</para>
+
+		</sect3>
+
+	</sect2>
+
+	<sect2 id="fakeperms">
+	<title>fake_perms</title>
+
+		<para>
+<indexterm><primary>fake_perms</primary></indexterm>
+<indexterm><primary>移動プロファイル</primary></indexterm>
+<indexterm><primary>writeable</primary></indexterm>
+<indexterm><primary>read only</primary></indexterm>
+		このモジュールは、(UNIX配下のSambaサーバで)移動プロファイルのファイルと
+		ディレクトリを読み込み専用に設定することができるようにするために作成
+		された。 このモジュールは、プロファイル共有にインストールされている場合、
+		プロファイルのファイルとディレクトリが書き込み可能であると、クライアントに
+		通知する。これにより、クライアントがログアウトまたはシャットダウンした
+		時に、ファイルを上書きしなくなるが、クライアントのニーズは充足する。
+		</para>
+
+	</sect2>
+
+	<sect2>
+	<title>recycle</title>
+
+		<para>
+<indexterm><primary>recycle</primary></indexterm>
+<indexterm><primary>unlink calls</primary></indexterm>
+<indexterm><primary>recycle directory</primary></indexterm>
+		ゴミ箱と同様のモジュールである。 使用すると、unlinkシステムコールを
+		横取り、ファイルを削除する代わりにゴミ箱ディレクトリに移動する。
+		これはWindowsコンピュータにおける<guiicon>ゴミ箱</guiicon>の機能と
+		同じである。
+		</para>
+
+		<para>
+<indexterm><primary>recycle</primary></indexterm>
+<indexterm><primary>.recycle</primary></indexterm>
+<indexterm><primary>recycle:keeptree</primary></indexterm>
+<indexterm><primary>deleted files</primary></indexterm>
+		<guiicon>ごみ箱</guiicon>は、<application>Windows エクスプローラー</application>
+		のネットワークファイルシステム(共有)のビューにも、マッピングされたドライブの
+		いずれのビューにも表示されない。その代わりに、<filename>.recycle</filename>
+		というディレクトリが、初めてファイルを削除したときと
+		<parameter>recycle:repository</parameter>が設定されていないときに自動的に
+		作成される。もし、<parameter>recycle:repository</parameter>が設定されている
+		場合、作成されるディレクトリは<parameter>recycle:repository</parameter>に
+		依存する。ユーザはごみ箱からファイルを取り戻すことが出来る。もしも、
+		<parameter>recycle:keeptree</parameter>が指定されていた場合、
+		削除されたファイルは、ファイルが削除された元の場所と同一のパスから、
+		見つけることができる。
+		</para>
+		
+		<para><command>recycle</command>がサポートするオプションは以下の通り:
+		<variablelist>
+			<varlistentry>
+			<term>recycle:repository</term>
+				<listitem><para>
+<indexterm><primary>recycle:repository</primary></indexterm>
+				削除されたファイルの移動先であるディレクトリのパス。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:directory_mode</term>
+				<listitem><para>
+<indexterm><primary>directory_mode</primary></indexterm>
+				recycleディレクトリに設定したい8進のモードを指定する。
+				もしも存在しないか、最初にファイルが削除された時、
+				このモードでrecycleディレクトリが作成される。
+				もしも、<parameter>recycle:subdir_mode</parameter>が
+				設定されていない場合、それらのモードはサブディレクトリ
+				にも適用される。もしも、
+				<parameter>directory_mode</parameter>が設定されて
+				いない場合、既定値として0700が使われる。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:subdir_mode</term>
+				<listitem><para>
+<indexterm><primary>recycle:subdir_mode</primary></indexterm>
+				recycleディレクトリのサブディレクトリに設定したい
+				8進のモードを指定する。このモードでサブディレクトリ
+				が作成される。もしも、
+				<parameter>recycle:subdir_mode</parameter>が
+				設定されていない場合、サブディレクトリのモードは
+				<parameter>directory_mode</parameter>のモードで
+				作成される。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:keeptree</term>
+				<listitem><para>
+<indexterm><primary>recycle:keeptree</primary></indexterm>
+				ディレクトリ構造を維持するか、あるいは削除された
+				ファイルはゴミ箱に別に保存するかを指定する。
+				</para></listitem>
+			</varlistentry>
+			
+			<varlistentry>
+			<term>recycle:versions</term>
+				<listitem><para>
+<indexterm><primary>recycle:versions</primary></indexterm>
+				このオプションを設定すると、同名の二つのファイルが削除
+				されたとき、 二つとも別のファイルとしてゴミ箱に保存する。
+				より新しい方の削除ファイルは、
+				<quote>Copy #x of <replaceable>filename</replaceable></quote>
+				という名称で保存される。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:touch</term>
+				<listitem><para>
+<indexterm><primary>recycle:touch</primary></indexterm>
+				ファイルがごみ箱に移されたときに、ファイルのアクセス
+				日付を変更するかどうかを指定する。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:touch_mtime</term>
+				<listitem><para>
+<indexterm><primary>recycle:touch</primary></indexterm>
+				ファイルがごみ箱に移されたときに、ファイルの最終変更
+                                時刻を変更するかどうかを指定する
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:maxsize</term>
+				<listitem><para>
+<indexterm><primary>recycle:maxsize</primary></indexterm>
+				このパラメータで指定したバイト数より大きいファイルは、
+				ごみ箱に入れない。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:exclude</term>
+				<listitem><para>
+<indexterm><primary>recycle:exclude</primary></indexterm>
+				ごみ箱に入れないで、普通に削除するべきファイルをリストする。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:exclude_dir</term>
+				<listitem><para>
+<indexterm><primary>recycle:exclude_dir</primary></indexterm>
+				ディレクトリのリストを指定する。これらのディレクトリから
+				ファイルが削除されると、ごみ箱には入れずに、普通に削除する。
+				</para></listitem>
+			</varlistentry>
+
+			<varlistentry>
+			<term>recycle:noversions</term>
+				<listitem><para>
+<indexterm><primary>recycle:noversions</primary></indexterm>
+				recycle:versionsの反対である(*や?のワイルドカードもサポート)
+				する。<emphasis>recycle:versions</emphasis>が有効な時に
+				便利である。
+				</para></listitem>
+			</varlistentry>
+		</variablelist>
+		</para>
+
+	</sect2>
+
+	<sect2>
+	<title>netatalk</title>
+
+		<para>
+<indexterm><primary>netatalk</primary></indexterm>
+		netatalkモジュールは、Sambaとnetatalkのファイル共有サービスの共存を
+		やり易くする。
+		</para>
+
+		<para>従前のnetatalkモジュールと比較した長所は以下の通り:
+		<itemizedlist>
+<indexterm><primary>.AppleDouble</primary></indexterm>
+			<listitem><para>.AppleDouble フォークの作成を気にかけず、ただ同期を取る。</para></listitem>
+			<listitem><para>&smb.conf;中の共有の「隠し(hide)」または「拒否(veto)」
+			 リスト中に.AppleDoubleのアイテムを含まないとき、自動的に追加される。</para></listitem>
+		</itemizedlist>
+		</para>
+
+	</sect2>
+
+    <sect2>
+      <title>shadow_copy</title>
+
+	<warning><para>
+<indexterm><primary>shadow_copy</primary></indexterm>
+	<emphasis>これはバックアップでも、アーカイブでも、バージョンコントロールソリューションでもない!</emphasis>
+	</para>
+
+	<para>
+<indexterm><primary>version control</primary></indexterm>
+	SambaかWindowsサーバでは、shadow_copyはエンドユーザツールとしてのみ設計されて
+	いる。バックアップやアーカイブソリューションの機能強化や置き換えにはならず、
+	そのように考えてはいけない。更に、バージョンコントロール機能が必要な場合には、
+	バージョンコントロールシステムを入れること。これは警告である。
+	</para></warning>
+
+
+	<para>
+	shadow_copyモジュールはMicrosoftシャドーコピーサービスに似た機能を提供する。
+	適切に設定された場合、Sambaの共有上で、Microsoftシャドーコピークライアントが
+	"シャドーコピー"を見えるようにする。シャドーコピークライアントのインストール
+	が必要である。Microsoftシャドーコピークライアントは
+	<ulink noescape="1" url="http://www.microsoft.com/windowsserver2003/downloads/shadowcopyclient.mspx">ここ</ulink>
+	から入手できる。Windows XPより前のクライアントには追加の要求があることに注意。
+	この機能はWindows XPより前のバージョンではテストされていない。Microsoftシャドーコピー
+	に関するより詳細な情報は、
+	<ulink noescape="1" url="http://www.microsoft.com/windowsserver2003/techinfo/overview/scr.mspx">Microsoftのサイト</ulink>
+	を参照のこと。
+	</para>
+
+	<para>
+<indexterm><primary>shadow_copy</primary></indexterm>
+<indexterm><primary>VFSモジュール</primary></indexterm>
+<indexterm><primary>shadow_copyモジュール</primary></indexterm>
+<indexterm><primary>LVM</primary></indexterm>
+<indexterm><primary>EVMS</primary></indexterm>
+<indexterm><primary>論理ボリュームマネージャ</primary><see>LVM</see></indexterm>
+	shadow_copy VFSモジュールはLVM1、LVM2かEVMSのような、ある種の論理ボリューム
+	マネージャ(LVM)でセットアップしたものがベースのファイルシステムを要求する。
+	LVMの設定はこの文書の範囲外である。しかし、<emphasis>例としてのみ</emphasis>
+	この機能をテストするために行う手順の概要を示す。使いたいとしているLVMの
+	実装が使用対象に対して準備されているかを確かめる必要がある。十分にテストは
+	されなければならない。
+	</para>
+
+	<para>
+	以下は、LVMとEVMSに対するよく使われる情報源である:
+	</para>
+
+	<itemizedlist>
+	  <listitem>
+	    <para><ulink noescape="1"
+	    url="http://www.sistina.com/products_lvm_download.htm">Sistinaの
+	    LVM1と LVM2に関する情報</ulink></para>
+	  </listitem>
+	  <listitem>
+	    <para><ulink url="http://evms.sourceforge.net/">Enterprise Volume Management System (EVMS)</ulink></para>
+	  </listitem>
+	  <listitem>
+	    <para><ulink url="http://tldp.org/HOWTO/LVM-HOWTO/">The LVM HOWTO</ulink>
+	    (訳注:日本語訳は<ulink url="http://www.linux.or.jp/JF/JFdocs/LVM-HOWTO.html">こちら</ulink>)</para>
+	  </listitem>
+	  <listitem>
+	    <para>
+	    Daniel Robbinによる、よく書かれた、LVMソースコードとreiserfsを使ったLinux上の2つのパートに分かれたチュートリアル
+  <ulink url="http://www-106.ibm.com/developerworks/linux/library/l-lvm/">Learning
+	      Linux LVM, Part 1</ulink> と <ulink url="http://www-106.ibm.com/developerworks/library/l-lvm2.html">Learning
+	      Linux LWM, Part 2</ulink>を参照。</para>
+	  </listitem>
+	</itemizedlist>
+
+	<sect3>
+	<title>Shadow Copy のセットアップ</title>
+	<para>
+<indexterm><primary>XFS file system</primary></indexterm>
+<indexterm><primary>Debian Sarge</primary></indexterm>
+	これを書いている時点では、十分なテストは終わっていない。シャドーコピーVFS
+	モジュールを、製品環境では展開していないが、概念の照明としてはより多く、
+	特定のシナリオでテストした。シナリオはXFSファイルシステムとLVM1を使う
+	Debian Sarge上のSamba-3サーバで改良された。ここで提示されたすべてのコンポーネント
+	に関して、十分な評価をしないでソリューションとして使うことは推奨しない。
+	すなわち、以下は動作させたまでの基本的な概要である。
+	</para>
+
+	<orderedlist>
+	  <listitem>
+	    <formalpara><title>インストールされたOS</title> 
+	    <para>
+		テストを行うにあたっては、
+		<ulink url="http://www.debian.org/devel/debian-installer/">Debian Sarge</ulink>
+		(すなわちテスト版)をXFSファイルシステム上で使用した。OSの設定は、
+		この文書の範囲外である。Sambaが動作するOSがあるものと仮定する。
+		</para></formalpara>
+	  </listitem>
+
+	  <listitem>
+	    <formalpara><title>Sambaのインストールと設定</title>
+		<para>
+		この件についてはこのHOWTOの<link linkend="introduction">インストールの章</link>
+		を参照のこと。ドメインコントローラかメンバファイルサーバであることは重要では
+		ないが、Samba 3.0.3かそれ以降のサーバが動作していることを仮定する。
+		</para></formalpara>
+	  </listitem>
+
+	  <listitem>
+	    <formalpara><title>LVMのインストールと設定</title>
+		<para>
+<indexterm><primary>シャドーコピー</primary></indexterm>
+<indexterm><primary>スナップショット</primary></indexterm>
+		クライアントに対してシャドーコピーを有効にする前に、シャドーコピーを
+		作っておく必要がある。これはファイルシステムのスナップショットのような
+		事を行う事でできる。スナップショットはLVMのような、論理ボリューム
+		マネージャでの一般的な機能であり、まずこれを最初に設定する必要がある。
+		</para></formalpara>
+
+	    <itemizedlist>
+		<para>
+		以下は、Debianユーザにとっては最も手助けとなる例である。繰り返すが、
+		これは"testing"または"Sarge"を使ってテストしている。
+		</para>
+
+			<listitem>
+			<para>
+<indexterm><primary>lvm10 package</primary></indexterm>
+<indexterm><primary>devfsd package</primary></indexterm>
+<indexterm><primary>Debian</primary></indexterm>
+<indexterm><primary>xfsprogs</primary></indexterm>
+<indexterm><primary>apt-get</primary></indexterm>
+			まだ入れていないのであれば、lvm10とdevfsdパッケージをインストールする。
+			Debianシステム上では、devfsファイル名を要求するdevfsとlvm1が相互に
+			影響するので警告が出る。
+			<command>apt-get update &amp;&amp; apt-get install lvm10 devfsd xfsprogs</command>
+			を実行してこの例のためのトリックを行う。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>ボリュームの作成</primary></indexterm>
+<indexterm><primary>パーティションの作成</primary></indexterm>
+<indexterm><primary>fdisk</primary></indexterm>
+<indexterm><primary>cfdisk</primary></indexterm>
+<indexterm><primary>Linux LVM</primary></indexterm>
+			次にボリュームを作成する。そしてボリュームにパーティションを作成する
+			必要がある。好みのパーティション作成ツールを使うこと(たとえば、
+			Linuxのfdisk、cfdiskなど)。パーティションタイプは"Linux LVM"を
+			表す 0x8eに設定すべきである。この例では/dev/hdb1を使う。
+			</para>
+
+			<para>
+<indexterm><primary>Linux LVMのパーティション</primary></indexterm>
+<indexterm><primary>LVM ボリューム</primary></indexterm>
+<indexterm><primary>modprobe</primary></indexterm>
+			LVMパーティション(タイプ0x8e)が出来ると、LVMボリュームを作成するための
+			一連のコマンドを実行出来る。いくつかのディスクとパーティションを
+			使うことが出来るが、この例では一つのみを使う。
+			<command>modprobe lvm-mod</command>のようにしてカーネルモジュールを
+			ロードしてもよく、また、(<filename>/etc/modules</filename>に追加
+			することによって)起動時にロードするように、rebootしても良い。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>pvcreate</primary></indexterm>
+			<command>pvcreate /dev/hdb1</command>で物理ボリュームを作成する。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>vgcreate</primary></indexterm>
+<indexterm><primary>ボリュームグループ</primary></indexterm>
+			<command>vgcreate shadowvol /dev/hdb1</command>でボリュームグループを作成し、/dev/hda1に追加する。
+			</para>
+
+			<para>
+<indexterm><primary>vgdisplay</primary></indexterm>
+			<command>vgdisplay</command>を使ってボリュームグループについての情報を見る事ができる。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>lvcreate</primary></indexterm>
+			この時点で<command>lvcreate -L400M -nsh_test shadowvol</command>のようにして、論理ボリュームを作成できる。
+			</para>
+
+			<para>
+<indexterm><primary>/dev/shadowvol</primary></indexterm>
+			これは、shadowvolとして作成したボリュームグループ内に、400MBの、
+			"sh_test"という論理ボリュームを作成する。すべてがうまくいくと、
+			<filename>/dev/shadowvol</filename>中にそれらを見る事ができる。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>mkfs.xfs</primary></indexterm>
+			この時点でsh_testという論理ボリュームを
+			<command>mkfs.xfs /dev/shadowvol/sh_test</command>
+			というコマンドでフォーマットできる準備が出来た。
+			</para>
+
+			<para>
+<indexterm><primary>論理ボリューム</primary></indexterm>
+<indexterm><primary>LVM</primary></indexterm>
+<indexterm><primary>freezing</primary></indexterm>
+<indexterm><primary>リサイズ</primary></indexterm>
+<indexterm><primary>拡張</primary></indexterm>
+			選択した任意のファイルシステムで論理ボリュームをフォーマット
+			できるが、ファイルシステムのフリーズ、リサイズや拡張のような
+			LVMの便利な追加機能を使えるようにしておくこと。
+			</para>
+
+			<para>
+<indexterm><primary>LVMボリューム</primary></indexterm>
+<indexterm><primary>シャドーコピー</primary></indexterm>
+<indexterm><primary>モジュール</primary></indexterm>
+			これで、シャドーコピーVFSモジュールを使えるLVMボリュームが
+			準備できた。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>mkdir</primary></indexterm>
+<indexterm><primary>パーミッション</primary></indexterm>
+<indexterm><primary>chmod</primary></indexterm>
+			以下のようにしてディレクトリを準備する必要がある。
+Now we need to prepare the directory with something like
+<screen>
+&rootprompt; mkdir -p /data/shadow_share
+</screen>
+			あるいは、シャドーコピーが有効になったSamba共有の希望する名前を
+			指定する。その上で使えるように、パーミッションの設定をきちんと
+			行う事。もしも、わからなければ、
+			<command>chmod 777 /data/shadow_share</command>を使い、うまく
+			動いてからパーミッションをきつくする。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>マウント</primary></indexterm>
+			<command>mount /dev/shadowvol/sh_test /data/shadow_share</command>
+			のようにしてLVMボリュームをマウントする。
+			</para>
+
+			<para>
+<indexterm><primary>/etc/fstab</primary></indexterm>
+			システム起動時にこのパーティションをマウントできるよう、
+			<filename>/etc/fstab</filename>を編集しても良い。
+			</para></listitem>
+		</itemizedlist>
+
+		</listitem>
+
+	  <listitem>
+	    <formalpara><title>シャドーコピーVFSモジュールのインストールと設定</title>
+		<para>
+		最後に実際のシャドーコピーVFSモジュールを設定する。シャドーコピーVFS
+		モジュールはSamba 3.0.3以降で有効である。smb.confの設定はとても標準的
+		である。以下はシャドーコピーVFSモジュールを使う共有定義の例である:
+		</para></formalpara>
+
+		<example id="vfsshadow">
+		<title>シャドーコピーVFSを使う共有</title>
+		<smbconfblock>
+		<smbconfsection name="[shadow_share]"/>
+		<smbconfoption name="comment">Shadow Copy Enabled Share</smbconfoption>
+		<smbconfoption name="path">/data/shadow_share</smbconfoption>
+		<smbconfoption name="vfs objects">shadow_copy</smbconfoption>
+		<smbconfoption name="writeable">yes</smbconfoption>
+		<smbconfoption name="browseable">yes</smbconfoption>
+		</smbconfblock>
+		</example>
+
+		</listitem>
+
+		<listitem>
+	    <formalpara><title>スナップショットの作成とシャドーコピーとしての有効化</title> 
+		<para>
+<indexterm><primary>シャドーコピー</primary></indexterm>
+<indexterm><primary>LVMスナップショット</primary></indexterm>
+<indexterm><primary>モジュール</primary></indexterm>
+		シャドーコピーを閲覧できる前に、それを作成してマウントする必要がある。
+		これは、cronジョブとして動作するスクリプトで行うのが最も良い。この特定の
+		解決方法に、LVMスナップショットを閲覧するのにシャドーコピーVFSモジュールが
+		使える。これらのスナップショットはモジュールによっては作成されない。また、
+		モジュールによって有効化もされない。このモジュールは、有効になったスナップ
+		ショットを閲覧する事を、シャドーコピーが有効になったクライアントに対して
+		行う。
+		</para></formalpara>
+
+	    <para>
+		以下はスナップショットの作成とマウントを行う単純なスクリプトである:
+<screen>
+#!/bin/bash
+# This is a test, this is only a test
+SNAPNAME=`date +%Y.%m.%d-%H.%M.%S`
+xfs_freeze -f /data/shadow_share/
+lvcreate -L10M -s -n $SNAPNAME /dev/shadowvol/sh_test
+xfs_freeze -u /data/shadow_share/
+mkdir /data/shadow_share/@GMT-$SNAPNAME
+mount /dev/shadowvol/$SNAPNAME \
+       /data/shadow_share/@GMT-$SNAPNAME -onouuid,ro
+</screen>
+		このスクリプトはリブート時にスナップショットの再マウントのような事は扱わないことに注意。
+	    </para></listitem>
+
+		<listitem>
+	    <formalpara><title>クライアントからのテスト</title>
+		<para>
+		テストのために、
+		<ulink url="http://technet.microsoft.com/ja-jp/windowsserver/bb405951.aspx">MicrosoftのWebサイト</ulink>
+		からシャドーコピークライアントを入手し、インストールする必要がある
+		(訳注:URLは日本語版に差し替え済み)。これはXPクライアントでのみテストして
+		いるので、他のXP以前のクライアントでは結果が異なる可能性がある。一度
+		XPクライアントにインストール後、指定したファイルかshadow_shareの
+		空白部分で右クリックすると、"プロパティ"が表示される。何か変更があると、
+		プロパティウィンドウの中に"以前のバージョン"が表示される。
+		</para></formalpara>
+	  </listitem>
+	</orderedlist>
+
+	</sect3>
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>他で入手可能なVFSモジュール</title>
+
+<para>
+<indexterm><primary>VFSモジュール</primary></indexterm>
+この節では、投稿されてはいるが、SambaCVSツリー(訳注:現在はgit)には何らかの理由(例えば、
+管理者が独自のCVSツリーを持つ方が管理しやすいなどの理由)で、現行のものには含まれない、
+各種のVFSモジュールを紹介する。
+</para>
+
+<para>
+ここで言及したからと言って、そのモジュールの安定性や機能性の良し悪しを示唆したとは解釈しないこと。
+</para>
+
+<sect2>
+<title>DatabaseFS</title>
+
+<para>
+<indexterm><primary>DatabaseFS</primary></indexterm>
+URL: <ulink noescape="1" url="http://www.css.tayloru.edu/~elorimer/databasefs/index.php">
+Taylors University DatabaeFS</ulink>
+</para>
+
+<para>By <ulink url="mailto:elorimer@css.tayloru.edu">Eric Lorimer.</ulink></para>
+
+<para>
+私は、かなり完成された読み込み専用のファイルシステムを実現する VFS モジュールを作成した。
+これは、異なるデータベースを使用するための、モジュール式あるいは一般的な方式のファイル
+システムとしてデータベースからの情報を表示する(元々は、<quote>アーティスト</quote>や
+<quote>歌詞</quote>といったディレクトリでMP3ファイルを整理するために設計されたもので
+ある。これを私は、学生名簿データベースに応用した)。ディレクトリ構造はデータベース自身に
+保存されており、その表を確認するプログラムが走りますが、それ以外に、データベース構造に
+関して何らかの推定をすることはしない。
+</para>
+
+<para>
+フィードバックを歓迎する。コメント、提案、パッチ、その他何でも送ってほしい。他に何の
+役にも立たなくても、最低、誰かが仮想ファイルシステムを作成したい場合に役に立つことを
+願っている。
+</para>
+
+</sect2>
+
+<sect2>
+<title>vscan</title>
+
+<indexterm><primary>vscan</primary></indexterm>
+<para>URL: <ulink noescape="1" url="http://www.openantivirus.org/projects.php#samba-vscan">
+Open Anti-Virus vscan</ulink>
+</para>
+
+<para>
+<indexterm><primary>samba-vscan</primary></indexterm>
+Samba-vscan は、Sambaが使う共有化のファイルのための、オンアクセスアンチウィルス機能を提供する、
+コンセプト実証(POC)モジュールである。samba-vscan は、各種のウィルス・スキャナーをサポートし、
+Rainer Linkがメンテナンスを行っている。
+</para>
+
+</sect2>
+
+<sect2>
+<title>vscan-clamav</title>
+<para>
+Sambaユーザは何の問題もなくSerNetからのRPMを使っている。OpenLDAP Linuxユーザも
+とても良い結果が得られるvscanスキャナを使っている。これは全体を通して書き込みの
+パフォーマンスに影響がある。
+</para>
+
+<para>
+以下のような共有セクションはvscan-clamavを設定したい人のための良いガイドである:
+</para>
+
+<screen>
+[share]
+vfs objects = vscan-clamav
+vscan-clamav: config-file = /etc/samba/vscan-clamav.conf
+</screen>
+
+<para>
+以下の<filename>vscan-clamav.conf</filename>ファイルの例は、完全に動作可能なものの
+手助けになるかもしれない:
+</para>
+
+<screen>
+<title>VFS: Vscan ClamAV制御ファイル</title>
+#
+# /etc/samba/vscan-clamav.conf
+#
+
+[samba-vscan]
+; run-time configuration for vscan-samba using
+; clamd
+; all options are set to default values
+
+; do not scan files larger than X bytes. If set to 0 (default),
+; this feature is disable (i.e. all files are scanned)
+max file size = 10485760
+
+; log all file access (yes/no). If set to yes, every access will
+; be logged. If set to no (default), only access to infected files
+; will be logged
+verbose file logging = no
+
+; if set to yes (default), a file will be scanned while opening
+scan on open = yes
+; if set to yes, a file will be scanned while closing (default is yes)
+scan on close = yes
+
+; if communication to clamd fails, should access to file denied?
+; (default: yes)
+deny access on error = no
+
+; if daemon failes with a minor error (corruption, etc.),
+; should access to file denied?
+; (default: yes)
+deny access on minor error = no
+
+; send a warning message via Windows Messenger service
+; when virus is found?
+; (default: yes)
+send warning message = yes
+
+; what to do with an infected file
+; quarantine: try to move to quantine directory
+; delete:     delete infected file
+; nothing:    do nothing (default)
+infected file action = quarantine
+
+; where to put infected files - you really want to change this!
+quarantine directory  = /opt/clamav/quarantine
+; prefix for files in quarantine
+quarantine prefix = vir-
+
+; as Windows tries to open a file multiple time in a (very) short time
+; of period, samba-vscan use a last recently used file mechanism to avoid
+; multiple scans of a file. This setting specified the maximum number of
+; elements of the last recently used file list. (default: 100)
+max lru files entries = 100
+
+; an entry is invalidad after lru file entry lifetime (in seconds).
+; (Default: 5)
+lru file entry lifetime = 5
+
+; exclude files from being scanned based on the MIME-type! Semi-colon
+; seperated list (default: empty list). Use this with care!
+exclude file types =
+
+; socket name of clamd (default: /var/run/clamd). Setting will be ignored if
+; libclamav is used
+clamd socket name = /tmp/clamd
+
+; limits, if vscan-clamav was build for using the clamav library (libclamav)
+; instead of clamd
+
+; maximum number of files in archive (default: 1000)
+libclamav max files in archive = 1000
+
+; maximum archived file size, in bytes (default: 10 MB)
+libclamav max archived file size = 5242880
+
+; maximum recursion level (default: 5)
+libclamav max recursion level = 5
+</screen>
+
+<para>
+もちろん、これを動作させるためにclamデーモンを走らせることは必要である。これはClamAVを
+使うための動作例である。ClamAVの説明には追加の設定例が提供されている。それは、システム
+内の<filename>/usr/share/doc/</filename>ディレクトリ配下に配置されている。いくつかの例は
+他の使用可能なウィルススキャナをターゲットにもしている。
+</para>
+
+</sect2>
+</sect1>
+
+</chapter>

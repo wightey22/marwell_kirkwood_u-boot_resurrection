@@ -1,0 +1,177 @@
+.\"     Title: pwck
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: System Management Commands
+.\"    Source: System Management Commands
+.\"
+.TH "PWCK" "8" "23/11/2008" "System Management Commands" "System Management Commands"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOME"
+pwck \- verify integrity of password files
+.SH "SINOSSI"
+.HP 5
+\fBpwck\fR [\-q] [\-s] [\fIpasswd\fR\ [\ \fIshadow\fR\ ]]
+.HP 5
+\fBpwck\fR [\-q] [\-r] [\fIpasswd\fR\ \fIshadow\fR]
+.SH "DESCRIZIONE"
+.PP
+The
+\fBpwck\fR
+command verifies the integrity of the system authentication information\&. All entries in the
+\fI/etc/passwd\fR
+and
+\fI/etc/shadow\fR
+are checked to see that the entry has the proper format and valid data in each field\&. The user is prompted to delete entries that are improperly formatted or which have other uncorrectable errors\&.
+.PP
+Vengono fatti controlli per verificare che ogni voce abbia:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'il corretto numero di campi
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'un nome utente univoco
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'identificatori validi dell\'utente e del gruppo
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'un gruppo primario valido
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'una home directory valida
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'una shell di login valida
+.RE
+.PP
+Gli errori nelle verifiche sul corretto numero di campi e sull\'univocità del nome utente sono irrimediabili\&. Se una voce ha un numero errato di campi, all\'utente viene chiesto di cancellare l\'intera riga; se l\'utente non risponde affermativamente, vengono omessi tutti gli ulteriori controlli\&. Viene richiesta la cancellazione anche per le voci aventi il nome utente duplicato, ma i rimanenti controlli vengono ugualmente effettuati\&. Tutti gli altri errori non sono gravi e l\'utente è invitato a eseguire il comando
+\fBusermod\fR
+per correggerli\&.
+.PP
+I comandi che operano sul file
+\fI/etc/passwd\fR
+non sono in grado di modificare voci corrotte o duplicate; in tali circostanze va usato
+\fBpwck\fR
+per rimuovere la voce scorretta\&.
+.SH "OPZIONI"
+.PP
+Il comando
+\fBpwck\fR
+accetta le seguenti opzioni:
+.PP
+\fB\-q\fR
+.RS 4
+Report errors only\&. The warnings which do not require any action from the user won\'t be displayed\&.
+.RE
+.PP
+\fB\-r\fR
+.RS 4
+Execute the
+\fBpwck\fR
+command in read\-only mode\&.
+.RE
+.PP
+\fB\-s\fR
+.RS 4
+Sort entries in
+\fI/etc/passwd\fR
+and
+\fI/etc/shadow\fR
+by UID\&.
+.RE
+.PP
+Come impostazione predefinita,
+\fBpwck\fR
+opera sui file
+\fI/etc/passwd\fR
+e in
+\fI/etc/shadow\fR\&. L\'utente può selezionare file alternativi con i parametri
+\fIpasswd\fR
+e
+\fIshadow\fR\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBPASS_MAX_DAYS\fR (number)
+.RS 4
+The maximum number of days a password may be used\&. If the password is older than this, a password change will be forced\&. If not specified, \-1 will be assumed (which disables the restriction)\&.
+.RE
+.PP
+\fBPASS_MIN_DAYS\fR (number)
+.RS 4
+The minimum number of days allowed between password changes\&. Any password changes attempted sooner than this will be rejected\&. If not specified, \-1 will be assumed (which disables the restriction)\&.
+.RE
+.PP
+\fBPASS_WARN_AGE\fR (number)
+.RS 4
+The number of days warning given before a password expires\&. A zero means warning is given only upon the day of expiration, a negative value means no warning is given\&. If not specified, no warning will be provided\&.
+.RE
+.SH "FILE"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informazioni sugli account di gruppo\&.
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+informazioni sugli account utente\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informazioni sicure sugli account di utenti\&.
+.RE
+.SH "VEDERE ANCHE"
+.PP
+\fBgroup\fR(5),
+\fBpasswd\fR(5),
+\fBshadow\fR(5),
+\fBusermod\fR(8)\&.
+.SH "VALORI RESTITUITI"
+.PP
+Il comando
+\fBpwck\fR
+restituisce i seguenti valori:
+.PP
+\fI0\fR
+.RS 4
+successo
+.RE
+.PP
+\fI1\fR
+.RS 4
+sintassi del comando errata
+.RE
+.PP
+\fI2\fR
+.RS 4
+una o più voci di password conengono errori
+.RE
+.PP
+\fI3\fR
+.RS 4
+impossibile aprire i file delle password
+.RE
+.PP
+\fI4\fR
+.RS 4
+impossibile fare il lock dei file delle password
+.RE
+.PP
+\fI5\fR
+.RS 4
+impossibile aggiornare i file delle password
+.RE

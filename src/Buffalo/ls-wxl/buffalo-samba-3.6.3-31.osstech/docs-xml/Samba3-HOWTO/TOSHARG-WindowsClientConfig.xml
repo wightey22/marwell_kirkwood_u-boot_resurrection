@@ -1,0 +1,619 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="ClientConfig">
+<chapterinfo>
+	&author.jht;
+</chapterinfo>
+
+<title>Microsoft Windows ネットワーク設定ガイド</title>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>network difficulty</primary></indexterm>
+<indexterm><primary>networkクライアント</primary></indexterm>
+<indexterm><primary>クライアントの操作</primary></indexterm>
+時折、Microsoft WindowsクライアントがSambaサーバに正しく相互運用を行うことが
+難しいと、ネットワーク管理者が報告している。Microsoft Windows NT4か200xサーバ
+を使うときのように、Microsoft Windowsネットワーククライアントが正しく設定する
+ための正しい方法という事実を何人かが受け入れられないように見える。それでも、
+詳細なWindowsクライアント設定の手順を提供するという継続的な必要性がある。
+</para>
+
+<para>
+<indexterm><primary>GUI画面でのクライアント設定</primary></indexterm>
+<indexterm><primary>重要な設定場面</primary></indexterm>
+この章の目的は、最も共通的な重要な設定場面での設定について、Microsoft Windows
+クライアントの設定をGUIで説明することである。十分に経験のあるネットワーク管理者
+は、この章の詳細については興味がないだろう。
+</para>
+
+</sect1>
+
+<sect1>
+<title>技術的な詳細</title>
+
+<para>
+<indexterm><primary>TCP/IPプロトコル設定</primary></indexterm>
+<indexterm><primary>ネットワークメンバシップ</primary></indexterm>
+この章では、現在一般的に使われているプラットフォームのためのネットワーク
+メンバシップと同様に、TCP/IPプロトコルについて説明する。それは以下の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	Microsoft Windows XP Professional
+	</para></listitem>
+	<listitem><para>
+	Windows 2000 Professional
+	</para></listitem>
+	<listitem><para>
+	Windows Millennium edition (Me)
+	</para></listitem>
+</itemizedlist>
+
+	<sect2>
+	<title>TCP/IP設定</title>
+
+	<para>
+<indexterm><primary>ネットワーク設定の問題</primary></indexterm>
+<indexterm><primary>悩んでいるネットワークユーザ</primary></indexterm>
+	大工さんは家を建てるときには基礎がしっかりしている上で建築することを保証しな
+	ければならない(訳注:やや意訳)。TCP/IPベースのネットワークシステムの構築者に
+	とってもこれは真である。ネットワーク基盤設定の問題はそれが解決するまで、
+	すべてのネットワークユーザを悩ませる。
+	</para>
+
+	<para>
+<indexterm><primary>固定IPアドレス</primary></indexterm>
+<indexterm><primary>DHCP</primary></indexterm>
+	Microsoft Windowsワークステーションとサーバは固定IPアドレスかDHCPのどちらでも
+	設定できる。以下での例ではDHCPを使い、固定IP設定に影響される場面においては、
+	参照先への参照のみを行っている。
+	</para>
+
+	<para>
+<indexterm><primary>ショートカット</primary></indexterm>
+<indexterm><primary>短縮されたキーストローク</primary></indexterm>
+	特定の設定画面に到達するためにショートカットや短縮されたキーストロークを
+	使うことが可能である。この章でのすべての例のベースのために、
+	<guibutton>スタート</guibutton>ボタンを使うことを決めごととした。
+	</para>
+
+		<sect3>
+		<title>Microsoft Windows XP Professional</title>
+
+		<para>
+<indexterm><primary>Windows XP TCP/IP</primary></indexterm>
+		Windows XP TCP/IP 設定パネルへは2つのパスがある。どちらか好きな方を
+		選べばよい:
+		</para>
+
+		<para>
+		<guimenu>スタート -> コントロールパネル -> ネットワーク接続</guimenu>とクリック。
+		</para>
+
+		<para>
+		<emphasis>もう1つの方法は</emphasis> click <guimenu>スタート-></guimenu>をクリックし、<guimenu>マイネットワーク</guimenu>を右クリックし、
+		<guimenuitem>プロパティ</guimenuitem>をクリックする。
+		</para>
+
+		<para>
+<indexterm><primary>Windows XP Professional</primary></indexterm>
+		以下の手順はWindows XP ProfessionalのTCP/IP設定手続きのステップである:
+		</para>
+
+		<procedure>
+			<step><para>
+<indexterm><primary>ローカルエリア接続</primary></indexterm>
+<indexterm><primary>Network Bridge</primary></indexterm>
+<indexterm><primary>インタフェース</primary></indexterm>
+			いくつかのインストールにおいて、インタフェースは<guimenu>ローカルエリア接続</guimenu>と
+			その他では<guimenu>Network Bridge</guimenu>と呼ばれる。ここでの例においては
+			<guimenu>Network Bridge</guimenu>と呼ばれる。
+			<guimenu>Network Bridge -> プロパティ</guimenu>と右クリックする。
+			<link linkend="WXPP002"/>を参照。
+                        <figure id="WXPP002">
+			<title>Network Bridgeの設定</title>
+			<imagefile>WXPP002</imagefile></figure>
+			</para>
+			</step>
+
+			<step><para>
+<indexterm><primary>TCP/IPプロトコルの設定</primary></indexterm>
+<indexterm><primary>Network Bridgeの設定</primary></indexterm>
+			Network Bridge Configurationの設定か、ローカルエリア接続の設定で、TCP/IPプロトコル
+			設定のためにパネルが使われる。
+			<guimenuitem>この接続は次の項目を使用します(O):</guimenuitem>というボックス中で、
+			<guimenu>インターネット プロトコル(TCP/IP)</guimenu>をクリックし、次に、
+			<guibutton>プロパティ</guibutton>をクリックする。
+			</para>
+
+			<para>
+<indexterm><primary>DHCPが有効な操作</primary></indexterm>
+<indexterm><primary>IPアドレスを自動的に取得する</primary></indexterm>
+			既定値の設定は、DHCPが有効な動作である。
+			(すなわち、<quote>IPアドレスを自動的に取得する</quote>)。
+			<link linkend="WXPP003"/>を参照。
+			<figure id="WXPP003">
+				<title>インターネット プロトコル(TCP/IP)のプロパティ</title>
+				<imagefile>WXPP003</imagefile>
+			</figure>
+			</para>
+
+			<para>
+<indexterm><primary>DHCP</primary></indexterm>
+<indexterm><primary>TCP/IP</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>ISC DHCP サーバ</primary></indexterm>
+			多くのネットワーク管理者は、すべてのクライアントTCP/IPプロトコルスタックの
+			設定においてDHCPを使う設定をしたいと思っている(Windowsクライアントをサポート
+			するための ISC DHCPサーバの設定方法についての情報は、
+			<link linkend="DHCP">DNSとDHCP設定ガイド</link>と、<link linkend="DHCP">DHCPサーバ</link>
+			を参照)。
+			</para>
+
+			<para>
+<indexterm><primary>固定IPアドレス</primary></indexterm>
+<indexterm><primary>サブネットマスク</primary></indexterm>
+<indexterm><primary>ゲートウェイアドレス</primary></indexterm>
+			もしも、固定IPを使う必要があるならば、<quote>次のIPアドレスを使う</quote>を
+			クリックし、IPアドレス、サブネットマスク、デフォルトゲートウェイをそれぞれの
+			ボックスに入力する。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>詳細なTCP/IP設定</primary></indexterm>
+<indexterm><primary>TCP/IP設定</primary></indexterm>
+<indexterm><primary>IPエイリアス</primary></indexterm>
+<indexterm><primary>デフォルトゲートウェイ</primary></indexterm>
+			TCP/IP設定にある<guibutton>詳細設定</guibutton>をクリックする。このインタフェースに
+			対する追加のIPアドレスを作成することが可能になるパネルが開く。
+			追加のIPアドレスに対する技術的な名前は<emphasis>IPエイリアス</emphasis>であり、
+			さらに、追加のデフォルトゲートウェイ(ルータ)を設定することもできる。ほとんどの場合、
+			DHCPが使われていると、追加の設定は必要ない。このパネルの外観は、
+			<link linkend="WXPP005"></link>を参照。
+			<figure id="WXPP005"><title>ネットワークの詳細設定</title><imagefile>WXPP005</imagefile></figure>
+			</para>
+
+			<para>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>DHCP</primary></indexterm>
+			DHCP経由で自動的にDNSとWINSの設定が提供されない場合、
+			固定的な設定が必要である。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>DNSサーバの設定</primary></indexterm>
+<indexterm><primary>手動によるDNSの設定</primary></indexterm>
+			<guimenu>DNS</guimenu>タブをクリックし、DNSサーバの設定を追加する。
+			例題のシステムでは、手動でのDNS設定を使っている。変更が終了したなら、
+			<guibutton>OK</guibutton>をクリックして変更を確定する。
+			<link linkend="WXPP014"/>を参照。
+			<figure id="WXPP014"> <title>DNSの設定</title> <imagefile>WXPP014</imagefile> </figure>
+			</para></step>
+
+			<step><para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>手動でのWINSサーバエントリ</primary></indexterm>
+			<guibutton>WINS</guibutton>タブをクリックして、手動でWINSサーバの
+			設定を追加する。この手順は、例題のシステムで、手動でWINSサーバの設定
+			を行うことを行っている。変更が終了したならば、<guibutton>OK</guibutton>
+			をクリックして変更を確定する。<link linkend="WXPP009"></link>を参照。
+			<figure id="WXPP009"><title>WINS Configuration</title><imagefile>WXPP009</imagefile></figure>
+			</para></step>
+		</procedure>
+
+		</sect3>
+
+		<sect3>
+		<title>Microsoft Windows 2000</title>
+
+		<para>
+<indexterm><primary>Windows 2000 Professional TCP/IP</primary></indexterm>
+<indexterm><primary>TCP/IP設定パネル</primary></indexterm>
+		TCP/IP設定パネルを表示させるためには2つの方法がある。以下のどちらを使っても良い:
+		</para>
+
+		<para>
+		<guimenu>スタート -> コントロールパネル -> ネットワークとダイヤルアップの設定</guimenu>をクリック(訳注:正しい訳か未確認)。
+		</para>
+
+		<para>
+		<emphasis>その代わりに、</emphasis><guimenu>スタート</guimenu>をクリックし、<guimenu>マイネットワーク</guimenu>を右クリックし、
+		<guimenuitem>プロパティ</guimenuitem>を選択する。
+		</para>
+
+		<para>
+<indexterm><primary>Windows XP Professional TCP/IP</primary></indexterm>
+		以下の手順はWindows XP Professional TCP/IP設定の手順である:
+		</para>
+
+		<procedure>
+			<step><para>
+			<guimenu>ローカルエリア設定</guimenu>を右クリックし、次に、
+			<guimenuitem>プロパティ</guimenuitem>をクリックする。<link linkend="w2kp001"></link>を参照。
+			<figure id="w2kp001"><title>ローカル エリア接続のプロパティ</title><imagefile>w2kp001</imagefile></figure>
+			</para></step>
+
+			<step><para>
+<indexterm><primary>ローカル エリア接続のプロパティ</primary></indexterm>
+<indexterm><primary>TCP/IPプロトコルの設定</primary></indexterm>
+
+			ローカル エリア接続のプロパティはTCP/IPプロトコル設定を設定するのに使われる。
+			<guimenuitem>この接続は次の項目を使用します</guimenuitem>中の
+			<guimenu>インターネット プロトコル (TCP/IP)</guimenu>をクリックし、次に
+			<guibutton>プロパティ</guibutton>ボタンをクリックする。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>DHCP有効</primary></indexterm>
+<indexterm><primary>IPアドレスを自動的に取得する</primary></indexterm>
+			既定値はDHCP有効な設定である(すなわち<quote>IP アドレスを自動的に取得する</quote>)。
+			<link linkend="w2kp002"/>を参照。
+			<figure id="w2kp002"><title>インターネット プロトコル (TCP/IP)のプロパティ</title><imagefile>w2kp002</imagefile></figure>
+			</para>
+
+			<para>
+<indexterm><primary>DHCP</primary></indexterm>
+<indexterm><primary>プロトコルスタックの設定</primary></indexterm>
+			ネットワーク管理者の多くは、すべてのクライアントのTCP/IPプロトコルスタック設定
+			をDHCPを使うように設定したいと思っている(ISC DHCPサーバをWindowsクライアントを
+			サポートするように設定する方法についての情報は<link linkend="DHCP"></link>
+			を参照のこと)。
+			</para>
+
+			<para>
+<indexterm><primary>固定IPアドレス</primary></indexterm>
+<indexterm><primary>ネットワーククライアント</primary></indexterm>
+			もしも、固定IPアドレスを使いたいならば、<quote>次の IP アドレスを使う</quote>をクリックし、
+			IPアドレスとサブネットマスクとデフォルトゲートウェイのIPアドレスを所定の位置に入力する。
+			この例では、すべてのネットワーククライアントはDHCPで設定されていることを仮定している。
+			</para></step>
+
+			<step><para>
+			<guimenu>詳細設定</guimenu>ボタンをクリックして、TCP/IP詳細設定を実行する。
+			<link linkend="w2kp003"></link>を参照。
+			<figure id="w2kp003"><title>TCP/IP 詳細設定</title><imagefile>w2kp003</imagefile></figure>
+			</para>
+
+			<para>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>DHCP</primary></indexterm>
+			固定設定は、DHCP経由で自動的にDNSとWINS設定が提供されない場合に要求される。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>DNSサーバ設定</primary></indexterm>
+<indexterm><primary>設定変更の実行</primary></indexterm>
+			DNSサーバ設定のために<guimenu>DNS</guimenu>タブをクリックする。
+			例題システムでは、手動でのDNS設定を使っている。変更が完了したならば、
+			<guibutton>OK</guibutton>をクリックして変更を確定する。 <link linkend="w2kp004"></link>を参照。
+			<figure id="w2kp004"><title>DNS設定</title><imagefile>w2kp004</imagefile></figure>
+			</para></step>
+
+			<step><para>
+<indexterm><primary>手動でのWINSサーバ設定</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+			WINSサーバエントリ設定のために<guibutton>WINS</guibutton>タブをクリックする。
+			このステップは、例題システムにおいて、手動でのWINS設定を使うことを示している。
+			変更が完了したならば、<guibutton>OK</guibutton>をクリックして変更を確定する。
+			<link linkend="w2kp005"></link>を参照。
+			<figure id="w2kp005">
+				<title>WINS設定</title><imagefile>w2kp005</imagefile>
+			</figure>
+			</para></step>
+
+		</procedure>
+
+		</sect3>
+
+		<sect3>
+		<title>Microsoft Windows Me</title>
+
+		<para>
+<indexterm><primary>Windows Millennium edition (Me) TCP/IP</primary></indexterm>
+<indexterm><primary>Windows Millennium</primary></indexterm>
+<indexterm><primary>TCP/IP設定</primary></indexterm>
+		Windows Millennium edition (Me)でTCP/IP設定パネルを呼び出すには2つのパスがある。以下のどちらかを実行する:
+		</para>
+
+		<para>
+		<guimenu>スタート -> コントロールパネル -> ネットワーク接続</guimenu>をクリックする。
+		</para>
+
+		<para>
+<indexterm><primary>My Network Places</primary></indexterm>
+<indexterm><primary>プロパティ</primary></indexterm>
+		<emphasis>別の方法として、</emphasis><guimenu>スタート -></guimenu>をクリックし、<guimenu>My Network Places</guimenu>を右クリックし、
+		<guimenuitem>プロパティ</guimenuitem>を選択する。
+		</para>
+
+		<para>
+<indexterm><primary>Windows Me TCP/IP</primary></indexterm>
+		以下の手順は、Windows MeのTCP/IP設定手順である:
+		</para>
+
+		<procedure>
+			<step><para>
+<indexterm><primary>インターネットプロトコル TCP/IP</primary></indexterm>
+			<guimenuitem>The following network components are installed:</guimenuitem>というタイトルのボックス中で、
+			<guimenu>インターネットプロトコル TCP/IP</guimenu>をクリックし、次に<guibutton>プロパティ</guibutton>ボタンをクリックする。
+			<link linkend="WME001"></link>を参照。
+			<figure id="WME001">
+				<title>Windows Me ネットワーク設定パネル</title>
+				<imagefile>WME001</imagefile>
+			</figure>
+			</para></step>
+
+			<step><para>
+<indexterm><primary>DHCP</primary></indexterm>
+<indexterm><primary>TCP/IP</primary></indexterm>
+<indexterm><primary>ISC DHCP サーバ</primary></indexterm>
+			ネットワーク管理者の多くは、すべてのクライアントのTCP/IPプロトコルスタック設定
+			をDHCPを使うように設定したいと思っている(ISC DHCPサーバをWindowsクライアントを
+			サポートするように設定する方法についての情報は<link linkend="DHCP"></link>と
+			を参照のこと)。Windows Me ワークステーションでの既定値の設定はDHCP有効である
+			(すなわち、<guimenu>IPアドレスを自動的に取得</guimenu>が有効)。
+			<link linkend="WME002"></link>を参照。
+                        <figure id="WME002"><title>IPアドレス</title><imagefile>WME002</imagefile></figure>
+			</para>
+
+			<para>
+<indexterm><primary>IPアドレスを指定</primary></indexterm>
+<indexterm><primary>サブネットマスク</primary></indexterm>
+<indexterm><primary>DHCP</primary></indexterm>
+			もしも固定IPアドレスの指定が必要ならば、<guimenuitem>IPアドレスを指定</guimenuitem>をクリックし、
+			IPアドレス、トサブネットマスクをボックス内に入力する。この例では、すべてのネットワーククライアントは
+			DHCPを使うように設定されていると仮定している。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+			固定設定は、DHCP経由で自動的にDNSとWINS設定が提供されない場合に要求される。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>WINS server settings</primary></indexterm>
+			必要に応じてDNSサーバ設定追加のために<guimenu>DNS設定</guimenu>タブをクリックする。
+			WINSサーバ設定追加のために<guibutton>WINS設定</guibutton>タブをクリックする。
+			<guimenu>ゲートウェイ</guimenu>タブでは、追加のゲートウェイ(ルータアドレス)を、
+			ネットワークインタフェース設定追加できる。DHCPを使うほとんどの場合では、
+			手動でこれらの設定を作成することは不要である。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>WINS</primary></indexterm>
+<indexterm><primary>手動設定</primary></indexterm>
+			以下は、WINSを手動で設定する例である。<link linkend="WME005"></link>を参照。
+			変更が終わったら、<guibutton>OK</guibutton>をクリックして変更を確定する。
+			<figure id="WME005"><title>DNS設定</title><imagefile>WME005</imagefile></figure>
+			</para>
+
+			<para>
+<indexterm><primary>単一のDHCPサーバ</primary></indexterm>
+<indexterm><primary>複数のWindowsワークグループかドメイン</primary></indexterm>
+			これは、手動でWINS設定したシステムの例である。これができよう出来るような状況は、
+			複数のWindowsワークグループまたはドメインの設定を提供する単一のDHCPサーバがある
+			ネットワークである。<link linkend="WME003"></link>を参照。
+			<figure id="WME003"><title>WINS設定</title><imagefile>WME003</imagefile></figure>
+			</para></step>
+		</procedure>
+
+
+		</sect3>
+
+	</sect2>
+
+	<sect2>
+	<title>ドメインへの参加: Windows 2000/XP Professional</title>
+
+	<para>
+<indexterm><primary>Windows NT/200x/XP Professional</primary></indexterm>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>ドメインへの参加</primary></indexterm>
+	Microsoft Windows NT/200x/XP Professional platformsはドメインセキュリティに参加できる。
+	この節では、Windows 200x/XP Professionalマシンをドメインセキュリティ環境のメンバにする
+	手順を説明する。この手続きは、Windows NT4/200xによって制御されるドメインへ参加する時
+	とSambaPDCでは同一であることに注意されたい。
+	</para>
+
+	<procedure>
+		<step><para>
+		<guimenu>Start</guimenu>をクリック。
+		</para></step>
+
+		<step><para>
+		<guimenu>マイコンピュータ</guimenu>を右クリックし、次に<guimenuitem>プロパティ</guimenuitem>を選択。
+		</para></step>
+
+		<step><para>
+<indexterm><primary>コントロールパネル</primary></indexterm>
+		パネルのオープンは、コントロールパネル上の<guimenu>System</guimenu>をクリックしても
+		同様に行える。<link linkend="wxpp001"></link>を参照。
+		<figure id="wxpp001"><title>全般</title><imagefile>wxpp001</imagefile></figure>
+		</para></step>
+
+		<step><para>
+<indexterm><primary>コンピュータ名</primary></indexterm>
+		<guimenu>コンピュータ名</guimenu>タブをクリックする。
+		このパネルでは、<guimenuitem>コンピュータの説明</guimenuitem>、<guimenuitem>フルコンピュータ名</guimenuitem>と
+		<guimenuitem>ワークグループ</guimenuitem>または<guimenuitem>ドメイン名</guimenuitem>が表示されている。
+		</para>
+
+		<para>
+<indexterm><primary>ネットワークID</primary></indexterm>
+<indexterm><primary>設定ウィザード</primary></indexterm>
+		<guimenu>ネットワークID</guimenu>ボタンをクリックすると、設定ウィザードが起動する。Samba-3では
+		これを使ってはならない。コンピュータ名やドメインからの離脱を行いたいならば、<guimenu>変更</guimenu>
+		ボタンを使う。<link linkend="wxpp004"></link>を参照のこと。
+		<figure id="wxpp004"><title>コンピュータ名パネル</title><imagefile>wxpp004</imagefile></figure>
+		</para></step>
+
+		<step><para>
+		<guimenu>変更</guimenu>をクリックする。このパネルでは例題のシステム(TEMPTATION)がWORKGROUPという
+		ワークグループであることを示している。
+		MIDEARTHというドメインにこれから参加する。<link linkend="wxpp006"></link>を参照。
+		<figure id="wxpp006"><title>コンピュータ名の変更パネル</title><imagefile>wxpp006</imagefile></figure>
+        </para></step>
+
+		<step><para>
+<indexterm><primary>ドメインボタン</primary></indexterm>
+		以下のドメインボタンのフィールド内に<guimenu>MIDEARTH</guimenu>を入力する。
+		</para>
+
+        <para>
+		このパネルでは、例題のシステム(TEMPTATION)がMIDEARTHと呼ばれるドメインに参加することを示している。
+		<link linkend="wxpp007"></link>を参照。
+		<figure id="wxpp007"><title>コンピュータ名の変更パネル &smbmdash; ドメイン MIDEARTH</title><imagefile>wxpp007</imagefile></figure>        </para></step>
+		<step><para>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>ユーザ名とパスワード</primary></indexterm>
+		<guimenu>OK</guimenu>ボタンをクリックする。マシンをドメインに参加させる権利を持つドメイン管理者
+		アカウントの認証(ユーザ名とアカウント)を入力するためのダイアログボックスが現れる。
+		</para>
+
+        <para>
+<indexterm><primary>root</primary></indexterm>
+		Samba-3サーバの<quote>root</quote>とパスワードを入力する。<link linkend="wxpp008"></link>を参照。
+		<figure id="wxpp008">
+			<title>コンピュータ名の変更 &smbmdash; ユーザ名とパスワードパネル</title><imagefile>wxpp008</imagefile>
+		</figure>
+        </para></step>
+
+		<step><para>
+		<guimenu>OK</guimenu>をクリックする。
+        </para>
+
+		<para>
+<indexterm><primary>ようこそ</primary></indexterm>
+<indexterm><primary>再起動</primary></indexterm>
+		<quote>MIDEARTHドメインへようこそ</quote>ダイアログボックスが現れる。この時点でマシンを再起動する必要がある。
+		これでドメインへの参加が完了する。
+        </para></step>
+
+	</procedure>
+
+	</sect2>
+
+	<sect2>
+	<title>ドメインログオンの設定: Windows 9x/Me</title>
+
+	<para>
+<indexterm><primary>Windows 9x/Me</primary></indexterm>
+<indexterm><primary>ドメインログオン</primary></indexterm>
+<indexterm><primary>LanManager</primary></indexterm>
+	Windows 9x/Meマシンがドメインに参加できるということを言う時に、とても一般的に用いられる慣例に従う。
+	実際には、これらのプラットフォームはLanManagerネットワークログオンプロトコルのみを使うことが出来る。
+	</para>
+
+	<note><para>
+<indexterm><primary>Windows XP Home edition</primary></indexterm>
+<indexterm><primary>LanManager</primary></indexterm>
+<indexterm><primary>ネットワークログオン</primary></indexterm>
+	Windows XP Home editionはドメインへの参加またはLanManagerネットワークログオンができない。
+	</para></note>
+
+	<procedure>
+		<step><para>
+		<guimenu>ネットワークコンピュータ(Network Neighborhood)</guimenu>アイコンを右クリックする。
+		</para></step>
+
+		<step><para>
+		ネットワーク設定パネルには、変更可能なすべての共通なネットワーク設定がある。
+                <link linkend="WME009"></link>を参照。
+		<figure id="WME009"><title>ネットワークパネル</title><imagefile>WME009</imagefile></figure>
+                </para>
+
+		<para>
+<indexterm><primary>クライアント用Microsoftネットワーク</primary></indexterm>
+<indexterm><primary>プロパティ</primary></indexterm>
+		<guimenu>クライアント用Microsoftネットワーク</guimenu>ドライバが、見えているようにインストールされているようにする。
+		<guimenu>以下のネットワークコンポーネントを使用する:</guimenu>中の
+		<guimenu>クライアント用Microsoftネットワーク</guimenu>をクリックする。次に、
+                <guibutton>プロパティ</guibutton>ボタンをクリックする。
+		</para></step>
+
+		<step><para>
+<indexterm><primary>ネットワークプロパティ</primary></indexterm>
+<indexterm><primary>ネットワークログオン</primary></indexterm>
+		クライアント用Microsoftネットワークプロパティパネルではネットワークログオンの設定をするための
+		所である。<link linkend="WME010"></link>を参照。
+		<figure id="WME010"><title>クライアント用Microsoftネットワークプロパティパネル</title><imagefile>WME010</imagefile></figure>
+                </para>
+
+		<para>
+<indexterm><primary>Windows NTドメイン名</primary></indexterm>
+<indexterm><primary>ドメイン名</primary></indexterm>
+		NTドメイン名を入力し、<guimenu>NTドメインにログオン</guimenu>ボックスにチェックを付け、
+		<guimenu>OK</guimenu>をクリックする。
+		</para></step>
+
+		<step><para>
+<indexterm><primary>識別</primary></indexterm>
+<indexterm><primary>ワークグループ</primary></indexterm>
+<indexterm><primary>コンピュータ名</primary></indexterm>
+		<guimenu>識別</guimenu>ボタンをクリックする。これは、設定すべきワークグループ
+		(ドメイン)名とマシン名(コンピュータ名)がある所である。<link linkend="WME013"></link>を参照。
+		<figure id="WME013"><title>識別パネル</title><imagefile>WME013</imagefile></figure>
+                </para></step>
+
+		<step><para>
+<indexterm><primary>アクセス制御</primary></indexterm>
+<indexterm><primary>グループアカウント</primary></indexterm>
+<indexterm><primary>ドメインユーザ</primary></indexterm>
+<indexterm><primary>ユーザレベルのアクセス制御</primary></indexterm>
+		次に<guimenu>アクセス制御</guimenu>ボタンをクリックする。もしもドメインユーザとグループ
+		アカウントを使って共有アクセスパーミッションを割り当てたいならば、このパネル中にある
+		<guimenu>ユーザレベルのアクセス制御</guimenu>を有効にする必要がある。
+		<link linkend="WME014"></link>を参照。
+		<figure id="WME014"><title>アクセス制御パネル</title><imagefile>WME014</imagefile></figure>
+                </para></step>
+
+	</procedure>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+<indexterm><primary>ネットワークシステム</primary></indexterm>
+<indexterm><primary>errors that can afflict</primary></indexterm>
+最もよくあるWindowsネットワークシステムに悪影響を及ぼすエラーは下記の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para>不正なIPアドレス。</para></listitem>
+	<listitem><para>不正又は矛盾したネットマスク。</para></listitem>
+	<listitem><para>不正なルータアドレス。</para></listitem>
+	<listitem><para>不正なDNSサーバアドレス。</para></listitem>
+	<listitem><para>不正なWINSサーバアドレス。</para></listitem>
+	<listitem><para>これについて注意するネットワークスコープ設定を使う!</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>Windows NT/200x/XP Professional</primary></indexterm>
+<indexterm><primary>ドメインに参加できない</primary></indexterm>
+Windows NT/200x/XP ProfessionalクライアントがSamba制御下のドメインに参加できない最も一般的な理由は
+以下の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para>&smb.conf; で正しい<smbconfoption name="add machine script"/>設定をしていない</para></listitem>
+	<listitem><para><quote>root</quote>がパスワードバックエンドデータベースにない。</para></listitem>
+	<listitem><para>ドメインに参加するときに<quote>root</quote>以外のユーザアカウントを代わりにに使っている。</para></listitem>
+	<listitem><para>ワークステーションからサーバに対する接続が切れている。</para></listitem>
+	<listitem><para>クライアント又はSambaサーバにファイアウォールかフィルタの設定がなされている。</para></listitem>
+</itemizedlist>
+
+</sect1>
+
+</chapter>

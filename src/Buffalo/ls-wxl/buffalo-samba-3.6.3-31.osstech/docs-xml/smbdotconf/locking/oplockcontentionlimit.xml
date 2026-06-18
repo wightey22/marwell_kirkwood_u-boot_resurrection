@@ -1,0 +1,26 @@
+<samba:parameter name="oplock contention limit"
+                 context="S"
+				 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>これは <emphasis>非常に</emphasis> 高度な
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> 
+	のチューニングオプションで、
+	複数のクライアントから同じファイルへの 
+	oplock 要求が行なわれた際の効率を改善するものである。</para>
+		
+	<para> このパラメータには数値を指定する。
+	同じファイルに対して oplock を行なおうとするクライアントの大体の数がこのパラメータで指定した限界を越えると、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> は、
+	たとえ要求されても oplock を許可しないようになる。これにより、
+	<command moreinfo="none">smbd</command>は Windows NT と同様の動作を行うようになる。</para>
+
+	<warning><para>
+	Samba の oplock コードを読んで理解していない限り、このパラメータを変更してはいけない。
+	</para></warning>
+
+</description>
+<value type="default">2</value>
+</samba:parameter>

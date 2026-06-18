@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_cacheprime.8">
+
+<refmeta>
+	<refentrytitle>vfs_cacheprime</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_cacheprime</refname>
+	<refpurpose>カーネルのファイルデータキャッシュを用意する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = cacheprime</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である.</para>
+
+	<para><command>vfs_cacheprime</command> VFS モジュールは
+	クライアントから読み込むように要求されたファイル内のデータの周辺を、
+	大きな塊として読み込む。
+	これにより、その周辺がクライアントが後で実際に読み込み要求
+	した場合、カーネルのファイルデータキャッシュに残っているようにする。
+	する。
+	 </para>
+
+	<para><command>vfs_cacheprime</command>コマンドで有効になるディスクリード処理のデータサイズは、
+	cacheprime:rsizeオプションで決まる。
+	
+	すべてのディスクリードオペレーションは、ここで指定したサイズの倍数単位で同期(調整)される。
+	ファイルデータは、クライアントがファイルをオープンしている間、前もって準備されている。
+	 </para>
+
+	<para>このモジュールはスタッカブルである</para>
+</refsect1>
+
+<refsect1>
+	<title>OPTIONS</title>
+
+	<variablelist>
+
+		<varlistentry>
+		<term>cacheprime:rsize = BYTES</term>
+		<listitem>
+		<para>カーネルデータキャッシュに用意しておく容量を指定する。
+		</para>
+		<para>以下のサィックスをBYTESに付け加えることができる</para>
+		<itemizedlist>
+		<listitem><para><command>K</command> - KByte単位で指定する</para></listitem>
+		<listitem><para><command>M</command> - MByte単位で指定する</para></listitem>
+		<listitem><para><command>G</command> - GByte単位で指定する</para></listitem>
+		</itemizedlist>
+
+		</listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>EXAMPLES</title>
+
+	<para>高性能なディスクアレーでは、リードオペレーションのサイズを1MByte(1048576bytes)にして、
+	1MByte単位で行われるように設定する必要がある。
+	</para>
+<programlisting>
+	<smbconfsection name="[hypothetical]"/>
+	<smbconfoption name="vfs objects">cacheprime</smbconfoption>
+	<smbconfoption name="cacheprime:rsize">1M</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>CAVEATS</title>
+	<para><command>cacheprime</command>は多目的に用意した先読みメカニズムではない。
+	この機能はある限定された環境、ディスク読み込みがある単位で行われなければならず、
+	そのサイズが分かっている(可能な限り大きな値)、のために用意されている。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルはSambaシステムバージョン3.0.25(訳注:3.3?)に対応している
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team に
+	よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+	として開発が行なわれている。</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このドキュメントは、Samba 3.0.25 - 3.5.3 対応のものである。</para>	
+    <para>このドキュメントの翻訳は
+		<itemizedlist>
+			<listitem><para>平田祥司 (shouji@microft.co.jp)</para></listitem>
+		</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

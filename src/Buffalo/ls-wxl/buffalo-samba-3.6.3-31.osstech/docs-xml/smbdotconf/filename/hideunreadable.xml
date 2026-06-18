@@ -1,0 +1,10 @@
+<samba:parameter name="hide unreadable"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+    <para>このパラメータにより、読みとりができないファイルの存在をクライアントから隠蔽できる。
+		このパラメータのデフォルトは off になっている。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

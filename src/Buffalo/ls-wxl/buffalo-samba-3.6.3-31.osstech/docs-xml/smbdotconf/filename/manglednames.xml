@@ -1,0 +1,56 @@
+<samba:parameter name="mangled names"
+				 type="boolean"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> このパラメータは、
+	UNIX 上の DOS非互換のファイル名をDOS互換の名前(「短縮名」)に短縮してアクセス可能にするか、
+	単純に無視するかどうかを制御する。</para>
+
+	<para>短縮処理がどのように行なわれているかについての詳細は、
+	<smbconfoption name="name mangling"/> セクションを参照のこと。</para>
+
+	<para>短縮が行なわれる場合の手法は以下の通りである(訳注:以下は hash アルゴリズムの場合):</para>
+
+	<itemizedlist>
+		<listitem>
+			<para> ファイル名の先頭から一番右にあるドットの前までの英数5文字は、
+			大文字に変換された上で、
+			短縮名の先頭5文字となる。</para>
+		</listitem>
+		
+		<listitem>
+			<para>チルダ「~」が短縮名に付加される。
+			更に元々のファイル名のベース部分(ファイル名から拡張子部分を除いたもの)から生成された一意な2文字が付加される。
+			拡張子にあたる部分は、大文字を含んでいるか、
+			3文字以上の場合のみ、ハッシュの計算に含まれる。
+			</para>
+
+			<para> 「~」の利用を避けたい場合は、
+			<smbconfoption name="mangling char"/>
+			オプションにより、別の文字を指定することも可能である。</para>
+		</listitem>
+
+		<listitem>
+			<para>UNIX 上のファイル名がドットから始まる場合、
+			そのファイルは DOS の隠しファイルとして扱われる。
+			この場合の短縮名は、ファイル名の先頭のドットを取り除き、
+			実際の拡張子に関わらず、拡張子「___(「_」3文字」を付加したものから、一般のファイル名と同様にして生成する。
+			</para>
+		</listitem>
+	</itemizedlist>
+
+	<para>2桁のハッシュ値は、大文字の英数文字になる。</para>
+
+	<para>このアルゴリズムは、
+	ディレクトリ内のファイルに先頭の英数 5 文字が同一のファイル名が存在する時のみ名前の衝突が発生するが、
+	実際に衝突する確率は、1/1300 である。</para>
+
+	<para>
+	名前の短縮処理により、(この処理が有効な限り) Windows や DOS から、UNIX 側の長いファイル名を保持したまま UNIX ディレクトリ間のファイルのコピーができる。 
+	Windows や DOS 側から UNIX 側のファイル名の拡張子を変更しても、ベース名は保持される。 
+	なお、セッションが異なっても短縮名は変化しない。 
+	</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

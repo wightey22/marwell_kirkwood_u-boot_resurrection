@@ -1,0 +1,19 @@
+<samba:parameter name="preload"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>auto services</synonym>
+<description>
+	<para>このパラメータは、
+	自動的にブラウズリスト上に追加したいサービスのリストを設定する。
+	このパラメータを利用しないと不可視になる
+	homes や printers サービスにとって有用である。</para>
+
+	<para> printcap ファイルにあるすべてのプリンタを指定したい場合は、
+	<smbconfoption name="load printers"/>
+	オプションを利用する方が簡単である。</para>
+</description>
+<value type="default"></value>
+<value type="example">fred lp colorlp</value>
+</samba:parameter>

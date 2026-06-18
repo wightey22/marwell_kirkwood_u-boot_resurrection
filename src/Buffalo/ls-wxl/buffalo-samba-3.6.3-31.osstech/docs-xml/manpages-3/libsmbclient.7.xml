@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="libsmbclient.7">
+
+<refmeta>
+	<refentrytitle>libsmbclient</refentrytitle>
+	<manvolnum>7</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">7</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>libsmbclient</refname>
+	<refpurpose>ネットワークブラウザのための拡張ライブラリであり、一般的なブラウジングの API を実装する。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+    <cmdsynopsis>
+    <para>
+    Browser URL:
+    <command moreinfo="none">smb://[[[domain:]user[:password@]]server[/share[/path[/file]]]] [?options]
+    </command>
+    </para>
+    </cmdsynopsis>
+</refsynopsisdiv>
+
+
+<refsect1>
+	<title>説明</title>
+
+	<para>
+	このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。
+	</para>
+
+	<para>
+	<command>libsmbclient</command>は、ローカルなUNIX/Linuxファイルを操作するために有効なたくさんの標準POSIX関数を使う
+        CIFS/SMBネットワークリソースを操作するためのアプリケーションを許可するライブラリツールセットである。これは、ブラウズ、
+         ファイルのオープン/クローズ、読み書き、アクセス権変更、ファイルの時刻変更、属性とACLの操作やその他などを許可する。もちろん、
+         この機能は一般的にブラウジングと呼ばれる機能のすべてを含む。
+	</para>
+
+	<para>
+	<command>libsmbclient</command> は、コマンド行からは直接使えないが、その代わりに、ファイルマネージャとブラウザのような
+        ツールの機能の拡張を提供する。このマニュアルページにはそのツールのための構成方法を説明するので、ユーザーはとても優れた機能を
+        持つユーティリティを得ることができる。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<para>
+	URLの意味は以下のとおり:
+	</para>
+
+	<variablelist>
+		<varlistentry>
+			<term>smb://</term>
+			<listitem><para>
+			ネットワーク中で有効なすべてのワークグループかドメインを表示する。動作はマイクロソフトのWindows
+			エクスプローラと一致する。
+			</para>
+
+			<para>
+			ワークグループ(とドメインも)のリストを位置付ける方法は、<literal>(context-&gt;options.browse_max_lmb_count)</literal>
+			コンテキスト変数の設定方法に依存して変わる。これは,これを賢明な値に設定する、ライブラリを呼び出すアプリケーションの
+			レスポンス性である。これはコンパイル時オプションである。この値はワークグループのリスト問い合わせのために
+			ローカルマスタブラウザの最大値を決める。それを確かにするために、存在するネットワーク上でリストは完全にされ、
+			すべてのマスタブラウザは問い合わせを受けなければならない。もしも、ネットワーク上に大量のワークグループがあると、
+			問い合わせ時間はとても大きくなる。小さなネットワーク(数個のワークグループ)のためには、この値を0に設定することを
+			推奨し、それはlibsmbclientにすべてのローカルマスタブラウザに問い合わせを行うようにさせる。たくさんのワーク
+			グループを持つ環境中では、より適切な設定は3のあたりである。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>smb://name/</term>
+			<listitem><para>
+			このコマンドは名前検索の実行をlibsmbclientにさせる。もしも、NAME&lt;1D&gt;かNAME&lt;1B&gt;
+			が存在するならば(ワークグループ名)、libsmbclientはワークグループ(またはドメイン)中のすべての
+			サーバをリストする。それ以外は、NAME&lt;20&gt;(マシン名)のための名前検索が実行され、サーバ上の
+			共有リソースのリストが表示される。
+			</para></listitem>
+		</varlistentry>
+	</variablelist>
+
+	<para>
+	libsmbclientがアプリケーションによって起動されたならば、ユーザのシェル環境中で指定された$HOME ディレクトリ
+	中にある、<filename>.smb</filename>と呼ばれるディレクトリを探す。次に、 <filename>smb.conf</filename> 
+	というファイルを探し、存在すれば、システムの<filename>/etc/samba/smb.conf</filename>ファイルを完全に
+	上書きする。もしも、その代わりに<filename>~/.smb/smb.conf.append</filename>というファイルをlibsmbclient
+	が見つけたならば、システムの<filename>/etc/samba/smb.conf</filename>ファイルを読み込み、次に、
+	<filename>~/.smb/smb.conf.append</filename>の内容を継ぎ足す。
+	</para>
+
+	<para>
+	<command>libsmbclient</command> は、 <literal>USER</literal>パラメータのためにユーザのシェル環境をチェックし、
+                   もしも<literal>user</literal>パラメータがURLに含まれていないならば、その値を使う。
+	</para>
+
+</refsect1>
+
+<refsect1>
+	<title>プログラマーズガイド</title>
+
+	<para>
+	将来の更新のためにこの場所をウォッチして欲しい。
+	</para>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>
+	このマニュアルページはSamba3.0スイートのために修正された。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+      Tridgell によって作られた。Samba は現在、Linux カーネルが開発されているような方法でのオープンソースプロジェクトである Samba Team によって開発されている。</para>
+
+	<para>
+	libsmbclient のマニュアルページは John H Terpstra によって書かれた。
+	</para>
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+
+	<para>Samba 3.0.23 - Samba 3.0.24 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+	<para>Samba 3.2.4 - 3.5.3 対応の翻訳は、
+	<itemizedlist>
+		<listitem><para>太田俊哉(ribbon@samba.gr.jp)</para></listitem>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+	によって行なわれた。</para>
+</refsect1>
+
+</refentry>

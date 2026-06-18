@@ -1,0 +1,16 @@
+<samba:parameter name="panic action"
+		 context="G"
+		 type="string"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>これは Samba 開発者のためのオプションで、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> か <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>	
+	がクラッシュした際に呼び出されるシステム上のコマンドを指定する。
+	これは通常問題が発生した事実を警告するのに使われる。</para>
+</description>
+<value type="default"></value>
+<value type="example">&quot;/bin/sleep 90000&quot;</value>
+</samba:parameter>

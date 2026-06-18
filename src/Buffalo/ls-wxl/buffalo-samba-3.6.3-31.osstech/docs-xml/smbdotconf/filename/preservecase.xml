@@ -1,0 +1,17 @@
+<samba:parameter name="preserve case"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para> クライアントから送信されてきた新しいファイル名中の大文字小文字をそのまま利用するか、
+	<smbconfoption name="default case"/> 
+        パラメータの設定を強制するかどうかを設定する。
+	</para>
+	
+	<para>この設定に関する詳細については、
+	<link linkend="NAMEMANGLINGSECT">名前の短縮</link> セクションを参照のこと。
+	</para>
+</description>
+
+<value type="default">yes</value>
+</samba:parameter>

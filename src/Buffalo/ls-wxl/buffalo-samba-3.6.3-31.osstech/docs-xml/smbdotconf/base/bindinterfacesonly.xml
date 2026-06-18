@@ -1,0 +1,68 @@
+<samba:parameter name="bind interfaces only"
+				type="boolean"
+                 context="G"
+                 advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このグローバルパラメータにより、
+    Samba 管理者が SMB 要求を受け付けるインタフェースを制限できるようになる。
+    この影響は、ファイルサービス <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> とネームサービス <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> とで多少異なる。</para>
+
+    <para> このパラメータを指定すると、ネームサービス <command moreinfo="none">nmbd</command> は、
+    <smbconfoption name="interfaces"/>
+    パラメータで指定されたインタフェースのポート 137 と 138 にバインドする。
+    <command moreinfo="none">nmbd</command> は、ブロードキャストメッセージを受信するために、
+    「すべてのアドレス」となるインタフェース (0.0.0.0) のポート 137 と
+    138 にもバインドする。このオプションが設定されていない場合、
+    <command moreinfo="none">nmbd</command> は、これらすべてのソケットに対してネームサービスを提供する。
+    <smbconfoption name="bind interfaces only"/> が設定されていると、
+    <command moreinfo="none">nmbd</command> はブロードキャストパケットの送信元アドレスを確認して、
+    <smbconfoption name="interfaces"/>
+    パラメータで指定されたインタフェースのブロードキャストアドレスを経由しないパケットを破棄する。
+    他のソケットでユニキャストパケットを受信した場合、 <command moreinfo="none">nmbd</command> は、
+    <smbconfoption name="interfaces"/>
+    パラメータで指定されたインタフェースを経由しないパケットを送出したマシンに対してはネームサービスを拒否する。
+    もっとも、IP ソースアドレスを偽造 (spoofing) することで、この単純なチェックは破られてしまう。
+    そのため、このパラメータを <command moreinfo="none">nmbd</command>
+    のセキュリティ機能と位置付けて本格的に利用すべきではない。</para>
+
+    <para>ファイルサービスの場合、このパラメータを指定すると、
+    <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が <smbconfoption name="interfaces"/> 
+    パラメータで指定されたインタフェースにのみバインドするようになる。
+    これにより、 <command moreinfo="none">smbd</command> がサービスを提供するネットワークを指定したインタフェース経由のものに制限することが可能である。
+    PPP などの間欠的なネットワークインタフェースや、非ブロードキャストなネットワークインタフェースにサービスを提供している場合は、
+    これらの非永続的なインタフェースをうまく処理できないため、このパラメータを使わないこと。</para>
+
+    <para><smbconfoption name="bind interfaces only"/> が設定されているが、
+    <emphasis>127.0.0.1</emphasis> のネットワークアドレスが
+    <smbconfoption name="interfaces"/> パラメータに指定されていない場合は、
+    以下に示すような理由のため、<citerefentry><refentrytitle>smbpasswd</refentrytitle> <manvolnum>8</manvolnum></citerefentry> 
+    や <citerefentry><refentrytitle>swat</refentrytitle> <manvolnum>8</manvolnum></citerefentry> などが期待したように動作しないことがある。</para>
+
+    <para> ユーザの SMB パスワードを変更するために、 <command moreinfo="none">smbpasswd</command>
+    はデフォルトで <emphasis>localhost - 127.0.0.1</emphasis> のアドレスに 
+    SMB クライアントとして接続を行ない、パスワード変更要求を送信する。
+    <smbconfoption name="bind interfaces only"/> が設定されているにも関わらず、
+    <emphasis>127.0.0.1</emphasis> のネットワークアドレスが
+    <smbconfoption name="interfaces"/> パラメータに含まれていなかった場合、
+    <command moreinfo="none">smbpasswd</command> のデフォルトの状態では接続に失敗してしまう。
+    <command moreinfo="none">smbpasswd</command> については、
+    <citerefentry><refentrytitle>smbpasswd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> に <parameter moreinfo="none">-r <replaceable>remote machine</replaceable></parameter> パラメータを指定して、
+    <replaceable>remote machine</replaceable> にローカルホストのプライマリインタフェースのIPアドレスを設定することにより、
+    強制的にローカルホストのプライマリIPインタフェースを利用させることも可能である。</para>
+
+    <para> <command moreinfo="none">swat</command> のステータス(status)ページは、
+    <command moreinfo="none">smbd</command> と <command moreinfo="none">nmbd</command> が実行されているかを確認するために、
+    <emphasis>127.0.0.1</emphasis> から接続を行なおうとする。
+    そのため、<emphasis>127.0.0.1</emphasis>を追加していない場合、<command moreinfo="none">
+    smbd</command> と <command moreinfo="none">nmbd</command> は実際には動作している場合でも、
+    常に「not running」と表示される。更に、<command moreinfo="none">
+    swat</command> から <command moreinfo="none">smbd</command>
+    と <command moreinfo="none">nmbd</command> の開始/停止/再起動を行なうこともできなくなる。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

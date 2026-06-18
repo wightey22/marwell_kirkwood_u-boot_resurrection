@@ -1,0 +1,49 @@
+<samba:parameter name="printcap name"
+	context="S"
+	type="string"
+		 print="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>printcap</synonym>
+<description>
+    <para>このパラメータは、
+	コンパイル時に設定されるデフォルトでサーバが用いる printcap ファイル名
+	(通常 <filename moreinfo="none">/etc/printcap</filename>) を上書きにするために使われる。
+	このパラメータを設定すべき状況については、前述した
+	<link linkend="PRINTERSSECT">[printers]</link> セクションに関する説明を参照のこと。</para>
+
+	<para>CUPS 印刷インタフェースを利用する際は、<command moreinfo="none">printcap name = cups
+	</command> という設定を行なうこと。これにより [global] セクションの
+        <smbconfoption name="printing">cups</smbconfoption> パラメータにより補完される。
+	 <command moreinfo="none">printcap name = cups</command> により、
+	CUPS の設定ファイルによって指定された、
+	CUPS によって作成される&quot;ダミー&quot;の printcap が用いられるようになる。 
+	</para>
+
+	<para> <command moreinfo="none">lpstat</command> を利用することで
+	利用可能なプリンタの一覧を取得できる System V のシステムでは、
+	<command moreinfo="none">printcap name = lpstat</command>
+	と設定することで、利用可能なプリンタの一覧を自動的に取得できる。
+	(ほとんどの System V ベースのシステムが該当する)では、これが既定値である。
+	これらのシステムで <parameter moreinfo="none">printcap name</parameter> に
+	<command moreinfo="none">lpstat</command> が設定されると、
+	Samba は <command moreinfo="none">lpstat -v</command> を実行し、その出力からプリンタ一覧を取得する。</para>
+
+	<para> 最低限の printcap ファイルは下記のようなものである:
+<programlisting format="linespecific">
+print1|My Printer 1
+print2|My Printer 2
+print3|My Printer 3
+print4|My Printer 4
+print5|My Printer 5
+</programlisting>
+	'|' によって、プリンタの別名が区切られる。
+	ただし、2 番目の別名中に空白があると、
+	Samba はそれをプリンタのコメントであると判断する。</para>
+
+	<note><para>AIXにおけるデフォルトの printcap ファイルの名前は、
+	<filename moreinfo="none">/etc/qconfig</filename>である。printcap ファイルの名前が 
+	<filename moreinfo="none">qconfig</filename> の場合、Samba はファイルが AIXの <filename moreinfo="none">qconfig</filename>形式であると仮定する。</para></note>
+</description>
+<value type="default">/etc/printcap</value>
+<value type="example">/etc/myprintcap</value>
+</samba:parameter>

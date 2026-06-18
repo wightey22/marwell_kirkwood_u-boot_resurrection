@@ -1,0 +1,49 @@
+.\"     Title: groups
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23.11.2008
+.\"    Manual: Dienstprogramme für Benutzer
+.\"    Source: Dienstprogramme für Benutzer
+.\"
+.TH "GROUPS" "1" "23.11.2008" "Dienstprogramme für Benutzer" "Dienstprogramme für Benutzer"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+groups \- zeigt die aktuell verwendeten Gruppennamen an
+.SH "SYNOPSIS"
+.HP 7
+\fBgroups\fR [\fIBenutzer\fR]
+.SH "BESCHREIBUNG"
+.PP
+Der Befehl
+\fBgroups\fR
+zeigt die momentan verwendeten Gruppennamen oder IDs an\&. Wenn einem Wert kein Eintrag in
+\fI/etc/group\fR
+entspricht, wird die Gruppennummer ausgegeben\&. Mit der Option
+\fIuser\fR
+werden nur die Gruppen des bezeichneten
+\fIBenutzers\fR
+angezeigt\&.
+.SH "ANMERKUNGEN"
+.PP
+Auf Systemen, die keine simultanen Gruppen unterstützen, werden die Informationen aus
+\fI/etc/group\fR
+ausgegeben\&. Wenn der Benutzer seine Gruppen\-ID ändern will, muss er
+\fBnewgrp\fR
+oder
+\fBsg\fR
+verwenden\&.
+.SH "DATEIEN"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informationen zu den Gruppenkonten\&.
+.RE
+.SH "SIEHE AUCH"
+.PP
+\fBnewgrp\fR(1),
+\fBgetgid\fR(2),
+\fBgetgroups\fR(2),
+\fBgetuid\fR(2)\&.

@@ -1,0 +1,26 @@
+<samba:parameter name="kernel oplocks"
+				 type="boolean"
+                 context="G"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>カーネルベースの
+	<smbconfoption name="oplocks"/>
+	をサポートしているUNIX(現在はIRIXとLinux 2.4カーネルのみ)の場合、
+	このパラメータにより oplock の利用を制御できる。</para>
+
+	<para>カーネル oplocks のサポートにより、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> が oplock を行ったファイルに対して、
+	ローカルな UNIX プロセスや NFS 経由でのアクセスがあった際に、
+	Sambaが <parameter moreinfo="none">oplocks</parameter> を破棄することが可能となる。
+	これにより、 SMB/CIFS と NFS やローカルファイルアクセスとの間の完全な一貫性が確保される
+	(これは<emphasis>非常に</emphasis>素晴らしいことである :-)。</para>
+
+	<para>このパラメータの既定値は、 <constant>on</constant> であるが、
+	カーネルがこの機能をサポートしていないシステムでは、自動的に無効にされる。
+	このパラメータを変更する必要はないであろう。</para>
+</description>
+<related>oplocks</related>
+<related>level2 oplocks</related>
+<value type="default">yes</value>
+</samba:parameter>

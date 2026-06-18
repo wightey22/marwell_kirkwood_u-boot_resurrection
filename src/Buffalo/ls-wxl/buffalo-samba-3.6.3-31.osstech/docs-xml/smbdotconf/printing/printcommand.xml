@@ -1,0 +1,86 @@
+<samba:parameter name="print command"
+                 context="S"
+				 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>印刷ジョブが、スプールファイルの書き込みを完了した後で、
+	ここで指定したコマンドが <command moreinfo="none">system()</command> 
+	関数経由でスプールファイルを処理するために、利用される。
+	通常、指定したコマンドはスプールファイルをホストの印刷サブシステムに送信するが、
+	そうしなければならないということはない。 
+	サーバはスプールファイルを削除しないので、
+	指定したコマンドが処理完了後にスプールファイルを削除しなければならない。
+	さもなければ、古いスプールファイルを手動で削除する必要がある。</para>
+		
+	<para> print command は、単純なテキスト文字列である。
+	これは、以下のマクロが置換される他はそのまま利用される。</para>
+
+	<para>%s, %f - スプールファイル名へのパス
+	</para>
+
+	<para>%p - プリンタ名
+	</para>
+
+	<para>%J - the job 
+	クライアントから送信されたジョブ名</para>
+
+	<para>%c - スプールされたジョブのうち、
+	すでに印刷されたページ数(検知可能な場合)</para>
+
+	<para>%z - スプールされた印刷ジョブのサイズ
+	(バイト)</para>
+
+	<para> print command には、<emphasis>最低限</emphasis> <parameter moreinfo="none">%s</parameter> もしくは <parameter moreinfo="none">%f</parameter> の記述が必要である。
+	<parameter moreinfo="none">%p</parameter> については必須ではない。
+	ジョブの実行時にプリンタ名が指定されていない場合、
+	<parameter moreinfo="none">%p</parameter> は単に print command から無視される。</para>
+
+	<para> [global] セクション中で指定された print command は、
+	独自の print command が設定されていない各印刷サービスに適用される。
+	</para>
+
+	<para> 印刷サービスに print command の定義がなく、
+	グローバルな print command の定義もない場合、
+	スプールファイルは作成されるが処理されず、(これが最も重要だが)削除されない。</para>
+
+	<para> UNIX プラットフォームによっては
+	<constant>nobody</constant> アカウントを用いた印刷が失敗する場合があるので注意して欲しい。
+	この場合、印刷の実行が可能な別のゲストアカウントを作成し、
+	[global] セクション中の <smbconfoption name="guest account"/> に設定すること。</para>
+
+	<para> シェルで解析できる限りの非常に複雑な print command を記述することが可能である。
+	以下の例では印刷ジョブを記録し、ファイルを印刷してからそれを削除している。
+	';' はシェルスクリプトにおいて、
+	通常コマンド間のセパレータとして用いられることに注意。</para>
+
+    <para><command moreinfo="none">print command = echo Printing %s &gt;&gt; 
+    /tmp/print.log; lpr -P %p %s; rm %s</command></para>
+
+	<para> システムでファイルを印刷する一般的な方法によっては、
+	このコマンドを適宜変更する必要があるかもしれない。
+	パラメータの既定値は、<smbconfoption name="printing"/>
+    パラメータの設定に応じて変化する。</para>
+
+	<para>デフォルト: <command moreinfo="none">printing = BSD, AIX, QNX, LPRNG, 
+	PLPの場合:</command></para>
+	<para><command moreinfo="none">print command = lpr -r -P%p %s</command></para>
+
+	<para><command moreinfo="none">printing = SYSV, HPUXの場合:</command></para>
+	<para><command moreinfo="none">print command = lp -c -d%p %s; rm %s</command></para>
+
+	<para><command moreinfo="none">printing = SOFTQの場合:</command></para>
+	<para><command moreinfo="none">print command = lp -d%p -s %s; rm %s</command></para>
+
+	<para>printing = CUPS の場合:   
+	Samba が libcups を利用してコンパイルされた場合、
+    <smbconfoption name="printcap">cups</smbconfoption> 
+	は、ジョブの送信などに CUPS API を利用する。
+	それ以外の場合は、<command moreinfo="none">lp -c -d%p -oraw; rm %s</command> のように、
+	System V 系の印刷用コマンドに -oraw オプションをつけたものに対応づけられる。
+	Samba が libcups を利用してコンパイルされ、
+	<command moreinfo="none">printing = cups</command> の設定が行なわれた場合、
+	手動で設定された print コマンドは無視される。</para>
+</description>
+<value type="example">/usr/local/samba/bin/myprintscript %p %s</value>
+</samba:parameter>

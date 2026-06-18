@@ -1,0 +1,12 @@
+<samba:parameter name="available"
+	         context="S"
+		 basic="1" advanced="1" print="1"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータにより、サービスを「無効」とすることが可能である。
+	<parameter moreinfo="none">available = no</parameter> の場合、
+	サービスに対する接続は<emphasis>すべて</emphasis>失敗する。これらの失敗は記録される。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

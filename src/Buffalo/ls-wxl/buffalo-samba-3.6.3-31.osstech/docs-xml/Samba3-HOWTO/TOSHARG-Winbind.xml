@@ -1,0 +1,1507 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="winbind">
+
+<chapterinfo>
+	<author>
+		<firstname>Tim</firstname><surname>Potter</surname>
+		<affiliation>
+			<orgname>Samba Team</orgname>
+			<address><email>tpot@linuxcare.com.au</email></address>
+		</affiliation>
+	</author>
+	&author.tridge;
+	<author>
+		<firstname>Naag</firstname><surname>Mummaneni</surname>
+		<affiliation>
+			<address><email>getnag@rediffmail.com</email></address>
+		</affiliation>
+		<contrib>Notes for Solaris</contrib>
+	</author>
+	<author>
+		<firstname>John</firstname><surname>Trostel</surname>
+		<affiliation>
+			<orgname>SNAP</orgname>
+			<address><email>jtrostel@snapserver.com</email></address>
+		</affiliation>
+	</author>
+	&author.jelmer;
+	&author.jht;
+	<pubdate>June 15, 2005</pubdate>
+</chapterinfo>
+
+<title>Winbind: ドメインアカウントの使用</title>
+
+<sect1>
+	<title>機能と利便性</title>
+
+	<para>
+<indexterm><primary>聖杯</primary></indexterm>
+<indexterm><primary>混成のコンピューティング</primary></indexterm>
+	UNIXとMicrosoft Windows NTを統合化されたログオンで統合することは、長い間
+	異機種間コンピューティング環境において<quote>聖杯</quote>と考えられてきた。
+	</para>
+
+	<para>
+<indexterm><primary>相互運用性</primary></indexterm>
+<indexterm><primary>ドメインユーザ</primary></indexterm>
+<indexterm><primary>ドメイングループ</primary></indexterm>
+<indexterm><primary>グループの所有者</primary></indexterm>
+	もう一つ、この機能がなければ、UNIXとMicrosoft Windowsネットワークの相互運用性が
+	著しく限定されるというものがある。UNIXシステム全般に渡ってファイル共有を
+	可能にし、ドメインユーザとグループの所有者を整合性のある形で割り当てられる
+	機構がなければならない。
+	</para>
+
+	<para>
+<indexterm><primary>Pluggable Authentication Modules</primary><see>PAM</see></indexterm>
+<indexterm><primary>winbind</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>RPC</primary></indexterm>
+	<emphasis>winbind</emphasis>は、Sambaシステム中で、統一されたログオンの
+	問題を解決するコンポーネントである。Winbind は、Microsoft RPC コール、
+	Pluggable Authentication Modules (PAM)、Name Service SwitchのUNIXの実装を
+	使用して、Windows NTのドメインユーザがUNIXマシン上のUNIXユーザとして動作
+	できるようにする。この章は、Winbindシステムについて、その機能、設定の仕方、
+	及び内部的にどのように動いているのかを説明する。
+	</para>
+
+	<para>
+	Winbind は、三つの別々の機能を提供する。
+	</para>
+
+	<itemizedlist>
+		<listitem><para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>NT4 ドメイン</primary></indexterm>
+		ユーザの本人確認情報の認証(PAM経由)。これは、Windows NT4ドメインか
+		(Sambaドメインも含む)Active Directoryドメインからユーザとグループ
+		アカウントを使ってUNIX/Linuxシステムにログオンすることを可能にする。
+		</para></listitem>
+
+		<listitem><para>
+<indexterm><primary>IDの解決</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+		IDの解決(NSS経由)。これは、winbindが使われなかった時の既定値である。
+		</para></listitem>
+
+		<listitem><para>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>idmap uid</primary></indexterm>
+<indexterm><primary>idmap gid</primary></indexterm>
+<indexterm><primary>idmap backend</primary></indexterm>
+		Winbindは、winbind_idmap.tdbと呼ばれるデータベースを維持し、その中に、
+		UNIX UID/GIDとNT SID間のマッピング情報を格納する。このマッピングは、
+		ローカルUID/GIDを持たないユーザまたはグループにのみ使用する。
+		idmap uid/gid の範囲から割り当てられ、NTのSIDにマッピングされた
+		UID/GIDが格納される。<parameter>idmap backend</parameter>が
+		<constant>ldap:ldap://hostname[:389]</constant>に指定されている場合、
+		ローカルのマッピングを使用する代わりに、Winbindは、この情報をLDAP
+		データベースから取得する。
+		</para></listitem>
+	</itemizedlist>
+
+	<note><para>
+	<indexterm><primary>winbindd</primary></indexterm>
+	<indexterm><primary>sambaの起動</primary><secondary>winbindd</secondary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>/etc/group</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+	もしも<command>winbindd</command>が実行中ではないとき、smbd
+	(<command>winbindd</command>を呼び出す方)は、代替手段として純粋にローカルな
+	<filename>/etc/passwd</filename>と<filename>/etc/group</filename>からの情報を
+	使用することにし、動的マッピングは使用しない。OSでNSSが有効になっている場合、
+	ユーザとグループ情報の解決はNSS経由で行われる。
+	</para></note>
+
+
+	<figure id="winbind_idmap">
+	<title>Winbind Idmap</title>
+	<imagefile scale="45">idmap_winbind_no_loop</imagefile>
+	</figure>
+
+</sect1>
+
+
+<sect1>
+	<title>はじめに</title>
+
+	<para>UNIXとMicrosoft Windows NTでは、ユーザ及びグループ情報の見せ方のモデルも、
+	それを実行するために使用している技術も異なるのは周知の事実である。これが、
+	二つのシステムを統合して、満足の行く運用をすることを困難にしてきた。
+	</para>
+
+	<para>
+<indexterm><primary>同期の問題</primary></indexterm>
+<indexterm><primary>パスワード</primary></indexterm>
+	これに対してよく行われる解決策は、UNIXとWindowsの両システム上に全く同名の
+	ユーザアカウントを作成し、Sambaを使用して、両システム間のファイルサービスと
+	印刷サービスを提供するというやり方であった。ただし、この解決策は、双方の
+	マシンにユーザを追加したり削除したりする作業が面倒でパスワードも2セット
+	持たなければならず、その両方がUNIXとWindowsシステム間の同期のずれの問題に
+	つながり、ユーザの混乱を招くという、完璧には程遠いものである。</para>
+
+	<para>UNIX マシンのための統一されたログオンという問題を、次のように三つの
+	構成要素に分けることができる:</para>
+
+	<itemizedlist>
+		<listitem><para>Windows NTのユーザ及びグループ情報を取得する。
+		</para></listitem>
+
+		<listitem><para>Windows NT ユーザを認証する。
+		</para></listitem>
+
+		<listitem><para>Windows NT ユーザのためにパスワードを変更する。
+		</para></listitem>
+	</itemizedlist>
+
+
+	<para>
+<indexterm><primary>統一されたログオン</primary></indexterm>
+<indexterm><primary>情報の複製</primary></indexterm>
+	理想的には、統一されたログオンという問題の解決方法は、UNIXマシン上に情報を複製する
+	ことなく、上記の問題を全て満足させ、しかも、 ユーザやグループ情報をどちらの
+	システムで維持しても、システム管理者の仕事を増やさないというものであってほしい。
+	Winbind システムは、統一されたログオンという問題の三つの構成要素を簡単に優雅に
+	こなすソリューションを提供するものである。
+	problem.</para>
+</sect1>
+
+
+<sect1>
+	<title>Winbindが提供するもの</title>
+
+	<para>
+<indexterm><primary>Windowsアカウント管理</primary></indexterm>
+<indexterm><primary>UNIXユーザ</primary></indexterm>
+<indexterm><primary>UNIXグループ</primary></indexterm>
+<indexterm><primary>NTドメイン</primary></indexterm>
+	Winbindは、UNIXとWindows NTのアカウント管理を、UNIXマシンがNTドメインの完全な
+	メンバになることを可能にすることによって統一する。一旦これを行えば、UNIX
+	マシンは、NTユーザやグループをあたかも<quote>ネイティブな</quote>UNIXユーザや
+	グループであるかのように見ることができるようなり、UNIXのみの環境でNIS+を使用
+	するのとほぼ同様に、NTドメインを使用することができるようになる。</para>
+
+	<para>
+<indexterm><primary>Winbind hooks</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>リダイレクション</primary></indexterm>
+	その結果、UNIX マシン上のプログラムのいずれかが、OSにユーザ名やグループ名の検索を
+	依頼すると、指定されたドメインを担当する NT のドメインコントローラにその検索を
+	依頼することにより、問い合わせは解決する。Winbind は低レベル(Cライブラリ内の
+	NSS名前解決モジュール経由)でOSに繋がるので、NT ドメインコントローラへの上記の
+	リダイレクションは、完全に透過である。</para>
+
+	<para>
+<indexterm><primary>ユーザとグループ</primary></indexterm>
+<indexterm><primary>ドメインユーザ</primary></indexterm>
+	UNIXマシンのユーザは、<quote>ネイティブの</quote>UNIX名を使用するのと同様に、
+	NTユーザー名とグループ名を使用することができる。ユーザはファイルをchownして、
+	NTドメインユーザの所有に変えることもでき、UNIXマシンにログインしてドメイン
+	ユーザとしてUNIXのX Window Systemセッションを実行することもできる。</para>
+
+	<para>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+	Winbindが使用されていることが明らかにわかるところは、ユーザ及びグループの名前が
+	<constant>DOMAIN\user</constant>と<constant>DOMAIN\group</constant>の形を取ると
+	いう点だけである。これは、Winbind が、信頼関係のあるドメインに参照するの特定の
+	検索について、ドメインコントローラへのリダイレクト決めるために必要である。</para>
+
+	<para>
+<indexterm><primary>PAMが有効</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+	さらに、Winbind は、PAMシステムのhookとしての認証サービスを提供し、NTドメインを
+	経由して、PAM対応のあらゆるアプリケーションに対して認証を行う。この機能は、一カ所
+	(ドメインコントローラ上)に全てのパスワードが格納されるため、システム間の
+	パスワード同期の問題を解消する。</para>
+
+	<sect2>
+		<title>対象となるユーザ</title>
+
+		<para>
+<indexterm><primary>基盤</primary></indexterm>
+		NTベースのドメイン基盤がすでにあり、それにUNIX ワークステーションか
+		サーバを組み入れたいという要望のある組織がWinbindの対象となる。Winbind
+		より、このような組織は別個のアカウント基盤を管理する必要なく、UNIX
+		ワークステーションを展開することができる。これは、NTベースの組織にUNIX
+		ワークステーションを展開するための間接費を大幅に軽減する。</para>
+
+		<para>
+<indexterm><primary>アプライアンス</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+		Winbind のもう一つの興味深い使用方法は、UNIXベースの装置の中心部分に
+		使用することである。Microsoftベースのネットワークにファイルサービスと
+		印刷サービスを提供する装置は、Winbindを使用することで、ドメインに
+		シームレスに統合される。</para>
+	</sect2>
+
+	<sect2>
+	<title>外部のSIDの取り扱い</title>
+
+	<para>
+<indexterm><primary>foreign SID</primary></indexterm>
+	<emphasis>外部のSID(foreign SID)</emphasis>という単語は、特定の環境に依存しない
+	反応としてしばしば見受けられる。以下はSambaメーリングリスト上で起きたやりとりを
+	書化したものである。これは、winbindの使用に関連してしばしば現れる混乱の良い例で
+	ある。
+	</para>
+
+	<para>
+<indexterm><primary>ローカルドメイン</primary></indexterm>
+	事実:Winbindはローカルドメインの一部でないワークステーションを使うユーザを
+	扱う必要がある。
+	</para>
+
+	<para>
+<indexterm><primary>PDC</primary></indexterm>
+	対応:<quote>なぜ?私はwinbindなしで長い間ドメインに所属していないワークステーション
+	をSambaとともに使っている。winbindは他のSamba/Windows PDCによって制御される
+	ドメイン中のメンバサーバとしてのSamba用ではないかと思う。</quote>
+	</para>
+
+	<para>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>foreign user</primary></indexterm>
+	もしも、SambaサーバがローカルSambaドメイン以外のドメインからアクセスされる
+	か、もしも、ローカルドメインメンバでないマシンからアクセスされる場合、winbindは
+	Sambaドメインのメンバであるユーザから分離された外部のユーザの識別情報を保持する
+	めの割り当てられた領域からUIDとGIDを割り当てる。
+	</para>
+
+	<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>ドメイン非メンバ</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+	これは、winbindは、ドメインメンバとドメイン非メンバのワークステーションがある、
+	単一のSambaPDCがローカルネットワーク上にある場合に甚だしく有用である。もしも、
+	winbindが使われないと、ドメインのメンバでないWindowsワークステーション上の
+	georgeというユーザはPDCとして動作しているSambaサーバのアカウントデータベース
+	中のgeorgeと呼ばれるユーザのファイルにアクセスできる。winbindが使われると、
+	既定値の状態は、ローカルユーザのgeorgeがDOMAIN\georgeというアカウントとして
+	扱われ、外部(ドメインのメンバでない)アカウントは、おのおの別のSIDを持つために
+	MACHINE\georgeとして扱われる。
+	</para>
+
+	</sect2>
+</sect1>
+
+
+
+<sect1>
+	<title>Winbindの動き方</title>
+
+	<para>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>UNIXドメインソケット</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+	Winbindシステムは、クライアント/サーバアーキテクチャを想定し設計されたもので
+	ある。長時間走り続ける<command>winbindd</command>デーモンがUNIXドメイン
+	ソケット上でリクエストが来るのを待つ。これらのリクエストは、NSS及びPAM
+	クライアントにより生成され、順番に処理される。</para>
+
+	<para>Winbind を実装するのに使用されている技術を以下に詳述する。</para>
+
+	<sect2>
+		<title>Microsoft Remote Procedure Calls</title>
+
+		<para>
+<indexterm><primary>Microsoft Remote Procedure Call</primary><see>MSRPC</see></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>リモート管理</primary></indexterm>
+<indexterm><primary>ユーザ認証</primary></indexterm>
+<indexterm><primary>印刷スプーリング</primary></indexterm>
+		過去数年間、Sambaチームの多くのメンバが、Microsoftリモートプロシージャ
+		コール(MSRPC)システムの各側面を解明しようと努力してきた。このシステムは、
+		リモート管理、ユーザ認証、印刷スプーリングを含むWindows NTマシン間の
+		ネットワーク関連操作の大半に使用されている。当初、Sambaへのプライマリ
+		ドメインコントローラ(PDC)機能の実装を支援するために 着手した作業で
+		あったが、結果としてそれ以外の目的に使用できる一連のコードを得ることが
+		できた。
+		</para>
+
+		<para>
+<indexterm><primary>MSRPC</primary></indexterm>
+<indexterm><primary>ドメインユーザの列挙</primary></indexterm>
+<indexterm><primary>ドメイングループの列挙</primary></indexterm>
+		winbind はドメインユーザとグループを列挙し、個々のユーザやグループの詳細
+		情報を取得するために、各種のMSRPC コールを使用する。他のMSRPC コールは、
+		NTドメインユーザを認証し、ユーザのパスワードを変更するために使用できる。
+		Windows PDCに、直接ユーザ及びグループ情報を問い合わせることで、Winbindは、
+		NTのアカウント情報をUNIXユーザ名とグループ名にマッピングする。
+		</para>
+	</sect2>
+
+	<sect2>
+		<title>Microsoft Active Directoryサービス</title>
+
+		<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>Kerberos</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>ネイティブモード</primary></indexterm>
+		2001年後半より、SambaはNT4のRPC サービスではなく、<quote>ネイティブモード</quote>
+		のプロトコルを使用して、Microsoft Windows 2000とやり取りする機能を持つ
+		ようになった。LDAP及びKerberosを使用し、winbindを走らせている ドメイン
+		メンバは、Windows 200xクライアントの世界で行われるのと全く同じように、
+		ユーザとグループを列挙でき、そうすることによってより効率的で効果的な
+		winbind の実装を提供する。
+		</para>
+	</sect2>
+
+	<sect2>
+		<title>Name Service Switch</title>
+
+		<para>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>ネットワークに繋がったワークステーション</primary></indexterm>
+<indexterm><primary>NIS</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+		Name Service SwitchまたはNSSは、多くのUNIX OSに存在する機能である。
+		これは、ホスト名、メールの別名、ユーザ情報などのシステム情報を、異なる
+		ソースから解決することを可能にする。例えば、スタンドアロンのUNIXワーク
+		ステーションは、ローカルのファイルシステムに格納されている一連のフラット
+		ファイルからシステム情報を解決できる。ネットワークに繋がったワーク
+		ステーションは、最初にローカルファイルからシステム情報を解決しようとし、
+		次にユーザ情報についてNISデータベースに問い合わせるか、あるいは、ホスト名
+		情報についてDNS サーバに聞くことができる。</para>
+
+		<para>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>MSRPC</primary></indexterm>
+<indexterm><primary>信頼されたドメイン</primary></indexterm>
+<indexterm><primary>ローカルユーザ</primary></indexterm>
+<indexterm><primary>ローカルグループ</primary></indexterm>
+		UNIXユーザ名とグループの解決の際、NSSのAPIは、winbind が自分をシステム
+		情報のソースとして見せることを可能にする。winbindは、このインタフェースと
+		MSRPCコールを使用して、Windows NTサーバから取得した情報を使用して、
+		アカウント列挙の新しいソースを提供する。標準のUNIXライブラリコールを
+		利用して、winbind を走らせているUNIXマシン上でユーザとグループを列挙させ、
+		NTドメインのみならず、信頼関係のあるいずれのドメインでもその全ユーザと
+		グループを、あたかも、ローカルユーザやグループのように見ることができる。
+		</para>
+
+		<para>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+<indexterm><primary>passwd</primary></indexterm>
+		NSSの基本制御ファイルは<filename>/etc/nsswitch.conf</filename>である。
+		UNIXアプリケーションが検索を行うと、Cライブラリは要求されたサービス
+		タイプに一致する列を<filename>/etc/nsswitch.conf</filename>の中で探す。
+		例えば、ユーザ名またはグループ名の検索の場合、<quote>passwd</quote>の
+		サービスタイプが使用される。設定の中のこの列が、そのサービスのどの
+		実装が、どういう順番で試行されるべきか指定している。もし、passwdの
+		設定列が以下のようになっている場合:
+<screen>
+passwd: files example
+</screen>
+<indexterm><primary>/lib/libnss_files.so</primary></indexterm>
+<indexterm><primary>/lib/libnss_example.so</primary></indexterm>
+<indexterm><primary>resolver functions</primary></indexterm>
+		Cライブラリは、最初に<filename>/lib/libnss_files.so</filename>と呼ばれる
+		モジュールをロードし、次に<filename>/lib/libnss_example.so</filename>
+		モジュールをロードする。Cライブラリはこれらのモジュールを順番に動的
+		ロードし、モジュール内の解決機能を呼んでリクエストを解決しようとする。
+		要求が解決されると、Cライブラリ は、その結果をアプリケーションに返す。
+		</para>
+
+		<para>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>libnss_winbind.so</primary></indexterm>
+<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+		このNSSインタフェースは、OSへのフックのための、Winbindへの簡単なしくみを
+		提供する。必要な手続きは、<filename>/lib/</filename>の中に
+		<filename>libnss_winbind.so</filename>を書き、次に適切な場所で
+		 <filename>/etc/nsswitch.conf</filename>に<quote>winbind</quote>を追加
+		するだけである。これで、Cライブラリは、Winbindを呼んでユーザ名や
+		グループ名を解決できるようになる。
+		</para>
+	</sect2>
+
+	<sect2>
+		<title>Pluggable Authentication Modules</title>
+
+		<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>認証方法</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>NISデータベース</primary></indexterm>
+		PAMは、認証と認証技術を抽象化するものである。PAMモジュールを使用すると、
+		異なるシステムアプリケーション用にそれぞれ異なる認証方法を指定でき、
+		しかも、これらのアプリーケーションを再コンパイルする必要はない。
+		PAM はまた、特別なポリシーを認証に実装するためにも有用である。例えば、
+		システム管理者は、ローカルなパスワードファイルに格納されたユーザからは
+		コンソールログインのみを許可し、NISデータベースから解決されるユーザに
+		ついては、ネットワーク経由のログインを許可することができる。
+		</para>
+
+		<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>認証管理</primary></indexterm>
+<indexterm><primary>パスワード管理</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+		Winbind は、認証管理とパスワード管理のPAMインタフェースを使用して、
+		Windows NTユーザをUNIXシステムに統合する。これにより、 Windows NT
+		ユーザはUNIXマシンにログインでき、適切なPDCの認証を受けることが
+		できるようになる。このようなユーザはパスワードの変更もできる上、
+		その変更内容をPDCに直に反映させることができる。
+		</para>
+
+		<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>/etc/pam.d/</primary></indexterm>
+<indexterm><primary>pam_winbind.so</primary></indexterm>
+<indexterm><primary>/lib/security/</primary></indexterm>
+		PAMは、認証を必要とするサービスごとに、<filename>/etc/pam.d/</filename>の
+		ディレクトリに管理ファイルを設けて設定する。アプリケーションが認証要求を
+		出すと、Cライブラリ内のPAMコードが、認証を行うために、どのモジュールを
+		どの順番でロードするべきかを決定するためにこの管理ファイルを検索する。
+		このインタフェースにより、Winbindに新しい認証サービスを追加することが
+		簡単になる。必要な手順は、<filename>/lib/security/</filename>に
+		<filename>pam_winbind.so</filename>モジュールをコピーすることと、
+		Winbind 経由の認証を可能にするために、関連するサービスのPAM管理ファイルを
+		更新することである。詳細は、
+		<link linkend="pam">PAMベースの分散型認証</link>のPAMの説明を参照のこと。
+		</para>
+	</sect2>
+
+	<sect2>
+		<title>ユーザとグループIDの割り当て</title>
+
+		<para>
+<indexterm><primary>RID</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>UNIX ID</primary></indexterm>
+		Windows NT/200xでユーザまたはグループが作成されると、数字で構成される
+		相対ID(RID)を割り当てられる。これは、UNIXとは幾分異なる。UNIXでは、
+		ユーザIDに使用される数字の範囲と、グループIDに使用される数字の範囲が
+		別々になっている。RIDをUNIXのIDに変換する、またはその逆を行うのが
+		Winbindの仕事である。Winbindを設定する際、UNIXユーザIDのスペースの
+		一部とUNIX グループIDのスペースの一部を、Windows NTのユーザと
+		グループを格納する場所である。Windows NTユーザが最初に解決されるとき、
+		上記の範囲の中から次の空き番号をUNIX上のIDとして割り当てる。この
+		同じプロセスがWindows NTグループに対しても適用される。こうして一定の
+		時間が経つと、全てのWindows NTユーザとグループはWinbindにより、対応
+		するUNIXユーザIDとグループIDへマッピングされることになる。
+		</para>
+
+		<para>
+<indexterm><primary>IDマッピングデータベース</primary></indexterm>
+<indexterm><primary>tdb</primary></indexterm>
+<indexterm><primary>UNIX ID</primary></indexterm>
+<indexterm><primary>RID</primary></indexterm>
+		このマッピングの結果は、tdbのデータベース内のIDマッピングデータベースに
+		一貫して格納されていく。これにより、RIDが一貫した方法でUNIXのIDに
+		マッピングされていくことを確保している。
+		</para>
+	</sect2>
+
+	<sect2>
+		<title>結果のキャッシュ保存</title>
+
+		<para>
+<indexterm><primary>SAM</primary></indexterm>
+<indexterm><primary>caching scheme</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+		Active Directoryシステムは、数多くのユーザ名やグループ名の検索を発行
+		する。 これらの検索に係るネットワークの負担を軽減するため、Winbindは、
+		NTドメインコントローラから供給されるSAM シーケンス番号に基づいて、
+		キャッシュに保存する。PDCから返されたユーザ情報やグループ情報は、
+		同じくPDCから返されたシーケンス番号と一緒に、Winbindによってキャッシュに
+		保存される。ユーザ情報やグループ情報が変更される度に、Windows NTは
+		シーケンス番号を増やす。キャッシュに保存されたエントリが満了になる
+		ときに、シーケンス番号をPDC からリクエストし、キャッシュのエントリの
+		シーケンス番号と比較する。番号が一致しないときは、キャッシュに保存された
+		情報を捨て、PDCから直接更新情報をもらうように更新を行う。
+		</para>
+	</sect2>
+</sect1>
+
+
+<sect1>
+	<title>インストールと設定</title>
+
+<sect2>
+<title>はじめに</title>
+
+<para>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>認証制御</primary></indexterm>
+この節では、Winbindを入手して使えるようにするまでの手順を説明する。WinbindはNTまたは
+Windows 200xの PDCを通して、Windowsのドメインユーザにtelnetやftpのような通常のサービス
+と、Sambaの各種サービスのためのアクセス制御と認証管理の機能を提供することができる。
+</para>
+
+<itemizedlist>
+<listitem>
+	<para>
+	<emphasis>どうして、これをやるべきなのか?</emphasis>
+	</para>
+
+	<para>
+<indexterm><primary>Samba管理者</primary></indexterm>
+<indexterm><primary>認証メカニズム</primary></indexterm>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>アカウント</primary></indexterm>
+これにより、Samba管理者がドメインメンバの認証のために、Windows NT/200x PDCの認証機構を
+頼れるようになる。Windows NT/200xユーザは、Sambaサーバ上に別のアカウントを持つ必要が
+なくなる。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	<emphasis>この文書は誰が読むべきものか?</emphasis>
+	</para>
+
+	<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>Windows NT/200x</primary></indexterm>
+この文書はシステム管理者のためのものである。この文書は、Sambaをファイルサーバ上に実装する
+予定であり、既存のWindows NT/200xユーザを、PDCからSambaサーバへ(比較的簡単に)統合したい
+場合のものである。
+	</para>
+</listitem>
+</itemizedlist>
+</sect2>
+
+
+<sect2>
+<title>用件</title>
+
+<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>バックアップ</primary></indexterm>
+<indexterm><primary>ブートディスク</primary></indexterm>
+現在使用しているSamba設定ファイルがあるなら、<emphasis>バックアップを取ること!</emphasis>。
+使用中のシステムが既にPAMを使用しているなら、<emphasis>
+<filename>/etc/pam.d</filename>ディレクトリの内容をバックアップすること!</emphasis>。
+起動ディスクをまだ作成していないのなら<emphasis>今すぐに作ること!</emphasis>。
+</para>
+
+<para>
+<indexterm><primary>PAMの設定</primary></indexterm>
+<indexterm><primary>/etc/pam.d</primary></indexterm>
+<indexterm><primary>シングルユーザモード</primary></indexterm>
+PAM設定ファイルを間違って修正すると、使用中のマシンにログインするのがほとんど不可能に
+なってしまうことがある。このため、うまくいかない時にはマシンをシングルユーザモードで
+立ち上げ、<filename>/etc/pam.d</filename>を元の状態に戻せるようにすること。
+</para>
+
+<para>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>daemon</primary></indexterm>
+Samba-3の最新バージョンには、正常に機能する winbindd daemonが含まれている。ソースコードを
+ダウンロードする手順については、 <ulink url="http://samba.org/">Samba Webページ</ulink>か
+最寄のSamba ミラーサイトにある説明を参照のこと。
+</para>
+
+<para>
+<indexterm><primary>ドメインユーザ</primary></indexterm>
+<indexterm><primary>共有とファイル</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>開発ライブラリ</primary></indexterm>
+ドメインユーザがSambaの共有やファイルにアクセスできるようにし、また使用するマシンが
+提供するその他のサービスにもアクセスできるようにするには、PAMを使用するマシン上で正しく
+設定しなければならない。Winbindモジュールをコンパイルするには、PAM開発ライブラリを
+インストールすべきである。
+<ulink url="http://www.kernel.org/pub/linux/libs/pam/">PAMのウェブサイト</ulink>を参照のこと。
+</para>
+</sect2>
+
+<sect2>
+<title>テスト</title>
+
+<para>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>/etc/pam.d</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+開始する前に、使用しているサーバ上で走っている全てのSamba関連のデーモンを止めておくことを
+推奨する。動いているかもしれない&smbd;、&nmbd;、及び&winbindd;の全プロセスを停止する。
+PAMを使用するには、PAMを認識するサービスが使用するPAMモジュール、複数のPAMライブラリ、及び
+PAMのための<filename>/usr/doc</filename>と<filename>/usr/man</filename>のエントリを含む、
+<filename>/etc/pam.d</filename>のディレクトリ構造を提供する、標準PAM パッケージを持って
+いることを確認する。WinbindをSamba内で構築する際、pam-devel パッケージをインストールして
+いると、よりうまくいく。このパッケージには、PAMを認識するアプリケーションをコンパイルする
+のに必要なヘッダファイルが含まれる。
+</para>
+
+<sect3>
+<title><filename>nsswitch.conf</filename>とWinbindライブラリをLinuxとSolaris上で設定する</title>
+
+<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>pam-devel</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+PAMは、最新世代のUNIX/Linuxシステムの標準コンポーネントである。しかし、残念ながら
+PAM対応のSambaを構築するのに必要な<filename>pam-devel</filename>ライブラリをインストール
+しているシステムは数が限られている。また、Samba-3はWinbindファイルを使用中のシステム上の
+正しい位置に自動インストールするかもしれない。そこでこれ以上先に進む前に、以下に説明する
+設定が本当に必要かどうか確認すること。もしかしたら、
+<filename>/etc/nsswitch.conf</filename>の設定だけで済むかもしれない。
+</para>
+
+<para>
+&winbindd; daemonをnsswitch経由で走らせるために必要なライブラリを正しい場所にコピー
+しなければならない:
+</para>
+
+<para>
+<indexterm><primary>libnss_winbind.so</primary></indexterm>
+<screen>
+&rootprompt;<userinput>cp ../samba/source/nsswitch/libnss_winbind.so /lib</userinput>
+</screen>
+</para>
+
+<para>
+また、以下のシンボリック・リンクを作成することが必要である:
+</para>
+
+<para>
+&rootprompt; <userinput>ln -s /lib/libnss_winbind.so /lib/libnss_winbind.so.2</userinput>
+</para>
+
+<para>さらに、Sun Solarisの場合は以下が必要である:
+<indexterm><primary>nss_winbind.so.1</primary></indexterm>
+<screen>
+&rootprompt;<userinput>ln -s /usr/lib/libnss_winbind.so /usr/lib/libnss_winbind.so.1</userinput>
+&rootprompt;<userinput>ln -s /usr/lib/libnss_winbind.so /usr/lib/nss_winbind.so.1</userinput>
+&rootprompt;<userinput>ln -s /usr/lib/libnss_winbind.so /usr/lib/nss_winbind.so.2</userinput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+次に、rootになって、&winbindd; daemonからユーザやグループのエントリが見えるように、
+<filename>/etc/nsswitch.conf</filename>を編集する。たとえば<filename>/etc/nsswitch.conf</filename>
+ファイルを以下のように編集する:
+<programlisting>
+passwd:     files winbind
+shadow:     files
+group:      files winbind
+</programlisting></para>
+
+<para>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>ldconfig</primary></indexterm>
+<indexterm><primary>libnss_winbind</primary></indexterm>
+<indexterm><primary>grep</primary></indexterm>
+<indexterm><primary>dynamic link loader</primary></indexterm>
+<command>winbindd</command> daemonが必要とするライブラリは、次回システムが再起動する
+とき、自動的に<command>ldconfig</command>のキャッシュに入るが、手動で以下を行う方が
+早い(それに、再起動する必要もない):
+<screen>
+&rootprompt;<userinput>/sbin/ldconfig -v | grep winbind</userinput>
+</screen>
+これにより、winbinddが<filename>libnss_winbind</filename>を使える状態になり、
+dynamic link loaderによって使われる現在の検索パスを返す。<command>ldconfig</command>
+コマンドの出力に<command>grep</command>フィルタを適用することで、このライブラリが
+本当にdynamic link loaderによって認識されるかの確証を確認できる。
+</para>
+
+<para>
+<indexterm><primary>dynamic link loader</primary></indexterm>
+<indexterm><primary>crle</primary></indexterm>
+<indexterm><primary>/usr/local/lib</primary></indexterm>
+<indexterm><primary>リンクローダの設定</primary></indexterm>
+<indexterm><primary>object module dependencies</primary></indexterm>
+Sun Solarisのダイナミックリンクローダ管理ツールは<command>crle</command>と呼ばれる。
+このツールは元々のOS環境の一部として提供されていないライブラリファイルを含む
+ディレクトリを検索するよう指示するために必要である。以下の例は、ダイナミックリンク
+ローダの検索パスに、どのようにして<filename>/usr/local/lib</filename>ディレクトリを
+追加するために使うかを示す:
+<screen>
+&rootprompt; crle -u -l /usr/lib:/usr/local/lib
+</screen>
+引数なしで実行した場合、<command>crle</command>は現在のダイナミックリンクローダの
+設定を表示する。それは以下の通り:
+<screen>
+&rootprompt; crle
+
+Configuration file [version 4]: /var/ld/ld.config
+  Default Library Path (ELF):   /lib:/usr/lib:/usr/local/lib
+  Trusted Directories (ELF):    /lib/secure:/usr/lib/secure  (system default)
+
+Command line:
+  crle -c /var/ld/ld.config -l /lib:/usr/lib:/usr/local/lib
+</screen>
+これから、<filename>/usr/local/lib</filename>ディレクトリは、オブジェクトモジュールの
+依存関係を満足させるために、ダイナミックリンクライブラリの検索中に含まれていることが
+わかる。
+</para>
+
+</sect3>
+
+<sect3>
+<title>AIXにおけるNSS Winbind</title>
+
+<para>(この節はAIXを動作させている人にのみ関係する。)</para>
+
+<para>
+<indexterm><primary>AIX</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>/usr/lib/security</primary></indexterm>
+<indexterm><primary>authentication module API</primary></indexterm>
+<indexterm><primary>/usr/lib/security/methods.cfg</primary></indexterm>
+<indexterm><primary>PAM module</primary></indexterm>
+Winbind AIX識別モジュールは、Sambaソースのnsswitchディレクトリ内に 
+<filename>libnss_winbind.so</filename>として構築される。このファイルは、
+<filename>/usr/lib/security</filename>にコピーでき、AIXの名前変換から、WINBIND
+という名前にするべきであると指示してくる。次の節では、以下のようにして、
+<programlisting>
+WINBIND:
+        program = /usr/lib/security/WINBIND
+        options = authonly
+</programlisting>
+<filename>/usr/lib/security/methods.cfg</filename>が追加できるようなる。このモジュールは
+識別のみサポートするが、標準のWinbind PAMモジュールを認証に使用して成功した例が報告されて
+いる。ローダブルな認証モジュール設定の際には、システムにログオンできない状態になって
+しまうこともあり得るので、慎重に行なうこと。AIX認証モジュールAPIに関する詳細情報は、
+AIXのための、
+<ulink url="http://publibn.boulder.ibm.com/doc_link/en_US/a_doc_lib/aixprggd/kernextc/sec_load_mod.htm">
+Loadable Authentication Module Programming Interface</ulink>で記述されている、
+<quote>Kernel Extensions and Device Support Programming Concepts for AIX</quote>
+という文書にある。モジュールの管理に関するさらなる情報は、
+<ulink url="http://publibn.boulder.ibm.com/doc_link/en_US/a_doc_lib/aixbman/baseadmn/iandaadmin.htm">System
+Management Guide: Operating System and Devices</ulink>にある。
+</para>
+</sect3>
+
+<sect3>
+<title>smb.confの設定</title>
+
+<para>
+<indexterm><primary>winbind</primary></indexterm>
+<indexterm><primary>man page</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+&winbindd;の動作を制御するために、&smb.conf;ファイルにいくつかのパラメータを設定する必要が
+ある。これについては、<citerefentry><refentrytitle>winbindd</refentrytitle>
+<manvolnum>8</manvolnum></citerefentry>マニュアルページに、より詳細に説明されている。
+以下の<link linkend="winbindcfg">Winbind設定のためのsmb.conf</link>による&smb.conf;は、
+[global]セクションの中の必要なエントリーも含むように変更したものである。
+</para>
+
+<example id="winbindcfg">
+<title>Winbind設定のためのsmb.conf</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfcomment>DOMAIN\username のように、ドメインとユーザ名を '\'を挟んで分ける。</smbconfcomment>
+<smbconfoption name="winbind separator">\</smbconfoption>
+<smbconfcomment>ドメインユーザには、10000から20000のUIDを使用する。</smbconfcomment>
+<smbconfoption name="idmap uid">10000-20000</smbconfoption>
+<smbconfcomment>ドメイングループには、10000から20000のGIDを使用する。</smbconfcomment>
+<smbconfoption name="idmap gid">10000-20000</smbconfoption>
+<smbconfcomment>winbindユーザとグループの列挙を可能にする。</smbconfcomment>
+<smbconfoption name="winbind enum users">yes</smbconfoption>
+<smbconfoption name="winbind enum groups">yes</smbconfoption>
+<smbconfcomment>winbind ユーザに本当のシェルを与える(telnetアクセスを持つ場合のみ必要)</smbconfcomment>
+<smbconfoption name="template homedir">/home/winnt/%D/%U</smbconfoption>
+<smbconfoption name="template shell">/bin/bash</smbconfoption>
+</smbconfblock>
+</example>
+
+</sect3>
+
+
+<sect3>
+<title>SambaサーバをPDCドメインに参加させる</title>
+
+<para>
+<indexterm><primary>domain security</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+ドメインセキュリティに関与するすべてのマシンはドメインのメンバであるべきである。
+これはPDCとすべてのBDCにも適用される。
+</para>
+
+<para>
+<indexterm><primary>ドメインへの参加</primary></indexterm>
+<indexterm><primary>ドメインに参加</primary></indexterm>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join</tertiary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>MS DCE RPC</primary></indexterm>
+<indexterm><primary>DCE RPC</primary></indexterm>
+<indexterm><primary>RPC</primary></indexterm>
+ドメインへの参加手続きは、<command>net rpc join</command>コマンドを使って行う。この
+手続きは、MS DCE RPC経由で登録された(通常はPDC)ドメインコントローラと通信を行う。これは、
+もちろん、<command>smbd</command>プロセスが対象のドメインコントローラ上で動作
+していなければならないということである。それ自身のドメインに参加できるように、一時的に
+PDCとしてSambaを起動することは、そのために必要である。
+</para>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>管理者権限</primary></indexterm>
+<indexterm><primary>Administrator</primary></indexterm>
+<replaceable>PDC</replaceable>という名前のPDCで、ドメイン中で管理者権限を持つドメイン
+ユーザが<replaceable>Administrator</replaceable>である時、以下のコマンドを入力し、
+Sambaサーバをドメインに参加させる。
+</para>
+
+<note><para>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>tcpポート</primary></indexterm>
+<indexterm><primary>udpポート</primary></indexterm>
+ドメインにマシンを参加させる前に、対象のドメインコントローラ(通常はPDC)でSambaが
+動作しているかを確認し、ポート137/udp, 135/tcp, 139/tcp, と 445/tcpが開いているかを
+確認する(もしもPDCがSambaかWindows Server 2Kxの場合)。
+</para></note>
+
+<para>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join</tertiary></indexterm>
+<command>net rpc join</command>機能の使用方法は以下の通り:
+<screen>
+&rootprompt;<userinput>/usr/local/samba/bin/net rpc join -S PDC -U Administrator</userinput>
+</screen>
+このコマンドへの正しい解答は、<quote>Joined the domain<replaceable>DOMAIN</replaceable></quote>
+である。ここで、<replaceable>DOMAIN</replaceable>は対象のドメイン名である。
+</para>
+
+</sect3>
+
+<sect3>
+<title><command>winbindd</command>daemonの開始とテスト</title>
+
+<para>
+<indexterm><primary>起動スクリプト</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>Winbindサービス</primary></indexterm>
+最終的には、Sambaのその他の部分が立ち上がるときに、自動的にwinbindd daemonを呼び出す
+ように、Sambaの起動スクリプトを変更したいと思うかもしれないが、Winbind部分だけを最初に
+テストしておくことは可能である。Winbind のサービスを立ち上げるには、以下のコマンドを
+rootとして入力する:
+<screen>
+&rootprompt;<userinput>/usr/local/samba/sbin/winbindd</userinput>
+</screen>
+<command>winbindd</command>実行ファイルの位置への適切なパスを使用すること。
+</para>
+
+<note><para>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>/usr/local/samba</primary></indexterm>
+上記は、<filename>/usr/local/samba</filename>のディレクトリツリーの中にSamba を
+インストールしたと仮定している。使用するシステム上で<command>winbindd</command>が別の
+所にある場合は、Sambaファイルの位置を探す必要がある。
+</para></note>
+
+<para>
+<indexterm><primary>paranoid</primary></indexterm>
+<indexterm><primary>daemon running</primary></indexterm>
+心配性な人の場合、daemonが本当に動いているかは以下で確認出来る。
+<screen>
+&rootprompt;<userinput>ps -ae | grep winbindd</userinput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>winbindd</primary></indexterm>
+このコマンドは、daemonが動いているなら、以下のような結果を返してくるはずである。
+<screen>
+3025 ?        00:00:00 winbindd
+</screen>
+</para>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>wbinfo</primary></indexterm>
+次に、本当のテスト用に、PDC上にあるユーザ情報を取得する:
+<screen>
+&rootprompt;<userinput>/usr/local/samba/bin/wbinfo -u</userinput>
+</screen>
+これは、PDC上のWindowsユーザ情報に入っているユーザの一覧をエコーバックするはずである。
+例えば、以下のような結果が表示される:
+<screen>
+CEO\Administrator
+CEO\burdell
+CEO\Guest
+CEO\jt-ad
+CEO\krbtgt
+CEO\TsInternetUser
+</screen>
+もちろん、ドメイン名は<quote>CEO</quote>で、<smbconfoption name="winbind separator"/>は
+<quote>\</quote>である。
+</para>
+
+<para>
+<indexterm><primary>wbinfo</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+同様にPDCからグループ情報を取得することができる:
+<screen>
+&rootprompt;<userinput>/usr/local/samba/bin/wbinfo -g</userinput>
+CEO\Domain Admins
+CEO\Domain Users
+CEO\Domain Guests
+CEO\Domain Computers
+CEO\Domain Controllers
+CEO\Cert Publishers
+CEO\Schema Admins
+CEO\Enterprise Admins
+CEO\Group Policy Creator Owners
+</screen></para>
+
+<para>
+<indexterm><primary>getent</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>ホームディレクトリ</primary></indexterm>
+<indexterm><primary>既定値のシェル</primary></indexterm>
+ここで、<command>getent</command>コマンドを使用して、ローカルとPDCの両方からユーザと
+グループの統合された一覧を表示させることができる。以下のコマンドを入力する:
+<screen>
+&rootprompt;<userinput>getent passwd</userinput>
+</screen>
+<filename>/etc/passwd</filename>のような、ドメインユーザの新しいUID、GID、
+ホームディレクトリ及び既定値のシェルが表示される一覧が出てくるはずである。
+</para>
+
+<para>
+グループについても同様に以下のコマンドを実行できる:
+<screen>
+&rootprompt;<userinput>getent group</userinput>
+</screen>
+</para>
+
+</sect3>
+
+
+<sect3>
+<title>init.d起動スクリプトの修正</title>
+
+<sect4>
+<title>Linux</title>
+
+<para>
+<indexterm><primary>winbindd daemon</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>/etc/init.d/smb</primary></indexterm>
+<indexterm><primary>/etc/init.d/samba</primary></indexterm>
+<indexterm><primary>/usr/local/samba/bin</primary></indexterm>
+&winbindd; daemonは&smbd;と&nmbd; daemonが動き出してから起動する必要がある。これを
+行うには起動スクリプトを書き換える。それは、Red Hat Linuxでは
+<filename>/etc/init.d/samba</filename>にあり、Debian Linuxでは
+<filename>/etc/init.d/samba</filename>にある。これらのdaemonを正しい順序で走らせる
+ためのコマンドをスクリプトに加える。たとえば、起動スクリプトの例としては、
+&smbd;, &nmbd;, と &winbindd;を直接<filename>/usr/local/samba/bin</filename>ディレクトリ
+から起動する。このスクリプト中の<command>start</command>関数は以下の通り:
+<programlisting>
+start() {
+        KIND="SMB"
+        echo -n $"Starting $KIND services: "
+        daemon /usr/local/samba/bin/smbd $SMBDOPTIONS
+        RETVAL=$?
+        echo
+        KIND="NMB"
+        echo -n $"Starting $KIND services: "
+        daemon /usr/local/samba/bin/nmbd $NMBDOPTIONS
+        RETVAL2=$?
+        echo
+        KIND="Winbind"
+        echo -n $"Starting $KIND services: "
+        daemon /usr/local/samba/sbin/winbindd
+        RETVAL3=$?
+        echo
+        [ $RETVAL -eq 0 -a $RETVAL2 -eq 0 -a $RETVAL3 -eq 0 ] &amp;&amp; \
+		touch /var/lock/subsys/smb || RETVAL=1
+        return $RETVAL
+}
+</programlisting></para>
+
+<para>winbindd をデュアル・デーモン・モードで走らせたい場合は、上記例の中の:
+<programlisting>
+        daemon /usr/local/samba/sbin/winbindd
+</programlisting>
+
+の列を、以下に変える:
+
+<programlisting>
+        daemon /usr/local/samba/sbin/winbindd -D
+</programlisting>.
+</para>
+
+<para>
+<command>stop</command>関数は、サービスを停止するために以下のように起動に対応するエントリを持つ:
+</para>
+
+<para><programlisting>
+stop() {
+        KIND="SMB"
+        echo -n $"Shutting down $KIND services: "
+        killproc smbd
+        RETVAL=$?
+        echo
+        KIND="NMB"
+        echo -n $"Shutting down $KIND services: "
+        killproc nmbd
+        RETVAL2=$?
+        echo
+        KIND="Winbind"
+        echo -n $"Shutting down $KIND services: "
+        killproc winbindd
+        RETVAL3=$?
+        [ $RETVAL -eq 0 -a $RETVAL2 -eq 0 -a $RETVAL3 -eq 0 ] &amp;&amp; \
+		 rm -f /var/lock/subsys/smb
+        echo ""
+        return $RETVAL
+}
+</programlisting></para>
+</sect4>
+
+<sect4>
+<title>Solaris</title>
+
+<para>
+WinbindはSolaris 9では動作しない。 see <link linkend="winbind-solaris9">Solaris 9でのWinbind</link>の節を参照のこと。
+for details.
+</para>
+
+<para>
+<indexterm><primary>Solaris 9</primary></indexterm>
+<indexterm><primary>/etc/init.d/samba.server</primary></indexterm>
+<indexterm><primary>/usr/local/samba/bin</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+Solarisでは、<filename>/etc/init.d/samba.server</filename>起動スクリプトを変更する必要が
+ある。また、通常は smbd と nmbdのみを起動するが、winbinddも起動すべきである。Sambaが
+<filename>/usr/local/samba/bin</filename>にインストールされている場合、このファイルには
+以下のようなものを含むことが出来る:
+</para>
+
+<para>
+	<programlisting>
+	##
+	## samba.server
+	##
+
+	if [ ! -d /usr/bin ]
+	then                    # /usr がマウントされていない
+		exit
+	fi
+
+	killproc() {            # 名前指定でプロセスを停止
+		pid=`/usr/bin/ps -e |
+		     /usr/bin/grep -w $1 |
+		     /usr/bin/sed -e 's/^  *//' -e 's/ .*//'`
+		[ "$pid" != "" ] &amp;&amp; kill $pid
+	}
+
+	# Sambaサーバに必要な起動/停止プロセス
+
+	case "$1" in
+
+	'start')
+	#
+	# 使用環境(パス、ワークグループ、ホスト)に合わせて以下を編集すること
+	#
+	echo Starting SMBD
+	   /usr/local/samba/bin/smbd -D -s \
+		/usr/local/samba/smb.conf
+
+	echo Starting NMBD
+	   /usr/local/samba/bin/nmbd -D -l \
+		/usr/local/samba/var/log -s /usr/local/samba/smb.conf
+
+	echo Starting Winbind Daemon
+	   /usr/local/samba/sbin/winbindd
+	   ;;
+
+	'stop')
+	   killproc nmbd
+	   killproc smbd
+	   killproc winbindd
+	   ;;
+
+	*)
+	   echo "Usage: /etc/init.d/samba.server { start | stop }"
+	   ;;
+	esac
+</programlisting></para>
+
+<para>
+繰り返すが、Winbindをデュアルdaemonモードで動かしたい場合、上記の:
+<programlisting>
+/usr/local/samba/sbin/winbindd
+</programlisting>
+の部分を、下記に変える:
+<programlisting>
+/usr/local/samba/sbin/winbindd -D
+</programlisting>
+</para>
+
+</sect4>
+
+<sect4>
+<title>再起動</title>
+<para>
+<indexterm><primary>daemons</primary></indexterm>
+<indexterm><primary>local user</primary></indexterm>
+この時点で&smbd;, &nmbd;, と &winbindd; daemonを再起動すると、まるでローカルユーザで
+あるかのように、Sambaサーバにドメインメンバとして接続できるはずである。
+</para>
+</sect4>
+</sect3>
+
+<sect3>
+<title>WinbindとPAMの設定</title>
+
+<para>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>authentication</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>/etc/pam.d</primary></indexterm>
+ここまで来たということは、<command>winbindd</command>とSambaが一緒に動作している状態に
+なったと言うことである。Winbindを使用して、他のサービスに認証を提供できるようにしたい
+場合は、この先を読み進めること。PAMの設定ファイルを、この手順の中で変更する必要が出て
+くる(現在使っている<filename>/etc/pam.d</filename>ファイルのバックアップを取っていない
+ならば、今行うこと)。
+</para>
+
+<para>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>../source/nsswitch</primary></indexterm>
+<indexterm><primary>pam_winbind.so</primary></indexterm>
+<indexterm><primary>/lib/security</primary></indexterm>
+<indexterm><primary>Solaris</primary></indexterm>
+<indexterm><primary>/usr/lib/security</primary></indexterm>
+他のサービスでwinbinddを使用するためのPAM モジュールが必要になる。このモジュールは、
+以下のコマンドで、<filename>../source</filename>ディレクトリから
+<filename>../source/nsswitch</filename>ディレクトリにコンパイルされる:
+<screen>
+&rootprompt;<userinput>make nsswitch/pam_winbind.so</userinput>
+</screen>
+<filename>pam_winbind.so</filename>ファイルは、他のPAMセキュリティモジュールのある
+場所にコピーしなければならない。Red Hat システムでは、<filename>/lib/security</filename>
+というディレクトリである。Solaris では、PAMセキュリティモジュールは、
+<filename>/usr/lib/security</filename>に入る。
+<screen>
+&rootprompt;<userinput>cp ../samba/source/nsswitch/pam_winbind.so /lib/security</userinput>
+</screen>
+</para>
+
+<sect4>
+<title>Linux/FreeBSD固有のPAM設定</title>
+
+<para>
+<indexterm><primary>/etc/pam.d/samba</primary></indexterm>
+<filename>/etc/pam.d/samba</filename>ファイルは変更する必要がない。このファイルはそのまま残す:
+<programlisting>
+auth    required  /lib/security/pam_stack.so service=system-auth
+account required  /lib/security/pam_stack.so service=system-auth
+</programlisting></para>
+
+<para>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>authentication service</primary></indexterm>
+<indexterm><primary>login</primary></indexterm>
+<indexterm><primary>console</primary></indexterm>
+<indexterm><primary>telnetでのログイン</primary></indexterm>
+<indexterm><primary>ftpサービス</primary></indexterm>
+<indexterm><primary>/etc/xinetd.d</primary></indexterm>
+<indexterm><primary>/etc/inetd.conf</primary></indexterm>
+<indexterm><primary>/etc/xinetd.d/telnet</primary></indexterm>
+Winbindを認証サービスに使用できるように手を加えたその他のサービスは、コンソール上の通常
+ログイン(またはターミナルセッション)、telnetログイン、それにftpサービスである。これらの
+サービスを有効にするには、まず、<filename>/etc/xinetd.d</filename>(または
+<filename>/etc/inetd.conf</filename>)の中のエントリを変更する必要があるかも知れない。
+Red Hat Linux 7.1以降のバージョンは、新しい xinetd.d 構造を使用しており、この場合、
+<filename>/etc/xinetd.d/telnet</filename>と<filename>/etc/xinetd.d/wu-ftp</filename>
+の中の文字列を
+<programlisting>
+	enable = no
+</programlisting>
+から
+<programlisting>
+	enable = yes
+</programlisting>
+に変更する必要がある。</para>
+
+<para>
+<indexterm><primary>ftpサービス</primary></indexterm>
+<indexterm><primary>ホームディレクトリのテンプレート</primary></indexterm>
+<indexterm><primary>ドメインユーザ</primary></indexterm>
+ftpサービスを動作させるためには、既にサーバ上に存在するドメインユーザのために、個別に
+ディレクトリを用意するか、ホームディレクトリを全ドメインユーザ用の汎用ディレクトリに
+変更する必要がある。これらは、&smb.conf;の<smbconfoption name="template homedir"/>
+グローバルエントリで簡単に設定できる。
+</para>
+
+<note><para>
+<indexterm><primary>pam_mkhomedir</primary></indexterm>
+<smbconfoption name="template homedir"/>中のディレクトリは、自動的には生成されない!
+pam_mkhomedirか、あらかじめ当該ユーザに対してディレクトリを作成しておくようにして、
+固有のホームディレクトリを使ってUNIXにログインできるようにすること。
+</para></note>
+
+<para>
+<indexterm><primary>/etc/pam.d/ftp</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>ftp access</primary></indexterm>
+<filename>/etc/pam.d/ftp</filename>ファイルは、<filename>/etc/pam.d/samba</filename>
+ファイルと似たような形で、Winbindのftpアクセスを許可するように変更できる。変更後の
+<filename>/etc/pam.d/ftp</filename>ファイルは以下の通り:
+<programlisting>
+auth       required     /lib/security/pam_listfile.so item=user sense=deny \
+	 file=/etc/ftpusers onerr=succeed
+auth       sufficient   /lib/security/pam_winbind.so
+auth       required     /lib/security/pam_stack.so service=system-auth
+auth       required     /lib/security/pam_shells.so
+account    sufficient   /lib/security/pam_winbind.so
+account    required     /lib/security/pam_stack.so service=system-auth
+session    required     /lib/security/pam_stack.so service=system-auth
+</programlisting></para>
+
+<para>
+<indexterm><primary>/etc/pam.d/login</primary></indexterm>
+<filename>/etc/pam.d/login</filename>ファイルもほぼ同様に変更できる。以下のようになる:
+<programlisting>
+auth       required     /lib/security/pam_securetty.so
+auth       sufficient   /lib/security/pam_winbind.so
+auth       sufficient   /lib/security/pam_unix.so use_first_pass
+auth       required     /lib/security/pam_stack.so service=system-auth
+auth       required     /lib/security/pam_nologin.so
+account    sufficient   /lib/security/pam_winbind.so
+account    required     /lib/security/pam_stack.so service=system-auth
+password   required     /lib/security/pam_stack.so service=system-auth
+session    required     /lib/security/pam_stack.so service=system-auth
+session    optional     /lib/security/pam_console.so
+</programlisting>
+<indexterm><primary>pam_winbind.so</primary></indexterm>
+<indexterm><primary>pam_securetty.so</primary></indexterm>
+<indexterm><primary>pam_unix.so</primary></indexterm>
+この場合、前述のように
+<programlisting>auth sufficient /lib/security/pam_winbind.so</programlisting>
+を追加するが、それに加え
+<programlisting>required pam_securetty.so</programlisting>
+を加えることにより、ネットワーク上からのrootのログインを不許可とした。また、
+<programlisting>sufficient /lib/security/pam_unix.so use_first_pass</programlisting>
+行を<command>winbind.so</command>行の後に加え、パスワードからのプロンプトが二重表示される
+問題を解消した。
+</para>
+
+</sect4>
+
+<sect4>
+<title>Solaris固有の設定</title>
+
+<para>
+<indexterm><primary>/etc/pam.conf</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+<filename>/etc/pam.conf</filename>の変更が必要である。ドメインユーザがローカルにも
+telnetでもログオンできるように変更する。以下が変更内容である。<filename>pam.conf</filename>
+を要件に沿ってカスタマイズしてもよいが、最悪の場合、システムがほとんど起動不能になることが
+あるので、変更内容に十分自信がある場合のみ変更すること。
+<programlisting>
+#
+#ident "@(#)pam.conf 1.14 99/09/16 SMI"
+#
+# Copyright (c) 1996-1999, Sun Microsystems, Inc.
+# All Rights Reserved.
+#
+# PAMの設定
+#
+# 認証管理
+#
+login   auth required   /usr/lib/security/pam_winbind.so
+login auth required  /usr/lib/security/$ISA/pam_unix.so.1 try_first_pass
+login auth required  /usr/lib/security/$ISA/pam_dial_auth.so.1 try_first_pass
+#
+rlogin  auth sufficient /usr/lib/security/pam_winbind.so
+rlogin  auth sufficient /usr/lib/security/$ISA/pam_rhosts_auth.so.1
+rlogin auth required  /usr/lib/security/$ISA/pam_unix.so.1 try_first_pass
+#
+dtlogin auth sufficient /usr/lib/security/pam_winbind.so
+dtlogin auth required  /usr/lib/security/$ISA/pam_unix.so.1 try_first_pass
+#
+rsh auth required /usr/lib/security/$ISA/pam_rhosts_auth.so.1
+other   auth sufficient /usr/lib/security/pam_winbind.so
+other auth required /usr/lib/security/$ISA/pam_unix.so.1 try_first_pass
+#
+# アカウント管理
+#
+login   account sufficient      /usr/lib/security/pam_winbind.so
+login account requisite /usr/lib/security/$ISA/pam_roles.so.1
+login account required /usr/lib/security/$ISA/pam_unix.so.1
+#
+dtlogin account sufficient      /usr/lib/security/pam_winbind.so
+dtlogin account requisite /usr/lib/security/$ISA/pam_roles.so.1
+dtlogin account required /usr/lib/security/$ISA/pam_unix.so.1
+#
+other   account sufficient      /usr/lib/security/pam_winbind.so
+other account requisite /usr/lib/security/$ISA/pam_roles.so.1
+other account required /usr/lib/security/$ISA/pam_unix.so.1
+#
+# セッション管理
+#
+other session required /usr/lib/security/$ISA/pam_unix.so.1
+#
+# パスワード管理
+#
+#other   password sufficient     /usr/lib/security/pam_winbind.so
+other password required /usr/lib/security/$ISA/pam_unix.so.1
+dtsession auth required /usr/lib/security/$ISA/pam_unix.so.1
+#
+# Kerberos V5 認証のサポート(Kerberosを使用するにはアンコメントすること)
+#
+#rlogin auth optional /usr/lib/security/$ISA/pam_krb5.so.1 try_first_pass
+#login auth optional /usr/lib/security/$ISA/pam_krb5.so.1 try_first_pass
+#dtlogin auth optional /usr/lib/security/$ISA/pam_krb5.so.1 try_first_pass
+#other auth optional /usr/lib/security/$ISA/pam_krb5.so.1 try_first_pass
+#dtlogin account optional /usr/lib/security/$ISA/pam_krb5.so.1
+#other account optional /usr/lib/security/$ISA/pam_krb5.so.1
+#other session optional /usr/lib/security/$ISA/pam_krb5.so.1
+#other password optional /usr/lib/security/$ISA/pam_krb5.so.1 try_first_pass
+</programlisting></para>
+
+<para>
+<indexterm><primary>winbind.so</primary></indexterm>
+さらに、<filename>winbind.so</filename>行の後に<parameter>try_first_pass</parameter>
+行を追加することで、パスワードからのプロンプトが二重表示される問題を解消する。
+</para>
+
+<para>
+Sambaを再起動して、pam.confで設定したアプリケーションから接続してみる。
+</para>
+
+</sect4>
+
+</sect3>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>結論</title>
+
+<para>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>RPCコール</primary></indexterm>
+<indexterm><primary>ドメインユーザ</primary></indexterm>
+Winbindシステムは、NSSとPAM及び適切なMicrosoft RPCコールを使用することで、UNIXシステム
+上のMicrosoft Windows NTドメインユーザのシームレスな統合を可能にした。その結果、UNIXと
+NTの混在するネットワークを運用する管理コストの大幅削減が実現さた。
+</para>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+	<para>
+	Winbindは、現在のリリース版には、幾つかの制約があり、これは将来の リリースで克服していきたいと考えている:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>
+		Winbindは、現行では、他のOSへの移植は可能だが、Linux、Solaris、AIX、
+		及びIRIXのOSでのみ使用可能である。このような移植を実現するには、移植先の
+		OSのCライブラリが、NSSとPAMシステムをサポートしていることが要件となる。
+		NSSとPAMがUNIXベンダの間でサポートを得るようになってきたので、この二つの
+		サポートは以前より一般的に見られるようになった。
+		</para></listitem>
+
+		<listitem><para>
+		Windows NT RIDからUNIX IDへのマッピングは、 アルゴリズムで決められる
+		のではなく、マッピングされていないユーザとグループをWinbindが目にした
+		順番に番号を振っていく。そのため、RIDとUNIX IDのマッピング情報を持つ
+		ファイルが不良になったり壊れたりした場合、前と同じマッピングを再現
+		することは難しいかもしれない。
+		</para></listitem>
+
+		<listitem><para>
+		現行では、Winbind PAMのモジュールは、Windows NTユーザに対して設定される
+		ワークステーションのログオン時間などの制約を考慮しておらず、PDC が強制
+		するものと想定している。
+		</para></listitem>
+	</itemizedlist>
+
+	<sect2>
+	<title>NSCDの問題に関する警告</title>
+
+	<warning><para>
+	いかなる状況でも<command>winbindd</command>が動作しているシステム上で
+	<command>nscd</command>を動かさないこと。
+	</para></warning>
+
+	<para>
+	もしも<command>nscd</command>がUNIX/Linuxシステム上で動いている時、NSSWITCHが
+	正しく設定されていても、ファイルとディレクトリの管理のために、ドメインユーザと
+	グループを解決することはできない。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>Winbindがユーザとグループを解決しない</title>
+
+	<para><quote>
+	&smb.conf;ファイルは正しく設定した。
+	<smbconfoption name="idmap uid">12000</smbconfoption>と
+	<smbconfoption name="idmap gid">3000-3500</smbconfoption>を設定し、
+	<command>winbind</command>を走らせている。以下を行うとすべてうまく行く。
+	</quote></para>
+
+<para><screen>
+&rootprompt;<userinput>wbinfo -u</userinput>
+MIDEARTH\maryo
+MIDEARTH\jackb
+MIDEARTH\ameds
+...
+MIDEARTH\root
+
+&rootprompt;<userinput>wbinfo -g</userinput>
+MIDEARTH\Domain Users
+MIDEARTH\Domain Admins
+MIDEARTH\Domain Guests
+...
+MIDEARTH\Accounts
+
+&rootprompt;<userinput>getent passwd</userinput>
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/bin/bash
+...
+maryo:x:15000:15003:Mary Orville:/home/MIDEARTH/maryo:/bin/false
+</screen></para>
+
+<para><quote>
+ところが、以下のコマンドは失敗する:
+</quote>
+<screen>
+&rootprompt;<userinput>chown maryo a_file</userinput>
+chown: `maryo': invalid user
+</screen>
+<quote>
+気が変になりそうなのだが何がいけないのだろう?
+</quote></para>
+
+<para>
+前記の問題と同じである。使用しているシステムは、恐らく<command>nscd</command>を動作させて
+いるのだろう。システムを再起動ではなく一旦シャットダウンすれば、その後では、問題は解消して
+いるだろう。
+</para>
+
+</sect2>
+</sect1>
+
+</chapter>

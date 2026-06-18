@@ -1,0 +1,11 @@
+<varlistentry>
+  <term><option>GID_MAX</option> (number)</term>
+  <term><option>GID_MIN</option> (number)</term>
+  <listitem>
+    <para>
+      Range of group IDs used for the creation of regular groups by
+      <command>useradd</command>, <command>useradd</command>, or
+      <command>newusers</command>.
+    </para>
+  </listitem>
+</varlistentry>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_xattr_tdb.8">
+
+<refmeta>
+	<refentrytitle>vfs_xattr_tdb</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_xattr_tdb</refname>
+	<refpurpose>は、拡張属性(Extended Attributes (EAs)) を tdb ファイルに保存する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = xattr_tdb</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である.</para>
+
+	<para><command>vfs_xattr_tdb</command>VFSモジュールは
+	拡張属性(EAs)をtdbファイルに保存する。
+	この機能を有効にすることで、もともと拡張属性をサポートしていないOSやファイルシステム
+	でEAsが使えるようになる。
+	</para>
+
+	<para>このモジュールはスタッカブルである</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>xattr_tdb:file = PATH</term>
+		<listitem>
+		<para>拡張属性を保持するためのtdbファイル名。
+		このオプションを指定しないと、ディフォルトのファイル名
+		<filename>xattr.tdb</filename>を使用する</para>
+		</listitem>
+		</varlistentry>
+	</variablelist>
+
+	
+</refsect1>
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team に
+	よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+	として開発が行なわれている。</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.2.8 - 3.5.3 対応の翻訳は
+		<itemizedlist>
+			<listitem><para>平田祥司 (shouji@microft.co.jp)</para></listitem>
+		</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

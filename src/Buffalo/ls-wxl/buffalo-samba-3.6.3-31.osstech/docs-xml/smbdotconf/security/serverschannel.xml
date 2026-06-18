@@ -1,0 +1,23 @@
+<samba:parameter name="server schannel"
+                 context="G"
+				 type="boolean-auto"
+                 basic="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、サーバが netlogon のセキュアチャネルを提供するかどうかを制御する。
+    <smbconfoption name="server schannel">no</smbconfoption>
+    の場合、セキュアチャネルは提供されない。
+    <smbconfoption name="server schannel">auto</smbconfoption>
+    の場合セキュアチャネルが提供されるが強制はされない。
+    <smbconfoption name="server schannel">yes</smbconfoption>
+    の場合、クライアントが netlogon のセキュアチャネルを認識できない場合は接続が拒否される。
+    これに該当するのは Windows NT 4.0 SP4 以前のみである。</para>
+
+    <para>このパラメータを <literal>no</literal> に設定した場合、
+    Windows XP マシンには Samba アーカイブの docs/Registry サブディレクトリ中にある
+    <filename>WinXP_SignOrSeal.reg</filename> ファイルを適用してレジストリを修正する必要があることに注意。
+    </para>
+</description>
+<value type="default">auto</value>
+<value type="example">yes</value>
+</samba:parameter>

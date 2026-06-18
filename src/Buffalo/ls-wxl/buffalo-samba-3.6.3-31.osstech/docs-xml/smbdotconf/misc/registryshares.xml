@@ -1,0 +1,21 @@
+<samba:parameter name="registry shares"
+                 context="G"
+		 type="bool"
+		 advanced="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+レジストリから参照される共有定義のサポートのオンオフを切り替える。
+<emphasis>smb.conf</emphasis> で定義された共有は、レジストリ内に同じ名前で
+定義されたものより優先する。詳細はレジストリベースの設定の章を参照してほしい。
+	</para>
+
+	<para>
+注意：このパラメータはデフォルトでは <emphasis>no</emphasis> であるが、
+<parameter>config backend</parameter> が <emphasis>registry</emphasis>
+にセットされている場合は<emphasis>yes</emphasis> となる。
+	</para>
+</description>
+<value type="default">no</value>
+<value type="example">yes</value>
+</samba:parameter>

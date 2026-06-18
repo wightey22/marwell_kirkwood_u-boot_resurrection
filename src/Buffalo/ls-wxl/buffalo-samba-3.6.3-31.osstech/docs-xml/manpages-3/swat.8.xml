@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="swat.8">
+
+<refmeta>
+	<refentrytitle>swat</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>swat</refname>
+	<refpurpose>Samba Web 管理ツール</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>swat</command>
+		<arg choice="opt">-s &lt;Samba 設定ファイル&gt;</arg>
+		<arg choice="opt">-a</arg>
+		<arg choice="opt">-P</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>swat</command> は、Samba 管理者が Web
+	ブラウザを使って複雑な <citerefentry><refentrytitle>smb.conf
+	</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+	の設定を行うことを可能にする。それに加え、<command>swat</command>
+	の設定ページには、<filename>smb.conf</filename>
+	中で設定可能な全てのオプションへのリンクがあり、
+	管理者が設定変更の影響を簡単に調べられるようになっている。</para>
+
+	<para><command>swat</command> は <command>inetd</command> 
+	から実行される。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-s smb configuration file</term>
+		<listitem><para>デフォルトの設定ファイルのパスは、
+		コンパイル時に設定される。設定されたファイルには、
+		<citerefentry><refentrytitle>smbd</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry> 
+		サーバに必要な詳細な設定が記述される。このファイルが
+		<command>swat</command> によって修正されるファイルである。
+		ファイルには、そのサーバが提供する全てのサービスの記述に加え、
+		printcap ファイルの位置のようなサーバ固有の情報も含まれる。
+		詳細情報については、<filename>smb.conf</filename> を参照のこと。		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-a</term>
+		<listitem><para>このオプションは、認証機能を無効にし、<command>
+		swat</command> をデモモードにする。
+		このモードでは、誰でも <filename>smb.conf</filename>
+		ファイルを修正する事ができてしまう。</para>
+		
+		<para><emphasis>警告:  運用中のサーバでは、
+		このオプションを絶対に有効にしないこと。 
+		</emphasis></para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-P</term>
+		<listitem><para>このオプションは、リードオンリユーザを、パスワード管理ページに制限する。
+		<command>swat</command>は次に、"View"と"Status"メニューボタンを見せることなしに
+		ユーザのパスワードを変更することが出来る。</para></listitem>
+		</varlistentry>
+
+		&stdarg.server.debug;
+		&popt.common.samba;
+		&stdarg.help;
+
+	</variablelist>
+
+</refsect1>
+
+<refsect1>
+
+	<title>インストール</title>
+
+	<para>Swat は、ほとんどのディストリビューションのバイナリパッケージに
+	含まれている。
+	その場合パッケージマネージャがインストールと設定を行う。
+	このセクションは一から swat をコンパイルした人のみを対象としている。
+	</para>
+
+	<para>SWAT をコンパイルした後、<command>make install</command>
+	を実行して <command>swat</command> バイナリといろいろなヘルプとイメージ
+	ファイルをインストールする必要がある。
+	デフォルトのインストールでは以下のものが入れられる: </para>
+	
+	<itemizedlist>
+		<listitem><para>/usr/local/samba/bin/swat</para></listitem>
+		<listitem><para>/usr/local/samba/swat/images/*</para></listitem>
+		<listitem><para>/usr/local/samba/swat/help/*</para></listitem>
+	</itemizedlist>
+
+	<refsect2> 
+		<title>Inetd Installation</title>
+
+		<para><command>inetd</command> から SWAT を起動するには、
+		<filename>/etc/inetd.conf</filename> と
+		<filename>/etc/services</filename> を修正する必要がある。
+		</para>
+
+		<para><filename>/etc/services</filename> には、
+		以下の一行を加える: </para>
+
+		<para><command>swat            901/tcp</command></para>
+
+		<para> NIS/YP および LDAP ユーザへの注意: ローカルな
+		<filename>/etc/services</filename> ファイルの代わりに、NIS
+		サービスマップを再構築する必要があるかも知れない。
+		</para>
+
+		<para>ポート番号は、1024 より小さい番号のポートで現在使用中でないもので
+		あればなんでも良い (1024 より大きいポートを用いる事は、
+		<command>inetd</command> デーモンの実装内容によっては、
+		セキュリティホールを提供してしまう)。</para>
+
+		<para><filename>/etc/inetd.conf</filename> については、
+		以下のような行を追加すること: </para>
+
+		<para><command>swat    stream  tcp     nowait.400  root
+		/usr/local/samba/bin/swat swat</command></para>
+	
+		<para><filename>/etc/services</filename> と 
+		<filename>/etc/inetd.conf</filename> を編集したら、inetd に
+		HUP シグナルを送ること。それには <command>kill -1 PID</command>
+		のように入力する。
+		ここでPIDは inetd デーモンのプロセスIDを示す。</para>
+
+	</refsect2>
+
+
+
+</refsect1>
+
+<refsect1>
+	<title>起動</title>
+
+	<para>SWAT を起動するには、 お好みのWebブラウザを起動して、
+	"http://localhost:901/" を開く。</para>
+
+	<para>IP 的に接続可能なマシンから SWAT を起動することも可能であるが、
+	パスワードは伝送路上を平文で送られているため、別マシンからの接続を
+	行なうとパスワードを盗聴される可能性があることに注意。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連ファイル</title>
+	
+	<variablelist>
+		<varlistentry>
+		<term><filename>/etc/inetd.conf</filename></term>
+		<listitem><para>このファイルには、メタデーモンのための適切な
+		起動情報が含まれている。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><filename>/etc/services</filename></term>
+		<listitem><para>このファイルには、サービス名 (例: SWAT)
+		とサービスポート (例: 901)、そのプロトコルの種類 (例: tcp)
+		のマッピングに関する情報が含まれている。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><filename>/usr/local/samba/lib/smb.conf</filename></term>
+		<listitem><para>これは swat が編集する <citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry> サーバ設定ファイルのデフォルトの位置である。
+		他によくあるインストール先としては 
+		<filename>/usr/samba/lib/smb.conf</filename> や
+		<filename>/etc/smb.conf</filename> がある。
+		このファイルにはサーバがクライアントに提供する全てのサービスに
+		ついての記述がある。</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>警告</title>
+
+	<para><command>swat</command> は <citerefentry><refentrytitle>
+	smb.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry> 
+	ファイルを書き換えてしまう。エントリは再配置され、コメントや
+	<parameter>include=</parameter>、<parameter>copy=</parameter>
+	オプションは削除されてしまう。
+	既に念入りに手をかけて作成した <filename>smb.conf</filename>
+	を持っている場合は、事前にバックアップしておくか、swat を使わないこと!
+	</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba バージョン 3用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><command>inetd(5)</command>, <citerefentry>
+	<refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum>
+	</citerefentry>, <citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry></para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作成された。現在 Samba は Samba Team によって、
+	Linux カーネルの開発と同様の オープンソースプロジェクトとして開発が
+	行なわれている。</para>
+	
+	<para>オリジナルの Samba マニュアルページは Karl Auer
+	によって作成された。マニュアルページは YODL 形式
+	(<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink>
+	で入手可能な優れたオープンソースソフトウェア) に変換され、
+	Samba 2.0 リリースに伴い、Jeremy Allison によって更新された。
+	Samba 2.2 における DocBook 形式への変換は、Gerald Carter
+	によって行なわれた。
+	Samba 3.0 における DocBook XML 4.2 への変換は Alexander Bokovoy によって行われた。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>たかはし もとのぶ(monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+	によって行なわれた。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は 太田俊哉(ribbon@samba.gr.jp)によって行われた。</para>
+</refsect1>
+
+</refentry>
+

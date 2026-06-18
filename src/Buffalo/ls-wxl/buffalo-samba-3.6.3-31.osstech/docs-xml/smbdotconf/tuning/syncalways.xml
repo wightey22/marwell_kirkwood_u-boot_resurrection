@@ -1,0 +1,19 @@
+<samba:parameter name="sync always"
+	context="S"
+	type="boolean"
+        xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータは、書き込み時に不摘発性のストレージへの書き込みとの同期を常に行なうかどうかを制御する。
+		<constant>no</constant> の場合、
+		サーバは個々のクライアントからの書き込み要求に基づいて、同期を行なうかどうかを制御する
+		(クライアントは個々の書き込みについて、同期要求ビットを設定することが可能である)。
+		<constant>yes</constant> の場合、
+		個々の書き込みに毎に、データを確実にディスクに書き込むため
+		<command moreinfo="none">fsync()</command> が呼び出される。
+		このパラメータが機能するには、
+		<parameter moreinfo="none">strict sync</parameter>パラメータが<constant>
+		yes</constant>に設定されている必要がある。</para>
+</description>
+<related>strict sync</related>
+<value type="default">no</value>
+</samba:parameter>

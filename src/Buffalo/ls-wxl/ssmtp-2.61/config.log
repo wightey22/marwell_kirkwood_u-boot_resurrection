@@ -1,0 +1,74 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:540: checking for gcc
+configure:653: checking whether the C compiler (gcc  ) works
+configure:669: gcc -o conftest    conftest.c  1>&5
+configure:695: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:700: checking whether we are using GNU C
+configure:709: gcc -E conftest.c
+configure:728: checking whether gcc accepts -g
+configure:790: checking for a BSD compatible install
+configure:843: checking whether ln -s works
+configure:866: checking how to run the C preprocessor
+configure:887: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:946: checking for ANSI C header files
+configure:959: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1026: gcc -o conftest -g -O2   conftest.c  1>&5
+configure: In function 'main':
+configure:1021: warning: incompatible implicit declaration of built-in function 'exit'
+configure:1053: checking for limits.h
+configure:1063: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1053: checking for strings.h
+configure:1063: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1053: checking for syslog.h
+configure:1063: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1053: checking for unistd.h
+configure:1063: gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1092: checking for obsolete openlog
+configure:1104: gcc -c -g -O2  conftest.c 1>&5
+configure: In function 'main':
+configure:1100: error: too few arguments to function 'openlog'
+configure: failed program was:
+#line 1097 "configure"
+#include "confdefs.h"
+#include <syslog.h>  
+int main() {
+ openlog("xx",1);  
+; return 0; }
+configure:1121: checking for working const
+configure:1175: gcc -c -g -O2  conftest.c 1>&5
+configure:1196: checking whether struct tm is in sys/time.h or time.h
+configure:1209: gcc -c -g -O2  conftest.c 1>&5
+configure:1231: checking for gethostname in -lnsl
+configure:1250: gcc -o conftest -g -O2   conftest.c -lnsl   1>&5
+configure:1278: checking for socket in -lsocket
+configure:1297: gcc -o conftest -g -O2   conftest.c -lsocket  -lnsl  1>&5
+/usr/lib/gcc/x86_64-pc-linux-gnu/4.1.2/../../../../x86_64-pc-linux-gnu/bin/ld: cannot find -lsocket
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1286 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char socket();
+
+int main() {
+socket()
+; return 0; }
+configure:1326: checking return type of signal handlers
+configure:1348: gcc -c -g -O2  conftest.c 1>&5
+configure:1367: checking for vprintf
+configure:1395: gcc -o conftest -g -O2   conftest.c -lnsl  1>&5
+configure:1379: warning: conflicting types for built-in function 'vprintf'
+configure:1474: checking for gethostname
+configure:1502: gcc -o conftest -g -O2   conftest.c -lnsl  1>&5
+configure:1474: checking for socket
+configure:1502: gcc -o conftest -g -O2   conftest.c -lnsl  1>&5
+configure:1474: checking for strdup
+configure:1502: gcc -o conftest -g -O2   conftest.c -lnsl  1>&5
+configure:1486: warning: conflicting types for built-in function 'strdup'
+configure:1474: checking for strstr
+configure:1502: gcc -o conftest -g -O2   conftest.c -lnsl  1>&5
+configure:1486: warning: conflicting types for built-in function 'strstr'

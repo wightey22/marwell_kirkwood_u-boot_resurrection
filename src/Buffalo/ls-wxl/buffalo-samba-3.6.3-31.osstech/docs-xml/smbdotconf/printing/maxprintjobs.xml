@@ -1,0 +1,17 @@
+<samba:parameter name="max print jobs"
+                 context="S"
+		 print="1"
+		 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、
+	ある時点で Samba の印刷キューに蓄積可能なジョブの最大数が設定される。
+	設定数を超過すると、
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> は、
+	クライアントに「空き領域がない」というエラーを返却する。
+	</para>
+</description>
+<value type="default">1000</value>
+<value type="example">5000</value>
+</samba:parameter>

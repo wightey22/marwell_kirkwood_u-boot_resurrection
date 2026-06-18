@@ -1,0 +1,16 @@
+<samba:parameter name="guest only"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>only guest</synonym>
+<description>
+    <para>このパラメータが <constant>yes</constant> のサービスについては、
+    ゲスト接続のみが許可される。
+    このパラメータは、<smbconfoption name="guest ok"/> が有効になっていないサービスでは無効である。</para>
+
+    <para>このオプションに関する詳細については、<smbconfoption name="security"/>
+    セクションを参照のこと。
+    </para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

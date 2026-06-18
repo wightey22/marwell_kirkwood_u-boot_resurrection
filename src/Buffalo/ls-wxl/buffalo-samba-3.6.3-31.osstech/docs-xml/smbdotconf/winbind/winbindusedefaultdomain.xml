@@ -1,0 +1,22 @@
+<samba:parameter name="winbind use default domain"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+  <para>
+    このパラメータにより、 
+    <citerefentry><refentrytitle>winbindd</refentrytitle> 
+      <manvolnum>8</manvolnum></citerefentry>  デーモンが、ドメイン名が
+    付加されていないユーザ名を扱う方式が指定される。
+    ドメイン名が付加されていないユーザは、winbindd サーバのドメイン
+    のものとして扱われる。 
+    Windows ユーザにとっては、どちらでもよい話であるが、 SSH, FTP や 
+    e-mail を利用する際に、 UNIX システム本来のやり方に近い方法で
+    指定することが可能となる。
+  </para>
+</description>
+
+<value type="default">no</value>
+<value type="example">yes</value>
+</samba:parameter>

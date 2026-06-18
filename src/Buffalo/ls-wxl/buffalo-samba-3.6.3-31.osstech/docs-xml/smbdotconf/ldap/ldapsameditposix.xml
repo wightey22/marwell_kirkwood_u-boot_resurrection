@@ -1,0 +1,98 @@
+<samba:parameter name="ldapsam:editposix"
+	context="G"
+	type="string"
+		 advanced="1" developer="0"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+Editposix は ldapsam:trusted を利用してドメインコントローラーの管理をより
+簡単にするためのオプションである。これを使えば posix ユーザーやグループの
+追加や保守のためのカスタムスクリプトを設定しなくてもすむ。その代わりこの
+オプションでは、LDAP ツリー上のユーザやグループのエントリーを直接生成、
+削除、編集できる。なお、このオプションを使うにあたっては、ユーザ／グループ
+の生成をする際に新しい uid/gid を割り当てるための winbindd が動いている
+必要がある。その割り当て範囲はあらかじめ設定されていなければならない。
+	</para>
+
+	<para>
+このオプションを使うためには、基本的な LDAP ツリーが提供され、また LDAP
+サフィックスが適切に設定されていなければならない。構築したてのサーバーでは、
+<command moreinfo="none">net sam provision</command> コマンドで事前に
+デフォルトのユーザとグループ (Administrator, Guest, Domain Users, 
+Domain Admins, Domain Guests) を作成できる。このコマンドを動かす際は
+LDAP サーバーと winbindd が動いており、かつ smb.conf の LDAP オプション
+群が適切に構成されていなければならない。
+<smbconfoption name="ldapsam:trusted">yes</smbconfoption> オプションで
+使われる典型的な LDAP 構成であれば、通常は
+<smbconfoption name="ldapsam:editposix">yes</smbconfoption> を使うのに
+十分である。
+	</para>
+
+	<para>
+設定例を以下に示す：
+
+	<programlisting>
+	encrypt passwords = true
+	passdb backend = ldapsam
+
+	ldapsam:trusted=yes
+	ldapsam:editposix=yes
+
+	ldap admin dn = cn=admin,dc=samba,dc=org
+	ldap delete dn = yes
+	ldap group suffix = ou=groups
+	ldap idmap suffix = ou=idmap
+	ldap machine suffix = ou=computers
+	ldap user suffix = ou=users
+	ldap suffix = dc=samba,dc=org
+
+	idmap backend = ldap:"ldap://localhost"
+
+	idmap uid = 5000-50000
+	idmap gid = 5000-50000
+	</programlisting>
+
+この設定例では、ディレクトリのレイアウトが以下の LDIF で示すように
+なっていることを想定している：
+
+	<programlisting>
+	dn: dc=samba,dc=org
+	objectClass: top
+	objectClass: dcObject
+	objectClass: organization
+	o: samba.org
+	dc: samba
+
+	dn: cn=admin,dc=samba,dc=org
+	objectClass: simpleSecurityObject
+	objectClass: organizationalRole
+	cn: admin
+	description: LDAP administrator
+	userPassword: secret
+
+	dn: ou=users,dc=samba,dc=org
+	objectClass: top
+	objectClass: organizationalUnit
+	ou: users
+
+	dn: ou=groups,dc=samba,dc=org
+	objectClass: top
+	objectClass: organizationalUnit
+	ou: groups
+
+	dn: ou=idmap,dc=samba,dc=org
+	objectClass: top
+	objectClass: organizationalUnit
+	ou: idmap
+
+	dn: ou=computers,dc=samba,dc=org
+	objectClass: top
+	objectClass: organizationalUnit
+	ou: computers
+	</programlisting>
+	</para>
+
+</description>
+<value type="default">no</value>
+</samba:parameter>

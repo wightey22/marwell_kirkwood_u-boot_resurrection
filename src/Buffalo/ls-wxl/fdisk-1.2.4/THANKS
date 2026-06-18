@@ -1,0 +1,14 @@
+Robert Millan <rmh@aybabtu.com>: small fixes, support for compiling without
+    GNU extensions to reduce size.
+
+Alexey Gladkov <legion@altlinux.ru>: small fix.
+
+Julien Louis <ptitlouis@sysif.net>: small fixes.
+
+-----------------------------------------------------------------------------
+
+This file is part of GNU fdisk
+Copyright (C) 2006 Free Software Foundation Inc.
+
+This file may be modified and/or distributed without restriction.  This is
+not an invitation to misrepresent the history of GNU fdisk.

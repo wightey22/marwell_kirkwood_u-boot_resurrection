@@ -1,0 +1,29 @@
+<samba:parameter name="preferred master"
+                 context="G"
+				 type="boolean-auto"
+                 basic="1" advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>prefered master</synonym>
+ <description>
+    <para>この真偽値パラメータは、
+    <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が
+    ワークグループのマスタブラウザとして優先されるかどうかに影響する。</para>
+
+    <para> これが <constant>yes</constant> に設定されていると、
+    <command moreinfo="none">nmbd</command> は起動時にブラウザの選定を強要する。
+    また、選定時の優先度でも、わずかではあるが有利になる。
+    このパラメータは、<command moreinfo="none">nmbd</command> がドメインマスタブラウザになることを保証するために、
+    <smbconfoption name="domain master">yes</smbconfoption> の設定と連携して使用することが推奨されている。
+    (訳注: Samba 3.0 系列では、<smbconfoption name="domain logons">Yes</smbconfoption>の場合 <smbconfoption name="preferred master"/>  パラメータもデフォルトでは有効となる。<parameter>domain logons</parameter> が有効でない場合(デフォルト)、<parameter>domain master</parameter> もデフォルトでは有効にならない。</para>
+		
+    <para> 同じサブネット上に優先マスタブラウザに指定されたホスト(Samba
+    サーバ、Windows 95/NT のいずれの場合も)が複数台存在すると、
+    それらのホストは定期的にローカルマスタブラウザになろうとする
+    試みを永続的に繰り返すことになる。
+    これは不要なブロードキャストトラフィックを発生させるだけでなく、
+    ブラウジング機能自体にも支障を発生させてしまうため、このオプションは注意して扱うこと。</para>
+</description>
+<related>os level</related>
+<value type="default">auto</value>
+</samba:parameter>

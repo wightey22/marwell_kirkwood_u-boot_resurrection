@@ -1,0 +1,53 @@
+<samba:parameter name="max protocol"
+                 context="G"
+				 type="enum"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータ(文字列)の値は、
+    サーバがサポートする最上位のプロトコルである。</para>
+
+    <para>設定可能な値は以下の通りである:</para>
+    <itemizedlist>
+	<listitem>
+            <para><constant>CORE</constant>: 
+            最初期のもので、ユーザの概念がない</para>
+	</listitem>
+			
+	<listitem>
+            <para><constant>COREPLUS</constant>: 
+            ほんの少し CORE に手を加えたものである</para>
+	</listitem>
+
+	<listitem>
+            <para><constant>LANMAN1</constant>: 最初の <emphasis>
+            近代的な</emphasis> バージョンであり、
+            長いファイル名をサポートしている </para>
+	</listitem>
+
+	<listitem>
+            <para><constant>LANMAN2</constant>: 
+            LANMAN1 プロトコルを改良したものである</para>
+	</listitem>
+
+	<listitem>
+            <para><constant>NT1</constant>: 最も新しいプロトコルであり、
+            Windows NT が利用する。CIFSと呼ばれることもある。</para>
+	</listitem>
+        <listitem>
+            <para><constant>SMB2</constant>: SMBプロトコルの再実装。Windows Vista
+	      以降で使用される。SambaでのSMB2の実装は現在実験的である!</para>
+        </listitem>
+    </itemizedlist>
+
+    <para> 通常、SMB プロトコルによりネゴシエーションを経て適切なプロトコルが選択されるため、
+    このオプションを設定すべきではない。
+    </para>
+</description>
+
+<related>min protocol</related>
+<synonym>protocol</synonym>
+
+<value type="default">NT1</value>
+<value type="example">LANMAN1</value>
+</samba:parameter>

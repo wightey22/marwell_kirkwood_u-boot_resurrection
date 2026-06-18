@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="Further-Resources">
+<chapterinfo>
+	&author.jelmer;
+	<pubdate>May 1, 2003</pubdate>
+</chapterinfo>
+
+<title>追加資料</title>
+
+<sect1>
+	<title>Web サイト</title>
+
+<itemizedlist>
+
+	<listitem><para>
+	<ulink url="http://hr.uoregon.edu/davidrl/cifs.txt">
+	<emphasis>CIFS: Common Insecurities Fail
+	Scrutiny</emphasis> <quote>Hobbit</quote> 著</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://afr.com/it/2002/10/01/FFXDF43AP6D.html">
+	<emphasis>Doing the Samba on Windows</emphasis> Financial Review 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://ubiqx.org/cifs/">
+	<emphasis>Implementing CIFS</emphasis> Christopher R. Hertel 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://samba.anu.edu.au/cifs/docs/what-is-smb.html">
+	<emphasis>Just What Is SMB?</emphasis> Richard Sharpe 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.linux-mag.com/1999-05/samba_01.html">
+	<emphasis>Opening Windows Everywhere</emphasis> Mike Warfield 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.tldp.org/HOWTO/SMB-HOWTO.html">
+	<emphasis>SMB HOWTO</emphasis> David Wood 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.phrack.org/phrack/60/p60-0x0b.txt">
+	<emphasis>SMB/CIFS by The Root</emphasis> <quote>ledin</quote> 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.linux-mag.com/1999-09/samba_01.html">
+	<emphasis>The Story of Samba</emphasis> Christopher R. Hertel 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://hr.uoregon.edu/davidrl/samba/">
+	<emphasis>The Unofficial Samba HOWTO</emphasis> David Lechnyr 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.linux-mag.com/2001-05/smb_01.html">
+	<emphasis>Understanding the Network Neighborhood</emphasis>
+	Christopher R. Hertel 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.linux-mag.com/2002-02/samba_01.html">
+	<emphasis>Using Samba as a PDC</emphasis> Andrew Bartlett 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://ru.samba.org/samba/ftp/docs/Samba24Hc13.pdf">
+	<emphasis>PDF version of the Troubleshooting Techniques
+	chapter</emphasis> Sam's Teach Yourself Samba in 24 Hours の第
+	2版 (出版日 2001/12/12) より</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://ru.samba.org/samba/ftp/slides/">
+	<emphasis>Slide presentations</emphasis> Samba チームメンバ 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.atmarkit.co.jp/flinux/special/samba3/samba3a.html">
+	<emphasis>Samba 3.0 の全貌</emphasis> たかはしもとのぶ著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.linux-mag.com/2001-05/smb_01.html">
+	<emphasis>Understanding the Network Neighborhood</emphasis> Samba チー
+	ムメンバ Chris Hertel 著。この記事は、Linux magazine の 2001 年 5 月号で掲載された。
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="ftp://ftp.stratus.com/pub/vos/customers/samba/">
+	<emphasis>Samba 2.0.x Troubleshooting guide</emphasis> Paul Green 著
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://samba.org/samba/docs/10years.html">
+	<emphasis>Ten Years of Samba</emphasis>
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://tldp.org/HOWTO/Samba-Authenticated-Gateway-HOWTO.html">
+		<emphasis>Samba Authenticated Gateway HOWTO</emphasis>
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://samba.org/samba/docs/SambaIntro.html">
+		<emphasis>An Introduction to Samba</emphasis>
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://www.samba.org/cifs/">
+		<emphasis>What is CIFS?</emphasis>
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://support.microsoft.com/support/kb/articles/q92/5/88.asp">
+		<emphasis>WFWG: Password Caching and How It Affects LAN Manager
+			Security</emphasis> Microsoft サポート技術情報より
+	</ulink>
+	</para></listitem>
+
+</itemizedlist>
+
+</sect1>
+
+<sect1>
+	<title>Microsoft の関連更新情報</title>
+
+<itemizedlist>
+	<listitem><para>
+	<ulink url="http://support.microsoft.com/support/kb/articles/q92/5/88.asp">
+		<emphasis>Enhanced Encryption for Windows 95 Password Cache</emphasis> 
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://support.microsoft.com/support/kb/articles/q136/4/18.asp">
+		<emphasis>Windows '95 File Sharing Updates</emphasis>
+	</ulink>
+	</para></listitem>
+
+	<listitem><para>
+	<ulink url="http://support.microsoft.com/support/kb/articles/q136/4/18.asp">
+		<emphasis>Windows for Workgroups Sharing Updates</emphasis>
+	</ulink>
+	</para></listitem>
+
+</itemizedlist>
+</sect1>
+
+</chapter>

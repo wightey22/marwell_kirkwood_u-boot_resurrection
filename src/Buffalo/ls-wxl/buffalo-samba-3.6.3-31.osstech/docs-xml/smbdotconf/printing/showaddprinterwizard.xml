@@ -1,0 +1,35 @@
+<samba:parameter name="show add printer wizard"
+                 context="G"
+				 type="boolean"
+		 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>Samba 2.2 での Windows NT/2000 クライアントに対する MS-RPC ベースのプリンタサポート機能のサポートによって、
+	Samba ホスト上の共有一覧で「プリンタ」フォルダが表示されようになっている。
+	通常、このフォルダにはプリンタの追加ウィザード
+	(MS Add Printer Wizard (APW))のアイコンが存在している。
+	しかし、接続したユーザの権限に関わらず、
+	この機能を無効にすることも可能である。</para>
+		
+	<para>通常の場合、Windows NT/2000 クライアントは
+	Administrator 権限を持っているかどうかを確認するために、
+	OpenPrinterEx() 関数により、プリンタサーバ上のハンドルをオープンしようとする。
+	ユーザにプリンタサーバ上での管理者権限がない場合
+	(root でなく、<parameter moreinfo="none">printer admin</parameter> グループのメンバでもない)、
+	OpenPrinterEx() の呼出は失敗して、 client は低い権限でも可能な別の関数呼出を行なう。
+	これに成功しても、APW のアイコンは表示されない。</para>
+		
+	<para><parameter moreinfo="none">show add printer wizard</parameter>
+	パラメータを無効にすることにより、サーバ上での
+	OpenPrinterEx() 呼出が常に失敗するようになる。
+	そのため、APW のアイコンは決して表示されなくなる。
+    </para>
+	<note><para>このパラメータは、ユーザが個々のプリンタの管理権限を持つことを制限するものではない。</para></note>
+</description>
+
+<related>addprinter command</related>
+<related>deleteprinter command</related>
+<related>printer admin</related>
+
+<value type="default">yes</value>
+</samba:parameter>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_fake_perms.8">
+
+<refmeta>
+	<refentrytitle>vfs_fake_perms</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_fake_perms</refname>
+	<refpurpose>読み込み専用のローミングプロファイルを有効にする</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = fake_perms</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である.</para>
+
+	<para>この<command>vfs_fake_perms</command>VFSモジュールはUNIX上のSambaサーバ
+	で移動プロファイルとディレクトリを読み込み専用にするために作成された。
+	
+	このモジュールがあると、プロファイルが共有でインストールされ時、そのプロファイル
+	ファイルとディレクトリは書き込み可であるとクライアントに報告する。
+	
+	この機能により、クライアントがログアウトするか、シャットダウンするまでの間それらのファイルは
+	書き換えられなかったことにできる。
+	
+	</para>
+
+	<para>このモジュールはスタッカブルである。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+
+<programlisting>
+        <smbconfsection name="[Profiles]"/>
+	<smbconfoption name="path">/profiles</smbconfoption>
+	<smbconfoption name="vfs objects">fake_perms</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+	<para>このヘルプはSambaシステム　3.0.25(訳注:3.3?)に対応している。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team に
+	よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+	として開発が行なわれている。</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このドキュメントは、Samba 3.0.25 - 3.5.3 対応のものである。</para>	
+    
+    <para>このドキュメントの翻訳は
+	<itemizedlist>
+		<listitem><para>平田祥司 (shouji@microft.co.jp)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

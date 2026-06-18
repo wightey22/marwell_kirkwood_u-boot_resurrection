@@ -1,0 +1,26 @@
+<samba:parameter name="defer sharing violations"
+                 context="G"
+		 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    Windows ではファイルのオープン時に他のプロセスとの共有方法を指定することができる。
+    あるプロセスがファイルを開こうとした時に指定した共有方法が
+    別のプロセスによって指定された共有方法と共存できないようなものであった際に
+    共有違反が発生する。
+    このパラメータにより、smbd は Windows サーバのように動作するようになり、
+    「共有違反」のエラーメッセージを 1 秒待ってから返却するようになり、
+    クライアントはこの間に共有違反を起こしたファイルをクローズすることが可能となる。
+    </para>
+
+    <para>UNIX のデフォルトでは、こうした挙動は行なわれない。</para>
+
+    <para>
+    このパラメータは Samba の挙動をより Windows に近づけるためのものであり、
+    無効にする必然性はないであろう。
+    </para>
+</description>
+
+<value type="default">True</value>
+</samba:parameter>

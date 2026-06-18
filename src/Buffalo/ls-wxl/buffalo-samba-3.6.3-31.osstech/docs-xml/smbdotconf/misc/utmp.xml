@@ -1,0 +1,23 @@
+<samba:parameter name="utmp"
+                 context="G"
+				 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>この真偽値パラメータは、
+	Sambaが <command moreinfo="none">--with-utmp</command> オプションで
+	configure され、コンパイルされた時にのみに有効である。
+	このパラメータを <constant>yes</constant> に設定することで、
+	Sambaは utmp または utmpx レコード(UNIXシステムに依存)に、
+	Sambaサーバへの接続時の情報を追加するようになる。
+	このパラメータにより、
+	Sambaの共有への接続を記録することが可能になる。
+	</para>
+
+	<para>utmp レコードの仕様のため、接続する個々のユーザ毎に一意な識別子が生成されている必要がある。
+	この、オプションを有効にすることで、 n^2 アルゴリズムを使ってその番号を検索する処理が発生する。
+	大規模システムの場合、この処理がパフォーマンスに影響を与える場合も考えられる。</para>
+</description>
+<related>utmp directory</related>
+<value type="default">no</value>
+</samba:parameter>

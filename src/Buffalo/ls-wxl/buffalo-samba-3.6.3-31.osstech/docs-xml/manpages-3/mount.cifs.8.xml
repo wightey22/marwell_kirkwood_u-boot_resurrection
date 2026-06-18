@@ -1,0 +1,724 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="mount.cifs.8">
+
+<refmeta>
+	<refentrytitle>mount.cifs</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">System管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>mount.cifs</refname>
+	<refpurpose>Common Internet File System (CIFS) を使用したマウント</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+
+		<command>mount.cifs</command>
+		<arg choice="req">service</arg>	
+		<arg choice="req">mount-point</arg>	
+		<arg choice="opt">-o options</arg>	
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para>mount.cifs は Linux の CIFS ファイルシステムをマウントする。
+	これは通常、"-t cifs" オプションが指定された場合に
+	<citerefentry><refentrytitle>mount</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> によって間接的に呼び出される。
+	このコマンドは Linux 上でしか動作せず、カーネルが CIFS
+	ファイルシステムをサポートしていなければいけない。CIFS プロトコルは SMB
+	プロトコルの後継プロトコルであり、Samba の他にもほとんどの Windows 
+	サーバや他の商用サーバ、ネットワーク・ストレージ機器などで
+	サポートされている。</para>
+
+	<para>
+    mount.cifs ユーティリティは、<emphasis>service</emphasis> として指定
+    された UNC 名 (公開されたネットワークリソース)にローカルディレクトリの
+    <emphasis>mount-point</emphasis> を割り当てる。
+    <emphasis>service</emphasis> は //server/share という書式で指定する。
+    ここで "server" はサーバの名前もしくは IP アドレス、 "share" は
+    共有の名前である。
+    </para>
+
+	<para>
+	<emphasis>mount.cifs</emphasis> のオプションはカンマ「,」
+		で区切られた key=value の組み合わせで指定される。
+		ここで列挙されているオプション以外でも、CIFS
+	ファイルシステムのカーネルモジュール (cifs.ko) がサポートしているオプションを指定することもできる。
+		認識されないcifs マウントオプションは、そのままcifs vfsカーネルモジュールに
+		渡され、カーネルのログに記録される。
+	</para>
+
+	<para><emphasis>mount.cifs</emphasis> はcifsdという名のスレッドをを起動するcifs vfs を引き起こす。マウント後は、
+	マウントしたリソースが (通常 umount ユーティリティで)アンマウントされるまで実行されたままになる。
+	</para>
+	<para>
+		<emphasis>mount.cifs -V</emphasis>コマンドはcifsマウントヘルパのバージョンを表示する。
+	</para>
+	<para>
+
+		<emphasis>modinfo cifs</emphasis>コマンドはcifsモジュールのバージョンを表示する。
+	</para>
+
+
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+	<variablelist>
+		<varlistentry><term>user=<replaceable>arg</replaceable></term>
+
+		<listitem><para>
+        接続する際に用いるユーザ名を指定する。
+		指定されていないときは、環境変数 <envar>USER</envar>
+		が使用される。このオプションは、"user%password" や
+		"workgroup/user" もしくは "workgroup/user%password"
+		という形で、ユーザ名の一部としてパスワードやワークグループを
+		指定することも可能である。
+		</para>
+
+
+<note>
+	<para>
+	cifs VFS モジュールは、<parameter>user=</parameter> というパラメータの他に、
+	smbfs に慣れたユーザのために <parameter>username=</parameter> という長い形式のパラメータも受け付ける。
+	同様に、<parameter>pass=</parameter>、<parameter>dom=</parameter>、<parameter>cred=</parameter> といった短い cifs のパラメータの同義語として、smbfs 形式の長いパラメータ名も受け付けられる。
+	</para>
+</note>
+
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term>password=<replaceable>arg</replaceable></term>
+
+		<listitem><para>
+        CIFS のパスワードを指定する。
+		指定されていないときは、環境変数 <emphasis>PASSWD</emphasis>
+		が使用される。パスワードが取得できなければ、guest
+		オプションが指定されていない限り、<emphasis>mount.cifs</emphasis>
+		はパスワードを求めるプロンプトを表示する。</para>
+
+
+		<para>
+		コマンドラインでは、(カンマ','のような) 引数の区切り文字を含む
+		パスワードは、正しく認識できないことに注意すること。ただし、
+		PASSWD 環境変数やパスワードを格納したファイル
+		(以下「資格情報ファイル」と呼ぶ。詳しくは後述)もしくはパスワードプロンプトからの入力においては、
+		そのようなパスワードも正しく認識できる。</para>
+	    </listitem>
+    </varlistentry>
+
+	<varlistentry><term>credentials=<replaceable>filename</replaceable></term>
+
+		<listitem><para>
+        ユーザ名やパスワード、およびオプションでワークグループ名を
+        含む資格情報ファイルを指定する。
+		ファイルのフォーマットは以下のとおり:
+		</para>
+
+<programlisting>
+		username=<replaceable>value</replaceable>
+		password=<replaceable>value</replaceable>
+		domain=<replaceable>value</replaceable>
+</programlisting>
+		
+		<para>資格情報ファイルを利用することは、
+		<filename>/etc/fstab</filename> のような 共有されている
+		ファイル中に平文でパスワードを記述するより好ましい。
+		このファイルは適切に保護するように注意すること。
+		</para>
+
+	    </listitem>
+    </varlistentry>
+
+	<varlistentry>
+		<term>uid=<replaceable>arg</replaceable></term>
+		<listitem>
+		<para>サーバが所有者の情報を提供しない時に、マウントされた
+		ファイルシステム上の、すべてのファイルとディレクトリを所有する
+		uidを設定する。これは、ユーザ名か数値によるuidのどちらかで指定できる。
+		指定されない場合は、既定値としてuid 0 が使われる。mount.cifsヘルパは、
+		非数値形式のuidを指定することをサポートするため、バージョン1.10以上で
+		なければならない。詳細については、以下の、「ファイルとディレクトリの
+                 所有権とアクセス許可」の節を参照。</para>
+
+    </listitem>
+        </varlistentry>
+
+        <varlistentry>
+        <term>forceuid</term>
+        <listitem>
+               <para>ファイルとディレクトリのためにサーバによって提供された任意のuidを
+		 無視し、常時uid=オプションでの値に、所有者を割り当てるように、
+		 クライアントに指示する。詳細については、以下の、「ファイルとディレクトリの
+		 所有権とアクセス許可」の節を参照。</para>
+        </listitem>
+        </varlistentry>
+
+        <varlistentry>
+        <term>gid=<replaceable>arg</replaceable></term>
+        <listitem>
+
+	  <para>サーバが所有者の情報を提供しない時に、マウントされた
+                ファイルシステム上の、すべてのファイルとディレクトリを所有する
+                gidを設定する。これは、グループ名か数値によるgidのどちらかで指定できる。
+                指定されない場合は、既定値としてgid 0 が使われる。mount.cifsヘルパは、
+                非数値形式のuidを指定することをサポートするため、バージョン1.10以上で
+                なければならない。詳細については、以下の、「ファイルとディレクトリの
+                 所有権とアクセス許可」の節を参照。</para>
+
+        </listitem>
+        </varlistentry>
+
+        <varlistentry>
+        <term>forcegid</term>
+        <listitem>
+	  <para>ファイルとディレクトリのためにサーバによって提供された任意のgidを
+                 無視し、常時gid=オプションでの値に、所有者を割り当てるように、
+                 クライアントに指示する。詳細については、以下の、「ファイルとディレクトリの
+                 所有権とアクセス許可」の節を参照。</para>
+        </listitem>
+        </varlistentry>
+
+	<varlistentry>
+		<term>port=<replaceable>arg</replaceable></term>
+
+		<listitem><para>CIFS サポートの手続きを行うためのサーバの
+		ポート番号を指定する。もしサーバが指定されたポート番号を
+		開いていない場合や、この値が指定されなかった場合には、
+		デフォルトである 445 が試され、それでもレスポンスがなかった
+		場合は 139 が試される。
+		</para></listitem>
+	</varlistentry>
+
+        <varlistentry>
+                <term>servern=<replaceable>arg</replaceable></term>
+
+                <listitem><para>
+		サーバへのセッションのセットアップを試みる時に使う、サーバのnetbios
+		名(RFC1001名)を指定する。新しいサーバをマウントするためにもまれに必要で、
+		このオプションは、ほとんどの新しいサーバと違って、ポート139越えで既定値の
+		サーバ名をサポートしない古いサーバ(例えばOS/2やWindows 98 と Windows ME)
+		をマウントする時に必要となる。サーバ名は最大15文字までで、通常大文字である。
+                </para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>netbiosname=<replaceable>arg</replaceable></term>
+
+                <listitem><para>ポート 139 でサーバにマウントされる場合、
+		RFC1001 の NetBIOS セッション初期化中に
+		クライアントの NetBIOS コンピュータ名として用いられるRFC1001 netbios
+		マシン名を指定する。
+		</para></listitem>
+        </varlistentry>
+
+	<varlistentry>
+		<term>file_mode=<replaceable>arg</replaceable></term>
+
+		<listitem><para>サーバが CIFS Unix extensions をサポートしていない場合、
+		これは既定値のファイルモードを上書きする。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>dir_mode=<replaceable>arg</replaceable></term>
+
+		<listitem><para>サーバが CIFS Unix extensions をサポートしていない場合、
+		これは既定値のディレクトリモードを上書きする。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>ip=<replaceable>arg</replaceable></term>
+
+		<listitem><para>対象IP アドレスを指定する。このオプションは、もしも、要求された
+		UNC名のサーバ名部分が解決できる時に自動的に設定されるので、ユーザによって指定することはまれである。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>domain=<replaceable>arg</replaceable></term>
+
+		<listitem><para>ユーザの所属するドメイン名 (ワークグループ名)
+		を指定する。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>guest</term>
+
+		<listitem><para>パスワードプロンプトを表示しない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>iocharset</term>
+
+		<listitem><para>
+		Unicode と変換するローカルパス名の文字コードを設定する。
+		Unicode は、サーバがサポートしている限り、ネットワークパス名のデフォルトの文字コードとして用いられる。
+		iocharset が指定されておらず、nls_default がクライアントのカーネルビルド時に指定されている場合は、それが用いられる。
+		サーバが Unicode をサポートしていない場合、このパラメータは用いられない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>ro</term>
+
+		<listitem><para>read-only でマウントする。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>rw</term>
+		<listitem><para>read-write でマウントする。</para></listitem>
+	</varlistentry>
+
+        <varlistentry>
+                <term>setuids</term>
+                <listitem><para>
+		CIFS Unix extension がサーバとの間で有効化された場合、
+		クライアントは新規に作成するファイル、ディレクトリ、デバイス (create / mkdir / mknod) に対して、ローカルプロセスの実効 uid および gid を設定しようとする。
+		CIFS Unix Extension が無効な場合、新規に作成されるファイルやディレクトリには、
+		マウント時に指定されたデフォルトの uid と gid を設定する代わりに、
+		新規ファイルの uid と gid をローカルにキャッシュする。これは、inode 
+		がリロードされる度に (つまりユーザが共有を再マウントする度に)
+		ファイルの uid が変更されることを意味する。
+                </para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>nosetuids</term>
+                <listitem><para>
+		クライアントは、新規に作成するファイル、ディレクトリ、デバイス (create / mkdir / mknod) に対して、uid や gid を設定しようとしない。
+		これは、サーバが uid や gid をデフォルトの値 (通常共有をマウントしたユーザのもの) に設定することを意味する。
+		デフォルトでは、(クライアントではなく) サーバが uid や gid を設定する。
+		CIFS Unix Extension が無効の場合、新規ファイルの uid (gid) はマウントしたユーザ、もしくはマウント時にパラメータで指定した uid (gid) となる。
+                </para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>perm</term>
+                <listitem><para>
+		クライアントはパーミッションの検査を行わない(ファイルに対するuid/gidへのモードと
+		希望する操作のvfs_permission チェック)。サーバソフトウェアによって行われる
+		ターゲットマシンの通常のACL検査も追加されることに注意。クライアントのパーミッション
+		検査は既定値で有効である。</para></listitem>
+
+        </varlistentry>
+
+        <varlistentry>
+                <term>noperm</term>
+                <listitem><para>クライアントはパーミッション検査を行わない。これは、ローカル
+		クライアントシステム上の他のユーザによりアクセスするためにこのマウント上でファイルを
+		さらすことが出来る。これは、サーバがCIFS Unix Extensionsをサポートしているが、
+		クライアントとサーバシステム上のUID/GIDがユーザのマウント操作によってアクセス
+		するために密接になっているのに一致していない時にのみ通常必要である。
+		サーバソフトウェア(マウント時に提供されるユーザ名に対するACL)によってターゲット
+		マシンで通常のACL検査を行うことへの影響はないことに注意。</para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>dynperm</term>
+               <listitem><para>サーバに保存できないメモリ中で、所有権とアクセス許可を
+		管理することをサーバに指示する。この情報は、(inodeがキャッシュから
+		フラッシュされた時はいつでも)任意の時点で消滅できる。そのため、これが
+		いくつかのアプリケーションを動かすための手助けとなるかもしれない時、
+		その動作は、若干信頼性に欠ける。詳細については、以下の、「ファイルと
+		ディレクトリの所有権とアクセス許可」の節を参照。
+                </para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>directio</term>
+                <listitem><para>
+		マウント中にオープンされたファイルの inode 情報をキャッシュしない。
+		これは、マウント中に mmap されたファイルも preclude する。
+		高速なネットワーク環境で、キャッシュをほとんど、もしくは全く行なわないことによりクライアントにメリットがある場合 (例えば、アプリケーションがページサイズを越えるような大量のシーケンシャルな読み込みを行なっており、かつ読み込んだデータの再読み込みは行なっていないような状況) 、
+		oplock が取得され、維持されている限りローカルな Linux クライアントのページキャッシュ経由で読み取り(先読み/readahead)や書き込み(writebehind)をキャッシュするデフォルトの挙動と比較してパフォーマンスの向上をもたらす場合がある。
+		このパラメータを有効にすることで、ページサイズを越える書き込み処理は、直接サーバに送られるようになる。
+		カーネルによっては、cifs.ko モジュールが CIFS_EXPERIMENTAL という configure オプションを有効にしてビルドされている必要がある。
+		</para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>mapchars</term>
+                <listitem><para>
+		予約されている7文字の内6文字(バックスラッシュ以外の、コロン、疑問符、
+		パイプ、アスタリスク、＞、＜記号)を、remap range(0xF000以上)に割り当てる。
+		これにより、CIFSクライアントはWindowsのPOSIX エミュレーション環境下で
+		作成されたこれらの文字を含むファイル名を認識することが可能となる。
+		このオプションは、(これら 7 文字を含むファイル名の作成やオープンを
+		禁止している)ほとんどのバージョンのSambaの共有をマウントする際にも
+		有用である。サーバがネットワーク上で Unicode をサポートしていない場合、
+		このオプションは無効となる。mapcharsマウントオプションを指定して
+		作成されたファイルは、共有が、このオプションなしでマウントされた
+		場合、アクセス出来ないかもしれないと言うことに注意。
+                </para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>nomapchars</term>
+                <listitem><para>これら7文字の割り当てを行なわない(既定値)。</para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>intr</term>
+                <listitem><para>現在実装されていない</para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>nointr</term>
+                <listitem><para>(既定値)現在実装されていない</para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>hard</term>
+                <listitem><para>CIFS でマウントされたファイルシステムにアクセスしているプログラムは、サーバがクラッシュすると、ハングアップする。
+              </para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>soft</term>
+                <listitem><para>(既定値)CIFS でマウントされたファイルシステムにアクセスしているプログラムは、サーバがクラッシュしてもハングアップせず、ユーザアプリケーションにはエラーが返却される。</para></listitem>
+        </varlistentry>
+
+	<varlistentry>
+                <term>noacl</term>
+                <listitem><para>
+		サーバがサポートしていた場合でも、POSIX ACL 機能を無効にする。</para>
+		<para>
+		CIFS クライアントは、バージョン3.0.10 以降の Samba サーバに対して POSIX ACL の取得や設定 (getfacl や setfacl) を行なうことができる。
+		POSIX ACL の設定を行なうには、XATTR (拡張属性)のサポートに加え、CIFS モジュールのビルドの際、CIFS 設定オプション中の POSIX サポートを有効にしていることが必要である。
+		POSIX ACL サポートはマウントの際に「noacl」を指定することでマウントごとに無効化することが可能である。
+		</para>
+		</listitem>
+	</varlistentry>
+
+        <varlistentry>
+                <term>nocase</term>
+                <listitem>
+		<para>
+		大文字小文字を区別しないパス名のマッチング処理を行なう (デフォルトでは、サーバがサポートしていれば、大文字小文字を区別した処理が行なわれる)。
+		</para>
+                </listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>sec=</term>
+                <listitem>
+                <para>セキュリティモード。以下の値を設定できる:</para>
+			<itemizedlist>
+                        <listitem><para>none    空のユーザ名(名前なし)で接続を行なう。</para></listitem>
+                        <listitem><para>krb5    Kerberos 5 認証を用いる。</para></listitem>
+                        <listitem><para>krb5i   Kerberos 認証とパケット署名(訳注: SMB署名?)を用いる。</para></listitem>
+                        <listitem><para>ntlm    NTLM パスワードハッシュを用いる (デフォルト) 。</para></listitem>
+                        <listitem><para>ntlmi   NTLM パスワードハッシュと署名を用いる (もしも
+				/proc/fs/cifs/PacketSigningEnabled がonか、もしも、サーバが書名を
+				要求する異が既定値ならば)</para></listitem>
+                        <listitem><para>ntlmv2  NTLMv2 パスワードハッシュを用いる。</para></listitem>
+                        <listitem><para>ntlmv2i NTLMv2 パスワードハッシュとパケット署名を用いる。</para></listitem>
+			</itemizedlist>
+
+			<para>NB: この sec パラメータは開発中であり、cifs カーネルモジュール 1.40 以降で利用可能となる予定である。
+                </para>
+                </listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>nobrl</term>
+                <listitem>
+                <para>
+		サーバにバイト範囲ロックの要求を送信しない。
+		これは、CIFS 形式の強制的なバイト範囲ロックを無視する幾つかのアプリケーションにとって必要である (大半の CIFS サーバはアドバイザリなバイト範囲ロックをサポートしていない)。
+                </para>
+                </listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>sfu</term>
+                <listitem>
+                <para>
+		CIFS Unix Extension が無効となっている場合に、デバイスファイルと fifo ファイルを Services for Unix (SFU) と互換性のある形式で作成する。
+		さらに追加で(SFUが行うように)、SETFILEBITS拡張属性経由のビット10-12 を検索する。
+		将来は、modeモードの下9ビットもセキュリティデスクリプタ(ACL)の問い合わせとして
+		エミュレートする予定である。[NB: CIFS VFSのバージョン1.39か素励行が必要である。SFU互換形式でシンボリックリンクの認識と作成を行うためには、CIFS VFSカーネルモジュールのバージョン1.40かそれ以降が必要である。]
+                </para>
+                </listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>serverino</term>
+                <listitem><para>inode 番号 (一意で永続的なファイル識別子) として、クライアント側で一時的に自動生成された inode 番号ではなく、サーバ側から返却された番号を用いる。
+		サーバ側の inode 番号を用いることで、ハードリンクされたファイル (同じ inode 番号を持っている) の処理が簡素化される他、inode 番号を永続的にすることが可能となる (ソフトウェアによっては有用である)。
+		もしも、1つの共有配下で複数のサーバサイドのマウントがエクスポートされるときに、
+		inode番号の一意性をサーバは認めない(サーバ上のinode番号は、もしもファイルシステムが、
+より上位のディレクトリで同じ共有下でマウントされていた場合、一意にならないため)  
+		CIFS Unix Extension をサポートしている全てのサーバがサーバ側の inode 番号を返却するとは限らない。
+		Windows 2000 以降のサーバは、これをサポートしている (ただしローカルサーバのファイルシステムではこれを必要としていない)。
+		サーバ側で inode 番号の返却がサポートされていない場合、このパラメータは意味を持たない。
+		</para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>noserverino</term>
+                <listitem>
+		<para>inode番号をクライアント側で生成する(サーバ側のinode番号を用いない)。
+		  これが既定値である。
+		</para>
+		<para>
+		  より詳細は、<emphasis>INODE番号</emphasis>節を参照。
+		</para></listitem>
+        </varlistentry>
+
+        <varlistentry>
+                <term>nounix</term>
+                <listitem>
+               <para>
+		 このマウント操作に対して、CIFS Unix拡張を無効にする。これは、同時に
+		 複数の設定を無効にするのに便利である。これには、POSIX acl、POSIXロック、
+		 シンボリックリンクのサポートとサーバからのuid/gid/modeの検索を含む。
+		 これはまた、Unix拡張をサポートするサーバ中のバグに対応するのにも
+		 便利である。
+                </para>
+                <para>
+                より詳細は、<emphasis>INODE番号</emphasis>節を参照。
+                </para> </listitem>
+         </varlistentry>
+
+         <varlistentry>
+                <term>nouser_xattr</term>
+                <listitem><para>(既定値)サーバ側でサポートされていた場合でも、getfattr/setfattr を用いた拡張属性の参照、設定を許可しない。</para></listitem>
+        </varlistentry>
+
+	<varlistentry>
+		<term>rsize=<replaceable>arg</replaceable></term>
+		<listitem><para>ネットワークからの読み取りサイズのデフォルト値(通常16K)。クライアント
+		は現在CIFSMaxBufSize以上のrsizeを使えない。CIFSMaxBufSizeの既定値は16Kで、
+		cifs.koモジュールをインストールする時に(kerenelによって最大kmallocサイズの
+		変更が許される時)変更可能である。CIFSMaxValueをとても大きな値に設定すると、
+		いくつかの場合において、メモリはたくさんつかうが、パフォーマンスを減少させられる。
+		127K(オリジナルのCIFSプロトコルの最大値)より大きなrsizeをつかうためには、サーバが
+		新しいUnix Capability フラグ(特大の読み込み用)をサポートしている必要がある。
+		それは、たとえば新しいサーバ(Samba 3.0.26以降)である。rsizeは最低2048から
+		最大130048(127KまたはCIFSMaxBufSizeのどちらか小さい方)で設定可能である。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>wsize=<replaceable>arg</replaceable></term>
+
+		<listitem><para>ネットワークへの書き込みサイズのデフォルト値(既定値では57334）。
+		現在CIFSが認めている最大のwsizeは57344(4096バイトページの14倍)である。</para></listitem>
+	</varlistentry>
+	 <varlistentry>
+                <term>--verbose</term>
+                <listitem><para>マウントの際に、デバッグ用の付加情報を出力する。
+		このパラメータは -o の前に指定する必要があることに注意。以下に例を示す:
+                </para>
+                <para>mount -t cifs //server/share /mnt --verbose -o user=username</para></listitem>
+        </varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>サービスの形式とデリミタ</title>
+
+	<para>
+		サービス名中で通常のスラッシュ(/)をデリミタとして使うことは一般的である。Windowsのパスの構成の中に埋め込むことが認められないため、これは"汎用デリミタ"と考えることが出来、クライアントは無条件にバックスラッシュ(\)に変換する。逆にいえば、バックスラッシュ文字は、POSIXによって、パス要素として認められていて、同じ方法で自動的に変換されない。
+	</para>
+	<para>
+		mount.cifs は、それが可能であれば、バックスラッシュを通常のスラッシュに変換しようとするが、共有名のあとの任意のパス要素には行えない。
+	</para>
+</refsect1>
+
+ <refsect1>
+        <title>INODE番号</title>
+        <para>
+	  UNIX拡張が有効になっている時、POSIX呼び出しの応答中で、サーバによって
+	  提供された実際のinode番号を、inode番号として使う。
+        </para>
+        <para>
+	  UNIX拡張が無効で、"serverinfo"マウントオプションが有効な時、サーバの
+	  inode番号を知るすべはない。クライアントは通常inode番号に、サーバが割り当てた
+	  "固有のID"をマップする。
+        </para>
+        <para>
+	  固有のIDはサーバのinode番号とは異なることに注意。固有のIDの値は、
+	  サーバ全体の範囲を超えて個別であり、しばしば2の32乗よりも大きい。
+	  この値はしばしばLFS(Large File Support)なしでコンパイルされたプログラムに、
+	  対象の構造体のフィールド中に適合しないために、glibcのEOVERFLOWエラーを
+	  引き起こすトリガとなる。この問題を防止するために、使用するプログラムを
+	  LFS付きで(すなわち、-D_FILE_OFFSET_BITS=64を指定して)コンパイルすることを
+	  強く推奨する。また、クライアント上で2の32乗よりも小さいinodeの値を生成する
+	  "noserverino"マウントオプションを使う事も出来る。しかし、適切にハードリンクを
+	  検出できないかもしれない。
+        </para>
+</refsect1>
+
+<refsect1>
+        <title>ファイルとディレクトリの所有権とアクセス許可</title>
+
+        <para>基本のCIFSプロトコルはUNIXの所有権情報あるいはファイルとディレクトリの
+	  モードを提供しない。このため、ファイルとディレクトリは一般的に、uid=か
+	  gid=オプションで設定された値によって所有されるように見え、また、
+	  パーミッションは、マウント時のfile_modeとdir_modeの既定値に設定される。
+	  chmod/chownによってこれらの値を変更しようとすると、一見成功したように
+	  見えるが、実際には変更されない。</para>
+
+        <para>クライアントとサーバがUNIX拡張をネゴシエートするとき、ファイルと
+	  ディレクトリはサーバによって提供されるuid,gidとモードが割り当てられる。
+	  CIFSマウントは一般的にシングルユーザで、どのようなユーザがマウントした
+	  ものにアクセスするかにかかわらず、同じ認証情報が使われるという理由で、
+	  新しく作成されたファイルとディレクトリは一般的に、共有に対してマウント
+	  するときに使われた、どのような認証情報に対しても、その所有者情報が
+	  与えられる。</para>
+
+        <para>もしも、使用されるuidとgidがクライアントとサーバ上で一致しないならば、
+	  forceuidとfrocegidオプションが便利であろう。注意:しかしながら、modeを
+	  上書きすることに関連するオプションは存在しない。forceuidかforcegid使用時に
+	  ファイルに対して割り当てられるパーミッションは、実際のパーミッションを
+	  反映しないかもしれない。</para>
+
+        <para>UNIX拡張がネゴシエートされない時は、"dynperm"マウントオプションを
+	  使うことでサーバ上でローカルにそれらをエミュレートすることも可能である。
+	  このマウントオプションが有効であるとき、新しく作成されたファイルと
+	  ディレクトリは、適切なパーミッションになるように見えるように設定される
+	  だろう。これらのパーミッションはサーバ上にはどんな形でも格納されず、
+	  最終的にどこかで消える(kernelが気まぐれにinodeキャッシュをフラッシュする
+	  ことに依存する)。一般的に、このマウントオプションには落胆させられる。
+        </para>
+
+        <para>nopermオプション経由でクライアント全部をチェックすることで、
+	  パーミッションを上書きすることも可能である。サーバサイドのパーミッション
+	  チェックでは上書きできない。サーバによるパーミッションのチェックの完了は
+	  常時共有に対してマウントしたときの認証情報に対応するので、サーバにアクセスする
+	  ユーザに対しては必要でない。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>環境変数</title>
+
+	<para><emphasis>USER</emphasis> 環境変数にはサーバに対して認証を行うときに使う利用者の
+	ユーザ名が含まれる。
+	この変数にはユーザ名とパスワードの両方を username%password
+	のフォーマットで設定することができる。</para>
+	
+	
+	<para><emphasis>PASSWD</emphasis> 環境変数にはクライアントで使用される
+	パスワードが含まれる。
+	</para>
+
+	<para><emphasis>PASSWD_FILE</emphasis> 環境変数にはパスワードが読み込まれる
+	ファイルのパス名が含まれる。
+	1行目が読み取られ、パスワードとして使用される。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>注意</title>
+	
+	<para>setuid が設定されていない限り、このコマンドは root のみ使用できる。
+	  setuid が設定されている場合、noexec および nosuid のマウントフラグが
+	  有効化される。setuidプログラムとしてインストールされた場合、ユーザのマウント用
+	  のマウントプログラムと同等の慣習に従う。</para>
+
+        <para>
+	  smbclient(8)のような、いくつかのSambaクライアントツールは、smb.conf中に存在する
+	  クライアントサイドの設定パラメータを信頼する。それらのクライアントツールと
+	  違って、<emphasis>mount.cifs</emphasis>はsmb.confを完全に無視する。
+        </para>
+</refsect1>
+
+<refsect1>
+	<title>設定</title>
+		<para>
+CIFS VFS の設定の変更やデバッグ情報を取得する機能は
+		Linux の /proc ファイルシステムを利用して行われている。
+		<filename>/proc/fs/cifs</filename> ディレクトリには、さまざまな設定ファイルや
+		デバッグ情報を表示する仮想ファイルがある。
+		カーネルの CIFS vfs (cifs.ko モジュール) がロードされている時のみ設定される、
+		最大バッファサイズとバッファ数というオプションが存在する。
+		これらは、cifs.ko ファイルに対して、modinfo ユーティリティを実行することで確認できる。
+		このユーティリティにより、モジュールのインストール時(デバイスドライバのロード時)に CIFS モジュールに渡されるオプションが表示される。
+		より詳細な情報はカーネルに含まれる <filename>fs/cifs/README</filename> ファイルを
+		参照のこと。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>バグ</title>
+
+	<para>マウントの際に CIFS URL で指定する形式は、現在サポートされていない。
+	</para>
+
+	<para>資格情報ファイルではスペースで始まるユーザ名やパスワードを
+	扱うことができない。</para>
+
+	<para>バグ報告に対してまず行われる返答は、とりあえず最新のバージョンで
+	試してみるような提案である。まず最初にそのこと (最新バージョンへの更新)
+	を試したうえで、バグを報告するときは関連するソフトウェアのバージョン情報
+	(最低限でも mount.cifs (mount.cifs -V の結果)、カーネル (/proc/version の内容)) と接続しようとしているサーバの形式を含めること。
+</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは CIFS vfs ファイルシステム 1.52 (おおよそ Linux カーネル 2.6.24) 用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para>
+	Linux カーネルソースツリーの Documentation/filesystems/cifs.txt と
+	fs/cifs/README には追加のオプションや情報がある。</para>
+        <para><citerefentry><refentrytitle>umount.cifs</refentrytitle>
+        <manvolnum>8</manvolnum></citerefentry></para>
+
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>Steve French</para>
+
+	<para>構文やマニュアルページは smbmount のものをベースにしている。
+	これは Jelmer Vernooij によって Docbook/XML 形式に変換された。</para>
+
+	<para>現在の Linux cifs vfs とユーザスペースのツールの
+	<emphasis>mount.cifs</emphasis> のメンテナーは
+	<ulink url="mailto:sfrench@samba.org">Steve French</ulink> である。
+	これらのプログラムについて質問するには、
+	<ulink url="mailto:linux-cifs-client@lists.samba.org">Linux CIFS Mailing list</ulink> 
+	が望ましい。 
+	</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+
+	<para>このマニュアルページは Samba 3.4.4 - 3.5.3 対応のものである。</para>
+
+	<para>このドキュメントの Samba 3.0.0 対応の翻訳は、山田 史朗
+	(shiro@miraclelinux.com)によって行なわれた。</para>
+
+	<para>Samba 3.0.23 - Samba 3.0.24 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+	<para>Samba 3.2.4-3.5.3 対応の翻訳は、
+	<itemizedlist>
+		<listitem><para>太田俊哉(ribbon@samba.gr.jp)</para></listitem>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

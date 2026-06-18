@@ -1,0 +1,39 @@
+<samba:parameter name="ldap passwd sync"
+			context="G"
+			advanced="1"
+			developer="1"
+			type="enum"
+			xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+
+<description>
+	<para>このオプションは、Samba によるパスワード変更時に、Samba が通常のアカウント 
+	(ワークステーション、サーバやドメインの信頼関係は含まない) の NT
+	ハッシュや LM ハッシュと、LDAP のパスワード
+	の同期をおこなうかを定義する。 
+	</para>
+
+	<para><smbconfoption name="ldap passwd sync"/> には、
+	以下の 3 つのうちの 1 つを設定することができる: </para>
+	
+	<itemizedlist>
+		<listitem>
+			<para><parameter moreinfo="none">Yes</parameter>  =
+			LDAP、NT、LM パスワードの更新を試み、pwdLastSet
+			time を変更する。</para>
+		</listitem>
+			
+		<listitem>
+			<para><parameter moreinfo="none">No</parameter> =
+			NT、LM パスワードと pwdLastSet time を更新する。
+			</para>
+		</listitem>
+
+		<listitem>
+			<para><parameter moreinfo="none">Only</parameter> =
+			LDAP パスワードのみを変更し、あとの処理は LDAP サーバに
+			委任する。</para>
+		</listitem>
+	</itemizedlist>		
+</description>
+<value type="default">no</value>
+</samba:parameter>

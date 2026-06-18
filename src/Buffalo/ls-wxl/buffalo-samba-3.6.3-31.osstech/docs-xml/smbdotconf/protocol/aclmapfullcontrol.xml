@@ -1,0 +1,16 @@
+<samba:parameter name="acl map full control"
+                 context="S"
+		 type="boolean"
+                 advanced="1" wizard="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータは、
+    <citerefentry><refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+    が POSIX の ACE エントリでは最大のアクセス権を許可した状態である「rwx(read/write/execute)」を Windows 側の ACL の「フルコントロール」に対応づけるかどうかを制御する。
+    このパラメータを true に設定した場合、POSIX ACE で「rwx」のエントリに対して、Windows 側の ACL としては「フルコントロール」が返却される。
+    このパラメータが false に設定された場合、POSIX ACE で「rwx」のエントリに対して、
+    Windows 側の ACL としては read/write/execute を表すビットを設定したエントリが返却される。
+    </para>
+</description>
+<value type="default">True</value>
+</samba:parameter>

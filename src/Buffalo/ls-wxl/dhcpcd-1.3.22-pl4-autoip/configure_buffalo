@@ -1,0 +1,2 @@
+./configure --prefix=/  --sysconfdir=/etc/dhcpcd CFLAGS=-DBUFFALO_PLATFORM
+

@@ -1,0 +1,25 @@
+<samba:parameter name="enable privileges"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータは、smbd が
+	<command>net rpc rights</command> もしくは Windows 側のユーザ、グループ管理ツールにより、特定の SID に対して指定のユーザー権利を付与する機能を制御する。
+	このパラメータはデフォルトで有効となっているが、Domain Admins
+	グループのメンバがユーザーやグループにユーザー権利を割り当てることで、
+	root 権限で実行される smbd の処理が該当ユーザとして接続した状態で実行されることを防止するために無効にすることも可能である。
+	</para>
+
+	<para>
+	ユーザー権利を使用することで、例えば smbd が動作するサーバの root 権限を与えずに、
+	Samba ドメインに参加する権利を付与することが可能である。
+	</para>
+
+	<para>
+	より詳細な説明については、Samba HOWTO 中の記載を参照のこと。
+	</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

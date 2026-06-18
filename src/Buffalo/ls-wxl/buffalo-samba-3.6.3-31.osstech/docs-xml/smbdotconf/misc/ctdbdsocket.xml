@@ -1,0 +1,16 @@
+<samba:parameter name="ctdbd socket"
+                 context="G"
+                 advanced="1"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+<value type="example">clustering=yes</value> の指定を行う場合は、
+ctdbd がどの unix ドメインソケットを監視するのかを、Samba に対して 
+教えてやる必要がある。ctdb 1.0 におけるデフォルトのパスは /tmp/ctdb.socket
+であるが、これを smb.conf で明示してやらなければならない。
+	</para>
+</description>
+<value type="default"></value>
+<value type="example">/tmp/ctdb.socket</value>
+</samba:parameter>

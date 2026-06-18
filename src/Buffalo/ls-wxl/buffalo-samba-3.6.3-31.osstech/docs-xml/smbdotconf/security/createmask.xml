@@ -1,0 +1,45 @@
+<samba:parameter name="create mask"
+                 context="S"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+
+<synonym>create mode</synonym>
+<description>
+    <para>ファイル作成時に付与されるパーミッションは、
+    DOS の属性を UNIX のパーミッションに変換することにより生成されるが、
+    最終的には、このパラメータとビット単位の AND 演算が行なわれる。
+    このパラメータは、ファイルの UNIX のパーミッションに対するビットマスクと
+    考えることができる。ここで<emphasis>設定されない</emphasis>ビットは、
+    ファイル作成時のパーミッションから削除される。
+    </para>
+
+    <para>
+    このパラメータの既定値は、
+    <literal>「group」</literal>と<literal>「other」</literal>の書き込みおよび実行権を UNIX のパーミッションから取り除いた値である。
+    </para>
+
+    <para>この処理に引続き、Samba はこのパラメータにより生成されたパーミッションを
+    <smbconfoption name="force create mode"/>
+    パラメータの値とビット単位の OR 演算を行なう。
+    なおパラメータの値はデフォルトで、000 に設定されている。</para>
+
+    <para>このパラメータは、ディレクトリのパーミッション生成には関与しない。
+    <smbconfoption name="directory mask"/>
+    パラメータを参照のこと。
+    </para>
+
+
+    <para>
+    このパラメータは、Windows NT/2000 の ACL エディタにより設定されるアクセス許可には関与しない。
+    管理者が ACL に対するビットマスクも同様に設定したいと考えている場合は、
+    <smbconfoption name="security mask"/> の設定が必要である。
+    </para>
+</description>
+
+<related>force create mode</related>
+<related>directory mode</related>
+<related>inherit permissions</related>
+
+<value type="default">0744</value>
+<value type="example">0775</value>
+</samba:parameter>

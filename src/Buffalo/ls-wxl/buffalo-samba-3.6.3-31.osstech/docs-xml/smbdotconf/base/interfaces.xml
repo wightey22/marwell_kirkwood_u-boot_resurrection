@@ -1,0 +1,43 @@
+<samba:parameter name="interfaces"
+                 context="G"
+				 type="list"
+                 basic="1" advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+        <para>このオプションにより、Sambaがブラウジング、名前の登録その他のNBTの通信に利用するネットワークインタフェースのリストを設定することが可能となる。
+	 デフォルトの場合、Sambaはカーネルに対して有効なインタフェースのリストを問い合わせ、 127.0.0.1以外のブロードキャスト可能なインタフェースをすべて利用する。
+	</para>
+
+    <para>このオプションはインタフェースを示す文字列のリストとなる。 各文字列は以下の形式のいずれで指定してもよい。</para>
+
+	<itemizedlist>
+		<listitem><para>ネットワークインタフェース名(eth0など)。 シェルのようなワイルドカード指定も可能である。 例えばeth*は「eth」から始まるすべてのインタフェースを指定したことになる。</para></listitem>
+			
+		<listitem><para>IPアドレス。 この場合、ネットマスクの値は、カーネルから取得されたインタフェースのリストにより設定される。 </para></listitem>
+			
+		<listitem><para>IP/mask のペア。</para></listitem>
+			
+		<listitem><para>ブロードキャスト/mask のペア。</para></listitem>
+	</itemizedlist>
+
+	<para>「mask」パラメータはビット長(例えば24はクラスCネットワーク)で指定しても、 ドット区切り10進数表記で指定してもよい。</para>
+
+	<para>上記の「IP」パラメータは、ドット区切り10進法で指定しても、 OSの標準的なホスト名解決機構で解決可能なホスト名で指定してもよい。 </para>
+
+    <para>
+    デフォルトで、Samba はループバックインタフェース (IPアドレス 127.0.0.1)
+    を除くブロードキャスト可能なすべての有効なインタフェースを使用する。
+    </para>
+	
+    <para>
+    以下の設定では、eth0 デバイスと 192.168.2.10 および 192.168.3.10 の
+    IP アドレスに対応する 3 つのネットワークインタフェースが指定されている。 
+    後者のインタフェース 2 つに対するネットマスクは 255.255.255.0 に設定されている。 
+    </para>
+</description>
+<related>bind interfaces only</related>
+
+<value type="example">eth0 192.168.2.10/24 192.168.3.10/255.255.255.0</value>
+
+<value type="default"/>
+</samba:parameter>

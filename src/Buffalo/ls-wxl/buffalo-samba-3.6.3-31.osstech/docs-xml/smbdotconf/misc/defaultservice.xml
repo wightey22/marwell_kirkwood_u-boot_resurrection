@@ -1,0 +1,31 @@
+<samba:parameter name="default service"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>default</synonym>
+<description>
+
+	<para> このパラメータは、
+	要求されたサービスが存在しなかった場合に接続されるサービス名を指定する。
+	パラメータの値に、大括弧('[' と ']')は<emphasis>不要である</emphasis>ことに注意(設定例を参照のこと)。</para>
+
+	<para>このパラメータに既定値はない。
+	このパラメータが設定されていない場合、
+	存在しない共有に対する接続は失敗する。</para>
+
+	<para>default service は
+	<smbconfoption name="guest ok"/> と <smbconfoption
+	name="read-only"/> パラメータを有効にしたサービスにするのが一般的である。</para>
+
+	<para>
+	外面的なサービス名はクライアントから要求されたサービス名に変換される。
+	これは、<parameter moreinfo="none">%S</parameter>
+	のようなマクロをワイルドカードサービスに適用する際に、非常に有用である。</para>
+
+	<para>default service のサービス名に現れる「_」文字は、「/」にマッピングされる。
+	これにより、いろいろと面白いことができるだろう。</para>
+</description>
+<value type="default"></value>
+<value type="example">pub</value>
+</samba:parameter>

@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="diagnosis">
+<chapterinfo>
+	&author.tridge;
+	&author.jelmer;
+	&author.danshearer;
+	<pubdate>Wed Jan 15</pubdate>
+</chapterinfo>
+
+<title>Sambaチェックリスト</title>
+
+<sect1>
+<title>概要</title>
+
+<para>
+<indexterm><primary>検証</primary></indexterm>
+この章には、Sambaサーバの検証が行えるテストの一覧が含まれている。また、それらの手順の
+どこかで失敗した問題を起こす可能性の高いものが何かと言うことについても説明している。
+もしも、すべてのテストをパスしたら、おそらく正しく動いているだろう。
+</para>
+
+<para>
+すべてのテストを示された順で行うべきである。後のテストが、前のテストで確認された
+機能のみを使うように、テストを注意深く選ぶようにしてある。しかし、最初のエラーで
+止まってはならない:テストの継続が、問題の解決を手助けするという事例があったからで
+ある。
+</para>
+
+<para>
+もしも、<quote>It does not work,</quote>というタイトルでメールをSambaメーリングリストの
+どこかに送り、このテスト手順に従わないならば、メールが無視されても驚いてはいけない。
+</para>
+
+</sect1>
+
+<sect1>
+<title>前提条件</title>
+
+<para>
+すべてのテストにおいて、SambaサーバはBIGSERVERで、PCクライアントがACLIENTで、両者とも
+TESTGROUPというワークグループに属していることを仮定する。
+</para>
+
+<para>
+手続きは、他のクライアントのタイプと同様である。
+</para>
+
+<para>
+&smb.conf;中の有効な共有名も分かっているものとする。ここでの例における共有の名前は
+<smbconfsection name="tmp"/>である。これは、<link linkend="tmpshare">次の例</link>
+で示される行を追加することで、このような<smbconfsection name="tmp"/>共有を追加できる。
+</para>
+
+<example id="tmpshare">
+<title>[tmp]共有のためのsmb.conf</title>
+<smbconfblock>
+<smbconfsection name="[tmp]"/>
+<smbconfoption name="comment">temporary files </smbconfoption>
+<smbconfoption name="path">/tmp</smbconfoption>
+<smbconfoption name="read only">yes</smbconfoption>
+</smbconfblock>
+</example>
+
+<note><para>
+これらのテストはバージョン3.0.0以降のSambaシステムを仮定する。以前のバージョンでは
+いくつかのコマンドは存在しない。
+</para></note>
+
+<para>
+<indexterm><primary>エラーメッセージ</primary></indexterm>
+<indexterm><primary>名前解決</primary></indexterm>
+<indexterm><primary>/etc/resolv.conf</primary></indexterm>
+受け取ったエラーメッセージに注意をはらってほしい。もしもエラーメッセージが、使用している
+サーバが調子が悪いという事を報告しているのであれば、まず初めに使用しているIPを名前解決
+する方式が正しく設定されているかどうかをチェックすべきである。実際に存在している
+ネームサーバを、<filename>/etc/resolv.conf</filename>が正しく指し示しているようにする
+こと。
+</para>
+
+<para>
+<indexterm><primary>DNSサーバアクセス</primary></indexterm>
+<indexterm><primary>名前解決</primary></indexterm>
+<indexterm><primary>dnsプロキシ</primary></indexterm>
+<indexterm><primary>testparm</primary></indexterm>
+また、もしも、名前解決用のDNSサーバアクセスが出来ないならば、&smb.conf;に
+<parameter>dns proxy = no</parameter>が設定されているかをチェックする。
+これをチェックする最も良い方法は、<command>testparm smb.conf</command>である。
+</para>
+
+
+<para>
+<indexterm><primary>ログファイル</primary></indexterm>
+<indexterm><primary>tail</primary></indexterm>
+<indexterm><primary>/usr/local/samba/var</primary></indexterm>
+<indexterm><primary>/var/log/samba</primary></indexterm>
+<indexterm><primary>ログファイル</primary><secondary>モニタリング</secondary></indexterm>
+別のターミナルコンソール(X中で複数のターミナルを使うには、ctrl-alt-F1からF6を使用)で、
+<command>tail -F log_file_name</command>を使うことで、テストの間ログファイルをモニタする
+のは便利である。適切なログファイルは(既定値によるインストールでは)、
+<filename>/usr/local/samba/var</filename>にある。また、マシンからの接続ログは、ここか、
+<filename>/var/log/samba</filename>か、あるいは
+&smb.conf;ファイル中でロギングを指定した場合には、それに依存する場所にある。
+</para>
+
+<para>
+もしも、それらのテスト中に&smb.conf;ファイルを変更したならば、&smbd;と&nmbd;の再起動を
+忘れないこと。
+</para>
+
+</sect1>
+
+<sect1>
+<title>テスト</title>
+<procedure>
+<title>使用しているSambaサーバの診断</title>
+
+
+<step performance="required">
+<para>
+<indexterm><primary>testparm</primary></indexterm>
+&smb.conf;ファイルを格納しているディレクトリ中で、<command>testparm smb.conf</command>を
+実行する。もしも何らかのエラーが発生した場合、その&smb.conf;の設定には間違いがある。
+</para>
+
+<note><para>
+<indexterm><primary>/etc/samba</primary></indexterm>
+<indexterm><primary>/usr/local/samba/lib</primary></indexterm>
+使用している&smb.conf;ファイルは、<filename>/etc/samba</filename>か
+<filename>/usr/local/samba/lib</filename>にあってもよい。
+</para></note>
+</step>
+
+<step performance="required">
+<para>
+<indexterm><primary>ping</primary></indexterm>
+PCから<command>ping BIGSERVER</command>コマンドを動かし、UNIXマシンから
+<command>ping ACLIENT</command>を動かす。正常な応答がない場合、TCP/IP層の設定が
+うまくいっていない。
+</para>
+
+<para>
+PC上でpingを動かす場合には、<quote>DOS プロンプト</quote>を起動する必要がある。
+</para>
+
+<para>
+<indexterm><primary>/etc/hosts</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>/etc/resolv.conf</primary></indexterm>
+もしも、<quote><errorname>host not found</errorname></quote>か同様なメッセージが
+表示されたならば、DNSソフトウェアか<filename>/etc/hosts</filename>ファイルが正しく
+設定されていない。もしもDNSを使っている場合、<filename>/etc/resolv.conf</filename>に、
+正しい、最新のエントリがあるかどうかをチェックする。DNSエントリなしにSambaをサーバと
+クライアントとして動作させることは可能であるが、この後のテストでは、正しいエントリが
+あると仮定している。
+</para>
+
+<para>
+<indexterm><primary>ファイアウォール</primary></indexterm>
+<indexterm><primary>iptables</primary></indexterm>
+<indexterm><primary>ipchains</primary></indexterm>
+pingが失敗するかもしれない他の理由としては、使用しているホスト上でファイアウォール
+ソフトウェアが動作している場合である。ワークステーションからの問い合わせに対して
+ルールをゆるめる必要がありえ、それはおそらく、他のサブネットからのアクセスを許可する
+ことであろう(Linux上では、これは、<command>ipchains</command>か
+<command>iptables</command>という、適切なファイアウォール管理コマンドによって行える)。
+</para>
+
+<note>
+<para>
+最新のUNIXディストリビューションでは、既定値でipchains/iptablesをインストールしている。
+これは、しばしばよく見落とされる問題である。
+</para>
+</note>
+
+<para>
+<indexterm><primary>iptables</primary></indexterm>
+<indexterm><primary>ipchains</primary></indexterm>
+もしも、テスト中にシステム中どのようなファイアウォールルールが存在しているかを調べたい
+場合、単純に<command>iptables -L -v</command>か、あるいは
+<parameter>ipchains</parameter>ベースのファイアウォールを使っている場合には、
+<command>ipchains -L -v</command>を入力する。
+</para>
+
+<para>
+以下は、Sambaが有効になっていない外部向けのイーサネットインタフェース(eth1)とSambaが
+有効になっている内部向けの(プライベートネットワーク)インタフェース(eth0)を持つ、
+システムからの結果例である。
+<screen>
+frodo:~ # iptables -L -v
+Chain INPUT (policy DROP 98496 packets, 12M bytes)
+ pkts bytes target     prot opt in     out     source     destination
+ 187K  109M ACCEPT     all  --  lo     any     anywhere   anywhere
+ 892K  125M ACCEPT     all  --  eth0   any     anywhere   anywhere
+1399K 1380M ACCEPT     all  --  eth1   any     anywhere   anywhere  \
+					state RELATED,ESTABLISHED
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source     destination
+ 978K 1177M ACCEPT     all  --  eth1   eth0    anywhere   anywhere \
+					state RELATED,ESTABLISHED
+ 658K   40M ACCEPT     all  --  eth0   eth1    anywhere   anywhere
+    0     0 LOG        all  --  any    any     anywhere   anywhere \
+					LOG level warning
+
+Chain OUTPUT (policy ACCEPT 2875K packets, 1508M bytes)
+ pkts bytes target     prot opt in     out     source     destination
+
+Chain reject_func (0 references)
+ pkts bytes target     prot opt in     out     source     destination
+</screen>
+</para>
+
+</step>
+
+<step performance="required">
+<para>
+UNIXマシン上で<command>smbclient -L BIGSERVER</command>を動かす。
+これで有効な共有の一覧が得られる。
+</para>
+
+<para>
+<indexterm><primary>bad password</primary></indexterm>
+<indexterm><primary>hosts allow</primary></indexterm>
+<indexterm><primary>hosts deny</primary></indexterm>
+<indexterm><primary>valid users</primary></indexterm>
+<indexterm><primary>guest account</primary></indexterm>
+<indexterm><primary>invalid users</primary></indexterm>
+もしも<quote>bad password</quote>という文字列があるエラーメッセージが表示されたら、
+不正な<parameter>hosts allow</parameter>、<parameter>hosts deny</parameter>か
+<parameter>valid users</parameter>行が&smb.conf;にあるか、ゲストアカウントが無効に
+なっている。&testparm;でゲストアカウントが何かを調べ、一時的に
+<parameter>hosts allow</parameter>, <parameter>hosts deny</parameter>,
+<parameter>valid users</parameter>, か<parameter>invalid users</parameter>行を
+削除してみる。
+</para>
+
+<para>
+<indexterm><primary>inetd.conf</primary></indexterm>
+もしも、<literal>connection refused</literal>というメッセージが帰ってきたら、
+<command>smbd</command>サーバが動いていないかもしれない。もしも
+<filename>inetd.conf</filename>経由で動作するようにしていたら、おそらくこのファイルの
+編集が間違っている。もしもdaemonとして動作するようにしていたら、動作しているかを調べ、
+<command>netstat -a</command>を使ってnetbios-ssnポートがLISTEN中かを確認する。
+</para>
+
+<note><para>
+<indexterm><primary>inetd</primary></indexterm>
+<indexterm><primary>xinetd</primary><see>inetd</see></indexterm>
+ある種のUNIX/Linuxシステムでは、<command>inetd</command>の代わりに
+<command>xinetd</command>を使っている。ネットワークスーパーデーモンの、
+特定のシステム実装についての、制御ファイルの位置の説明文書を調べること。
+</para></note>
+
+<para>
+もしも、<literal>session request failed</literal>というメッセージが表示されたならば、
+サーバは接続を拒否している。もしも<quote>Your server software is being unfriendly</quote>
+というメッセージが表示されたならば、それはおそらく&smbd;に対するコマンドラインオプションを
+間違えているか、&smbd;の初期起動時に同様の致命的な問題がある。&testparm;で設定ファイル
+(&smb.conf;)の文法と、ログとロックファイルを保持する種々のディレクトリもチェックする。
+</para>
+
+<para>
+セッション要求を拒否するか、断るかもしれない数多くの理由がある。それらは、
+<link linkend="modif1">次の例</link>で示されている&smb.conf;ファイルのエントリ
+によって発生する。
+</para>
+
+
+<example id="modif1">
+<title>特定のサブネットからのみ接続を受け付ける設定例</title>
+<smbconfblock>
+<smbconfsection name="[globals]"/>
+<smbconfoption name="hosts deny">ALL</smbconfoption>
+<smbconfoption name="hosts allow">xxx.xxx.xxx.xxx/yy</smbconfoption>
+<smbconfoption name="interfaces">eth0</smbconfoption>
+<smbconfoption name="bind interfaces only">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>loopback adapter</primary></indexterm>
+<link linkend="modif1">特定のサブネットからのみ接続を受け付ける設定例</link>では、
+ループバックアダプタアドレス 127.0.0.1へ自動的に変換される任意のセッション要求は
+許可されない。この問題を解決するためには、<link linkend="modif2">以下の例</link>で
+示されているような行に変更する。
+</para>
+
+<example id="modif2">
+<title>特定のサブネットとローカルホストから接続を許可する例</title>
+<smbconfblock>
+<smbconfsection name="[globals]"/>
+<smbconfoption name="hosts deny">ALL</smbconfoption>
+<smbconfoption name="hosts allow">xxx.xxx.xxx.xxx/yy 127.</smbconfoption>
+<smbconfoption name="interfaces">eth0 lo</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>inetd</primary></indexterm>
+<indexterm><primary>smbclient</primary></indexterm>
+他の、よくある2つのエラーの例は、Samba(すでに<application>inetd</application>経由で
+&smbd;が動いている)か、DECのPathworksのような、ポート<constant>139</constant>上で
+何かがすでに動いているものである。デーモンで&smbd;を動かす前に
+<filename>inetd.conf</filename>ファイルをチェックすること。&smbmdash;そうすれば
+多くのトラブルを防げる!
+</para>
+
+<para>
+<indexterm><primary>サブネットマスク</primary></indexterm>
+<indexterm><primary>ブロードキャストアドレス</primary></indexterm>
+<indexterm><primary>log.nmbd</primary></indexterm>
+<indexterm><primary>ネットワークインタフェース</primary></indexterm>
+<indexterm><primary>IPアドレス</primary></indexterm>
+さらに、このテストが失敗する、他のあり得そうな例としては、サブネットマスクか
+ブロードキャストアドレスの設定が不正な場合である。ネットワークインタフェースの
+IPアドレス、ブロードキャスト、サブネットマスクが正しいかと、それらが
+<filename>log.nmbd</filename>ファイル中に正しくSambaが記録しているかを確認すること。
+</para>
+
+</step>
+
+<step performance="required">
+
+<para>
+<indexterm><primary>nmblookup</primary></indexterm>
+<command>nmblookup -B BIGSERVER __SAMBA__</command>コマンドを動かす。
+使用しているSambaサーバのIPアドレスが表示されるはずである。
+</para>
+
+<para>
+<indexterm><primary>inetd.conf</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>ポート 137</primary></indexterm>
+そうでない場合、&nmbd;が駄々しくインストールされていない。<filename>inetd.conf</filename>
+経由で動かしている場合はそこを、あるいはデーモンが動いていてUDPポート137をリッスン
+しているかどうかをチェックする。
+</para>
+
+<para>
+ある1つのよくある問題は、多くのinetdの実装が、コマンドライン上に多数のパラメータを使えない
+というものである。もしもこの場合、正しいパラメータを含む1行のみのスクリプトを作成し、
+それをinetdから起動する。
+</para>
+
+</step>
+
+<step performance="required">
+
+<para>
+<indexterm><primary>nmblookup</primary></indexterm>
+<command>nmblookup -B ACLIENT `*'</command>を起動する。
+</para>
+
+<para>
+PCのIPアドレスが表示されるはずである。もしもそうでなければ、PC上のクライアント
+ソフトウェアの設定が間違っているか、開始していないか、PCの名前が間違っているか
+である。
+</para>
+
+<para>
+もしもACLIENTがDNS経由で名前解決できない場合、上記のテストで、クライアントのIP
+アドレスを使用してみる。
+</para>
+
+</step>
+
+<step performance="required">
+
+<para>
+<command>nmblookup -d 2 `*'</command>コマンドを動かす。
+</para>
+
+<para>
+この時点では前述のテストと同じ事を試みるが、既定値のブロードキャストアドレスに、
+ブロードキャスト経由で行う。それをリッスンしているSambaは短時間にすべての応答を
+受け取れないかもしれないが、ネットワーク上にある、たくさんのNetBIOS/TCP/IPホストが、
+これに応答する。いくつかのホストからの、
+<literal>got a positive name query response</literal>メッセージを受け取るはずである。
+</para>
+
+<para>
+<indexterm><primary>nmblookup</primary></indexterm>
+もしも、上記のテストのような結果が得られないのであれば、nmblookupが、その自動
+メカニズムによる、使用しているブロードキャストアドレスを正しく入手できていない。
+この場合、使用するIPアドレス、ブロードキャストとサブネットマスクを、
+&smb.conf;中の<smbconfoption name="interfaces"/>オプションに、手動で設定する
+ことをやってみるべきである。
+</para>
+
+<para>
+もしも、使用しているPCとサーバが同じサブネットにない場合、そのPCのサブネットの
+ブロードキャストアドレスを指定する<option>-B</option>オプションを使う必要がある。
+</para>
+
+<para>
+このテストは、サブネットマスクとブロードキャストアドレスが間違っている場合、おそらく
+失敗する(3つ前の注意(Note)を参照)。
+</para>
+
+</step>
+
+<step performance="required">
+
+
+<para>
+<indexterm><primary>smbclient</primary></indexterm>
+<command>smbclient //BIGSERVER/TMP</command>コマンドを動かす。パスワード要求が来る
+はずである。UNIXマシンにログインするアカウントのパスワードを入力する。もしも他の
+アカウントで、テストを行いたいならば、コマンドラインの最後の所に、
+<option>-U accountname</option>オプションを追加する。 &smbmdash;たとえば、
+<command>smbclient //bigserver/tmp -Ujohndoe</command>である。
+</para>
+
+<note><para>
+以下のように、ユーザ名に引き続いてパスワードを指定することも出来る:
+<command>smbclient //bigserver/tmp -Ujohndoe%secret</command>.
+</para></note>
+
+<para>
+パスワードを入力すると、<prompt>smb></prompt>プロンプトが出るはずである。もしも
+そうでなければ、エラーメッセージが表示される。もしもそれが
+<quote><errorname>invalid network name</errorname></quote>であれば、サービス
+<smbconfsection name="tmp"/>が&smb.conf;中で正しく設定されていない。
+</para>
+
+<para>
+<quote><errorname>bad password</errorname></quote>という表示がされたならば、
+あり得そうな原因は以下の通り:
+</para>
+
+<orderedlist>
+<listitem>
+	<para>
+	shadowパスワード(かその他のパスワードシステム)を使っているが、&smbd;中で
+	それをサポートするようにコンパイルされていない。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	使用している<smbconfoption name="valid users"/>の設定が間違っている。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	大文字小文字を混ぜたパスワードを使っているが、十分に大きなレベルを
+	<smbconfoption name="password level"/>オプションで有効にしていない。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	&smb.conf;中の<smbconfoption name="path"/>行が間違っている。&testparm;で
+	検査すること。
+	</para>
+</listitem>
+
+<listitem>
+	<para>
+	パスワード暗号化を有効にしているが、SambaユーザにUNIXユーザをマップしていない。
+	<command>smbpasswd -a username</command>を実行する。
+	</para>
+</listitem>
+</orderedlist>
+
+<para>
+<indexterm><primary>dir</primary></indexterm>
+<indexterm><primary>get</primary></indexterm>
+<indexterm><primary>put</primary></indexterm>
+<indexterm><primary>help command</primary></indexterm>
+接続後、コマンド<command>dir</command>, <command>get</command>,<command>put</command>
+などが使えるようになっているはずである。どう入力するかを調べるために、
+<command>help command</command>を入力する。<command>dir</command>コマンドを入力した
+時に、空きディスクスペースが正しいかを、特にチェックすべきである。
+</para>
+
+</step>
+
+<step performance="required">
+
+<para>
+<indexterm><primary>net view</primary></indexterm>
+PC上で、<command>net view \\BIGSERVER</command>コマンドを入力する。これは、DOSウィンドウ
+内で入力する必要がある。サーバ上で有効な共有一覧が表示されるべきである。
+</para>
+
+<para>
+<indexterm><primary>nmbd</primary></indexterm>
+<literal>network name not found</literal>か似たようなエラーが表示された場合、NetBIOS
+名前解決が動作していない。これは通常<command>nmbd</command>の問題である。これを解決
+するために、以下のどれかを行う(どれか1つを選ぶのみでよい):
+</para>
+
+<orderedlist>
+<listitem><para>
+	&nmbd;のインストールを修正する。
+</para></listitem>
+
+<listitem><para>
+	PC上のTCP/IP設定中にある「詳細設定」において<command>wins</command>タブ中に
+	BIGSERVERのIPアドレスを追加する。
+</para></listitem>
+
+<listitem><para>
+        TCP/IP設定中にある「詳細設定」においてDNS経由での名前解決を有効にする。
+</para></listitem>
+
+<listitem><para>
+        PC上のlmhostsファイルにBIGSERVERを追加する。
+</para></listitem>
+</orderedlist>
+
+<para>
+もしも、<quote><errorname>invalid network name</errorname></quote>か
+<quote><errorname>bad password error,</errorname></quote>というメッセージが表示された
+ならば、<command>smbclient -L</command>テストでのと同じ修正を行う。特に、
+<command>hosts allow</command>行(マニュアルページを参照)が正しいかを確認すること。
+</para>
+
+<para>
+また、ワークステーションがSambaサーバに接続を要求するとき、Windowsマシンにログオンしている
+名前を使うという事実を見落とさないこと。Sambaサーバ上で存在しているアカウントと正確に
+同じ名前とパスワードにする必要がある。
+</para>
+
+<para>
+もしも<quote><errorname>specified computer is not receiving requests</errorname></quote>
+か、同等のエラーが表示されたならば、おそらくTCP経由でホストに接続できないことを
+意味する。TCPラッパーがホスト上で動いているかを調べ、そうであれば、クライアント
+(かサブネット等)のエントリを<filename>hosts.allow</filename>に追加する。
+</para>
+
+</step>
+
+<step performance="required">
+
+<para>
+<command>net use x: \\BIGSERVER\TMP</command>を実行する。パスワード要求が来るはずである。
+次に、<computeroutput>command completed successfully</computeroutput>メッセージが表示
+されるはずである。そうでない場合、PC上のソフトウェアが正しくインストールされていないか、
+&smb.conf;が間違っている。&smb.conf;中の<parameter>hosts allow</parameter>と他の
+設定行が正しいかを確認する。
+</para>
+
+<para>
+サーバが、どのユーザ名で接続するかを見いだせないという事もあり得る。この問題かどうかを
+見るためには、&smb.conf;中の<smbconfsection name="[tmp]"/>セクションに
+<smbconfoption name="user">username</smbconfoption>行を追加する。ここで、
+<parameter>username</parameter>は、入力するパスワードに対応するものである。
+もしもこれで修正されるならば、ユーザ名マッピングオプションが必要となるかもしれない。
+</para>
+
+<para>
+クライアントが暗号化パスワードのみを送り、&smb.conf;中で
+<smbconfoption name="encrypt passwords">no</smbconfoption>が設定されているという
+場合もあるかもしれない。これを修正するためには、設定を`yes'に変更する。
+</para>
+
+</step>
+
+<step performance="required">
+
+<para>
+ワークグループの名前が<parameter>testgroup</parameter>である、SambaサーバとWindows PCが
+属している所で<command>nmblookup -M <parameter>testgroup</parameter></command>を
+実行する。そのワークグループにおけるマスタブラウザのIPアドレスが表示されるはずである。
+</para>
+
+<para>
+そうでない場合、選択プロセスが失敗している。ただ単に遅れているのかもしれないので
+しばらく待ち、再度試してみる。それでも失敗した場合、&smb.conf;中にある
+ブラウジングオプションを調べてみる。起動時に選択(election)が行われるように、
+<smbconfoption name="preferred master">yes</smbconfoption>を書いておくこと。
+</para>
+
+</step>
+
+<step performance="required">
+
+<para>
+ファイルマネージャから、サーバをブラウジングしてみる。ローカルワークグループ
+(か&smb.conf;中で指定したもの)のブラウズリスト中にSambaサーバが現れるはずである。
+サーバの名前をダブルクリックし、共有の一覧が得られるべきである。もしも、
+<quote>invalid password</quote>というエラーが表示されたならば、おそらくWindows NTが
+動作していて、それがユーザレベルのセキュリティモードで動作していて暗号化パスワードを
+扱えない状態になっていてサーバのブラウジングを拒否している。この場合、
+<smbconfoption name="security">server</smbconfoption>と
+<smbconfoption name="password server">Windows_NT_Machine</smbconfoption>のどちらかを
+&smb.conf;ファイル中に設定するか、<smbconfoption name="encrypt passwords"/>を
+<quote>yes</quote>に設定するようにする。
+</para>
+
+</step>
+</procedure>
+</sect1>
+
+</chapter>

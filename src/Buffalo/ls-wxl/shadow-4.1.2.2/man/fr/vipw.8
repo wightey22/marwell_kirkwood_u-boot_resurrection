@@ -1,0 +1,116 @@
+.\"     Title: vipw
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "VIPW" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+vipw, vigr \- éditer les fichiers passwd, group, shadow ou gshadow
+.SH "SYNOPSIS"
+.HP 5
+\fBvipw\fR [\fIoptions\fR]
+.HP 5
+\fBvigr\fR [\fIoptions\fR]
+.SH "DESCRIPTION"
+.PP
+The
+\fBvipw\fR
+and
+\fBvigr\fR
+commands edits the files
+\fI/etc/passwd\fR
+and
+\fI/etc/group\fR, respectively\&. With the
+\fB\-s\fR
+flag, they will edit the shadow versions of those files,
+\fI/etc/shadow\fR
+and
+\fI/etc/gshadow\fR, respectively\&. The programs will set the appropriate locks to prevent file corruption\&. When looking for an editor, the programs will first try the environment variable
+\fB$VISUAL\fR, then the environment variable
+\fB$EDITOR\fR, and finally the default editor,
+\fBvi\fR(1)\&.
+.SH "OPTIONS"
+.PP
+Les options applicables aux commandes
+\fBvipw\fR
+et
+\fBvigr\fR
+sont\ \&:
+.PP
+\fB\-g\fR, \fB\-\-group\fR
+.RS 4
+Éditer la base de données de groupes\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Afficher un message d\'aide et quitter\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-passwd\fR
+.RS 4
+Éditer la base de données de mots de passe\&.
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+Mode silencieux\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shadow\fR
+.RS 4
+Éditer les bases de données shadow ou gshadow\&.
+.RE
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informations sécurisées sur les comptes utilisateurs\&.
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBvi\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)\fBpasswd\fR(5),
+\fBshadow\fR(5)\&.

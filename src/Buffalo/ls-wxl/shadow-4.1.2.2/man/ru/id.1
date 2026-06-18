@@ -1,0 +1,44 @@
+.\"     Title: id
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Пользовательские команды
+.\"    Source: Пользовательские команды
+.\"
+.TH "id" "1" "11/23/2008" "Пользовательские команды" "Пользовательские команды"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "НАЗВАНИЕ"
+id \- display current user and group ID names
+.SH "СИНТАКСИС"
+.HP 3
+\fBid\fR [\-a]
+.SH "ОПИСАНИЕ"
+.PP
+The
+\fBid\fR
+command displays the current real and effective user and group ID names or values\&. If the value does not have a corresponding entry in
+\fI/etc/passwd\fR
+or
+\fI/etc/group\fR, the value will be displayed without the corresponding name\&. The optional
+\fB\-a\fR
+flag will display the group set on systems which support multiple concurrent group membership\&.
+.SH "ФАЙЛЫ"
+.PP
+\fI/etc/group\fR
+.RS 4
+содержит информацию о группах
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+содержит информацию о пользователях
+.RE
+.SH "СМОТРИТЕ ТАКЖЕ"
+.PP
+
+\fBgetgid\fR(2),
+\fBgetgroups\fR(2),
+\fBgetuid\fR(2)

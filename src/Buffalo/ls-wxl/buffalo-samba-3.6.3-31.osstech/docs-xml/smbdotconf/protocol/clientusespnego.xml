@@ -1,0 +1,14 @@
+<samba:parameter name="client use spnego"
+                 context="G"
+				 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> この値により、Samba クライアントが認証の際に
+    Simple and Protected NEGOciation (RFC2478 で規定) をサポートしたサーバ
+    (Windows XP 、 Windows 2000 、Samba 3.0 を含む) に対して
+    SPNEGO の使用を試みるかどうかが制御される。
+    SPNEGO は Kerberos 認証の際に有効となる。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

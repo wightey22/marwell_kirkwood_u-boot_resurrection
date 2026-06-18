@@ -1,0 +1,15 @@
+<samba:parameter name="lock spin time"
+				 type="integer"
+                 context="G"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	smbd が一度失敗したロックを再度獲得しようとする際の待ち時間を、
+	ミリ秒単位で指定する。
+	このパラメータの既定値は、
+	Samba 3.0.23 において 10 から 200 に変更された。
+	関連する <smbconfoption name="lock spin count"/> パラメータは Samba 3.0.24 以降では使用されない。
+	このパラメータの値を変更する必要はないであろう。</para>
+</description>
+<value type="default">200</value>
+</samba:parameter>

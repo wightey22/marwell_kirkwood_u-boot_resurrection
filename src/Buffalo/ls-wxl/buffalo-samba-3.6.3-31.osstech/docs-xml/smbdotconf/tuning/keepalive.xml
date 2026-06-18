@@ -1,0 +1,15 @@
+<samba:parameter name="keepalive"
+                 context="G"
+		 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータの値(整数値)により、 <parameter moreinfo="none">keepalive</parameter> パケットが送出される秒単位の間隔が設定される。このパラメータの値が0の場合、 keepalive パケットは送出されない。
+    keepalive パケットを送出することにより、サーバはクライアントマシンが存在していて応答があることを確認することが可能になる。</para>
+
+    <para>ソケットにデフォルトで SO_KEEPALIVE 属性が設定されている場合(
+    <smbconfoption name="socket options"/> を参照のこと)、通常 keepalive は不要である。基本的に、このオプションは問題が発生している場合にのみ使用すべきである。</para>
+</description>
+<value type="default">300</value>
+<value type="example">600</value>
+</samba:parameter>

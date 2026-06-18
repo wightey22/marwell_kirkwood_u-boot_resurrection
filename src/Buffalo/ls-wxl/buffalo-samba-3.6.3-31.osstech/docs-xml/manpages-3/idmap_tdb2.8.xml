@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="idmap_tdb2.8">
+
+<refmeta>
+	<refentrytitle>idmap_tdb2</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>idmap_tdb2</refname>
+	<refpurpose>Samba の Winbind 用 idmap_tdb2 バックエンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<title>説明</title>
+
+	<para>
+    idmap_tdb2 プラグインはデフォルトの idmap_tdb バックエンドの代替と
+    なるもので、Samba と CTDB におけるクラスタ環境において winbindd が
+    SID/uid/gid の対応表を格納するのに使われる。
+	</para>
+
+	<para>
+    idmap_rid のようなバックエンドはリードオンリーであるが、これは
+    割り当て機能を持つバックエンドだと言える。つまり、新しいマッピング
+    を生成するために、新しいユーザやグループの ID を割り当てる必要が
+    あるということである。(割り当てを受け持つ)アロケータを idmap_tdb2
+    バックエンド自身が担当することもできるし、idmap_tdb や idmap_ldap
+    といった他のバックエンドにその処理を依頼することもできる。この機能は
+    <parameter>idmap alloc backend</parameter> パラメータにより有効となる。
+	</para>
+
+	<para>
+    注意：この(もしくは他のアロケータとなりうる)バックエンドで本機能が
+    動作するためには、デフォルトのバックエンドが書き込み可能でなければ
+    ならない。uid と gid の割り当てに使われる範囲は、&quot;idmap uid&quot;
+    と &quot;idmap gid&quot; で構成されるデフォルトの範囲が使われる。
+	</para>
+
+	<para>
+    さらに、書き込み可能な idmap バックエンドを使うすべてのドメインの
+    ために、割り当てを実行できる唯一のグローバルなバックエンドがあるので、
+    明示的に tdb2 の idmap バックエンドで構成されたドメインは、
+    同じ範囲をデフォルトの範囲として持つべきである。つまり、グローバルの
+    uid / gid アロケータを使用する必要がある。以下の例を見て欲しい。
+	</para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>IDMAP オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>range = low - high</term>
+		<listitem><para>
+            バックエンドが割り当て権限を持っていて、かつ利用可能な uid と gid
+            の範囲を定義する。このパラメータが指定されない場合 winbind は
+            フェイルオーバーして、smb.conf の &quot;idmap uid&quot; と
+             &quot;idmap gid&quot; オプションを使う。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>IDMAP スクリプト</title>
+
+	<para>
+    tdb2 idmap バックエンドは、id のマッピングをスクリプトで実行するための
+    smb.conf の <parameter>idmap : script</parameter> オプションをサポート
+    している。このスクリプトは、以下のコマンドラインオプションを受け付ける
+    ようになっていなければならない。
+	</para>
+
+	<programlisting>
+	SIDTOID S-1-xxxx
+	IDTOSID UID xxxx
+	IDTOSID GID xxxx
+	</programlisting>
+
+	<para>
+    またそのスクリプトは、以下のいずれかのレスポンスを１行で返すように
+    なっている必要がある。
+	</para>
+
+	<programlisting>
+	UID:yyyy
+	GID:yyyy
+	SID:yyyy
+	ERR:yyyy
+	</programlisting>
+
+	<para>
+    注意：SID を UNIX の ID マッピングに対して渡すにあたり、このスクリプトは
+    SID の全範囲をカバーするべきである。そうでないと、スクリプトではカバー
+    されていない SID が、すでにスクリプトで割り当て済みの ID に割り当てられる
+    恐れがある。 
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+
+	<para>
+    tdb2 がどのようにデフォルトの imapd バックエンドとして使われるかという
+    例を以下に示す。全ドメインについて適用されるグローバルオプションで idmap
+    の範囲を設定していることがわかる。これと同じ範囲が uid/gid の割り当て
+    の際に使われる。
+	</para>
+
+	<programlisting>
+	[global]
+	idmap backend = tdb2
+	idmap uid = 1000000-2000000
+	idmap gid = 1000000-2000000
+	</programlisting>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+    オリジナルの Samba ソフトウェアと関連ユーティリティは、Andrew Tridgell
+    により書かれた。Samba は現在 Samba チームの元で、Linux のカーネルと
+    同様にオープンソースソフトウェアとして開発されている。
+	</para>
+</refsect1>
+
+<refsect1>
+    <title>日本語訳</title>
+    <para>このマニュアルページは Samba 3.3.6 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの翻訳は
+    <itemizedlist>
+        <listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+    </itemizedlist>
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,26 @@
+<samba:parameter name="client ntlmv2 auth"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、<citerefentry><refentrytitle>smbclient</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> がサーバへの接続時に
+    NTLMv2 暗号化パスワードレスポンスを使用した認証を行なうかどうかが設定される。</para>
+
+    <para>有効にすると、NTLMv2 および LMv2 レスポンス(両方とも以前のバージョンよりはセキュアである) が送信される。
+    ただし、多くのサーバ(Windows NT 4.0 SP3以前、Windows 9x および Samba 2.2)は NTLMv2 と互換性がない。</para>
+
+    <para>同様に、有効にした場合 NTLMv1、 <command
+    moreinfo="none">client lanman auth</command> および <command
+    moreinfo="none">client plaintext auth</command>
+    認証は無効となる。また、共有レベルの認証も同時に無効となる。</para>
+
+    <para>無効にした場合、 NTLM レスポンス (および可能であれば LANMAN レスポンス)
+    が、<command
+    moreinfo="none">client lanman auth</command> の値に応じてクライアントから送信される。</para>
+
+    <para>サイトによっては (特に「ベストプラクティス」のセキュリティポリシーを適用しているサイト)、NTLMv2 のみを許可し、脆弱な LM および NTLM レスポンスは許可していない。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

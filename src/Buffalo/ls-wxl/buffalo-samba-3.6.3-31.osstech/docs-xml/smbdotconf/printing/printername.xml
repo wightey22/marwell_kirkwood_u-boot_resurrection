@@ -1,0 +1,22 @@
+<samba:parameter name="printer name"
+                 context="S"
+		 print="1"
+		 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <synonym>printer</synonym>
+<description>
+    <para>このパラメータは、印刷サービスに対して印刷ジョブが送られた際に、
+	それをスプールするプリンタ名を設定する。</para>
+
+	<para> [global] セクションで設定された場合、
+	そのプリンタ名は、独自のプリンタ名が指定されていないすべての
+	印刷サービスで利用される。</para>
+
+    <para>
+    <smbconfoption name="printer name"/> の既定値は 、
+    大半のシステムで <literal>lp</literal> である。
+    </para>
+</description>
+<value type="default">なし</value>
+<value type="example">laserwriter</value>
+</samba:parameter>

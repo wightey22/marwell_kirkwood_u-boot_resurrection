@@ -1,0 +1,21 @@
+<samba:parameter name="init logon delayed hosts"
+                 context="G"
+		 type="list"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータには、最初に返される samlogon 応答を遅延させるべき
+    ホスト名や IP アドレス、ネットワーク等のリストを指定する（本ホスト
+    以外にもドメインコントローラがある場合、この設定により、Windows XP 
+    端末はそれらの DC を参照するようになる）。
+	</para>
+
+	<para>
+	応答を保留する長さは<smbconfoption name="init logon delay"/>で指定する。
+	</para>
+</description>
+
+<value type="default"></value>
+<value type="example">150.203.5. myhost.mynet.de</value>
+</samba:parameter>

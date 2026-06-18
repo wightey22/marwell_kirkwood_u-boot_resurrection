@@ -1,0 +1,24 @@
+/Makefile/1.1.1.1/Sat Oct 24 16:45:51 1998//
+/byteorder.h/1.1.1.1/Sat Oct 24 16:45:51 1998//
+/md4.c/1.2/Sat Oct 24 16:45:51 1998//
+/rfcnb-common.h/1.1.1.1/Sat Oct 24 16:45:51 1998//
+/rfcnb-error.h/1.1.1.1/Sat Oct 24 16:45:51 1998//
+/rfcnb-io.c/1.3/Sat Oct 24 16:45:52 1998//
+/rfcnb-io.h/1.1.1.1/Sat Oct 24 16:45:52 1998//
+/rfcnb-priv.h/1.1.1.1/Sat Oct 24 16:45:52 1998//
+/rfcnb-util.c/1.2/Sat Oct 24 16:45:53 1998//
+/rfcnb-util.h/1.1.1.1/Sat Oct 24 16:45:53 1998//
+/rfcnb.h/1.2/Sat Oct 24 16:45:53 1998//
+/session.c/1.2/Sat Oct 24 16:45:53 1998//
+/smbdes.c/1.1.1.1/Sat Oct 24 16:45:53 1998//
+/smbencrypt.c/1.1.1.1/Sat Oct 24 16:45:54 1998//
+/smblib-common.h/1.1.1.1/Sat Oct 24 16:45:54 1998//
+/smblib-priv.h/1.1.1.1/Sat Oct 24 16:45:55 1998//
+/smblib-util.c/1.2/Sat Oct 24 16:45:55 1998//
+/smblib.c/1.3/Sat Oct 24 16:45:56 1998//
+/smblib.h/1.1.1.1/Sat Oct 24 16:45:56 1998//
+/std-defines.h/1.1.1.1/Sat Oct 24 16:45:57 1998//
+/std-includes.h/1.1.1.1/Sat Oct 24 16:45:57 1998//
+/valid.h/1.1.1.1/Sat Oct 24 16:45:57 1998//
+/valid.c/1.2/Sat Oct 24 16:48:44 1998//
+D

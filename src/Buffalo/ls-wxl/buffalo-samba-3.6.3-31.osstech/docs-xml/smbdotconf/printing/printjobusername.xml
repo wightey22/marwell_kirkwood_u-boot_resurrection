@@ -1,0 +1,16 @@
+<samba:parameter name="printjob username"
+                 context="S"
+				 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータはプリンとシステムにどちらのユーザ情報が渡されるかを
+	指定する。通常、ユーザ名が送られる。しかし、いくつかの場合、たとえば、
+	ドメインプレフィックスも一緒にした方が便利な場合もある。</para>
+</description>
+
+<related>printing</related>
+
+<value type="example">%D\%U</value>
+<value type="default">%U</value>
+</samba:parameter>

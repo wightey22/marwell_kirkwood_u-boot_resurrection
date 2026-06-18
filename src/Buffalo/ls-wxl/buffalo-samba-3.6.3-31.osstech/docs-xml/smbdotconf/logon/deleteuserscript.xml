@@ -1,0 +1,16 @@
+<samba:parameter name="delete user script"
+			     type="string"
+                 context="G"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、リモート RPC (NT) ツールによってユーザの管理が行なわれた際に、 <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> によって実行されるスクリプトのフルパス名である。</para>
+
+	<para>このスクリプトは、「ドメインユーザマネージャ」や 	<command moreinfo="none">rpcclient</command> により、リモートのクライアントがサーバからユーザを削除した際に呼び出される。</para>
+
+	<para>このスクリプトは指定されたユーザ名の UNIX ユーザを削除するものでなければならない。</para>
+</description>
+<value type="default"></value>
+<value type="example">/usr/local/samba/bin/del_user %u</value>
+</samba:parameter>

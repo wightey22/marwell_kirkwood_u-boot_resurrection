@@ -1,0 +1,1835 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+
+<chapter id="AccessControls">
+<chapterinfo>
+	&author.jht;
+	&author.jeremy;
+	<author>&person.jelmer;<contrib>drawing</contrib></author>
+	<pubdate>May 10, 2003</pubdate>
+</chapterinfo>
+<title>ファイル、ディレクトリと共有のアクセス制御</title>
+
+<para>
+<indexterm><primary>ACLs</primary></indexterm>
+<indexterm><primary>共有</primary></indexterm>
+<indexterm><primary>ネットワークアクセス制御</primary></indexterm>
+<indexterm><primary>未認証のアクセス</primary></indexterm>
+慣れたMicrosoft Windowsユーザは、期待しているようにはSamba経由で共有されている、
+ファイル、ディレクトリと共有リソース操作が動かないことに、しばしば当惑する。
+Microsoft Windowsネットワーク管理者は、ネットワークのアクセス制御と、未認証の
+アクセスからリソースを保護する時に、ユーザが必要とするアクセスを提供する方法
+についてしばしば当惑している。
+</para>
+
+<para>
+<indexterm><primary>ファイルアクセスのパーミッション</primary></indexterm>
+<indexterm><primary>ディレクトリアクセスのパーミッション</primary></indexterm>
+多くのUNIX管理者は、Microsoft Windows環境には慣れておらず、ファイルとディレクトリの
+アクセスパーミッションを設定しようとするMicrosoft Windowsユーザが望むことを図式化する
+ことに困難が生じている。
+</para>
+
+<para>
+<indexterm><primary>bridge</primary></indexterm>
+<indexterm><primary>ディレクトリ制御</primary></indexterm>
+<indexterm><primary>ディレクトリのパーミッション</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+問題は、2つの環境の間で、ファイルとディレクトリのパーミッションと制御がどのように動くかの
+違いにある。この違いは、その大きな違いに橋を架けようとしても、Sambaが完全にはそれを
+隠せないということにある。
+</para>
+
+<para>
+<indexterm><primary>拡張属性</primary></indexterm>
+<indexterm><primary>ACLs</primary><secondary>POSIX</secondary></indexterm>
+<indexterm><primary>アクセスコントロールリスト</primary></indexterm>
+<indexterm><primary>商用Linux製品</primary></indexterm>
+POSIX ACL技術は、現在有意義な使用の例があまりないにもかかわらず、長い期間UNIX用に
+(拡張属性と共に)提供されてきている。これは、商用Linux製品で、ACLの適用が遅い理由
+について、ある程度の説明になる。Microsoft Windows管理者にとっては、Microsoft Windows NT
+において10年以上も前から基本的な機能としてACLが提供されていることを鑑みると、
+このことは驚くべきことである。
+</para>
+
+<para>
+<indexterm><primary>ネットワーク管理者</primary></indexterm>
+この章の目的は、Microsoft Windowsデスクトップユーザに対して、最も良い環境を提供する
+ための、最適の方法を見つけるためにネットワーク管理者を手助けする、Samba-3で可能な、
+各制御の要点を提供することである。
+</para>
+
+<para>
+<indexterm><primary>相互運用性</primary></indexterm>
+<indexterm><primary>データの交換</primary></indexterm>
+これは、異なったOS環境での相互運用性とデータの交換を提供するためにSambaが作成した
+ことを説明するのに良い機会である。SambaはMicrosoft Windowsのようなプラットフォームに
+UNIX/Linuxを変化させるつもりはない。その代わり、2つの環境間で、十分なレベルでデータの
+交換を提供することを目的としている。現在利用可能なものは、当初の計画と希望から大きく
+拡大していているが、それでもギャップは縮み続けている。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+	<para>
+	Sambaはファイルシステムアクセス管理に多くの自由度を提供する。現在のSambaでは
+	キーとなるアクセス制御機能が提供されている:
+	</para>
+
+	<itemizedlist>
+	<title>Sambaアクセス制御機能</title>
+		<listitem><para>
+		<indexterm><primary>パーミッション</primary><secondary>UNIXのファイルとディレクトリ</secondary></indexterm>
+		<emphasis>UNIXのファイルとディレクトリのパーミッション</emphasis>
+		</para>
+
+			<para>
+<indexterm><primary>UNIXのファイルシステムアクセス制御</primary></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+<indexterm><primary>パーミッションと制御</primary></indexterm>
+			SambaはUNIXファイルシステム制御を実装し、それを使う。Samba
+			サーバにアクセスするユーザは特定のMicrosoft Windowsユーザとして
+			そうする。この情報はログオンか接続のセットアップ手順の一部として
+			Sambaサーバに渡される。Sambaはこのユーザ識別情報を、ファイル
+			システムリソース(ファイルとディレクトリ)へのアクセス許可を与える
+			かどうかを検証するために使う。この章では、UNIXパーミッションと
+			制御が少々奇妙か未知な人について、概要を提供する。
+			</para>
+		</listitem>
+
+		<listitem><para>
+		<emphasis>Sambaの共有定義</emphasis>
+		</para>
+
+			<para>
+<indexterm><primary>share settings</primary></indexterm>
+			共有の設定と制御を&smb.conf;ファイル中で設定するとき、ネットワーク
+			管理者は本来のファイルシステムのパーミッションと動作を上書き設定
+			することが出来る。これはMicrosoft Windows NTユーザがより期待する
+			ような動作を引き起こすために有用かつ便利であるが、それに到達する
+			<emphasis>最も良い</emphasis>方法は滅多にない。基本的なオプションと
+			テクニックはここで説明されている。
+			</para>
+		</listitem>
+
+		<listitem><para>
+		<emphasis>Sambaの共有のACL</emphasis>
+		<indexterm><primary>ACLs</primary><secondary>共有</secondary></indexterm>
+		</para>
+
+			<para>
+<indexterm><primary>共有のACL</primary></indexterm>
+			共有それ自身に対するACLの設定がMicrosoft Windows NTで可能なように、
+			Sambaでもそれは可能である。この機能を使う人は少ないが、アクセス
+			制御(制限)に影響を与えるために簡便な方法の一つとして残っている
+			ことと、他の方法と比較して最小の影響でしばしばそれを行うことが
+			できる。
+			</para>
+		</listitem>
+
+		<listitem><para>
+				<indexterm><primary>ACLs</primary><secondary>POSIX</secondary></indexterm>
+				<indexterm><primary>ACLs</primary><secondary>Windows</secondary></indexterm>
+		<emphasis>UNIX POSIX ACLを経由したMicrosoft Windows ACL</emphasis>
+		</para>
+
+			<para>
+<indexterm><primary>native ACLs</primary></indexterm>
+			UNIX/Linux上でPOSIX ACLを使う場合は、ベースとなるOSがそれをサポート
+			している場合にのみ可能である。もしもそうでない場合、このオプションは
+			有効ではない。現在のUNIX技術基盤ではPOSIX ACLを標準サポートしている。
+			このサポートを提供するLinux kernelへのパッチも存在する。残念なことに、
+			Linuxプラットフォームの一部のみがネイティブなACLと拡張属性を有効にして
+			現時点で提供を行っている。この節では、それをサポートしているプラット
+			フォームのユーザに対する関連情報が記述されている。
+			</para>
+		</listitem>
+	</itemizedlist>
+
+</sect1>
+
+<sect1>
+<title>ファイルシステムのアクセス制御</title>
+
+<para>
+おそらく、最も重要な認識される点は、UNIX OS環境で提供されているものと、Microsoft Windows NT4/200x/XP
+におけるフィルシステムの技術の実装が完全に異なるという単純な事実である。最初に最も
+有意義な違いが何かを考え、次にその違いを乗り越えるためにSambaが何をしているかを見てみる
+ことにする。
+</para>
+
+	<sect2>
+	<title>Microsoft Windows NTFSとUNIXファイルシステムとの比較</title>
+
+	<para>
+	<indexterm><primary>NTFS</primary></indexterm>
+	<indexterm><primary>ファイルシステム</primary></indexterm>
+	<indexterm><primary>ファイルシステム</primary><secondary>UNIX</secondary></indexterm>
+	<indexterm><primary>ファイルシステム</primary><secondary>Windows</secondary></indexterm>
+	SambaはUNIXファイルシステムの上で動作する。これは、UNIXファイルシステムの
+	取り決めとパーミッションの適用を受けることを意味する。また、もしも
+	Microsoft Windowsネットワーク環境がファイルシステムの動作を要求するならば、
+	それはUNIXファイルシステムの動作とは異なり、何らかの方法でSambaは透過的かつ
+	一貫した方法でエミュレートを行う。
+	</para>
+
+	<para>
+	Sambaがこれをかなりの部分、それらの最上位で、既定値の動作を上書きする高度な
+	オプションの設定を提供するという良いニュースがある。いくつかの上書きについて
+	説明はあるが、大部分は既定値の動作の範囲内にとどまっている。制御可能性の詳細な
+	点について知りたい場合は、&smb.conf;マニュアルページを調べること。
+	</para>
+
+	<para>以下では、UNIXファイルシステムの機能とMicrosoft Windows NT/200xを比較する:
+	<indexterm><primary>ファイルシステム</primary><secondary>機能の比較</secondary></indexterm>
+	
+	</para>
+
+	<variablelist>
+		<varlistentry>
+			<term>名前空間</term>
+			<listitem>
+		<para>
+		Microsoft Windows NT4/200x/XPのファイル名は254文字まで有効だが、UNIX
+		ファイル名は1023文字まで大丈夫かもしれない。Microsoft Windows中で、
+		ファイルの拡張子は特定のファイルタイプを意味する。UNIXではすべての名前が
+		任意であると考えられるので、これは厳格には見かけない。
+		</para>
+		<para>
+		Microsoft Windowsがフォルダと読んでいるものは、UNIXではディレクトリである。
+		</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>大文字小文字の区別</term>
+			<listitem>
+		<para>
+		<indexterm><primary>8.3形式のファイル名</primary></indexterm>
+		<indexterm><primary>ファイルシステム</primary><secondary>大文字小文字の区別</secondary></indexterm>
+		Microsoft Windowsファイル名は8.3形式(8文字のファイル名と3文字の拡張子)の
+		場合、一般的に大文字である。8.3形式より長いファイル名は、大小文字を保持
+		するが、それは無視される。
+		</para>
+
+		<para>
+		UNIXのファイルとディレクトリ名は大文字小文字を区別し、その状態は保存
+		される。SambaはMicrosoft Windowsファイル名の動作を実装しているが、それは
+		ユーザアプリケーションとしてである。UNIXファイルシステムは大文字小文字を
+		無視したファイル名の検索を実行する機能は提供していない。Microsoft Windows
+		はこれを既定値で行う。これは、UNIX OS環境で標準としては備わっていない
+		機能を提供するために、処理のオーバヘッドがかかってしまうと言うことである。
+		</para>
+
+		<para>
+		以下の例を考えてみる。以下はUNIX名としては一意だが、Microsoft Windows
+		ファイル名としては同一である:
+		<screen>
+				MYFILE.TXT
+				MyFile.txt
+				myfile.txt
+		</screen></para>
+
+		<para>
+		明らかに、Microsoft Windowsファイルの名前空間ではこれらの3つのファイルは
+		同時に存在できないが、UNIXではできる。
+		</para>
+
+		<para>
+		もしも上記3つがすべて存在していたときにSambaは何をすべきか?
+		辞書的に最初のものがMicrosoft Windowsユーザから見えるようにすることで
+		ある。残りは見えず、アクセスも出来ない。&smbmdash;それ以外の解は自殺的
+		行為である。Windowsクライアントは大文字小文字を区別しないファイル検索を
+		要求するため、大文字小文字を区別しないファイルの一覧に一致する、
+		複数のファイルがあるUNIXディレクトリの場合、Sambaは一貫した選択方法を
+		提供しなければならないということになる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>ディレクトリの区切り文字</term>
+		<listitem><para>
+		<indexterm><primary>ディレクトリの区切り文字</primary></indexterm>
+		Microsoft Windows とDOSはディレクトリの区切り文字としてバックスラッシュ
+		<constant>\</constant>を使い、UNIXでは通常のスラッシュ<constant>/</constant>
+		をディレクトリの区切り文字として使う。これはSambaによって透過的に扱われる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>ドライブの識別</term>
+		<listitem><para>
+		<indexterm><primary>ドライブの識別</primary></indexterm>
+		Microsoft Windows製品は、ディレクトリのパーティションを表現するために、
+		<command>C:</command>のようなドライブレターの概念を持つ。UNIXはファイルの
+		パーティションに対して分離された識別子を持つという概念がない。そのような
+		各ファイルシステムはディレクトリツリー全体の一部としてマウントされる。
+		UNIXディレクトリツリーは、<constant>C:\</constant>のような、DOSの
+		ドライブのrootを指定するような形で、<constant>/</constant>から始まる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>ファイル名に関する規則</term>
+		<listitem><para>
+		<indexterm><primary>ファイル名に関する規則</primary></indexterm>
+		Microsoft Windowsは一般的に先頭がドット(<constant>.</constant>)で始まる
+		ファイル名は使わないがUNIXの場合、はユーザのホームディレクトリ中では
+		当たり前のように使われている。ドット(<constant>.</constant>)で始まる
+		ファイルは通常多くのUNIXアプリケーションの起動ファイルか、スタートアップ
+		設定データを含むファイルである。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>リンクとショートカット</term>
+		<listitem><para>
+		<indexterm><primary>リンク</primary><secondary>hard</secondary></indexterm>
+		<indexterm><primary>リンク</primary><secondary>soft</secondary></indexterm>
+		<indexterm><primary>ショートカット</primary></indexterm>
+		Microsoft Windowsは、実際の位置にあるファイルに対してそのファイルを実行する
+		ためにリダイレクトを行う、特別なタイプのファイルとして振る舞う
+		<emphasis>リンクとショートカット</emphasis>を使う。UNIXでは、ファイルと
+		ディレクトリのリンクを使うが、それはMicrosoft Windowsユーザが使っているもの
+		とは全く異なる。
+		</para>
+
+		<para>
+		シンボリックリンクは、UNIX中ではデータ(ファイル又はディレクトリ)の実際の
+		位置を含むファイルである。(読み出しあるいは書き込みのような)操作は参照
+		されたファイルに対して直接行われる。シンボリックリンクは
+		<quote>ソフトリンク</quote>としても参照される。ハードリンクはMicrosoft
+		Windowsではなじみのないものである。これは、1つの物理的なファイルを、複数の
+		ファイル名で同時に参照できるようにするものである。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+
+	<para>
+	Microsoft Windows管理者が、UNIX/Linuxを理解するようになるプロセス中で、一時的に
+	若干当惑することを引き起こすかもしれな微妙な違いがある。それらは、UNIX/Linuxの
+	トレーニングと教育の目的としての専用のテキストを見ると良い。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ディレクトリの管理</title>
+
+	<para>
+<indexterm><primary>create</primary></indexterm>
+<indexterm><primary>delete</primary></indexterm>
+<indexterm><primary>rename</primary></indexterm>
+	ディレクトリ操作には3つの基本的な操作がある。それは<command>作成</command>,
+	<command>削除</command>,<command>改名</command>である。
+	<link linkend="TOSH-Accesstbl">UNIXとWindowsによるディレクトリの管理</link>
+	では、WindowsとUNIX中でのコマンドにおける、上記の操作の実装について比較している。
+	</para>
+
+	<table frame="all" id="TOSH-Accesstbl">
+		<title>UNIXとWindowsによるディレクトリの管理</title>
+		<tgroup align="center" cols="3">
+		<thead>
+		<row><entry>動作</entry><entry>Microsoft Windowsのコマンド</entry><entry>UNIXのコマンド</entry></row>
+		</thead>
+	
+		<tbody>
+			<row><entry>create</entry><entry>md folder</entry><entry>mkdir folder</entry></row>
+			<row><entry>delete</entry><entry>rd folder</entry><entry>rmdir folder</entry></row>
+			<row><entry>rename</entry><entry>rename oldname newname</entry><entry>mv oldname newname</entry></row>
+		</tbody>
+	</tgroup>
+	</table>
+
+	</sect2>
+
+	<sect2>
+	<title>ファイルとディレクトリのアクセス制御</title>
+
+	<para>
+	<indexterm><primary>ACLs</primary><secondary>ファイルシステム</secondary></indexterm>
+<indexterm><primary>POSIX ACLs</primary></indexterm>
+<indexterm><primary>EAs</primary></indexterm>
+	ネットワーク管理者は、ファイルとディレクトリのパーミッションのメンテナンスに
+	関連する、基本的なUNIX学習マニュアルとリファレンス資料を読むことを強く推奨する。
+	POSIX ACLや拡張属性(EA)のようなより複雑な機能に訴求しない基本的なUNIXの
+	パーミッションについて多くの説明がある。
+	</para>
+
+	<para>
+	UNIX/Linuxのファイルとディレクトリアクセスパーミッションは3つの主要なデータの設定と
+	1つの制御の設定がある。UNIXでのファイル一覧は下記のようになる:
+<screen>
+&prompt;<userinput>ls -la</userinput>
+total 632
+drwxr-xr-x   13 maryo   gnomes      816 2003-05-12 22:56 .
+drwxrwxr-x   37 maryo   gnomes     3800 2003-05-12 22:29 ..
+dr-xr-xr-x    2 maryo   gnomes       48 2003-05-12 22:29 muchado02
+drwxrwxrwx    2 maryo   gnomes       48 2003-05-12 22:29 muchado03
+drw-rw-rw-    2 maryo   gnomes       48 2003-05-12 22:29 muchado04
+d-w--w--w-    2 maryo   gnomes       48 2003-05-12 22:29 muchado05
+dr--r--r--    2 maryo   gnomes       48 2003-05-12 22:29 muchado06
+drwsrwsrwx    2 maryo   gnomes       48 2003-05-12 22:29 muchado08
+----------    1 maryo   gnomes     1242 2003-05-12 22:31 mydata00.lst
+--w--w--w-    1 maryo   gnomes     7754 2003-05-12 22:33 mydata02.lst
+-r--r--r--    1 maryo   gnomes    21017 2003-05-12 22:32 mydata04.lst
+-rw-rw-rw-    1 maryo   gnomes    41105 2003-05-12 22:32 mydata06.lst
+&prompt;
+</screen>
+	</para>
+
+	<para>
+	1行の中の各項目は(左から右に)パーミッション、ファイルのハードリンク数、所有者、
+	グループ、サイズ(バイト)、アクセス日付、最終更新日付とファイル名である。
+	</para>
+
+	<para>
+	パーミッション欄の概要は<link linkend="access1">UNIXパーミッション欄の概要</link>
+	にある。
+	</para>
+
+	<figure id="access1">
+		<title>UNIXパーミッション欄の概要</title>
+		<imagefile scale="40">access1</imagefile>
+	</figure>
+
+	<para>
+		どのビットフラグもOFFにできる。OFFになったフラグは"できない"と同値で、
+		<quote>-</quote>文字で表現される(<link linkend="access2"/>を参照)。
+<indexterm><primary>read</primary></indexterm>
+<indexterm><primary>write</primary></indexterm>
+<indexterm><primary>execute</primary></indexterm>
+<indexterm><primary>user</primary></indexterm>
+<indexterm><primary>group</primary></indexterm>
+<indexterm><primary>other</primary></indexterm>
+	</para>
+
+<example id="access2">
+<title>サンプルファイル</title>
+<programlisting>
+-rwxr-x---   意味: 
+ ^^^                所有者(ユーザ)はこのファイルを読み、書き、実行できる。
+    ^^^             グループに属したユーザは読み、実行できる。
+       ^^^          それ以外のユーザはこのファイルに対して何も出来ない。
+</programlisting>
+</example>
+
+
+	<para>
+<indexterm><primary>キャラクタデバイス</primary></indexterm>
+<indexterm><primary>ブロックデバイス</primary></indexterm>
+<indexterm><primary>パイプデバイス</primary></indexterm>
+<indexterm><primary>UNIX ドメインソケット</primary></indexterm>
+	[タイプ]フィールドにはさらに別の意味もあり、それは、c = キャラクタデバイス、
+	b = ブロックデバイス、p = パイプデバイス、s = UNIXドメインソケットである。
+	</para>
+
+	<para>
+<indexterm><primary>read</primary></indexterm>
+<indexterm><primary>write</primary></indexterm>
+<indexterm><primary>execute</primary></indexterm>
+<indexterm><primary>SGID</primary></indexterm>
+<indexterm><primary>SUID</primary></indexterm>
+	文字<constant>rwxXst</constant>はユーザ、グループとその他に対して、読み出し(r)、
+	書き込み(w)、実行(あるいはディレクトリへのアクセス許可) (x)、ファイルが
+	ディレクトリかすでにあるユーザに対して実行許可を与えられた場合に実行可能(X)、
+	実行時にset user ID (SUID)か set group ID (SGID) (s)かスティッキー(t)である。
+	</para>
+
+	<para>
+<indexterm><primary>スティッキービット</primary></indexterm>
+<indexterm><primary>unlinked</primary></indexterm>
+<indexterm><primary>/tmp</primary></indexterm>
+<indexterm><primary>誰でも書き込み可能</primary></indexterm>
+	スティッキービットがディレクトリ上に設定された場合、そのディレクトリ内にある
+	ファイルは、rootか所有者のみunlink(削除)か改名できる。スティッキービットがない
+	場合、書き込み可能なディレクトリでは、誰でもファイルの削除や改名が出来る。
+	スティッキービットは、誰でも書き込み可能な、<filename>/tmp</filename>のような
+	ディレクトリでは一般的に使われる。
+	</para>
+
+	<para>
+<indexterm><primary>write</primary></indexterm>
+<indexterm><primary>read</primary></indexterm>
+<indexterm><primary>ディレクトリの設定</primary></indexterm>
+<indexterm><primary>set user id</primary><see>SUID</see></indexterm>
+<indexterm><primary>set group id</primary><see>SGID</see></indexterm>
+	setuidやsetgidビットがディレクトリに設定された場合、その中に作成された
+	ファイルは、setuidビットsetgidビットのいずれが設定されたかに応じて、ディレクトリの
+	所有ユーザたはグループによって所有される。これは、あるグループに所属している
+	すべてのユーザがファイルの読み書きをできるようにすることが望ましく、これらの
+	ユーザが所属しているものと異なるプライマリグループを持つユーザが、該当の
+	ファイルを排他的に所有してしまうことが望ましくないようなディレクトリの
+	パーミッションを設定する際に有効なことがあろう。
+	</para>
+
+	<para>
+	ディレクトリが<constant>d-wx--x---</constant>に設定された時、所有者はその中の
+	ファイルを読んだり作成(書き込み)出来るが、読み出し(r)フラグが設定されていない
+	ので、だれも、ファイルの一覧を表示(見る)事が出来ない。グループに属するユーザは
+	そのディレクトリ中のファイルを読めるが新しいファイルは作成できない。もしも、
+	ディレクトリ中のファイルがグループに対して読み書き可能なように設定された場合、
+	グループメンバはそれらに書き込み(または削除)ができる。
+	</para>
+
+	<sect3>
+	<title>ディレクトリとファイルの削除操作からの保護</title>
+
+	<para>
+<indexterm><primary>ファイルの保護</primary></indexterm>
+<indexterm><primary>ディレクトリの保護</primary></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+<indexterm><primary>capability to delete</primary></indexterm>
+	どのように、ユーザの削除操作から、ファイルやディレクトリを保護したらよいか、
+	という事についてSambaメーリングリストに質問が来ることがある。例えば、Windows NT/2K/XP
+	は、ディレクトリ配下に、ファイルを書くことは出来るが削除できないというアクセス制御を
+	設定する機能がある。これは、ファイルに書き込みは出来るが、削除は出来ないというACLを
+	Windows上で設定することで可能になる。このような考え方はUNIX OSファイル空間ではない。
+	UNIXファイルシステムでは、ファイルを作成出来るユーザはファイルに書き込みが出来る。
+	ファイルがあるディレクトリへの書き込み権があり、ファイルへの書き込み権があるユーザは
+	それを削除できてしまう。
+	</para>
+
+	<para>
+<indexterm><primary>ディレクトリのパーミッション</primary></indexterm>
+<indexterm><primary>ファイルの削除</primary></indexterm>
+<indexterm><primary>書き込みアクセス</primary></indexterm>
+	確認ではあるが、UNIX環境では、ファイルの削除はそのファイルがいるディレクトリの
+	パーミッションによって制御される。別の言い方をすると、対象となるファイルの
+	所有者ではなくても、書き込み権があるユーザは、ディレクトリ中のファイルを
+	削除できる。
+	</para>
+	
+	<para>
+<indexterm><primary>file system capabilities</primary></indexterm>
+<indexterm><primary>継承</primary></indexterm>
+<indexterm><primary>POSIX ACLs</primary></indexterm>
+<indexterm><primary>拡張属性</primary></indexterm>
+	必要に応じて、SambaはホストOSのファイルシステムの構造を受け取る。Sambaは
+	Windows ACLを有効にすることについてと"最も最適な"POSIX ACLへの変換実行に
+	ついては、ファイルシステムの能力に制限される。いくつかのUNIXファイルシステム
+	では、拡張属性と呼ばれている機能をサポートしている。Windowsでの
+	<emphasis>継承</emphasis>という概念のみ、適切な拡張属性を使ってSambaは
+	実装している。
+	</para>	
+
+	<para>
+<indexterm><primary>拡張属性</primary></indexterm>
+<indexterm><primary>immutible</primary></indexterm>
+<indexterm><primary>chattr</primary></indexterm>
+<indexterm><primary>CAP_LINUX_IMMUTABLE</primary></indexterm>
+	拡張属性の特定の動作は、UNIXと例えばLinuxのようなUNIX風のシステム全体には
+	一貫していない。例えば、ディレクトリやファイルを削除操作から防ぐためのフラグを
+	セットすることは、拡張属性の特定の実装では可能である。これを達成する拡張属性は
+	<constant>immutible</constant>ビットと呼ばれている。残念なことに、immutible
+	フラグの実装は公開された文書とは一致していない。たとえば、SuSE Linux 9.2上の
+	<command>chattr</command>のマニュアルには:
+<screen>
+A file with the i attribute cannot be modified: it cannot be deleted
+or renamed, no link can be created to this file and no data can be
+written to the file. Only the superuser or a process possessing the
+CAP_LINUX_IMMUTABLE capability can set or clear this attribute.
+(訳: i 属性を持つファイルは変更できない:削除も改名もこのファイルへの
+リンク作成も出来ないし、このファイルへの書き込みも出来ない。スーパー
+ユーザかCAP_LINUX_IMMUTABLE機能を所有するプロセスがこの属性を設定
+および削除できる)。
+
+</screen>
+	immutible flag が、Sambaが動いているファイルシステム上でサポートされているか、
+	簡単なテストは以下のように出来る。
+	</para>
+
+	<procedure>
+	<title>ファイルの Immutibilityサポートのテスト</title>
+
+	<step><para>
+	<filename>filename</filename>という名前のファイルを作成。
+	</para></step>
+
+	<step><para>
+	<constant>root</constant>ユーザとしてログインし、以下のようにimmutibileフラグをテストファイルに設定:
+<screen>
+&rootprompt; chattr +i `filename'
+</screen>
+	</para></step>
+
+	<step><para>
+	ファイルを所有しているユーザ(非root)でログインし、以下のようにしてファイル削除を試みてみる:
+<screen>
+mystic:/home/hannibal > rm filename
+</screen>
+	immutibleが正しく効いているならばファイル削除は出来なくなっている。
+	</para></step>
+	</procedure>
+
+	<para>
+	immutible bitをサポートしているファイルシステムがあるOS上では、ディレクトリを
+	作成できるが削除できないようにするのは可能である。immutableディレクトリが書き込み
+	可能かどうかを、そのホストシステム上のマニュアルページでチェックすること。
+	もしも出来なければ、ディレクトリ全体とその内容は、書き込み(ファイル作成も)と
+	削除から効果的に保護される。
+	</para>
+
+	</sect3>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>共有のアクセス制御の定義</title>
+
+
+	<para>
+	<indexterm><primary>permissions</primary><secondary>share</secondary></indexterm>
+	&smb.conf;セクション中の以下のパラメータは、共有の制御かアクセス制御の設定を
+	定義する。以下のオプションのどれかを使う前に、&smb.conf;のマニュアルページを
+	参照のこと。
+	</para>
+
+	<sect2>
+	<title>ユーザとグループベースの制御</title>
+
+	<para>
+	ユーザとグループベースの制御はとても便利なことがわかっている。ある特定の状態に
+	おいては、単一のユーザが行うような形で、すべてのファイルシステムへの操作を強制する
+	ことはとても望ましいことがある。<smbconfoption name="force user"/>と
+	<smbconfoption name="force group"/>の動作を使うとこれを行う事ができる。
+	他の状態においては、特定の認証された人のみが共有またはその内容にアクセス出来る
+	ようにさせるような、偏執的なレベルの制御を使うことが必要かもしれない。これには、
+	<smbconfoption name="valid users"/>か<smbconfoption name="invalid users"/>
+	パラメータが便利である。
+	</para>
+
+	<para>
+	いつものように、管理するためと、アクセスを制御する方法の不明確な点を最小化する、
+	一番簡単な方法を使うことを特に推奨する。覚えていてほしいが、状態をそのまま残すと、
+	他の誰かが手助けを提供する必要があり、もしもだれかが、あまりにも大きな混乱状態
+	を見つけるか、何をしていたかが理解できない場合、Sambaが削除され、別の解が適用
+	されてしまうと言う危険性が出てくる。
+	</para>
+
+	<para>
+	<link linkend="ugbc">ユーザとグループベースの制御</link>は上記の制御について列挙している。
+	</para>
+
+	<table frame='all' pgwide='0' id="ugbc"><title>ユーザとグループベースの制御</title>
+	<tgroup cols='2'>
+		<colspec align="left"/>
+		<colspec align="justify" colwidth="1*"/>
+		<thead>
+		<row>
+			<entry align="center">制御パラメータ</entry>
+			<entry align="center">説明、動作、備考</entry>
+		</row>
+		</thead>
+		<tbody>
+		<row>
+			<entry><smbconfoption name="admin users"/></entry>
+			<entry><para>
+			共有に対して管理者権限を許可するユーザの一覧。そのユーザは
+			スーパーユーザ(root)と同様すべてのファイル操作ができる。
+			この一覧中のユーザは共有上でファイルのパーミッションに関わらず
+			何でも出来る。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="force group"/></entry>
+			<entry><para>
+			このサービスに接続するすべてのユーザに既定値のプライマリグループ
+			として割り当てるUNIXのグループ名を指定する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="force user"/></entry>
+			<entry><para>
+			このサービスに接続するすべてのユーザに既定値のユーザとして
+			割り当てるUNIXのユーザ名を指定する。
+			これは、ファイルの共有に便利である。間違って使うとセキュリティ
+			上の問題が発生する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="guest ok"/></entry>
+			<entry><para>
+			もしもパラメータがサービスに対して接続されたならば、サービスに
+			接続する時にパスワードが不要になる。権限は guestアカウントになる。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="invalid users"/></entry>
+			<entry><para>
+			このサービスにログイン出来ないユーザのリスト。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="only user"/></entry>
+			<entry><para>
+			接続を許可しないユーザ名の一覧。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="read list"/></entry>
+			<entry><para>
+			サービスに対してリードオンリアクセスを許可するユーザの一覧。
+			この一覧中のユーザはリードオンリオプションがどのように設定
+			されていても、書き込み権はない。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="username"/></entry>
+			<entry><para>
+			詳細は&smb.conf;マニュアルページを参照。これは複雑で潜在的に
+			間違って使われるパラメータである。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="valid users"/></entry>
+			<entry><para>
+			サービスにログイン出来るユーザの一覧。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="write list"/></entry>
+			<entry><para>
+			サービスに読み書き可能なアクセスが出来るユーザの一覧。
+			</para></entry>
+		</row>
+		</tbody>
+	</tgroup>
+	</table>
+
+	</sect2>
+
+	<sect2>
+	<title>ファイルとディレクトリに対するパーミッションベースの制御</title>
+
+	<para>
+	ディレクトリパーミッションベースの制御は、間違って使った場合、間違った設定の
+	原因を診断するのにかなりの困難が生じる。控えめに、そして厳重に使うこと。
+	徐々に、1つずつ、おのおのを導入すると、好ましくない副作用が見つかるかもしれない。
+	問題発生時には、いつでもそれらをコメントアウトし、徐々に様子を見ながらそれらを
+	元に戻していく。
+	</para>
+
+	<para>
+	ファイルとディレクトリパーミッションベースのアクセス制御を使うためのパラメータに
+	関連する情報は、
+	<link linkend="fdpbc">ファイルとディレクトリパーミッションベースの制御</link>
+	を参照のこと。
+	</para>
+
+	<table frame='all' id="fdpbc"><title>ファイルとディレクトリパーミッションベースの制御</title>
+		<tgroup cols='2'>
+			<colspec align="left"/>
+			<colspec align="justify" colwidth="1*"/>
+		<thead>
+		<row>
+			<entry align="center">制御パラメータ</entry>
+			<entry align="center">説明、動作、備考</entry>
+		</row>
+		</thead>
+		<tbody>
+		<row>
+			<entry><smbconfoption name="create mask"/></entry>
+			<entry><para>
+			&smb.conf;マニュアルページを参照のこと
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="directory mask"/></entry>
+			<entry><para>
+			UNIXディレクトリを作成する時に、DOSのモードをUNIXのモードに
+			変換する時に使う8進のモード値。directory security maskも参照。
+			</para></entry></row>
+		<row>
+			<entry><smbconfoption name="dos filemode"/></entry>
+			<entry><para>
+			このパラメータを有効にすると、ファイルに書き込み権があるユーザに
+			そのパーミッションの変更を許可する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="force create mode"/></entry>
+			<entry><para>
+			このパラメータは、Sambaによって作成されたファイル上に常時設定
+			されるUNIXモードのビット単位のパーミッションを指定する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="force directory mode"/></entry>
+			<entry><para>
+			このパラメータは、Sambaによって作成されたディレクトリ上に常時設定
+			されるUNIXモードのビット単位のパーミッションを指定する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="force directory security mode"/></entry>
+			<entry><para>
+			Windows NTクライアントがディレクトリ上のUNIXパーミッションを操作
+			する時に変更されるUNIXパーミッションビットを制御する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="force security mode"/></entry>
+			<entry><para>
+			Windows NTクライアントがUNIXパーミッションを操作する時に変更
+			されるUNIXパーミッションビットを制御する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="hide unreadable"/></entry>
+			<entry><para>
+			読めないファイルを、クライアントから見えなくする。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="hide unwriteable files"/></entry>
+			<entry><para>
+			書き込めないファイルをクライアントから見えなくする。書き込めない
+			ディレクトリは通常通り見える。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="nt acl support"/></entry>
+			<entry><para>
+			このパラメータはsmbdがUNIXパーミッションをWindows NT ACLにマップ
+			するかどうかを制御する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="security mask"/></entry>
+			<entry><para>
+			Windows NTクライアントがファイル上のUNIXパーミッションを操作する
+			時に変更されるUNIXパーミッションビットを制御する。
+			</para></entry>
+		</row>
+		</tbody>
+	</tgroup>
+	</table>
+
+	</sect2>
+
+	<sect2>
+	<title>その他の制御</title>
+
+	<para>
+	<link linkend="mcoc">他の制御</link>中に記載があるパラメータはファイルアクセスへの
+	不注意によるバリアを作成する方向で、管理者によってしばしば使われる。それらは、
+	&smb.conf;のファイル設定の完全な影響がわからない結果である。
+The parameters documented in <link linkend="mcoc">Other Controls</link> are often used by administrators
+	in ways that create inadvertent barriers to file access. Such are the consequences of not understanding the 
+	full implications of &smb.conf; file settings.
+	</para>
+
+	<table frame='all' id="mcoc"><title>他の制御</title>
+	<tgroup cols='2'>
+		<colspec align="justify" colwidth="1*"/>
+		<colspec align="justify" colwidth="1*"/>
+		<thead>
+		<row>
+			<entry align="center">制御パラメータ</entry>
+			<entry align="center">説明、動作、備考</entry>
+		</row>
+		</thead>
+		<tbody>
+		<row>
+			<entry>
+			<smbconfoption name="case sensitive"/>,
+			<smbconfoption name="default case"/>,
+			<smbconfoption name="short preserve case"/>
+			</entry>
+			<entry><para>
+			これは、すべてのファイル名検索を大文字小文字を意識した形で行う
+			事を意味する。Microsoft Windowsくらい亜入おから受け取った正確な
+			名前で、ファイルはSambaによって作成される。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="csc policy"/></entry>
+			<entry><para>
+			クライアントサイトのキャッシングポリシーは、Microsoft Windowsの
+			クライアントサイドのファイルキャッシング機能に類似している。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="dont descend"/></entry>
+			<entry><para>
+			常時空白としてサーバが見せる、カンマで分離されたディレクトリ一覧を指定する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="dos filetime resolution"/></entry>
+			<entry><para>
+			このオプションは、Samba共有に対して、主にVisual C++との互換オプションとして使われる。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="dos filetimes"/></entry>
+			<entry><para>
+			ファイルに書き込みが出来るときにDOSとWindowsは、ユーザにファイルの
+			時刻変更を許可する。POSIXでの流儀ではこれは出来ない。このオプションは
+			DOSとWindowsの流儀を許可する。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="fake oplocks"/></entry>
+			<entry><para>
+			Oplocksは、SMBクライアントがサーバから、ファイル操作をローカルに
+			キャッシュする許可を得る方法である。もしもサーバがoplockを許可
+			すると、クライアントは、ファイルへのアクセスが唯一であると仮定
+			することから自由になり、ファイルのデータをより頻繁にキャッシュする。
+			</para></entry>
+		</row>
+		<row>
+			<entry>
+			<smbconfoption name="hide dot files"/>,
+			<smbconfoption name="hide files"/>,
+			<smbconfoption name="veto files"/>
+			</entry>
+			<entry><para>
+			注意:Microsoft Windowsエクスプローラはhiddenが設定されたファイルの
+			状態を無視するので、結局それは見えてしまう。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="read only"/></entry>
+			<entry><para>
+			このパラメータがyesの場合、サービスのユーザはサービスのディレクトリ
+			中のファイルを作成又は変更できない。
+			</para></entry>
+		</row>
+		<row>
+			<entry><smbconfoption name="veto files"/></entry>
+			<entry><para>
+			見えないか、アクセスできないファイルとディレクトリの一覧。
+			</para></entry>
+		</row>
+		</tbody>
+	</tgroup>
+	</table>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>共有のアクセス制御</title>
+
+
+	<para>
+<indexterm><primary>共有単位のアクセス制御</primary></indexterm>
+<indexterm><primary>Everyone - フルコントロール</primary></indexterm>
+<indexterm><primary>specific restrictions</primary></indexterm>
+<indexterm><primary>共有アクセス</primary></indexterm>
+	<indexterm><primary>permissions</primary><secondary>share ACLs</secondary></indexterm>
+	この節では、Sambaの共有単位でのアクセス制御における制限の設定方法について取り
+	扱う。既定値では、Sambaは共有自身には何らの制限も設定しない。共有自身への
+	制限は、Microsoft Windows NT4/200x/XP共有上で設定出来る。これは、共有に
+	接続する人を効果的に制限できる方法である。特定の制限がない場合、既定値の
+	設定はグローバルユーザに対して<constant>Everyone - フルコントロール</constant>
+	(フルコントロール、変更と読み出し)である。
+	</para>
+
+	<para>
+<indexterm><primary>アクセス制御</primary></indexterm>
+<indexterm><primary>MMC</primary></indexterm>
+<indexterm><primary>コンピュータの管理</primary></indexterm>
+	現時点ではSambaは共有上のアクセス制御の設定を行うためのツールを提供していない
+	ので、それらの設定を作成する唯一の方法は、NT4のサーバマネージャか
+	Windows 200xの、コンピュータの管理のための、Microsoftマネジメントコンソール
+	(MMC)を使うことである。Sambaのコマンドラインツールでこの機能を提供することは
+	現時点では予定されていない。
+	</para>
+
+	<para>
+<indexterm><primary>share_info.tdb</primary></indexterm>
+<indexterm><primary>/usr/local/samba/var</primary></indexterm>
+<indexterm><primary>tdbdump</primary></indexterm>
+<indexterm><primary>tdbファイル</primary></indexterm>
+	Sambaは<filename>share_info.tdb</filename>というファイル中に共有単位のアクセス
+	制御の設定を格納する。サーバ上にこのファイルがある場所は、Sambaがコンパイル
+	された状態に依存する。Sambaのtdbファイルがある既定値の位置は、
+	<filename>/usr/local/samba/var</filename>配下である。もしも<filename>tdbdump</filename>
+	ユーティリティがコンパイルされシステム中にインストールされているならば、
+	tdbファイルがあるディレクトリ中で<command>tdbdump share_info.tdb</command>を
+	実行する事によってこのファイルの内容を検査することが出来る。
+	</para>
+
+	<sect2>
+	<title>共有のパーミッションの管理</title>
+
+		<para>
+		共有のパーミッションの管理を行うための最適のツールはプラットフォーム
+		依存である。環境に応じて最適のツールを選択されたい。
+		</para>
+
+			<sect3>
+			<title>Windows NT4 Workstation/Server</title>
+			<para>
+<indexterm><primary>共有のパーミッションの管理</primary></indexterm>
+<indexterm><primary>共有のパーミッション</primary></indexterm>
+<indexterm><primary>NT サーバマネージャ</primary></indexterm>
+<indexterm><primary>Windows NT4</primary></indexterm>
+			Windows NT4 ワークステーションかサーバからSambaサーバ上の
+			共有のパーミッションを管理するのに必要なツールは、
+			NT サーバマネージャである。サーバマネージャはWindows NT4
+			サーバ製品とともに出荷されているが、Windows NT4ワークステーション
+			には付いていない。Microsoft Windows NT4 ワークステーション
+			用のNT サーバマネージャは、MicrosoftのWebサイト
+			<ulink url="http://support.microsoft.com/default.aspx?scid=kb;en-us;173673">support</ulink>
+			から入手できる(訳注:日本語版は
+<ulink url="http://support.microsoft.com/default.aspx?scid=kb;ja-jp;173673">こちらから</ulink>)。
+			</para>
+
+			<procedure>
+			<title>手順</title>
+
+			<step><para>
+			<application>NT4 サーバマネージャ</application>を起動し、管理
+			したいSambaサーバをクリックする。メニューから
+			<guimenu>コンピュータ</guimenu>を選択し、
+			<guimenuitem>共有ディレクトリ</guimenuitem>をクリックする。
+			</para></step>
+
+			<step><para>
+			管理したい共有をクリックし、次に<guilabel>プロパティ</guilabel>
+			タブをクリックし、<guilabel>パーミッション</guilabel>タブを
+			クリックする。これで、アクセス制御を追加/変更できるようになる。
+			</para></step>
+			</procedure>
+
+			</sect3>
+
+			<sect3>
+			<title>Windows 200x/XP</title>
+
+			<para>
+<indexterm><primary>Windows NT4/200x/XP</primary></indexterm>
+<indexterm><primary>共有のACL</primary></indexterm>
+<indexterm><primary>Sharing</primary></indexterm>
+<indexterm><primary>Permissions</primary></indexterm>
+			<application>Microsoft Windows NT4/200x/XP</application>上では、
+			共有のACLはMicrosoftエクスプローラのようなツールで設定する。
+			たとえば、Windows 200xでは、共有フォルダを右クリックし、次に、
+			<guimenuitem>共有</guimenuitem>を選択し、次に
+			<guilabel>パーミッション</guilabel>をクリックする。
+			Windows NT4/200xでの既定値のパーミッションはグループ
+			"Everyone"が共有に対してフルコントロールを持つようになっている。
+			</para>
+
+			<para>
+<indexterm><primary>コンピュータの管理</primary></indexterm>
+<indexterm><primary>MMC</primary></indexterm>
+<indexterm><primary>ツール</primary></indexterm>
+			Microsoft Windows 200xとそれ以降のバージョンでは、MMCに対して
+			<application>コンピュータの管理</application>スナップインと
+			呼ばれるツールが提供されている。このツールは、
+			<guimenu>コントロールパネル->管理ツール->コンピュータの管理</guimenu>
+			経由でアクセス出来る。
+			</para>
+
+			<procedure>
+			<title>手順</title>
+			<step><para>
+			MMCのコンピュータマネジメントスナップインを起動後、メニュー項目
+			<guimenuitem>操作(A)</guimenuitem>をクリックし、
+			<guilabel>別のコンピュータに接続(C)</guilabel>を選択する。もしも、
+			ドメインにログオンしていない場合、ドメインログオンユーザ名と
+			パスワードを聞いてくるので入力する。それでドメインの認証を行う。
+			もしも管理者権限でログインしているならば、このステップは省略される。
+			</para></step>
+
+			<step><para>
+			もしも、Sambaサーバが<guilabel>コンピュータを選択</guilabel>
+			ボックス中に表示されていないならば、<guilabel>Name:</guilabel>
+			フィールド中に対象のSambaサーバの名前を入力する。次に
+			<guilabel>システムツール</guilabel>のそばにある
+			<guibutton>[+]</guibutton>をクリックし、左パネル中の
+			<guilabel>共有フォルダ</guilabel>のそばにある
+			<guibutton>[+]</guibutton>をクリックする。
+			</para></step>
+
+			<step><para>
+<indexterm><primary>共有のパーミッション</primary></indexterm>
+			右パネル中でアクセス制御のパーミッションを設定したい共有上で
+			右クリックする。次に、<guilabel>共有のパーミッション</guilabel>
+			を右クリックする。これで、小浮遊フォルダにアクセス制御
+			エンティティを追加できる。各エントリに割り当てたいアクセスの
+			タイプ(フルコントロール、変更、読み込み)を覚えておくこと。
+			</para></step>
+			</procedure>
+
+			<warning>
+			<para>
+			注意深く作業する必要がある。このユーザを削除しないで
+			<constant>Everyone</constant>ユーザからすべてのパーミッションを
+			取り去ると、この共有に対しては誰もアクセス出来なくなる。これは
+			ACLの優先順位として知られていることの結果である。Everyoneに
+			対して<emphasis>アクセス権なし</emphasis>ということは、
+			<constant>Everyone</constant>のグループに属している
+			<constant>MaryK</constant>というユーザは、明示的な、フルアクセス
+			の権利を与えられたとしても、アクセスできない。
+			</para>
+			</warning>
+
+			</sect3>
+		</sect2>
+
+</sect1>
+
+<sect1>
+<title>Microsoft Windowsのアクセス制御リストとUNIXとの相互運用性</title>
+
+	<sect2>
+		<title>NTセキュリティダイアログを使用したUNIXパーミッションの管理</title>
+
+
+		<para>
+		<indexterm><primary>パーミッション</primary><secondary>ファイルとディレクトリのACL</secondary></indexterm>
+		Windows NTクライアントは、基盤となるUNIXパーミッションを表示したり変更
+		するための、ネイティブなセキュリティ設定ダイアログボックスを使うことが
+		できる。
+		</para>
+
+		<para>
+		この機能は、Sambaが動作しているUNIXホストのセキュリティを危うくしない
+		ように留意し、かつ、Samba管理者が設定出来るすべてのファイル
+		パーミッションルールに依然として従う。
+		</para>
+
+		<para>
+		SambaはPOSIX ACLの範囲内で動くので、種々の、Windowsで提供されている
+		よりきめ細かいアクセス制御は実際の所無視される。
+		</para> 
+
+		<note>
+		<para>
+		Samba経由での、UNIX/LinuxシステムファイルへのすべてのアクセスはOSの
+		ファイルアクセス制御によって制御される。ファイルアクセスの問題を理解
+		しようとする時、Sambaによってファイルアクセスを行う時に提供されるWindows
+		ユーザの識別子を見つけることはきわめて重要である。これは、Sambaのログ
+		ファイルから見つけるのが最も良い。
+		</para>
+		</note>
+	</sect2>
+
+	<sect2>
+		<title>Samba共有上でのファイルセキュリティの表示</title>
+
+		<para>
+		NT4/200x/XPクライアントからSambaでマウントしたドライブレターかUNCパス
+		中のファイルかディレクトリのどれかを右クリックする。メニューがポップ
+		アップするのでメニューの最下部にある<guilabel>プロパティ</guilabel>
+		エントリをクリックする。この動作でファイルの<guilabel>プロパティ</guilabel>
+		ダイアログボックスが上がってくる。<guilabel>セキュリティ</guilabel>タブを
+		クリックすると3つのボタンが表示される:<guibutton>アクセス許可</guibutton>、
+		<guibutton>監査</guibutton>と<guibutton>所有者</guibutton>である。
+		<guibutton>監査</guibutton>ボタンは、ユーザがNTの管理者でない場合、
+		<errorname>"要求された権限をクライアントが持っていません(A requested privilege is not held by the client)"</errorname>
+		というエラーメッセージを表示するか、ユーザがNT管理者としてログオンしている
+		場合、ファイルに対する監査要求を追加するために、管理者に許可を行う
+		ダイアログを表示する。このダイアログは現時点ではSamba共有には機能しない
+		ので、唯一使えるボタンである <guibutton>追加</guibutton>ボタンは、
+		表示されているユーザの一覧を現時点では許可出来ない。
+		</para>
+
+	</sect2>
+
+	<sect2>
+		<title>ファイルの所有者の表示</title>
+
+		<para>
+		<guibutton>所有者</guibutton>ボタンをクリックすると、ダイアログボックスが
+		表示され、そのファイルの所有者を表示する。所有者は以下のように表示される:
+		<screen>
+		<constant>SERVER\user (長い名前)</constant>
+		</screen>
+		ここで<replaceable>SERVER</replaceable>はSambaサーバのNetBIOS名である。
+		<replaceable>user</replaceable>はこのファイルを所有しているUNIXユーザ
+		のユーザ名であり、<replaceable>(長い名前)</replaceable>はユーザを識別
+		するための説明文字列である(通常はUNIXパスワードデータベースのGECOS
+		フィールドが使われる)。<guibutton>閉じる</guibutton>ボタンをクリック
+		して、このダイアログを閉じる。
+		</para>
+
+		<para>
+		もしも<smbconfoption name="nt acl support"/>パラメータが
+		<constant>false</constant>に設定されているならば、ファイルの所有者は
+		NTユーザの<emphasis>Everyone</emphasis>として表示される。
+		</para>
+
+		<para>
+<indexterm><primary>所有権の取得</primary></indexterm>
+		<guibutton>所有権の取得</guibutton>ボタンでは異動したい先の人がこの
+		ファイルの所有権を取得することは出来ない(それをクリックすると、現在
+		NTクライアントにログオンしているユーザが見つからないということを通知する
+		ダイアログボックスが表示される)。この理由は、ファイルの所有者の変更は、
+		UNIX上では特権操作であり、<emphasis>root</emphasis>ユーザにのみ許可されて
+		いるからである。このボタンをクリックすると、NTに対してNTクライアントに
+		ログオンしている現在のユーザにファイルの所有者を変更するようにNTに指示
+		するが、これは現時点ではSambaでは動作しない。
+		</para>
+
+		<para>
+<indexterm><primary>chown</primary></indexterm>
+<indexterm><primary>ownership</primary></indexterm>
+<indexterm><primary>Seclib</primary></indexterm>
+		NTにある<command>chown</command>コマンドはSambaでも動作し、rootとして
+		Sambaサーバに接続している管理者権限を持つユーザに、ローカルのNTFSファイル
+		システムとリモートマウントしたNTFSかSambaドライブの両方のファイルの所有者
+		の変更を許可する。これは、Sambaチームの一員であるJeremy Allisonによって
+		書かれたNTセキュリティライブラリである<application>Seclib</application>の
+		一部として提供されていて、これはSambaのFTPサイトからダウンロードできる。
+		</para>
+
+	</sect2>
+
+	<sect2>
+		<title>ファイルとディレクトリのパーミッションの表示</title>
+
+		<para>
+		3番目のボタンは<guibutton>アクセス許可</guibutton>である。これをクリックすると、
+		パーミッションとファイルかディレクトリのUNIXでの所有者の両方を表示する
+		ダイアログボックスが起動する。所有者は以下のように表示される:
+		</para>
+
+		<para><command><replaceable>SERVER</replaceable>\
+				<replaceable>user</replaceable> 
+				<replaceable>(長い名前)</replaceable></command></para>
+
+		<para><replaceable>SERVER</replaceable>はSambaサーバのNetBIOS名であり、
+		<replaceable>user</replaceable>はファイルを所有しているUNIXユーザの
+		ユーザ名であり、<replaceable>(長い名前)</replaceable>は、ユーザを識別
+		する説明文字列である(通常はUNIXパスワードデータベースのGECOSフィールドが
+		使われる)。</para>
+
+		<para>
+		もしも<smbconfoption name="nt acl support"/>パラメータが
+		<constant>false</constant>に設定されている場合、ファイルの所有者は
+		<constant>Everyone</constant>というNTユーザとして表示され、パーミッション
+		はNTの<emphasis>フルコントロール</emphasis>として表示される。
+		</para>
+
+
+		<para>
+		パーミッション欄はファイルとディレクトリでは異なって表示される。詳細は次項で説明する。
+		</para>
+
+		<sect3>
+		<title>ファイルのパーミッション</title>
+
+		<para>
+		標準のUNIXユーザ/グループ/その他の三つ組みと、それに対応する
+		<constant>読み、書き、実行</constant>パーミッションの三つ組みは、Sambaによって
+		<quote>r</quote>, <quote>w</quote>, と <quote>x</quote>ビットが対応するNT
+		パーミッションにマップされる、NT ACLのパーミッションの3つの要素にマップされる。
+		UNIXの「その他」パーミッションは、UNIXの世界で許可されるパーミッションのリストを
+		伴ってグローバルNTグループの<constant>Everyone</constant>にマップされる。
+		UNIXの所有者とグループパーミッションは、それぞれUNIXのユーザとグループに
+		許可されるパーミッションのリストを伴って、NTの<guiicon>ユーザ</guiicon>アイコンと
+		NTの<guiicon>ローカルグループ</guiicon>アイコンとして表示される。
+		</para>
+
+		<para>
+		多くのUNIXパーミッションのセットが、たとえば<constant>読み込み</constant>、
+		<constant>変更</constant>, あるいは <constant>フルコントロール</constant>
+		のような共通のNTの名前にマップしないという理由で、通常パーミッションは
+		NTの表示リスト中で<constant>特殊なアクセス許可</constant>という単語が
+		前に付く。
+		</para>
+
+		<para>
+		しかし、もしもファイルに、特定のUNIXユーザ、グループ、その他に対して何も
+		許可しないパーミッションが付いているとどうなるだろうか?
+		<emphasis>アクセス権なし</emphasis>を見えるように、かつ変更できるように
+		するため、Sambaは<constant>所有権の取得</constant>というNTのACL属性を
+		上書きし(UNIXでは何の意味もない)、NTの<command>O</command>ビットを設定
+		して、アクセス権なしというコンポーネントを報告する。これはもちろん、
+		それを0のようにするために選ばれ、結局アクセス権なしの意味になる。
+		この動作の背景にある結論についての詳細は、以下に記述がある。
+		</para>
+
+		</sect3>
+		
+		<sect3>
+		<title>ディレクトリのパーミッション</title>
+
+		<para>
+		NT NTFSファイルシステム上のディレクトリは、2つの異なったパーミッションの
+		組を持っている。最初の組は、通常の<constant>RW</constant> NT形式中での
+		最初の括弧の組中に表示される、ディレクトリそれ自身上のACLセットである。
+		このパーミッションの最初の組は通常のファイルのパーミッションに対して、
+		上記で説明があったようなのと正確に同じ方式で、Sambaによって作成され、
+		同じ方法で表示される。
+		</para>
+
+		<para>
+		2番目のディレクトリパーミッションの組はUNIXパーミッションの世界では実際の
+		意味を持たず、このディレクトリが継承する範囲内で作成された任意のファイルの
+		<constant>継承された</constant>パーミッションを表す。
+		</para>
+
+		<para>
+		SambaはNT用にそれら継承されたパーミッションをまとめ、NT ACLとして返すので、
+		Sambaによって新しく作成されたこの共有のUNIXパーミッションモードを
+		受け取れる。
+		</para>
+
+		</sect3>
+
+	</sect2>
+		
+	<sect2>
+	<title>ファイルまたはディレクトリのパーミッションの変更</title>
+
+	<para>
+	ファイルとディレクトリのパーミッションの変更はダイアログボックス中に表示された
+	パーミッションの変更と同じくらい簡単で、<guibutton>OK</guibutton>をクリック
+	すればよい。しかし、ユーザが認識する必要がある制限があり、また、Samba標準の
+	パーミッションマスクと注意を払わなければならない事も必要なDOS属性のマッピング
+	も相互に影響する。
+	</para>
+
+	<para>
+	もしも、<smbconfoption name="nt acl support"/>パラメータが<constant>false</constant>
+	ならば、<errorname>"アクセスが拒否されました"</errorname>というメッセージが
+	出力されて、セキュリティパーミッションを設定することは失敗する。
+	</para>
+
+	<para>
+	最初に注意することは、<guibutton>追加</guibutton>ボタンはSamba中のユーザの一覧を
+	返さない事である(<errorname>"リモートプロ子ジャーコールは失敗し、実行出来ませんでした"</errorname>
+	というエラーメッセージが表示される)。これは、ダイアログボックス中に一覧表示されて
+	いる、現在のユーザ/グループ/その他 のパーミッションのみを操作できると言うことで
+	ある。これらはUNIXが実際に持っているパーミッションのみなので、これは実際にちゃん
+	と動く。
+	</para>
+
+	<para>
+	もしもパーミッションの三つ組み(ユーザ、グループかその他のどれか)がNTダイアログ
+	ボックス中でパーミッションのリストから削除されたならば、<guibutton>OK</guibutton>
+	ボタンが押されたとき、UNIXサイド上では<emphasis>パーミッションなし</emphasis>
+	状態になる。もしもサイドパーミッションを表示させると、NTの<command>O</command>
+	フラグとして、上記で説明したように<emphasis>パーミッションなし</emphasis>が表示
+	される。これはパーミッションの三つ組から取り去ったものをファイルかディレクトリに
+	もういちど戻すためにパーミッションを追加できるようにする。
+	</para>
+
+	<para>
+	UNIXはNT ACLの<quote>r</quote>, <quote>w</quote>, と <quote>x</quote>ビットのみを
+	サポートするため、もしも、<constant>削除</constant>のような他のセキュリティ属性が
+	選択された場合、Sambaサーバ上に適用するときには無視される。
+	</para>
+
+	<para>
+	ディレクトリにパーミッションを設定する場合、2番目のパーミッションの組(括弧の組の
+	二番目)は既定値でディレクトリ中のすべてのファイルに適用される。もしも、これが
+	やりたいことではない場合、NTダイアログボックス中の
+	<guilabel>Replace permissions on existing files</guilabel>チェックボックスの
+	チェックを、<guibutton>OK</guibutton>ボタンを押す前に外さなければならない。
+	</para>
+
+	<para>
+	もしもすべてのパーミッションを、ユーザ/グループ/その他から取り去りたい場合、
+	コンポーネントをハイライトさせ、<guibutton>削除</guibutton>ボタンをクリック
+	するか、特別な<constant>所有権の取得</constant>パーミッション(<command>O</command>として表示される)のみををハイライトさせてもよい。
+	</para>
+
+	</sect2>
+
+<?latex \newpage ?>
+	<sect2>
+	<title>標準的なSambaの<quote>create mask</quote>パラメータとの相互作用</title>
+
+	<para>標準的なSambaの<parameter>create mask</parameter>パラメータとの相互作用を制御する4つのパラメータがある:
+	
+
+	<itemizedlist>
+		<listitem><para><smbconfoption name="security mask"/></para></listitem>
+		<listitem><para><smbconfoption name="force security mode"/></para></listitem>
+		<listitem><para><smbconfoption name="directory security mask"/></para></listitem>
+		<listitem><para><smbconfoption name="force directory security mode"/></para></listitem>
+	</itemizedlist>
+
+	</para>
+
+	<para>
+	ユーザがパーミッションを適用するために<guibutton>OK</guibutton>をクリックした
+	時、Sambaは与えられたパーミッションを、ユーザ/グループ/その他のr/w/x三つ組
+	にマップし、次に<smbconfoption name="security mask"/>パラメータ中で設定された
+	ビットに対し、ファイルに対して変更されたパーミッションを検査する。このパラメータ
+	中で<emphasis>1</emphasis>に設定されていない変更されたすべてのビットは、ファイル
+	パーミッション中でそのまま残る。</para>
+
+	<para>
+	本質的に、<smbconfoption name="security mask"/>中のゼロビットは、ユーザが
+	変更を許可しないビットの組として、1のビットは変更を認めるビットとして扱っても
+	よい。
+	</para>
+
+	<para>
+	もしも明示的に設定されていない場合、このパラメータは既定値として
+	<smbconfoption name="create mask"/>パラメータと同じ値になる。ユーザにファイル
+	上のすべてのユーザ/グループ/その他 のパーミッションの設定変更を許可したいならば、
+	この値を0777にする。
+	</para>
+
+	<para>
+	次にSambaは、<smbconfoption name="force security mode"/>パラメート中で設定された
+	ビットに対して、ファイルのパーミッションの変更点をチェックする。このパラメータ
+	中で<emphasis>1</emphasis>に設定されたものに対応する、変更された任意のビットは、
+	強制的にセットされる。</para>
+
+	<para>
+	基本的に、<parameter>force security mode</parameter>パラメータ中でビットを設定
+	することは、ファイル上のセキュリティを変更する時、ユーザが常時<emphasis>on</emphasis>
+	に設定するとして、ビットのまとまりを扱っても良い。</para>
+
+	<para>
+	もしも、明示的に設定されない場合、このパラメータの既定値は、
+	<smbconfoption name="force create mode"/>パラメータでの値と同じになる。
+	何の制限もなしにすべてのユーザ/グループ/その他のパーミッションの変更を許可したい
+	ならば、このパラメータを000に設定する。
+	<smbconfoption name="security mask"/>と<parameter>force security mode</parameter>
+	パラメータはその順で、変更要求のために適用される。</para>
+
+	<para>
+	ディレクトリには、<parameter>security mask</parameter>の代わりに
+	<parameter> directory security mask</parameter>を、
+	<parameter>force security mode</parameter>の代わりに
+	<parameter>force directory security mode</parameter>パラメータを使う点を除いて、
+	上記で説明したファイルへの操作と同じ動作をSambaは実行する。</para>
+
+	<para>
+	<smbconfoption name="directory security mask"/>パラメータの既定値は、
+	<parameter>directory mask</parameter>パラメータと同じ値に設定され、
+	<parameter>force directory security mode</parameter>パラメータの既定値は、
+	<smbconfoption name="force directory mode"/>パラメータと同じ値に設定される。
+	この方法で、その制限内で引き続きパーミッションビットをユーザに変更許可する
+	間、Samba共有上で管理者が設定出来るパーミッションの制限を実施する。</para>
+
+	<para>
+	もしも、ファイルとディレクトリ上でパーミッションビットを変更する
+	フルコントロール権をユーザに許可するように、かつ、強制的に特定のビットを
+	<emphasis>on</emphasis>に設定しない、共有を設定したいならば、
+	&smb.conf;ファイル中の共有固有のセクションに、以下のパラメータを記述する:
+	</para>
+
+<?latex \newpage ?>
+	<smbconfblock>
+		<smbconfoption name="security mask">0777</smbconfoption>
+		<smbconfoption name="force security mode">0</smbconfoption>
+		<smbconfoption name="directory security mask">0777</smbconfoption>
+		<smbconfoption name="force directory security mode">0</smbconfoption>
+	</smbconfblock>
+
+</sect2>
+
+<sect2>
+	<title>標準Sambaファイル属性のマッピングの相互関係</title>
+
+	<note>
+	<para>
+	Sambaは(<quote>read-only</quote>のような)DOS属性の一部をファイルのUNIX
+	パーミッションにマップする。これは、セキュリティダイアログ経由での
+	パーミッションビットの設定とファイル属性マッピングによって設定されるビットとの
+	の間に競合が生じることがでてくる。
+	</para>
+	</note>
+
+	<para>
+	もしも、ファイルが所有者に対して読み込み権がない場合、これは標準ファイル属性
+	タブダイアログ中で<quote>読み取り専用</quote>として表示される。都合の悪いことに、
+	このダイアログは、他のタブ中にあるセキュリティ情報を含むものと同じである。
+	</para>
+
+	<para>
+	これができる事が意味するものは、もしも所有者がセキュリティダイアログを使って
+	自分自身に読み込みを許可するためにパーミッションを修正するならば、
+	標準セキュリティダイアログに戻るために<guibutton>OK</guibutton>をクリックし、
+	次にNTはファイルのパーミッションを読み取りのみに戻す(ダイアログ中では引き続き
+	表示される属性)。これは、パーミッション設定後、属性ダイアログに戻るために
+	<guibutton>OK</guibutton>をクリックした後、変更を書き戻さないようにするため、
+	<guibutton>OK</guibutton>の代わりに<guibutton>キャンセル</guibutton>をクリック
+	する事を意味する。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>Windows NT/200X ACLとPOSIX ACLの制限</title>
+
+	<para>
+	Windowsの管理者は簡単なACL制御になれていて、通常UNIXのユーザ/グループ/その他(ugo)
+	のパーミッションは不十分で十分にきめ細かくないと考えている。
+	</para>
+
+	<para>
+	競合しているSMBの実装は、Windows ACLをどのように取り扱うかについて異なる。Sambaは
+	Windows ACLを、UNIXのファイルシステム管理の構造で取り扱い、そのため、POSIX ACLの
+	制限が適用される。そのため、Windows NT/200X ACLの機能が POSIX ACLには欠如している
+	ので、POSIX ACLのセマンティックスと制限は、Windows管理者に課される。
+	</para>
+
+	<para>
+	POSIX ACLはUNIX管理者におもしろい難問を提供し、そのため、Windows ACL管理に適用
+	するために妥協を強いる。POSIX ACLは公式の標準としては適用されていない。という
+	よりは、最終の標準は、draft standard 1003.1e revision 17である。これが、Samba
+	が実装しているPOSIX文書である。
+	</para>
+
+	<para>
+	UNIXベンダは別々の流儀でPOSIX ACLを実装している。ACLをサポートしている数多くの
+	Linuxファイルシステムがある。Sambaは数多くのPOSIX ACLの実装間のすべての違いを
+	透過的にする仕組みを提供する必要がある。SambaにおけるACLサポートのプレッシャー
+	は、UNIXの世界でのACLサポートの標準化への圧力を顕著に増大する。
+	</para>
+
+	<para>
+	SambaはUNIXファイルシステムで実装されているPOSIX ACLが予想していない、
+	<emphasis>継承</emphasis>を実装しているWindows ACLという難問を取り扱う
+	複雑な事項を扱う必要がある。Sambaは通常のugoとACL機能を上書きすることが出来る
+	<emphasis>masks</emphasis>のサポートを提供する。これは、WindowsのACLが
+	実装しなければならない方法を更に複雑にする。
+	</para>
+
+	<sect3>
+	<title>UNIX POSIX ACLの概要</title>
+
+	<para>
+	POSIX ACLを調べる際に、ファイルとディレクトリ両方に対して操作する方法を
+	考えておかなければならない。ファイルのACLは以下の意味を持つ:
+<screen>
+# file: testfile      &lt;-- ファイル名
+# owner: jeremy       &lt;-- ファイルの所有者
+# group: users        &lt;-- POSIXグループの所有者
+user::rwx             &lt;-- ファイルの所有者に対する許可 (user)
+user:tpot:r-x         &lt;-- 追加のユーザに対する許可 `tpot'
+group::r--            &lt;-- ファイルグループの所有者に対する許可 (group)
+group:engrs:r--       &lt;-- 追加のグループに対する許可 `engineers'
+mask:rwx              &lt;-- グループに対して'論理積'を取る時のマスク値
+other::---            &lt;-- その他に対する許可 (other)
+</screen>
+	ディレクトリのACLは以下の意味を持つ:
+<screen>
+# file: testdir       &lt;-- ディレクトリ名
+# owner: jeremy       &lt;-- ディレクトリの所有者
+# group: jeremy       &lt;-- POSIXグループの所有者
+user::rwx             &lt;-- 所有者に対するディレクトリの許可 (user)
+group::rwx            &lt;-- 周遊するグループに対するディレクトリの許可 (group)
+mask::rwx             &lt;-- グループに対して'論理積'を取る時のマスク値
+other:r-x             &lt;-- その他に対する許可 (other)
+default:user::rwx     &lt;-- 継承された所有者に対する許可
+default:user:tpot:rwx &lt;-- 継承されたあるユーザに対する許可 `tpot'
+default:group::r-x    &lt;-- 継承されたグループに対する許可
+default:mask:rwx      &lt;-- 継承された既定値のマスク
+default:other:---     &lt;-- 継承されたその他に対するパーミッション (other)
+</screen>
+	</para>
+
+	</sect3>
+
+	<sect3>
+	<title>Windowsのファイル ACLsからUNIX POSIX ACLへのマッピング</title>
+
+	<para>
+	Microsoft Windows NT4/200XのACLはPOSIX ACLに当然マップされねばならない。
+	ファイルパーミッションのマッピングは、
+	<link linkend="fdsacls">WindowsのファイルACLをUNIX POSIXファイルACLにマップする方法</link>
+	で示されている。文字#は、Windows管理者がファイルに<constant>フルコントロール</constant>
+	フラグをセットする時のみこのフラグがセットされる事を意味する。
+	</para>
+
+	<table frame='all' pgwide='0' id="fdsacls"><title>WindowsのファイルACLをUNIX POSIXファイルACLにマップする方法</title>
+	<tgroup cols='2'>
+		<colspec align="left"/>
+		<colspec align="center"/>
+		<thead>
+		<row>
+			<entry align="left">WindowsのACE</entry>
+			<entry align="center">ファイル属性フラグ</entry>
+		</row>
+		</thead>
+		<tbody>
+		<row>
+			<entry><para>フルコントロール</para></entry>
+			<entry><para>#</para></entry>
+		</row>
+		<row>
+			<entry><para>フォルダのスキャン/ファイルの実行</para></entry>
+			<entry><para>x</para></entry>
+		</row>
+		<row>
+			<entry><para>フォルダの一覧/データの読み取り</para></entry>
+			<entry><para>r</para></entry>
+		</row>
+		<row>
+			<entry><para>属性の読み取り</para></entry>
+			<entry><para>r</para></entry>
+		</row>
+		<row>
+			<entry><para>拡張属性の読み取り</para></entry>
+			<entry><para>r</para></entry>
+		</row>
+		<row>
+			<entry><para>ファイルの作成/データの書き込み</para></entry>
+			<entry><para>w</para></entry>
+		</row>
+		<row>
+			<entry><para>フォルダの作成/データの追加</para></entry>
+			<entry><para>w</para></entry>
+		</row>
+		<row>
+			<entry><para>属性の書き込み</para></entry>
+			<entry><para>w</para></entry>
+		</row>
+		<row>
+			<entry><para>拡張属性の書き込み</para></entry>
+			<entry><para>w</para></entry>
+		</row>
+		<row>
+			<entry><para>サブフォルダとファイルの削除</para></entry>
+			<entry><para>w</para></entry>
+		</row>
+		<row>
+			<entry><para>削除</para></entry>
+			<entry><para>#</para></entry>
+		</row>
+		<row>
+			<entry><para>アクセス許可の読み取り</para></entry>
+			<entry><para>all</para></entry>
+		</row>
+		<row>
+			<entry><para>アクセス許可の変更</para></entry>
+			<entry><para>#</para></entry>
+		</row>
+		<row>
+			<entry><para>所有権の取得</para></entry>
+			<entry><para>#</para></entry>
+		</row>
+		</tbody>
+	</tgroup>
+	</table>
+
+	<para>
+	マッピングテーブルを見てわかるように、1対1でマッピングされるものは1つもなく、
+	そのため、Sambaは、Windowsに、管理者によって意図されるおおよその方向に操作
+	させる、論理的なマッピングをしなければならない。
+	</para>
+
+	<para>
+	一般的に、UNIX POSIXのユーザ/グループ/その他のパーミッションのマッピングは
+	Windows ACLにマップされる。これは、POSIX ACLの作成に優先する。POSIX ACLは
+	ファイルかディレクトリを所有しているユーザとグループ以外のユーザとグループの
+	ためのアクセス制御を行うために必要である。
+	</para>
+
+	<para>
+	UNIX管理者はUNIX環境下で任意のディレクトリパーミッションを設定出来る。
+	Windows管理者はファイルの所有者に対して読み取り許可を削除するために、Windows
+	エクスプローラで行う事が出来ないというように、より制限されている。
+	</para>
+
+	</sect3>
+
+	<sect3>
+	<title>WindowsのディレクトリACLs の UNIX POSIX ACLへのマッピング</title>
+
+	<para>
+	UNIX POSIXのディレクトリパーミッションとUNIX POSIXのACLを、Windowsのディレクトリ
+	ACLにマップされる、Windows ACEにマッピングする時に、おもしろいことが起きる
+	(アクセスコントロールエントリ(ACE)はACLの個々の要素である)。
+	</para>
+
+	<para>
+	ファイルパーミッションの時に説明したのと全く同じように、ディレクトリ
+	パーミッション機能するが、いくつか注意しなければならない例外と、
+	ディレクトリパーミッションを準備する時に、抜け目のない管理者が注意を払う2、3の
+	特色がある。
+	</para>
+
+	</sect3>
+
+	</sect2>
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+ファイル、ディレクトリと共有アクセスの問題はメーリングリスト上での共通の話題である。
+以下は最近メーリングリストで話題になった例である。
+</para>
+
+
+	<sect2>
+	<title>Publicな共有にユーザが書き込めない</title>
+
+	<para>
+	以下の不満はSambaメーリングリスト上でしばしば聞かれる:
+	<quote>
+	ファイルとディレクトリのパーミッションに関していくつかの問題に直面している。
+	ドメインにadmin user(root)としてログイン出来、ファイルを作成/変更するための
+	パーミッションを、誰でも持つ必要があるPublicな共有があるが、rootしかファイルを
+	変更できず、それ以外の人は出来ない。結局常時サーバの所に行って、
+	<userinput>chgrp -R users *</userinput>と<userinput>chown -R nobody *</userinput>
+	を実行し、他のユーザに対してファイルに対して変更が出来るようにしなければならない。
+	</quote>
+	</para>
+
+	<para>
+	この問題を解決できる1つの方法がある:
+	</para>
+
+	<procedure>
+		<step>
+			<para>
+			共有されているディレクトリの最上位に移動する。
+			</para>
+		</step>
+
+		<step>
+			<para>
+			好みのpublicなユーザとグループに所有者を設定する
+<screen>
+&prompt;find `directory_name' -type d -exec chown user:group {}\;
+&prompt;find `directory_name' -type d -exec chmod 2775 {}\;
+&prompt;find `directory_name' -type f -exec chmod 0775 {}\;
+&prompt;find `directory_name' -type f -exec chown user:group {}\;
+</screen>
+			</para>
+
+			<note><para>
+			上記はすべてのディレクトリに<constant>SGID ビット</constant>を
+			設定する。これが何をするかはUNIX/Linuxのマニュアルページを読む
+			こと。これにより、ディレクトリ中に作成されるすべてのファイルと
+			ディレクトリツリーは現在のユーザと、ディレクトリ作成時に所有する
+			グループによって所有される。
+			</para></note>
+		</step>
+		<step>
+			<para>
+			ディレクトリが<replaceable>/foodbar</replaceable>だとする:
+<screen>
+&prompt;<userinput>chown jack:engr /foodbar</userinput>
+</screen>
+			</para>
+
+			<note>
+			<para>これは以下と同じである:</para>
+<screen>
+&prompt;<userinput>chown jack /foodbar</userinput>
+&prompt;<userinput>chgrp engr /foodbar</userinput>
+</screen>
+			</note>
+		</step>
+		<step>
+			<para>以下のようにタイプする: 
+
+<screen>
+&prompt;<userinput>chmod 2775 /foodbar</userinput>
+&prompt;<userinput>ls -al /foodbar/..</userinput>
+</screen>
+			</para>
+		
+			<para>以下が表示される:
+<screen>
+drwxrwsr-x  2 jack  engr    48 2003-02-04 09:55 foodbar
+</screen>
+			</para>
+		</step>
+		<step>
+
+		<para>以下のようにタイプする:
+<screen>
+&prompt;<userinput>su - jill</userinput>
+&prompt;<userinput>cd /foodbar</userinput>
+&prompt;<userinput>touch Afile</userinput>
+&prompt;<userinput>ls -al</userinput>
+</screen>
+		</para>
+
+		<para>
+		<filename>Afile</filename>がJillによって作成されて、所有権を持っている
+		ことを確認し、以下のようにJackが許可されていることを確認する:
+		and permissions of Jack, as follows:
+<screen>
+-rw-r--r--  1 jill  engr     0 2007-01-18 19:41 Afile
+</screen>
+		</para>
+		</step>
+
+		<step>
+		<para>
+		もしも、ディレクトリに書き込みパーミッションを持たねばならないユーザが
+		グループ<emphasis>engr</emphasis>のメンバでないならば、&smb.conf;中の
+		共有のエントリを以下のようにする:
+		<smbconfblock>
+<smbconfoption name="force group">engr</smbconfoption>
+		</smbconfblock>
+		</para>
+	</step>
+	</procedure>
+	</sect2>
+
+
+	<sect2>
+		<title><emphasis>force user</emphasis>セットで<emphasis>root</emphasis>としてファイル操作が完了する</title>
+
+		<para>
+		<smbconfoption name="admin users"/>中にユーザがある時、
+		<smbconfoption name="force user"/>が設定されていたとしても、
+		Sambaは常時このユーザに対してファイル操作を<emphasis>root</emphasis>として行う。
+		</para>
+	</sect2>
+	
+	<sect2>
+		<title>SambaでMicrosoft Wordを使うとファイルの所有者が変更される</title>
+
+		<para>
+		<emphasis>質問:</emphasis><quote>Aが所有者のword文書をBがセーブする。
+		更新したファイルは所有者がBになる。なぜSambaはこのようにするのか?
+		どうやったら修復できる?</quote>
+		</para>
+
+		<para>
+		<emphasis>答え:</emphasis>Wordは、Wordの文書を修正/変更した時に以下の
+		作業を行う:Microsoft Wordは一時的な名前で新しい文書を作成する。Wordは
+		次に古い文書をクローズしてそれを削除し、新しい文書をオリジナルの文書
+		の名前に改名する。Sambaが、新しい文書がオリジナルの文書の所有者によって
+		所有すべきであるということを知るための機構はない。SambaはMicrosoft Word
+		によってファイルが改名されたことを知るすべはない。Sambaが告げることが
+		出来る限りのことは、作成されるファイルは新しいファイルであり、
+		アプリケーション(Word)が更新しているものではない、ということである。
+		</para>
+
+		<para>
+		パーミッション問題を解決するための回避方法がある。これは、&smb.conf;
+		ファイル中からファイルシステムの動作を管理できる方法についての理解と、
+		同様に、UNIXファイルシステムの動作について理解することを深める。
+		Word文書を変更するディレクトリに<command>chmod g+s `directory_name'</command>
+		を設定する。これは、生成されるすべてのファイルはディレクトリを所有している
+		グループになるようにする。 &smb.conf;中の共有定義セクションを以下のように
+		設定する。
+		</para>
+
+		<para>
+		<smbconfblock>
+                <smbconfoption name="force create mode">0660</smbconfoption>
+                <smbconfoption name="force directory mode">0770</smbconfoption>
+		</smbconfblock>
+		</para>
+
+		<para>
+		これらの2つの設定は、共有中で作成される、すべてのディレクトリとファイルが
+		ディレクトリそれ自身上に設定された所有者とグループによって読み書きができる
+		ようにする。
+		</para>
+		
+	</sect2>
+
+</sect1>
+
+</chapter>

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_readahead.8">
+
+<refmeta>
+	<refentrytitle>vfs_readahead</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_readahead</refname>
+	<refpurpose>カーネルバッファキャッシュをプリロードする</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = readahead</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para>この<command>vfs_readahead</command> VFS モジュールは
+	与えられたオフセット(既定値は16進で0x80000)の倍数としてread要求を検出する。
+	そしてreadaheadシステムコール(Linuxの場合)か、posix_fadviseシステムコールを用いて
+	カーネルに通知し、このデータをプリフェッチして、バッファキャッシュに入れる。
+	</para>
+	
+	<para>
+	このモジュールはWindows Vista クライアントがエクスプローラーでデータを読み込む際に
+	有用である。エクスプローラーは0x80000の倍数ごとに非同期ファイル読み込み要求をおこなう
+	ため、このオプションが有用になる。
+	</para>
+
+	<para>オフセットの倍数はreadahead:offsetオプションで指定する。既定値は
+	0x80000である。
+	</para>
+
+	<para>
+	<command>vfs_readahead</command>で行われるディスクリード処理のサイズは
+	readahead:length オプションで指定する。
+	このパラメータの既定値はreadahead:offsetと同一の値になる。明示的にに値が指定
+	されていなければ、readahead:offsetと同じ値が使用される。
+	</para>
+
+	<para>このモジュールはスタッカブルである</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+
+		<varlistentry>
+		<term>readahead:offset = BYTES</term>
+		<listitem>
+		<para>
+		オフセット量で、カーネルバッファーキャッシュに要求する元になる数値
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>readahead:length = BYTES</term>
+		<listitem>
+		<para>各々のreadaheadコールでカーネルバッファキャッシュに読み込むバイト数を指定する
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<para>以下のサフィックスがBYTES指定に使用できる</para>
+		<itemizedlist>
+		<listitem><para><command>K</command> - KByteで指定する</para></listitem>
+		<listitem><para><command>M</command> - MByteで指定する</para></listitem>
+		<listitem><para><command>G</command> - GByteで指定する</para></listitem>
+		</itemizedlist>
+
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+
+<programlisting>
+	<smbconfsection name="[hypothetical]"/>
+	<smbconfoption name="vfs objects">readahead</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+	<para>このヘルプはSamba3.0.25用(訳注:3.x?)である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team に
+	よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+	として開発が行なわれている。</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このドキュメントは、Samba 3.0.25 - 3.5.3 対応のものである。</para>	
+    <para>このドキュメントの翻訳は
+	<itemizedlist>
+	<listitem><para>平田祥司 (shouji@microft.co.jp)</para></listitem>
+	<listitem><para>太田俊哉 (ribbon@samba.grjp)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

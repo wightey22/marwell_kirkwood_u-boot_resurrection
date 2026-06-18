@@ -1,0 +1,13 @@
+<samba:parameter name="max smbd processes"
+		 type="integer"
+                 context="G"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、システムで同時に実行可能な <citerefentry><refentrytitle>smbd</refentrytitle>                                       
+    <manvolnum>8</manvolnum></citerefentry> プロセス数の最大値を設定することで、コネクションを扱うリソースが不足して、クライアントに対するサービスが低下することを抑止する。通常の環境では、各ユーザ毎に <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が割り当てられ、そのホストからの共有に対するコネクションのすべてを扱うことに注意。</para>
+</description>
+<value type="default">0</value>
+<value type="example">1000</value>
+</samba:parameter>

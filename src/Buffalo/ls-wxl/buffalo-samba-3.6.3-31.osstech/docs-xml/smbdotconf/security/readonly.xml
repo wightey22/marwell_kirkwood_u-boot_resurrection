@@ -1,0 +1,19 @@
+<samba:parameter name="read only"
+                 context="S"
+		 type="boolean"
+                 basic="1" advanced="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para><smbconfoption name="writeable"/>
+    の反意語である。</para>
+
+    <para>このパラメータが <constant>yes</constant> の場合、
+    ユーザは、サービスのディレクトリ内におけるファイルの作成も修正もできない。
+    </para>
+
+    <para>印刷サービス(<command moreinfo="none">printable = yes</command>)の場合、
+    ユーザは<emphasis>常に</emphasis>(アクセス権を持っている)
+    ディレクトリに対して書き込むことが可能であるが、書き込みはスプール操作経由に限られる。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

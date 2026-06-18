@@ -1,0 +1,21 @@
+KERNEL!="sd[a-z]*", GOTO="buffalo_sd_end"
+ENV{ID_BUS}=="usb", GOTO="buffalo_usbdisk_start"
+
+IMPORT{program}="udev_disk_helper.sh"
+ENV{DEVTYPE}=="disk", SYMLINK+="disk$env{DISK_NO}"
+ENV{DEVTYPE}=="partition", SYMLINK+="disk$env{DISK_NO}_%n"
+ENV{DEVTYPE}=="disk", ENV{DEVPATH}!="*usb*", RUN+="udev_disk_handler.sh"
+ENV{ID_BUS}!="usb", GOTO="buffalo_end"
+
+LABEL="buffalo_usbdisk_start"
+
+IMPORT{program}="udev_usbdisk_helper.sh"
+KERNEL=="sd[a-z]", SYMLINK+="usbdisk$env{USBDISK_NO}"
+KERNEL=="sd[a-z][0-9]", SYMLINK+="usbdisk$env{USBDISK_NO}_%n"
+KERNEL=="sd[a-z]*", RUN+="udev_usbdisk_handler.sh"
+
+LABEL="buffalo_sd_end"
+
+ENV{DEVTYPE}=="usb_device", ENV{BUSNUM}!="", ENV{DEVNUM}!="", RUN+="udev_ptp_handler.sh"
+
+LABEL="buffalo_end"

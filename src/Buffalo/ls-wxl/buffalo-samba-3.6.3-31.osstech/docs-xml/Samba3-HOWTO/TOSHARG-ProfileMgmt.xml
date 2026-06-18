@@ -1,0 +1,1634 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" 
+"http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="ProfileMgmt">
+<chapterinfo>
+	&author.jht;
+    <pubdate>April 3 2003</pubdate>
+</chapterinfo>
+
+<title>デスクトッププロファイルの管理</title>
+
+<sect1>
+<title>その特長と利点</title>
+
+<para>
+<indexterm><primary>移動プロファイル</primary></indexterm>
+移動プロファイルは一部の人にとっては恐れられており、
+これを忌み嫌う人もいないではないが、また多くの人に愛されてもいる。
+これを天の恵みだと考えている管理者もいる。
+</para>
+
+<para>
+<indexterm><primary>移動プロファイル管理</primary></indexterm>
+ユーザーが使用するマシンを毎回変えるような環境であっても、ローミング
+プロファイルを使えば管理者は常に同じユーザーデスクトップ環境を提供できる。
+この章では移動プロファイルの構成と管理の手法に関する多くの情報を
+提供する。
+</para>
+
+<para>
+<indexterm><primary>ローカルプロファイル</primary></indexterm>
+移動プロファイルはある種、楽園のように聞こえる人もいるかも
+しれないが、その他の人々にとっては、これは現実の、そして目に見える
+問題でもある。特に、接続状態が安定しないモバイルコンピューティング
+機器を利用するユーザーは、純粋なローカルプロファイルを使うケースが
+多いであろう。この章では Samba の管理者がこのような状況に対処する
+ための手助けになるような情報を提供する。
+</para>
+
+</sect1>
+
+<sect1>
+<title>移動プロファイル</title>
+
+<warning>
+<para>
+移動プロファイルのサポートは、Windows 9x/Me と Windows NT4/200x 
+でそれぞれ異なる。
+</para>
+</warning>
+
+<para>
+移動プロファイルの構成方法について論じるのに先立って、
+Windows 9x/Me と Windows NT4/200x クライアントが、それぞれどのように
+これらの機能を実装しているのかを知ることもまた有用であろう。
+</para>
+
+<para>
+<indexterm><primary>NetUserGetInfo</primary></indexterm>
+Windows 9x/Me クライアントは NetUserGetInfo リクエストをサーバーに送り、
+ユーザープロファイルの場所を取得する。しかしながら、その応答の中には
+分割されたプロファイルの位置を保持するためのフィールドを格納する領域はなく、
+単にそのユーザーの home 共有が渡されるだけである。つまり、Windows 9x/Me 
+のプロファイルでは、プロファイルをユーザーのホームディレクトリーに格納する
+ことしかできない。
+</para>
+
+
+<para>
+<indexterm><primary>NetSAMLogon</primary></indexterm>
+<indexterm><primary>RPC</primary></indexterm>
+Windows NT4/200x クライアントは NetSAMLogon RPC リクエストを送る。
+これには多くのフィールドがあり、分割されたユーザープロファイルの位置を表す
+情報も含まれている。
+</para>
+
+<sect2>
+<title>プロファイル処理のための Samba の設定</title>
+
+<para>
+この章では MS Windows クライアントのプロファイルサポートのための
+Samba の設定について解説する。
+</para>
+
+<sect3>
+<title>NT4/200x のユーザープロファイル</title>
+
+<para>
+たとえば、Windows NT4/200x をサポートする場合、以下の設定を
+&smb.conf; ファイルの [global] セクションに書けばよい。
+</para>
+
+<smbconfblock>
+	<smbconfoption name="logon path"> \\profileserver\profileshare\profilepath\%U\moreprofilepath</smbconfoption>
+</smbconfblock>
+
+<para>
+これは一般に以下のような実装を表している：
+<smbconfblock>
+<smbconfoption name="logon path">\\%L\Profiles\%U</smbconfoption>
+</smbconfblock>
+ここで<quote>%L</quote>は Samba サーバーの名前に置き換えられ、
+<quote>%U</quote>はユーザー名に置き換えられる。
+</para>
+
+<para>
+このオプションのデフォルトは <filename>\\%N\%U\profile</filename>
+すなわち <filename>\\sambaserver\username\profile</filename> である。
+<filename>\\%N\%U</filename> サービスは [homes] サービスにより
+自動的に生成される。Samba サーバー経由でプロファイルを使う場合は、
+logon path で指定された共有をブラウズ可能にしておかなければならない。
+<quote>%L</quote> と <quote>%N</quote> の違いや <quote>%U</quote> と
+<quote>%u</quote> の違いについては &smb.conf; の man ページを参照してほしい。
+
+</para>
+
+<note><para>
+<indexterm><primary>logons</primary></indexterm>
+<indexterm><primary>コネクションを切断する</primary></indexterm>
+MS Windows NT/200x クライアントは、時々ログオン完了後もサーバーへの
+コネクションを切断しないことがある。プロファイルの共有パスには
+メタサービス名である <smbconfsection name="homes"/> を使用しない
+方がよいだろう。
+</para></note>
+</sect3>
+
+<sect3>
+<title>Windows 9x/Me ユーザープロファイル</title>
+
+<para>
+<indexterm><primary>net use /home</primary></indexterm>
+<indexterm><primary>logon home</primary></indexterm>
+Windows 9x/Me クライアントをサポートするには、
+<smbconfoption name="logon home"/>パラメータを使用すること。
+Sambaが修正され、<parameter>logon home</parameter>パラメータを信頼
+する<userinput>net use /home</userinput>も動作するようになった。
+</para>
+
+<para>
+<indexterm><primary>logon home</primary></indexterm>
+<indexterm><primary>\\%L\%U\.profiles</primary></indexterm>
+<indexterm><primary>.profiles</primary></indexterm>
+<parameter>logon home</parameter> パラメータを指定すると Windows 9x/Me 
+のプロファイルの格納位置はユーザーのホームディレクトリーに制限される。
+しかし待って欲しい。実はこれは裏技的なやり方である。&smb.conf; ファイルの
+<smbconfsection name="[global]"/> セクションに
+<smbconfblock>
+<smbconfoption name="logon home">\\%L\%U\.profiles</smbconfoption>
+</smbconfblock>
+を記載すると、Windows 9x/Me クライアントはちゃんと自分のプロファイルを
+ホームディレクトリー配下の <filename>.profiles</filename> という隠し
+ディレクトリーに正しく保存するようになる。
+</para>
+
+<para>
+<indexterm><primary>net use /home</primary></indexterm>
+これだけではなく、<userinput>net use /home</userinput> は Windows 9x/Me
+における機能のためにもなる。これはホームディレクトリーにあるすべての
+ディレクトリーを削除し、サーバーと共有部分のみを使用する。すなわち、
+あたかも <smbconfoption name="logon home"/> に
+<filename>\\%L\%U</filename> を指定したように振舞う。
+</para>
+</sect3>
+
+<sect3>
+<title>Windows Windows 9x/Me と NT4/200x のユーザープロファイルの混在</title>
+
+<para>
+<smbconfoption name="logon home"/> と<smbconfoption name="logon path"/> 
+両方のパラメータをセットすると、Windows 9x と Windows NT クライアントの
+両方をサポートできるようになる。たとえば、
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="logon home">\\%L\%U\.profiles</smbconfoption>
+<smbconfoption name="logon path">\\%L\profiles\%U</smbconfoption>
+</smbconfblock></para>
+
+<para>
+<indexterm><primary>プロファイルの混在</primary></indexterm>
+Windows 9x/Me と NT4 およびそれより新しいプロファイルは、同じ位置に
+格納するべきではない。なぜなら、Windows NT4 とそれ以降のクライアントは
+プロファイルが混在した環境で問題を起こすからである。
+</para>
+
+</sect3>
+<sect3>
+<title>移動プロファイルサポートを無効にする</title>
+
+<para>
+<indexterm><primary>移動プロファイルを無効にする</primary></indexterm>
+しばしば行われる質問として、<quote>強制的にローカルプロファイルにするには？
+</quote>や<quote>どうやったら移動プロファイルを無効にできるか？</quote>
+といったものがある。
+</para>
+
+<para>
+<indexterm><primary>移動プロファイル</primary></indexterm>
+これには、３つのやり方がある：
+</para>
+
+<indexterm><primary>windows レジストリの設定</primary>
+<secondary>移動プロファイル</secondary></indexterm>
+
+<variablelist>
+  <varlistentry>
+    <term>&smb.conf; において</term>:
+      <listitem>
+        <para>
+<smbconfoption name="logon home"> </smbconfoption> および 
+<smbconfoption name="logon path"> </smbconfoption>
+を適用すると、すべてのクライアントがローカルプロファイルを使うようになる。
+        </para>
+
+        <para>
+これらのパラメータへの引数はブランクのままにしておかなければならない。
+空の値を設定する場合でも <constant>=</constant> 記号は必要である。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>MS Windows レジストリ:</term>
+		<listitem><para>
+<indexterm><primary>MMC</primary></indexterm>
+<indexterm><primary>ローカルプロファイル</primary></indexterm>
+マイクロソフト管理コンソール(MMC)の <command>gpedit.msc</command>
+を使って、その Windows XP マシンがローカルプロファイルだけを使う
+ようにする。もちろんこれはレジストリの設定を変更する。
+オプションへのフルパスは以下の通り：
+<screen>
+ローカル・コンピュータ・ポリシー\
+	コンピュータの構成\
+		管理用テンプレート\
+			システム\
+				ユーザープロファイル\
+
+無効: ローカルユーザープロファイルのみを許可する
+無効: 移動プロファイルへの変更をサーバーに伝達しない
+</screen>
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>プロファイルタイプの変更：</term>
+<indexterm><primary>プロファイルタイプ</primary></indexterm>
+		<listitem><para>
+スタートメニューのマイコンピュータ・アイコンで右クリックし、
+<guimenuitem>プロパティ</guimenuitem>の詳細設定タブを開く。
+<guilabel>ユーザープロファイル</guilabel>の設定で変更したいプロファイルを
+選んで「種類の変更」をクリックし、<guimenu>移動プロファイル</guimenu>を
+<guimenu>ローカルプロファイル</guimenu>に変更する。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+
+<para>
+特定バージョンの MS Windows において、どのレジストリキーを変更すれば
+強制的にローカルプロファイルになるのかは、MS Windows レジストリガイドを
+参照のこと。
+</para>
+
+<note><para>
+<indexterm><primary>Windows リソースキット</primary></indexterm>
+ローカルプロファイルを移動プロファイルに、もしくはその逆方向に変換する方法は、
+稼働中の MS Windows のバージョンに大きく依存する。バージョン固有の情報に
+ついては MS Windows リソースキットを参照してほしい。
+</para></note>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>Windows クライアントのプロファイル設定に関する情報</title>
+
+<sect3>
+<title>Windows 9x/Me のプロファイル設定</title>
+
+<para>
+ユーザーが最初に Windows 9x にログインすると、user.DAT ファイルが生成される。
+その中には <filename>スタートメニュー</filename>, 
+<filename>デスクトップ</filename>, <filename>プログラム</filename>, 
+<filename>近くのコンピュータ</filename> というフォルダーが入る。
+二度目以降のログイン時は、これらのディレクトリーとその中身が
+マージされて <filename>c:\windows\profiles\ユーザー名</filename> に格納される。
+これらにはそれぞれ最新の情報が入る。
+	ここで、プロファイルフォルダー内のショートカットを常に大文字で見せるために
+<smbconfsection name="[global]"/> オプションを、それぞれ
+<smbconfoption name="preserve case">yes</smbconfoption>, 
+<smbconfoption name="short preserve case">yes</smbconfoption>, 
+and <smbconfoption name="case sensitive">no</smbconfoption> 
+のように設定する必要がある。
+</para>
+
+<para>
+<indexterm><primary>user.DAT</primary></indexterm>
+<indexterm><primary>user.MAN</primary></indexterm>
+<filename>user.DAT</filename> ファイルにはそれぞれのユーザーの設定項目が
+入っている。これらの設定を強制したい場合は、それぞれの
+<filename>user.DAT</filename> ファイルを <filename>user.MAN</filename> 
+にリネームし、さらにこれらのファイルを書き込み禁止にしておく。
+</para>
+
+<orderedlist>
+	<listitem> <para>
+Windows 9x/Me マシンでは、<guimenu>コントロールパネル</guimenu> ->
+<guimenuitem>パスワード</guimenuitem> に入って
+<guilabel>ユーザー・プロファイル</guilabel>タブを選ぶ。
+要求する移動設定のレベルを選択して<guibutton>OK</guibutton> を押すが、
+ここではコンピュータのリブートを行わない。
+	</para> </listitem>
+	<listitem> <para>
+Windows 9x/Me マシンでは、<guimenu>コントロールパネル</guimenu> ->
+<guimenuitem>ネットワーク</guimenuitem> -> 
+<guimenuitem>マイクロソフトネットワークのクライアント</guimenuitem> ->
+<guilabel>Preferences</guilabel>に行き、
+<guilabel>NTドメインにログオン</guilabel>を選択する。
+そしてプライマリログオン（通常のログオン方法？）が
+<guimenuitem>マイクロソフトネットワークのクライアント</guimenuitem>
+になっていることを確認して<guibutton>OK</guibutton> を押す。
+ここでコンピュータをリブートする。
+	</para> </listitem>
+</orderedlist>
+
+<para>
+<indexterm><primary>Primary Logon</primary></indexterm>
+<indexterm><primary>ノベルネットワーク用クライアント</primary></indexterm>
+<indexterm><primary>ノベル</primary></indexterm>
+<indexterm><primary>Windows ログオン</primary></indexterm>
+Windows 9x/Me では、プロファイルはプライマリ・ログオンからダウンロードされる。
+プライマリ・ログオンが<quote>ノベルネットワーク用クライアント</quote>
+になっている場合、プロファイルとログオンスクリプトは使用中のノベルサーバー
+からダウンロードされる。プライマリ・ログオンが<quote>Windows ログオン</quote>
+になっている場合、プロファイルは移動プロファイルの考え方から少しはずれて
+ローカルマシンの &smbmdash; からロードされる。
+</para>
+
+<para>
+<indexterm><primary>ドメインログオンサーバー</primary></indexterm>
+マイクロソフトネットワークのログインダイアログには
+<constant>[ユーザー名, パスワード]</constant>だけに代わって
+<constant>[ユーザー名, パスワード, ドメイン]</constant>が表示されている
+ことにお気づきだろうか？ここで Samba サーバーのドメイン名、および
+ユーザー名、パスワードを入力する。なお、Samba サーバーの代わりに
+存在することがわかっているドメイン名を入力してもよい。その場合、
+そのドメインによってユーザー認証が行われ、さらにそのドメインの
+ログオンサーバーがサポートしていれば、プロファイルがそのサーバーから
+ダウンロードされる。
+</para>
+
+<para>
+そのユーザーの正当性が確認されると、Windows 9x/Me マシンは
+<computeroutput>このユーザーは過去に一度もログインされていません</computeroutput>
+を表示し、<computeroutput>このユーザーの設定情報を保存しますか？</computeroutput>
+と聞いてくるので<guibutton>Yes</guibutton>で答える。
+</para>
+
+<para>
+Windows 9x/Me のデスクトップが起動したら、Samba サーバー上の
+<smbconfoption name="logon path"/> にあるディレクトリーの中に
+<filename>デスクトップ</filename>, <filename>スタートメニュー</filename>,
+<filename>プログラム</filename>, <filename>近くのコンピュータNethood</filename> 
+フォルダー群が作られていることがわかるだろう。
+</para>
+
+<para>
+<indexterm><primary>ローカルのキャッシュ</primary></indexterm>
+<indexterm><primary>ショートカット</primary></indexterm>
+<indexterm><primary>プロファイルディレクトリー</primary></indexterm>
+これらのフォルダーはクライアント上でローカルでキャッシュされ、
+（事前にリードオンリーに設定しておかない限り）ユーザーのログオフ時に更新される。
+ユーザーがさらにフォルダーやショートカットを作ると、クライアントはこれらを
+すでにダウンロード済みのプロファイルの中身とマージして、それらの中から
+最新のフォルダーやショートカットを選択する。
+</para>
+
+<para>
+<indexterm><primary>ローカルプロファイル</primary></indexterm>
+<indexterm><primary>リモートプロファイル</primary></indexterm>
+<indexterm><primary>所有者権限</primary></indexterm>
+<indexterm><primary>プロファイルディレクトリー</primary></indexterm>
+Samba サーバー上のフォルダー／ファイルをリードオンリーにしていた場合、
+Windows 9x/Me はログオンやログアウト時にローカルとリモートの
+プロファイルをマージしようとしてエラーが発生する。基本的に
+Windows 9x/Me でエラーが出たら、Samba サーバー上のプロファイルディレクトリーで、
+UNIX 側のファイルのパーミッションや所有者の権限をチェックしてみてほしい。
+</para>
+
+<para>
+<indexterm><primary>windows レジストリの設定</primary></indexterm>
+<indexterm><primary>プロファイルのパス</primary></indexterm>
+<indexterm><primary>ユーザー・プロファイル</primary></indexterm>
+<indexterm><primary>デスクトップ・キャッシュ</primary></indexterm>
+<indexterm><primary>windows  レジストリの設定</primary>
+<secondary>プロファイルのパス</secondary></indexterm>
+ユーザープロファイルの生成で失敗する場合、そのユーザーのローカルデスクトップの
+キャッシュを後述の要領でリセットしてやるとよい。このユーザーが次回ログオンした時、
+<quote>今回はじめて</quote>ログオンした旨のメッセージが表示される。
+</para>
+
+
+<orderedlist>
+	<listitem><para>
+    [ユーザー名, パスワード, ドメイン] ダイアログでログオンする代わりに
+    <guibutton>エスケープ</guibutton>を押す。
+	</para> </listitem>
+
+	<listitem><para>
+	<command>regedit.exe</command> を起動して以下のエントリを探す：
+	</para>
+
+	<para>
+	<filename>HKEY_LOCAL_MACHINE\Windows\CurrentVersion\ProfileList</filename>
+	</para>
+
+	<para>
+	ここに各ユーザーの ProfilePath があるので（このキーの内容は
+	<filename>c:\windows\profiles\ユーザー名</filename>と同様である）、この中で
+	該当するユーザーの <parameter>ProfilePath</parameter> キーを削除する。
+	</para></listitem>
+
+	<listitem><para>
+	レジストリエディタを終了する。
+	</para></listitem>
+
+	<listitem><para>
+	<filename>c:\windows</filename> ディレクトリー配下から当該ユーザーの
+	パスワードチェインファイル .PWL を見つけ、これを削除する。
+	</para></listitem>
+
+	<listitem><para>
+	Windows 9x/Me クライアントをログオフする。
+	</para></listitem>
+
+	<listitem><para>
+	プロファイルパスの中身（前述の <smbconfoption name="logon path"/>
+	を参照）を確認し、ユーザーの <filename>user.DAT</filename> または
+	<filename>user.MAN</filename> を、必要であればバックアップを取ってから
+	削除する。
+	</para></listitem>
+</orderedlist>
+
+<warning><para>
+<indexterm><primary>ProfilePath</primary></indexterm>
+<parameter>ProfilePath</parameter>（おそらく 
+<filename>c:\windows\profiles\username</filename>）の一覧にあるディレクトリーの
+中身を削除する前に、各ユーザーのデスクトップやスタートメニューに重要なファイルが
+ないかどうかを確認しておく。<parameter>ProfilePath</parameter> ディレクトリーの
+中身を（必要であればバックアップを取ってから）削除する。
+</para>
+
+<para>
+これで、各ユーザーのプロファイルディレクトリーにある（それぞれが
+リードオンリーでかつ隠しファイル、システムファイルである）ローカルの
+<filename>user.DAT</filename>, <quote>desktop</quote>, 
+<quote>nethood</quote>, <quote>start menu</quote>, <quote>programs</quote>
+といったフォルダーが削除される。
+</para></warning>
+
+<para>
+<indexterm><primary>ログレベル</primary></indexterm>
+<indexterm><primary>パケットキャプチャー</primary></indexterm>
+<indexterm><primary>ethereal</primary></indexterm>
+<indexterm><primary>netmon.exe</primary></indexterm>
+八方手を尽くしてもだめなら、Samba のログレベルを 3 から 10 まで増やしてみて、
+さらに ethereal や <command>netmon.exe</command> といったコマンドでパケット
+をキャプチャしてエラーメッセージ等を捕捉してみる。
+</para>
+
+<para>
+<indexterm><primary>移動プロファイル</primary></indexterm>
+<indexterm><primary>パケット追跡</primary></indexterm>
+Windows NT4/200x サーバーへのアクセス権を持っている場合は、まず Windows 
+NT4/200x サーバー上で移動プロファイルや netlogon の設定を行う。
+その後 Windows NT4/200x サーバーが吐きだすパケットを解析して、
+Samba のトレース結果と照合し、何が違うのかを調べてみる。
+</para>
+
+</sect3>
+
+<sect3>
+<title>Windows NT4 workstation</title>
+
+<para>
+ユーザーが最初に Windows NT workstation にログインした時、NTuser.DAT 
+というプロファイルが生成される。プロファイルの場所は
+<smbconfoption name="logon path"/> パラメータで指定できる。
+</para>
+
+<para>
+現在は、NT プロファイルを利用可能にするための
+<smbconfoption name="logon drive"/> というパラメータもある。
+これは <filename>H:</filename> もしくは他のドライブ名に向けておき、
+また <smbconfoption name="logon home"/> パラメータと組み合わせて使用する。
+</para>
+
+<para>
+<indexterm><primary>.PDS 拡張子</primary></indexterm>
+<indexterm><primary>プロファイルのパス</primary></indexterm>
+NT4 プロファイルのエントリはファイルではなくディレクトリーである。
+プロファイルに関する NT のヘルプによれば、.PDS という拡張子を持つ
+ディレクトリーが同時に作られるらしい。ログイン時、当該ユーザーは完全な
+プロファイルパス（および、.PDS 拡張子を持つディレクトリーが作られる
+のでそれも）を作るための書き込み権が必要である。
+</para>
+
+<para>
+<indexterm><primary>NTuser.DAT</primary></indexterm>
+Windows NT4 では、プロファイルディレクトリーに Windows 9x/Me で作られる
+<filename>デスクトップ</filename>, 
+<filename>ネットワークコンピュータ</filename>, 
+<filename>スタートメニュー</filename>,
+<filename>プログラム</filename> 以外に
+<filename>アプリケーションデータ</filename> フォルダーが作られる。
+プロファイル自体は <filename>NTuser.DAT</filename> ファイルに格納される。
+.PDS ディレクトリには何も書き込まれないようで、現時点でここの目的は謎である。
+</para>
+
+<para>
+<indexterm><primary>NTuser.DAT</primary></indexterm>
+<indexterm><primary>NTuser.MAN</primary></indexterm>
+<application>システム コントロール パネル</application> を使って
+ローカルプロファイルを Samba サーバーにコピーすることができる
+（プロファイルに関する NT のヘルプを参照のこと：さらに、これで
+<application>システム コントロール パネル</application>の中で
+正確な位置を確認することもできる）。NT のヘルプによれば、残りの
+<filename>NTuser.DAT</filename> から <filename>NTuser.MAN</filename> は、
+プロファイルを強制するためのものであるらしい。
+</para>
+
+<para>
+プロファイル名の大文字小文字は重要である。このファイル名は
+<filename>NTuser.DAT</filename>、強制用ファイルであれば
+<filename>NTuser.MAN</filename> でなければならない。
+</para>
+
+</sect3>
+
+<sect3>
+<title>Windows 2000/XP Professional</title>
+
+<para>
+まずローカルプロファイルを MS Windows ワークステーション上で
+以下のようにドメインプロファイルに変換しなければならない：
+</para>
+
+<procedure>
+	<step><para><emphasis>ローカルの</emphasis>ワークステーション管理者
+	としてログイン</para></step>
+
+	<step><para><guiicon>マイコンピュータ</guiicon>アイコンで
+	右クリックして<guimenuitem>プロパティ</guimenuitem>を選択
+	</para></step>
+
+	<step><para><guilabel>ユーザープロファイル</guilabel>タブをクリック
+	</para></step>
+
+	<step><para>変換したいプロファイルを選択（一回クリック）
+	</para></step>
+
+	<step><para><guibutton>コピー先</guibutton>ボタンをクリック
+	</para></step>
+
+	<step><para><guilabel>使用を許可するユーザ/グループ</guilabel>
+	ボックスの<guibutton>変更</guibutton>ボタンをクリック
+	</para></step>
+
+	<step><para>マシン名の一覧が出る<guilabel>場所</guilabel>をクリック。
+    ここをクリックすると選択ボックスが開くので、プロファイルを
+    アクセス可能にするべきドメインをクリック。</para>
+
+	<note><para>ログオンボックスが表示された場合はそこでログオンする。
+	たとえば <replaceable>DOMAIN</replaceable>\root に
+	パスワード：<replaceable>mypassword</replaceable>
+	で接続する。</para></note> 
+
+	</step>
+
+	<step><para>プロファイルを誰でも使えるようにする場合は
+	<quote>Everyone</quote> を選択</para></step>
+
+	<step><para><guibutton>OK</guibutton>を押すと選択ボックスが閉じる
+	</para></step>
+
+	<step><para>これで <guibutton>OK</guibutton> を押すと、
+	指定した場所にプロファイルが作られる</para></step>
+</procedure>
+
+<para>
+これで Samba の <command>profiles</command> ツールから編集可能な
+プロファイルの作成ができた。
+</para>
+
+<note><para>
+Windows NT/200x では、必須プロファイルを使うとメールデータとして
+MS Exchange のストレージを使うことしかできなくなり、またこれは
+デスクトッププロファイルからは除外される。これにより、
+デスクトッププロファイルを使用不可にできない。
+</para></note>
+
+<sect4>
+<title>Windows XP サービスパック 1</title>
+	<para>
+	Windows XP （もしくは Windows XP サービスパック 1 のみ？）では
+	セキュリティーチェックが追加された。これは Active Directory
+	のグループポリシー経由で無効にできる。このポリシーは、以下の
+	手順で呼び出せる：
+<screen>
+コンピュータの設定\
+  管理用テンプレート\
+    システム\
+      ユーザープロファイル\
+        移動プロファイルフォルダのユーザー所有権を確認しない
+</screen>
+	</para>
+
+	<para>
+	これは <constant>有効</constant> にしておく
+	</para>
+
+	<para>
+	新しいバージョンの Samba には Active Directory と似たような
+	仕組みがあるだろうか？もしあるなら、前述の手順に従って
+	このポリシーを設定できるだろう。
+	</para>
+
+	<para>
+	Samba ではグループポリシーが設定できないようでも、各マシンで
+	ローカルに設定することは可能である。もしこの作業を行いたければ
+	以下のようにすればよい：
+	</para>
+
+<procedure>
+	<step><para>XP workstation に管理者権限でログインする</para></step>
+
+	<step><para><guimenu>スタート</guimenu> -> 
+	<guimenu>名前を指定して実行</guimenu>をクリック</para></step>
+	<step><para><command>mmc</command>とタイプする</para></step>
+	<step><para><guibutton>OK</guibutton>をクリック</para></step>
+	<step><para>マイクロソフト管理コンソールが起動する</para></step>
+	<step><para><guimenu>ファイル</guimenu> -> 
+	<guimenuitem>スナップインの追加と削除</guimenuitem> -> 
+	<guimenuitem>追加</guimenuitem>をクリック</para></step> 
+	<step><para><guiicon>グループポリシー</guiicon>をダブルクリック
+	</para></step>
+	<step><para><guibutton>完了</guibutton> -> 
+	<guibutton>閉じる</guibutton>をクリック</para></step> 
+	<step><para><guibutton>OK</guibutton>をクリック</para></step>
+	<step><para><quote>コンソールルート</quote> ウィンドウで
+		<guiicon>ローカルコンピュータポリシー</guiicon> ->
+		<guiicon>コンピュータの構成</guiicon> -> 
+		<guiicon>管理用テンプレート</guiicon> -> 
+		<guiicon>システム</guiicon> -> 
+		<guiicon>ユーザープロファイル</guiicon>を展開</para></step>
+	<step><para>
+	<guilabel>移動プロファイルフォルダのユーザー所有権を確認しない</guilabel>
+	をダブルクリック</para></step>
+	<step><para><guilabel>有効</guilabel>を選択</para></step>
+	<step><para><guibutton>OK</guibutton>をクリック</para></step>
+	<step><para>コンソール全体を閉じる。設定を保存する必要はない
+	（「保存」は変更したポリシーのことでではなく、コンソール設定の
+	ことを指している）
+	</para></step>
+	<step><para>リブート</para></step>
+</procedure>
+</sect4>
+</sect3>
+</sect2>
+
+<sect2>
+<title>User Profile Hive Cleanup Service</title>
+
+<para>
+終了時に、移動プロファイルのキャッシュされたローカルコピーを強制削除する
+設定になっているにも関わらず、それらが消されないという状況がありうる。
+このような現象に対処するために、特別なサービスが作られた。
+Windows NT4/2000/XP Professional と Windows 2003 には
+<command>UPHClean</command> (User Profile Hive Cleanup) という
+アプリケーションをサービスとしてインストールできる。
+</para>
+
+<para>
+UPHClean のソフトウェアパッケージは
+the User Profile Hive Cleanup Service<footnote>
+http://www.microsoft.com/downloads/details.aspx?FamilyID=1B286E6D-8912-4E18-B570-42470E2F3582&amp;displaylang=en
+</footnote>というWebサイトからダウンロードできる。
+</para>
+
+</sect2>
+
+<sect2>
+<title>
+Windows 9x/Me と NT4/200x/XP ワークステーション間でプロファイルを共有する
+</title>
+
+<para>
+<indexterm><primary>プロファイルの共有</primary></indexterm>
+<indexterm><primary>プロファイルの中身</primary></indexterm>
+Windows の異なったバージョン間でデスクトップを共有することは推奨されない。
+デスクトッププロファイル領域は未だ進化の途上であり、新しいバージョンの 
+Windows プロファイルで追加された機能は、それまでのバージョンの動作を
+阻害する。新旧のプロファイルを混在させるべきではないより大きな理由は、
+古いバージョンの Windows をログオフする際、古いフォーマットを持つ
+プロファイルの中身が新しいバージョンに属する情報を上書きしてしまい、
+結果的にユーザが新しいバージョンの Windows でログオンし直した際に必要な
+プロファイル情報が失われてしまうからである。
+</para>
+
+<para>
+Windows 9x/Me とスタートメニューやデスクトップを共有させたい場合は、
+プロファイルの共通領域を指定してやらなければならない。&smb.conf; で
+同じにしなければならないパラメータは <smbconfoption name="logon path"/>
+と <smbconfoption name="logon home"/>である。
+</para>
+
+<para>
+<indexterm><primary>user.DAT</primary></indexterm>
+<indexterm><primary>NTuser.DAT</primary></indexterm>
+これらが正しく設定されていれば、同じプロファイルディレクトリの中に別々の
+<filename>user.DAT</filename> と <filename>NTuser.DAT</filename> 
+ファイルが見えるはずである。
+</para>
+
+</sect2>
+
+<sect2>
+<title>
+Windows NT4/200x サーバーから Samba にプロファイルを移行する
+</title>
+
+<para>
+<indexterm><primary>暗号化パスワード</primary></indexterm>
+ユーザプロファイルの位置に関しては、どこのパスを指定してもよい。つまり
+プロファイルを保存する場所は、その SMB サーバーが暗号化パスワードを
+サポートしている限り、Samba サーバーでもそれ以外のその SMBサーバー
+でもかまわない。
+</para>
+
+<sect3 id="profilemigrn">
+<title>Windows NT4 のプロファイル管理ツール</title>
+
+<para>
+<indexterm><primary>リソースキット</primary></indexterm>
+残念なことに、現在のリソースキットの情報は Windows NT4/200x に特化
+したものとなっている。各プラットフォームに対応したリソースキットの
+存在が望まれる。
+</para>
+
+<para>クイックガイド</para>
+
+<procedure>
+<title>プロファイルの移行手順</title>
+
+	<step><para>NT4 のドメインコントローラーの
+	<guiicon>マイコンピュータ</guiicon>で右クリックして
+	<guilabel>プロパティ</guilabel> の
+	<guilabel>ユーザープロファイル</guilabel> タブを選ぶ
+	</para></step>
+
+	<step>
+	<para>移行したいユーザープロファイルを選んでクリック</para>
+
+	<note><para>ここでご紹介するのはゆるやかな<quote>移行</quote>
+	方法である。プロファイルをコピーしてグループプロファイルを作成し、
+	このプロファイルへのアクセス権を <parameter>Everyone</parameter>
+	ユーザに与える。Samba ドメインが NT4 の PDC と信頼関係を結んでいない
+	場合は、単にこれだけでよい。</para></note>
+	</step>
+
+	<step><para><guibutton>コピー先</guibutton>ボタンをクリック</para></step>
+	<step><para><guilabel>プロファイルのコピー先</guilabel>ボックスで、
+	<filename>c:\temp\foobar</filename>のように新しいパスを追加する
+	</para></step>
+
+	<step><para><guilabel>使用を許可するユーザ/グループ</guilabel>
+	ボックスの<guibutton>変更</guibutton>をクリック</para></step>
+
+	<step><para>グループ<quote>Everyone</quote>をクリックし、
+	<guibutton>OK</guibutton>をクリック。これで<quote>ユーザを選択</quote>
+	ボックスが閉じられる</para></step>
+
+	<step><para>これで<guibutton>OK</guibutton>をクリック</para></step>
+</procedure>
+
+<para>
+全てのプロファイル移行について、以下の手順に従う。
+</para>
+
+</sect3>
+
+<sect3>
+<title>補足事項</title>
+
+
+<para>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>net</primary>
+<secondary>rpc</secondary>
+<tertiary>info</tertiary></indexterm>
+NT4 ドメイン側の SID を取得するには
+<command>net rpc info</command>コマンドが使える。詳細は
+<link linkend="NetCommand">The Net Command Chapter</link>, 
+<link linkend="netmisc1">Other Miscellaneous Operations</link>
+を参照されたい。
+</para>
+
+</sect3>
+
+<sect3>
+<title>moveuser.exe</title>
+
+<para>
+<indexterm><primary>moveuser.exe</primary></indexterm>
+Windows 200x のリソースキットには <command>moveuser.exe</command>
+が含まれる。<command>moveuser.exe</command> はあるプロファイルの
+セキュリティをあるユーザーから別のユーザに変更する。これにより
+アカウントのドメインを変更したりユーザ名を変更したりできる。
+</para>
+
+<para>
+このコマンドは Samba の<command>profiles</command>コマンドの
+ようなものである。
+</para>
+
+</sect3>
+
+<sect3>
+<title>SID の取得</title>
+
+<para>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>GetSID.exe</primary></indexterm>
+Windows NT Server 4.0 のリソースキットに含まれる
+<command>GetSID.exe</command>を使って SID を取得できる。
+</para>
+
+<para>
+Windows NT 4.0 ではローカルプロファイルの情報はレジストリキー
+<filename>HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList</filename>配下に格納される。
+</para>
+
+<para>
+ProfileList キー配下には、現在このコンピュータにログオンしている
+ユーザーが、SID をサブキー名として格納されている。
+（ローカルにキャッシュされているプロファイルから移動したいユーザの
+プロファイル情報を見つけるには、<command>GetSID.exe</command>
+ユーティリティーでこのユーザーの SID を見つければよい）。
+適切なユーザーのサブキーの中に
+<parameter>ProfileImagePath</parameter>
+という名前の文字列値があるはずである。
+</para>
+
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>必須プロファイル</title>
+
+<para>
+<indexterm><primary>必須プロファイル</primary></indexterm>
+必須プロファイルとは、ユーザーが上書きできないプロファイルのことである。
+ユーザーセッションが有効の間、デスクトップ環境の変更が可能である。
+しかしながら、ユーザーがログアウトするとすべての変更内容は失われてしまう。
+ユーザーにデスクトップ環境を変更させたくない場合は、この設定をポリシー
+設定を通して行うことができる。
+<link linkend="PolicyMgmt">System and Account Policies</link>
+を参照のこと。
+</para>
+
+<note><para> 
+<indexterm><primary>パーミッション偽装モジュール</primary></indexterm>
+<indexterm><primary>VFS module</primary></indexterm>
+<indexterm><primary>fake-permissions</primary></indexterm>
+どのような状況においてもプロファイルディレクトリー（もしくはそのファイル）
+をリードオンリーにはできない。なぜならそのプロファイルが使用できなく
+なってしまうからである。ただし UNIX ファイルシステム配下であれば
+プロファイルをリードオンリーにできなくもない。この場合、
+<command>fake-permissions</command> VFS モジュールを使用する必要がある。
+これは Windows NT/200x/XP クライアントに対して、そのユーザのプロファイルに
+書き込み権があるようにふるまう。
+<link linkend="fakeperms">fake_perms VFS module</link>
+を参照のこと。
+</para></note>
+
+<para>
+<indexterm><primary>NTUser.MAN</primary></indexterm>
+<indexterm><primary>NTUser.DAT</primary></indexterm>
+Windows NT4/200x/XP では、必須プロファイルを作るのに
+<link linkend="profilemigrn">Windows NT4/200x サーバーから Samba
+へのプロファイルの移行</link>にあるような手順が使える。
+グループプロファイルを必須プロファイルに変換するには、単に
+コピー先にプロファイルに<filename>NTUser.DAT</filename>ファイルを
+入れ、それを<filename>NTUser.MAN</filename>にリネームすればよい。
+</para>
+
+<para>
+<indexterm><primary>User.MAN</primary></indexterm>
+Windows 9x/Me の場合は<filename>User.DAT</filename>ファイルを
+<filename>User.MAN</filename>にリネームすることで必須プロファイルを
+作成できる。
+</para>
+
+</sect1>
+
+<sect1>
+<title>グループプロファイルの作成と管理</title>
+
+<para>
+<indexterm><primary>グループプロファイル</primary></indexterm>
+<indexterm><primary>テンプレート</primary></indexterm>
+<indexterm><primary>プロファイル移行ツール</primary></indexterm>
+<indexterm><primary>プロファイルのアクセス権限</primary></indexterm>
+多くの組織は部署に分かれている。ひとつの部署内のユーザは同じデスクトップ
+アプリケーションや同じデスクトップレイアウトを要求することが多いので、
+部署単位で管理できるといろいろと都合のよいことが多い。
+Windows NT4/200x/XP では、グループプロファイルが利用できる。
+グループプロファイルは、まずテンプレート（例示）ユーザを使って作られる。
+その後、後述のプロファイル移行ツールを使ってそのユーザーグループから
+グループプロファイルに対する必要なアクセス権が設定される。
+</para>
+
+<para>
+<indexterm><primary>ユーザーマネージャー</primary></indexterm>
+次のステップはもっと重要である。グループプロファイルを
+（ユーザーマネージャーを使って）各ユーザーに<quote>ユーザー単位で</quote>
+割り当てるのではなく、そのグループ自体を更新されたプロファイルに
+割り当てるのである。
+</para>
+
+<note><para>
+グループプロファイルには注意すること。個人プロファイルをすでに持っている
+グループのメンバーがユーザーである場合、その結果は２つを統合（マージ）
+したものとなる。
+</para></note>
+
+</sect1>
+
+<sect1>
+<title>Windows ユーザーのデフォルトプロファイル</title>
+
+<para>
+<indexterm><primary>デフォルトプロファイル</primary></indexterm>
+<indexterm><primary>レジストリキー</primary></indexterm>
+Windows 9x/Me および NT4/200x/XP では、プロファイルが存在しないユーザー
+についてはデフォルトプロファイルを使用する。デフォルトプロファイルが
+Windows workstation 上にあるとわかっている場合、およびデフォルト
+プロファイルを作るパスを示すレジストリキーがわかっている場合、使用する
+デフォルトプロファイルをこのサイト用に最適化されたものに変更できる。
+これは管理上重要な利点である。
+</para>
+
+<sect2>
+<title>MS Windows 9x/Me</title>
+
+<para>
+<indexterm><primary>システムポリシーエディター</primary></indexterm>
+<indexterm><primary>レジストリ</primary></indexterm>
+Windows 9x/Me でユーザごとのデフォルトプロファイルを有効にするには、
+<application>Windows 98 システムポリシーエディター</application> 
+を使うか、またはレジストリを直接変更する。
+</para>
+
+<para>
+Windows 9x/Me でユーザごとのデフォルトプロファイルを有効にするには
+<application>システムポリシーエディタ</application>を起動し、
+<guimenu>ファイル</guimenu> -> <guimenu>レジストリを開く</guimenu>
+を選択する。次に<guiicon>ローカルコンピュータ</guiicon>アイコンを
+クリックし、<guilabel>Windows 98 システム</guilabel>をクリックして
+「有効」ボックスの<guilabel>ユーザープロファイル</guilabel>を選択する。
+レジストリの変更を保存するのを忘れないこと。
+</para>
+
+<para>
+<indexterm><primary>regedit.exe</primary></indexterm>
+レジストリを直接変更するには
+<application>レジストリーエディター</application>
+(<command>regedit.exe</command>) を起動し、
+<filename>HKEY_LOCAL_MACHINE\Network\Logon</filename>ハイブを選択する。
+ここで<quote>User Profiles</quote>キーのところに DWORD を追加する。
+ユーザープロファイルを有効にするには 1 を、無効にするには 0 をセットする。
+</para>
+
+<sect3>
+<title>Windows 9x/Me におけるユーザープロファイルの取り扱い</title>
+
+<para>
+ユーザーが Windows 9x/Me マシンにログオンすると、そのユーザーに関する
+既存のエントリを処置するのにローカルプロファイルのパス<filename>
+HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\ProfileList
+</filename>がチェックされる。
+</para>
+
+<para>
+レジストリのこの位置にユーザのエントリがある場合、Windows 9x/Me は
+ユーザープロファイルのキャッシュされたバージョンをローカルでチェックする。
+Windows 9x/Me では、さらにサーバー上にあるユーザーのホームディレクトリー
+（場所が変更されている場合は指定されたディレクトリー）にある（かもしれない）
+ユーザープロファイルもチェックする。プロファイルがどちらにもある場合は、
+新しい方が使われる。プロファイルがサーバー上にあるがローカルマシン上には
+ない場合は、サーバー上のプロファイルをダウンロードして使用する。ユーザー
+プロファイルがローカルマシン上のみにある場合は、そのコピーが使われる。
+</para>
+
+<para>
+ユーザープロファイルがこれらのどちらにもない場合は、Windows 9x/Me マシン
+のデフォルトユーザープロファイルが使われ、ログインしているユーザの新しく
+作られたディレクトリにこのプロファイルのコピーが作られる。ログオフの際、
+ユーザが行った変更がすべてこのユーザーのローカルプロファイルに書きこまれる。
+このユーザーが移動プロファイルを使っている場合、変更内容はサーバ上ある
+このユーザのプロファイルに書きこまれる。
+</para>
+
+</sect3>
+</sect2>
+
+<sect2>
+<title>MS Windows NT4 Workstation</title>
+
+<para>
+Windows NT4 の場合、デフォルトユーザープロファイルは
+<filename>%SystemRoot%\Profiles</filename> から読みこまれる。
+インストール時のデフォルト設定では、ここは
+<filename>C:\Windows NT\Profiles</filename>となる。
+クリーンインストール後におけるこのディレクトリの中身は
+<filename>Administrator</filename>, <filename>All Users</filename>,
+<filename>Default User</filename>という３つのディレクトリから構成される。
+</para>
+
+<para>
+<filename>All Users</filename> ディレクトリにはシステムユーザすべてで
+共通で使われるメニュー設定が入る。<filename>Default User</filename> 
+ディレクトリには、各ユーザーが自分で選択したり作成したりした
+プロファイル設定に依存する、カスタマイズ可能なメニューエントリが入る。
+</para>
+
+<para>
+新しいユーザーが最初に Windows NT4 のマシンにログオンする際、以下を元に
+新しいプロファイルが作られる。
+</para>
+
+<itemizedlist>
+	<listitem><para>All Users の設定</para></listitem>
+	<listitem><para>Default User（デフォルトの
+	<filename>NTUser.DAT</filename> ファイルを含む）の設定</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+あるユーザーがマイクロソフトのセキュリティードメインのメンバーである
+Windows NT4 マシンにログオンする際は、プロファイルの扱いに関して以下の
+手順を踏む：
+</para>
+
+<procedure>
+	<step> <para>
+	ログオンプロセスを通して得られるユーザーのアカウント情報には、その
+	ユーザーのデスクトッププロファイルの場所も入っている。プロファイルの
+	パスはマシンのローカルにある場合もあるし、ネットワーク共有の中かも
+	しれない。プロファイルがユーザーアカウントから得られたパスの位置に
+	ある場合、このプロファイルは
+	<filename>%SystemRoot%\Profiles\%USERNAME%</filename>
+	という位置にコピーされる。そしてこのプロファイルの内容は、
+	<filename>%SystemRoot%\Profiles</filename>にある
+	<filename>All Users</filename>プロファイルの設定を継承する。
+	</para> </step>
+
+	<step> <para> 
+    ユーザーアカウントがプロファイルへのパスを持っているが、そこに
+    プロファイルが存在しない場合、<filename>Default User</filename>
+    プロファイルが参照され、それを元にして新しいプロファイルが
+	<filename>%SystemRoot%\Profiles\%USERNAME%</filename>
+    に作られる。
+	</para> </step>
+
+	<step> <para>
+<indexterm><primary>NTConfig.POL</primary></indexterm>
+<indexterm><primary>NETLOGON</primary></indexterm>
+<indexterm><primary>認証サーバー</primary></indexterm>
+<indexterm><primary>ログオンサーバー</primary></indexterm>
+<indexterm><primary>HKEY_CURRENT_USER</primary></indexterm>
+    認証サーバー（ログオンサーバー）上の NETLOGON 共有内にポリシー
+    ファイル(<filename>NTConfig.POL</filename>)がある場合、その内容は
+    <filename>NTUser.DAT</filename>に適用され、最終的にはレジストリの
+    <filename>HKEY_CURRENT_USER</filename>部分に適用される。
+	</para> </step>
+
+	<step> <para>
+    ユーザーがログアウトする際、そのプロファイルが移動プロファイルで
+    あれば、指定されたプロファイルの場所に書き出される。その後
+    <filename>HKEY_CURRENT_USER</filename>の内容から
+    <filename>NTuser.DAT</filename>ファイルが再度作成される。つまり、
+    次回のログイン時には NETLOGON 共有内に
+    <filename>NTConfig.POL</filename>が存在するべきではなく、そのひとつ
+    前の<filename>NTConfig.POL</filename> がプロファイル内にあれば、
+    それが有効になる。この効果はタトゥーイング（入れ墨）と呼ばれる。
+	</para> </step>
+</procedure>
+
+<para>
+Windows NT4 のプロファイルのタイプは<emphasis>ローカル</emphasis>か
+<emphasis>移動</emphasis>のどちらかである。ローカルプロファイルは
+<filename>%SystemRoot%\Profiles\%USERNAME%</filename>に置かれる。
+以下のレジストリキーを作っておかない限り、移動プロファイルも同様に
+残ったままとなる。
+<screen>
+HKEY_LOCAL_MACHINE\SYSTEM\Software\Microsoft\Windows NT\CurrentVersion\
+winlogon\"DeleteRoamingCache"=dword:0000000
+</screen>
+このケースでは、
+（<filename>%SystemRoot%\Profiles\%USERNAME%</filename>にある）
+ローカルのコピーは、ログアウト時に削除される。
+</para>
+
+<para>
+<indexterm><primary>regedt32</primary></indexterm>
+Windows NT4 では後述のレジストリキーを変更することで、
+<filename>マイドキュメント</filename>といった共有リソースのデフォルト
+位置をネットワーク共有上にリダイレクトすることができる。これらの変更は
+システムポリシーエディターを使って行える。これを GUI 上で行いたい
+場合は、ポリシーエディタで自分自身のテンプレート拡張を作る必要がある
+かもしれない。別の方法としては、まずデフォルトのユーザープロファイル
+を作成し、そのユーザーでログインしてから<command>regedt32</command> 
+でキー設定の編集を行う。
+</para>
+
+<para>
+あるフォルダをデフォルトのユーザプロファイルとしたい場合のレジストリ
+ハイブキーは、Windows NT4 の場合以下で制御できる：
+<screen>
+HKEY_CURRENT_USER
+	\Software
+		\Microsoft
+			\Windows
+				\CurrentVersion
+					\Explorer
+						\User Shell Folders
+</screen>
+<indexterm><primary>windows のレジストリ設定</primary>
+<secondary>デフォルトプロファイルの場所</secondary>
+</indexterm>
+</para>
+
+<para>
+前述のハイブキーには自動的に管理されるフォルダがある。デフォルトの
+エントリは<link linkend="ProfileLocs">the next table</link>にある。
+</para>
+
+<table frame="all" id="ProfileLocs">
+	<title>User Shell Folder レジストリキーのデフォルト値</title>
+	<tgroup cols="2">
+		<colspec align="left"/>
+		<colspec align="left"/>
+	<thead>
+		<row><entry>名前</entry><entry>デフォルト値</entry></row>
+	</thead>
+	<tbody>
+		<row><entry>AppData</entry><entry>%USERPROFILE%\Application Data</entry></row>
+		<row><entry>Desktop</entry><entry>%USERPROFILE%\Desktop</entry></row>
+		<row><entry>Favorites</entry><entry>%USERPROFILE%\Favorites</entry></row>
+		<row><entry>NetHood</entry><entry>%USERPROFILE%\NetHood</entry></row>
+		<row><entry>PrintHood</entry><entry>%USERPROFILE%\PrintHood</entry></row>
+		<row><entry>Programs</entry><entry>%USERPROFILE%\Start Menu\Programs</entry></row>
+		<row><entry>Recent</entry><entry>%USERPROFILE%\Recent</entry></row>
+		<row><entry>SendTo</entry><entry>%USERPROFILE%\SendTo</entry></row>
+		<row><entry>Start Menu </entry><entry>%USERPROFILE%\Start Menu</entry></row>
+		<row><entry>Startup</entry><entry>%USERPROFILE%\Start Menu\Programs\Startup</entry></row>
+	</tbody>
+	</tgroup>
+</table>
+
+<para>
+デフォルトプロファイルの場所の設定を含むレジストリキー：
+<screen>
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\
+User Shell Folders
+</screen>
+</para>
+
+<para>
+デフォルトのエントリは
+<link linkend="regkeys">デフォルトのプロファイル設定用のレジストリキー</link>
+にある。
+</para>
+
+<table frame="all" id="regkeys">
+	<title>デフォルトのプロファイル設定用のレジストリキー</title>
+	<tgroup cols="2">
+		<colspec align="left"/>
+		<colspec align="left"/>
+	<tbody>
+		<row><entry>Common Desktop</entry><entry>%SystemRoot%\Profiles\All Users\Desktop</entry></row>
+		<row><entry>Common Programs</entry><entry>%SystemRoot%\Profiles\All Users\Programs</entry></row>
+		<row><entry>Common Start Menu</entry><entry>%SystemRoot%\Profiles\All Users\Start Menu</entry></row>
+		<row><entry>Common Startup</entry><entry>%SystemRoot%\Profiles\All Users\Start Menu\Programs\Startup</entry></row>
+	</tbody>
+	</tgroup>
+</table>
+
+</sect2>
+
+<sect2>
+<title>MS Windows 200x/XP</title>
+
+<note><para>
+<indexterm><primary>GPOs</primary></indexterm>
+<indexterm><primary>Windows XP Home Edition</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>domain security</primary></indexterm>
+Windows XP Home Edition ではユーザーごとのデフォルトプロファイルは
+使われず、ドメインセキュリティにも参加できず、NT/ADS スタイルの
+ドメインにもログインできないので、プロファイル情報は自分自身で持って
+おくしかない。デフォルトプロファイルを設定できるといろいろと便利なので、
+ドメインログオン処理に参加できるような上位レベルの Windows クライアント
+では、管理者がグローバルのデフォルトプロファイルを事前に作っておき、
+グループポリシーオブジェクト(GPO)を経由してそれらを強制的に適用する
+という仕組みを備えている。
+</para></note>
+
+<para>
+<indexterm><primary>デフォルトユーザー</primary></indexterm>
+新しいユーザーが最初に Windows 200x/XP マシンにログインすると、
+デフォルトプロファイルは
+<filename>C:\Documents and Settings\Default User</filename>
+から読みこまれる。システム管理者が必要に応じてこの中身を変更していても、
+Windows 200x/XP は喜んでその指示に従う。これは最善の処置とは
+とても言えるものではない。なぜなら、このデフォルトプロファイルを
+すべての Windows 200x/XP クライアントマシンにコピーして回らなければ
+ならないからである。
+</para>
+
+<para>
+<indexterm><primary>NETLOGON</primary></indexterm>
+Windows 200x/XP がドメインレベルのセキュリティに参加する際、
+デフォルトのユーザプロファイルが見つからなければ、クライアントは
+デフォルトプロファイルを探すために認証サーバーの NETLOGON 共有を
+見に行く。ここで Windows の元々の動きとしては、まず
+<filename>%LOGONSERVER%\NETLOGON\Default User</filename>
+を見に行き、もしこのディレクトリがあればこの配下のファイルが
+クライアント側の<filename>C:\Documents and Settings\</filename>
+直下にある現在 Windows にログイン中のユーザー名にコピーされる。
+</para>
+
+<note><para>
+一方 Samba 側の動きとしては、このパスは &smb.conf; の
+<smbconfsection name="[NETLOGON]"/> 共有に読み替えられる。
+このディレクトリはこの共有の直下に<filename>Default User</filename>
+という名前で作っておかなければならない。
+</para> </note>
+
+<para>
+この場所にデフォルトプロファイルが存在しない場合、Windows 200x/XP 
+はローカルのデフォルトプロファイルを使用する。
+</para>
+
+<para>
+ログアウトの際、ユーザーのデスクトッププロファイルはそのユーザーに
+関連するレジストリ設定で指定された場所に格納される。（Samba では
+自動的に行われるが）ログイン処理の際に特定のポリシーが作られ
+もしくは渡されない場合、ユーザのプロファイルはローカルマシンの
+<filename>C:\Documents and Settings\%USERNAME%</filename>
+パス配下にのみ書きこまれる。
+</para>
+
+<para>
+デフォルトの振る舞いを変更したい場合は、以下の３つの方法を使えばよい：
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	ローカルマシンのレジストリキーを手作業で変更し、NETLOGON 共有の
+	直下に新しいデフォルトプロファイルを置く。保守でいっせいに行う
+	必要があるので、この方法はお勧めしない。
+	</para> </listitem>
+
+	<listitem><para>
+	この振る舞いを指定した NT4 スタイルの NTConfig.POL ファイルを
+	作成し、それを新しいデフォルトプロファイルと共に NETLOGON 
+	共有の直下に置く。
+	</para> </listitem>
+
+	<listitem><para>
+	これを Active Directory を通して行うように強制する GPO を
+	作成し、新しいデフォルトプロファイルを NETLOGON に置く。
+	 </para> </listitem>
+</itemizedlist>
+
+<para>
+Windows 200x/XP において、デフォルトユーザープロファイルの一部
+となるフォルダーに関する振る舞いに影響を与えるレジストリのハイブ
+キーは以下のエントリーである：
+</para>
+
+<para>
+<filename>HKEY_CURRENT_USER\Software\Microsoft\Windows\
+CurrentVersion\Explorer\User Shell Folders\</filename>
+</para>
+
+<para>
+このハイブキーには自動的に管理されるフォルダーのリストが含まれる。
+デフォルトのエントリーは
+<link linkend="defregpthkeys">次の表</link>にある。
+<indexterm><primary>windows のレジストリ設定</primary>
+<secondary>デフォルトプロファイルの場所</secondary>
+</indexterm>
+</para>
+
+
+<table frame="all" id="defregpthkeys">
+	<title>デフォルトユーザプロファイルへのパスのデフォルト値
+	を持つレジストリエントリー</title>
+	<tgroup cols="2">
+		<colspec align="left"/>
+		<colspec align="left"/>
+	<thead>
+		<row><entry>名前</entry><entry>デフォルト値</entry></row>
+	</thead>
+	<tbody>
+		<row><entry>AppData</entry><entry>%USERPROFILE%\Application Data</entry></row>
+		<row><entry>Cache</entry><entry>%USERPROFILE%\Local Settings\Temporary Internet Files</entry></row>
+		<row><entry>Cookies</entry><entry>%USERPROFILE%\Cookies</entry></row>
+		<row><entry>Desktop</entry><entry>%USERPROFILE%\Desktop</entry></row>
+		<row><entry>Favorites</entry><entry>%USERPROFILE%\Favorites</entry></row>
+		<row><entry>History</entry><entry>%USERPROFILE%\Local Settings\History</entry></row>
+		<row><entry>Local AppData</entry><entry>%USERPROFILE%\Local Settings\Application Data</entry></row>
+		<row><entry>Local Settings</entry><entry>%USERPROFILE%\Local Settings</entry></row>
+		<row><entry>My Pictures</entry><entry>%USERPROFILE%\My Documents\My Pictures</entry></row>
+		<row><entry>NetHood</entry><entry>%USERPROFILE%\NetHood</entry></row>
+		<row><entry>Personal</entry><entry>%USERPROFILE%\My Documents</entry></row>
+		<row><entry>PrintHood</entry><entry>%USERPROFILE%\PrintHood</entry></row>
+		<row><entry>Programs</entry><entry>%USERPROFILE%\Start Menu\Programs</entry></row>
+		<row><entry>Recent</entry><entry>%USERPROFILE%\Recent</entry></row>
+		<row><entry>SendTo</entry><entry>%USERPROFILE%\SendTo</entry></row>
+		<row><entry>Start Menu</entry><entry>%USERPROFILE%\Start Menu</entry></row>
+		<row><entry>Startup</entry><entry>%USERPROFILE%\Start Menu\Programs\Startup</entry></row>
+		<row><entry>Templates</entry><entry>%USERPROFILE%\Templates</entry></row>
+	</tbody>
+	</tgroup>
+</table>
+
+<para>
+値がセットされていない、<quote>Default</quote>と呼ばれるエントリーもある。
+デフォルトのえんとりーの型は<constant>REG_SZ</constant>である。
+これ以外の全ての型は<constant>REG_EXPAND_SZ</constant>である。
+</para>
+
+<para>
+全てのフォルダーがネットワークサーバー上の特定の場所に格納されて
+いる場合、移動プロファイルを処理するスピードには大きな違いが出る。
+つまり、ログインやログアウトのたびに Outlook の PST ファイルを
+ネットワークの向こうに書き出す必要はないということだ。
+</para>
+
+<para>
+これをネットワーク上の場所にするには、以下の例に従えばよい：
+<screen>
+%LOGONSERVER%\%USERNAME%\Default Folders
+</screen>
+これにより、フォルダーはユーザーのホームディレクトリーにある
+<filename>Default Folders</filename>という名前のディレクトリー
+配下に格納される。また以下の書式で指定してもよい：
+<screen>
+\\<replaceable>SambaServer</replaceable>\<replaceable>FolderShare</replaceable>\%USERNAME%
+</screen>
+</para>
+
+<para>
+この場合、デフォルトフォルダーは
+<replaceable>SambaServer</replaceable>という名前のサーバ上にある
+<replaceable>FolderShare</replaceable>という名前の共有の下の、
+Linux/UNIX ファイルシステムによって Windows ユーザーの名前を
+つけられたディレクトリーに格納される。
+</para>
+
+<para>
+いったんデフォルトプロファイルの共有を作ったら、その中に移行する
+ユーザーのプロファイルを（デフォルト値であれカスタマイズしたもの
+であれ）を<emphasis>置かなければならない</emphasis>ことに注意して
+欲しい。
+</para>
+
+<para> 
+Windows 200x/XP のプロファイルは<emphasis>ローカル</emphasis>
+または<emphasis>移動</emphasis>のいずれかである。移動プロファイルは
+以下のレジストリキーが作られていない限りローカルにキャッシュされる：
+<indexterm><primary>移動プロファイルの削除</primary></indexterm>
+</para>
+
+
+<para>
+<programlisting>HKEY_LOCAL_MACHINE\SYSTEM\Software\Microsoft\
+Windows NT\CurrentVersion\winlogon\"DeleteRoamingCache"=
+dword:00000001</programlisting>
+</para>
+
+<para>
+この設定をすると、ログアウト時にローカルのキャッシュは削除される
+ようになる。
+</para> 
+</sect2> 
+</sect1>
+
+<sect1> <title>よくあるエラー</title>
+
+<para>
+Samba のメーリングリストで質問があった典型的なエラーや問題、
+質問内容を以下に示す。
+</para>
+
+<sect2>
+<title>少人数のユーザやグループのための移動プロファイルの設定
+</title>
+
+<para>
+Samba-2.2.x では、移動プロファイルをサポートするか否かという
+選択肢しかない。これはグローバル設定である。デフォルトでは
+移動プロファイルを持つことになっており、デフォルトのパスは
+ユーザーのホームディレクトリー配下にある。
+</para>
+
+<para>
+グローバルで無効にすると、誰も移動プロファイルを持てなくなる。
+移動プロファイル自身は有効にするが、これを特定のマシンにしか
+適用させたくない場合は、移動プロファイルサポートをしたくない
+個々のマシンにおいて、これを無効にする設定をレジストリに書き
+込んでやらなければならない。
+</para>
+
+<para>
+Samba-3 では、グローバル設定を &smb.conf; に書いておき、
+各ユーザーごとの設定を（Windows NT4/200x の）ドメインユーザー
+マネージャで上書きすることができる。
+</para>
+
+<para>
+どのケースにおいても、各ユーザーごとにひとつのプロファイルしか
+持てない。このプロファイルは以下のいずれかになる：
+</para>
+
+<itemizedlist>
+	<listitem><para>そのユーザ固有のプロファイル</para></listitem>
+	<listitem><para>必須プロファイル（ユーザーは変更できない）</para></listitem>
+	<listitem><para>グループプロファイル
+	（実際は必須となる &smbmdash; すなわち変更不可）</para></listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2> <title>移動プロファイルを使えない</title>
+
+<para>
+あるユーザーからの要求：
+<quote>
+移動プロファイルを実装して欲しくない。
+各ユーザーにローカルプロファイルだけを与えたい。
+私はこのエラーでひどく損害を受けた。
+この２日間、あらゆることを試してみた。
+Google を検索したりもしてみたが、役に立つ情報はなかった。
+助けてください。
+</quote>
+</para>
+
+<para>選択肢としては、以下のようになるだろう：</para>
+
+<variablelist>
+	<varlistentry>
+		<term>ローカルプロファイル</term> 
+		<listitem><para>ログアウト時に「ローカルの」プロファイルを
+		自動で消すようなレジストリキーがないことがわかっている。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>移動プロファイル</term>
+		<listitem><para>
+		ユーザーがネットワークにログオンすると、中央に格納された
+		プロファイルがワークステーションにコピーされてローカルの
+		プロファイルが作られる。このローカルプロファイルは、
+		レジストリキーが変更されてログアウト時の自動削除が有効に
+		ならない限りは永続的になる（ワークステーションのディスク
+		上に残る）。</para></listitem>
+	</varlistentry>
+</variablelist>
+
+<para>移動プロファイルの選択をする場合：</para>
+
+<variablelist>
+	<varlistentry>
+		<term>個人の移動プロファイル</term> 
+		<listitem><para>一般的には中央の（もしくは便宜上ローカルにある）
+		サーバー上のプロファイル用共有に格納されている。</para>
+
+		<para>ワークステーションはプロファイルのローカルコピーを
+		キャッシュ（格納）する。このキャッシュされたコピーは、
+		次回のログイン時にプロファイルがダウンロードできなかった
+		場合に使用される。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>グループプロファイル</term> 
+		<listitem><para>
+		これらは中央のプロファイルサーバーから読み込まれる。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>必須プロファイル</term> 
+		<listitem><para>必須プロファイルはユーザ用としてだけではなく、
+		そのユーザが属するすべてのグループのためにも作られる。
+		必須プロファイルを通常のユーザーが変更することはできない。
+		これを変更したり再構成したりできるのは、システム管理者に限られる。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+
+<para>
+Windows NT4/200x/XP のプロファイルは、そのサイズが最低 130KB から
+巨大なサイズまで変動する。プロファイルの中の多くを占めるのは、往々
+にして Outlook の PST ファイルであり、これはギガバイトレベルまで
+膨らむこともある。（好ましい状態で運用されている環境における）
+平均的な移動プロファイルのサイズは、計画段階では 2MB 程度であると
+考えればよいだろう。きちんと管理されていない環境では、プロファイルが
+2GB まで膨れ上がったのを見たことがある。こうなるとログオンに１時間
+くらいもかかってユーザーからの不満が出るかもしれないが、おおかた
+くだらないごみファイルをため込んでいるのであろう。
+</para>
+
+<para> 
+この議論のポイントは、移動プロファイルを使って変更できる設定とできない
+設定をうまくコントロールしてやれば、問題の少ないサイト運用ができる
+ということである。
+</para>
+
+<para> 
+PST 問題に対するマイクロソフトの回答は、すべての電子メールを MS
+Exchange Server バックエンドに格納するべき、というものである。
+これを使えば PST ファイルが必要なくなる。
+</para>
+
+<para>ローカルプロファイルの意味するところは：</para>
+
+<itemizedlist>
+	<listitem><para>
+	それぞれのマシンが多くのユーザーによって使用されるなら、ローカル
+	プロファイルを格納するために多くのディスク領域が必要になる。
+	</para></listitem> 
+	<listitem><para>
+	ユーザーがログインするそれぞれのワークステーションにはそれぞれの
+	プロファイルが格納されている。これらはマシン間で全く別物に
+	なっているかもしれない。
+	</para></listitem>
+</itemizedlist>
+
+<para>一方、移動プロファイルの意味するところは：</para>
+
+<itemizedlist>
+	<listitem><para>ネットワーク管理者は、全ユーザーのデスクトップ
+	環境をコントロールできる。</para></listitem>
+	<listitem><para>移動プロファイルを使うと、ネットワーク管理の
+	オーバーヘッドを劇的に削減できる。</para></listitem>
+	<listitem><para>長時間のスパンで考えれば、ユーザが問題に直面する
+	危険性が減るだろう。</para></listitem>
+</itemizedlist>
+
+</sect2>
+
+<sect2>
+<title>デフォルトプロファイルを変更する</title>
+
+<para><quote>
+クライアントがドメインコントローラーにログオンする際、クライアントは
+ダウンロードするべきプロファイルを検索する。我々はデフォルト
+プロファイルをどこに置くべきだろうか？
+</quote></para>
+
+<para>
+<indexterm><primary>デフォルトプロファイル</primary></indexterm>
+まず Samba サーバーはドメインコントローラーとして構成する必要がある。
+そのためには &smb.conf; に以下の設定を行う：</para>
+
+<smbconfblock>
+<smbconfoption name="security">user</smbconfoption>
+<smbconfoption name="os level">32 (or more)</smbconfoption>
+<smbconfoption name="domain logons">Yes</smbconfoption>
+</smbconfblock>
+
+<para> 
+次に <smbconfsection name="[netlogon]"/> が必須で、ここは全ユーザが
+読めるようになっていなければならない。ここに既存のプリンタやドライブ
+の割り当てをするためのログオンスクリプトを追加しておくのもよいだろう。
+ワークステーションの時刻をログオンサーバーと自動的に同期させる
+仕組みもある（これもやっておくことが好ましい）。
+</para>
+
+<note><para> 
+ローカルワークステーションのキャッシュ（＝ディスク領域）から移動
+プロファイルを自動検出させるには、
+<application>グループポリシーエディタ</application>を使って
+<filename>NTConfig.POL</filename>と呼ばれるファイルを作成し、
+この中で適切な設定を行っておく。このファイルは
+<smbconfsection name="netlogon"/>共有の直下に置いておかなければ
+ならない。</para></note>
+
+<para>
+Windows クライアントはドメインのメンバーである必要がある。
+ワークグループのマシンではネットワークログオンが使えないので
+ドメインプロファイルによる運用はできない。</para>
+
+<para>移動プロファイル用に &smb.conf; に追加する項目：</para>
+
+<smbconfblock>
+<smbconfoption name="logon path">\\%N\profiles\%U</smbconfoption>
+<smbconfcomment>Default logon drive is Z:</smbconfcomment>
+<smbconfoption name="logon drive">H:</smbconfoption>
+<smbconfcomment>This requires a PROFILES share that is world writable.</smbconfcomment>
+</smbconfblock>
+
+</sect2>
+
+<sect2>
+<title>移動プロファイルと NT4 スタイルのドメインポリシーのデバッグ</title>
+
+<para>
+移動プロファイルとドメインポリシーは <command>USERENV.DLL</command>
+により実装されている。この DLL をデバッグしてログインプロセスを解析
+するためのやり方は、Microsoft Knowledge Base の
+<ulink url="http://support.microsoft.com/default.aspx?scid=kb;en-us;221833">221833</ulink>
+と
+<ulink url="http://support.microsoft.com/default.aspx?scid=kb;en-us;154120">154120</ulink>
+という記事に解説がある。
+</para>
+
+</sect2>
+</sect1>
+</chapter>

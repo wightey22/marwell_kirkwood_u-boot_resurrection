@@ -1,0 +1,131 @@
+.\"     Title: limits
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Formats et conversions de fichiers
+.\"    Source: Formats et conversions de fichiers
+.\"
+.TH "LIMITS" "5" "23/11/2008" "Formats et conversions de fich" "Formats et conversions de fich"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+limits \- définition des limites de ressources
+.SH "DESCRIPTION"
+.PP
+Le fichier
+\fIlimits\fR
+(\fI/etc/limits\fR
+par défaut ou LIMITS_FILE définit dans
+\fIconfig\&.h\fR) décrit les limites de ressource que vous voulez imposer\&. Il doit être possédé et ne doit être lisible que par le compte root\&.
+.PP
+Par défaut, aucun quota (aucune limite) n\'est imposé à \(Fo\ \&root\ \&\(Fc\&. En fait, il n\'est pas possible d\'imposer de cette façon de limite aux comptes root ou équivalents (comptes ayant un UID de 0)\&.
+.PP
+Chaque ligne décrit une limite pour un utilisateur, elle est de la forme suivante\ \&:
+.PP
+
+\fIutilisateur LISTE_DE_LIMITES\fR
+.PP
+Où
+\fILISTE_DE_LIMITES\fR
+est une chaîne construite par la concaténation d\'une liste de limites de ressource\&. Chaque limite consiste en une lettre (identifiant le type de limite) et une valeur numérique\&.
+.PP
+Les identifiants possibles sont\ \&:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'A\ \&: espace d\'adressage maximal (en kilo octets)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'C\ \&: taille maximale d\'un fichier image de la mémoire (\(Fo\ \&core\ \&\(Fc, en kilo octets)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'D\ \&: taille maximale du segment de données d\'un programme (en kilo octets)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'F\ \&: taille maximale des fichiers (en kilo octets)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'M\ \&: taille maximale de mémoire verrouillée (\(Fo\ \&locked\-in\-memory\ \&\(Fc, en kilo octets)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'N\ \&: nombre maximal de fichiers ouverts
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'R\ \&: taille maximale de la mémoire résidente (\(Fo\ \&resident set size\ \&\(Fc, en kilo octets)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'S\ \&: taille maximale de la pile (en kilo octets)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'T\ \&: temps processeur maximal consommé (en minutes)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'U\ \&: nombre maximal de processus
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'K\ \&: masque de création de fichier, positionné par
+\fBumask\fR(2)\&.
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'L\ \&: nombre maximal de connexions simultanées pour cet utilisateur
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'P\ \&: priorité des processus, positionné par
+\fBsetpriority\fR(2)\&.
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'I: max nice value (0\&.\&.39 which translates to 20\&.\&.\-19)
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'O: max real time priority
+.RE
+.PP
+Par exemple,
+\fIL2D2048N5\fR
+est une chaîne
+\fILISTE_DE_LIMITES\fR
+valable\&. Pour faciliter la lecture, les entrées suivantes sont équivalentes\ \&:
+.sp
+.RS 4
+.nf
+      utilisateur L2D2048N5
+      utilisateur L2 D2048 N5
+    
+.fi
+.RE
+.PP
+Attention\ \&: tout ce qui suit
+\fIutilisateur\fR
+est considéré comme une limite de chaîne\&. Les commentaires ne sont pas autorisés\&. Une chaîne de limites non valable sera rejetée (non utilisée) par le programme
+\fBlogin\fR\&.
+.PP
+L\'entrée par défaut est représentée par un utilisateur dénommé \(Fo\ \&\fI*\fR\ \&\(Fc\&. Si plusieurs entrées par défaut sont présentes dans le fichier de limites, alors seule la dernière sera prise en compte\&.
+.PP
+Un simple tiret \(Fo\ \&\fI\-\fR\ \&\(Fc sera suffisant pour désactiver toute limite à un utilisateur,
+.PP
+Notez également que les limites ne sont spécifiées que PAR CONNEXION\&. Il n\'y a pas de limite globale ou permanente\&. Des limites globales pourraient voir le jour, mais pour l\'instant, il faut faire sans\&.
+.SH "FICHIERS"
+.PP
+\fI/etc/limits\fR
+.RS 4
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBlogin\fR(1),
+\fBsetpriority\fR(2),
+\fBsetrlimit\fR(2)\&.

@@ -1,0 +1,76 @@
+2010-01-10 Christian <mail.kristian@yahoo.it>
+
+	* GNU fdisk 1.2.4 released
+
+21/07/2009 Christian <mail.kristian@yahoo.it>
+	
+	* Handle system where `ped_free' is not defined.
+
+08/03/2009 Christian <mail.kristian@yahoo.it>
+
+	* configure.ac: Better check's for readline and termcap
+	* src/ui.c: Better code for systems were readline is not found
+	
+2009-01-28  gettextize  <bug-gnu-gettext@gnu.org>
+
+	* configure.ac (AM_GNU_GETTEXT_VERSION): Bump to 0.17.
+
+01/11/2009 Christian <mail.kristian@yahoo.it>
+
+	* GNU fdisk 1.2 Released
+	
+12/29/2008 Christian <mail.kristian@yahoo.it>
+
+	* ui.c: Bug fixed 
+		(http://lists.gnu.org/archive/html/bug-fdisk/2008-12/msg00011.html)
+	
+	* common.c: Bug fixed
+		(http://lists.gnu.org/archive/html/bug-fdisk/2008-12/msg00010.html)
+	
+10/23/2008 Christian <mail.kristian@yahoo.it>
+
+	* fdisk.c: Make `do_change_system_type' not case
+	           sensitive to list all known partition types
+	
+10/22/2008 Christian <mail.kristian@yahoo.it>
+	
+	* fdisk.c: rename `do_list_devices' to `fdisk_do_list_devices' and
+	           make it global.
+        * fdisk.c: rename `print_partition_size' to `fdisk_print_partition_size'
+	           and male it global.
+        * fdisk.c: Remove code to open disk from `fdisk' function
+	           and move it in `common.c->fdisk_interactive_mode'.
+	* common.c: Change `fdisk_interactive_mode' prototype to accept
+	            a device as first parameter.
+	* fdisk: Added code to make fdisk work with devices or files
+	         without partition table.
+	
+10/17/2008 Christian <mail.kristian@yahoo.it>
+
+	* common.c: new global `compat_mode'.
+	* common.c: make get_position show `or +size%' when not `compat_mode'
+	* fdisk.c: use `compat_mode' rather than `fdisk_compatibility_mode'.
+	
+10/16/2008 Christian <mail.kristian@yahoo.it>
+
+	* fdisk.c: do_mkpart bug-fixed.
+	
+10/04/2008 Christian <mail.kristian@yahoo.it>
+
+	* ui.c: Add termcap initialization routine.
+	
+09/28/2008 Christian <mail.kristian@yahoo.it>
+
+	* Completed readline support.
+	* Better command line option handling.
+	* Add getopt module from GNU Lib.
+		
+Please see the RCS change log.
+------------------------------------------------------------------------------
+
+This file is part of GNU fdisk 
+Copyright (C) 2006 Free Software Foundation Inc.
+
+This file may be modified and/or distributed without restriction.  This is
+not an invitation to misrepresent the history of GNU fdisk.
+

@@ -1,0 +1,18 @@
+<samba:parameter name="host msdfs"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para><constant>yes</constant> の場合、 Samba は DFS サーバとして機能し、 DFS を利用可能なクライアントは、サーバ上で提供された
+	DFS ツリーを参照することが可能となる。</para>
+
+	<para>共有単位のパラメータである
+	<smbconfoption name="msdfs root"/>
+	も参照のこと。
+	Samba で DFS ツリーを構成する場合の詳細な情報については、
+	Samba3-HOWTO の MSDFS の章を参照のこと。
+	</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

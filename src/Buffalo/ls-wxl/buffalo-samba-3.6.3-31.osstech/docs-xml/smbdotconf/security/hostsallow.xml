@@ -1,0 +1,60 @@
+<samba:parameter name="hosts allow"
+                 context="S"
+				 type="list"
+                 basic="1" advanced="1" print="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>allow hosts</synonym>
+<description>
+    <para>このパラメータの同義語として <smbconfoption name="allow hosts"/> がある。</para>
+		
+    <para>このパラメータには、サービスに対するアクセスを許可するホストのリストを、
+    コンマ, スペース, タブで区切って指定する。</para>
+
+    <para>[global] セクションで指定された場合、
+    個々のサービスで異なった設定が行われている場合も含めて、
+    その設定が全てのサービスに対して適用される。</para>
+
+    <para>ホストの指定は、IPアドレスでもホスト名でも行うことができる。
+    例えば、あるClass C サブネット上のホストのみにアクセスを限定したい場合は、
+    <command moreinfo="none">allow hosts = 150.203.5.</command>とすればよい。
+    指定に利用できる記法の全ては、 <filename moreinfo="none">hosts_access(5)
+    </filename>のマニュアルページ中に記載されている。
+    このマニュアルページはシステムに存在しないかも知れないので、
+    ここで簡単に説明を行っておく。</para>
+
+    <para>なお、localhost のアドレスである 127.0.0.1 からのアクセスは、
+    <smbconfoption name="hosts deny"/> パラメータで明示的に禁止されない限り、常にアクセスを許可される。</para>
+
+    <para> ホストの指定に、network/netmask 形式を用いたり、
+    システムがネットグループをサポートしている場合はネットグループ名を用いたりすることも可能である。
+    <emphasis>EXCEPT</emphasis> を用いることで、ワイルドカードによるホストの指定に対する例外を設けることも可能である。
+    以下の例が手がかりになるだろう:</para>
+
+    <para>Example 1: 150.203.*.* 内の全てのIPアドレスを許可する; ただし、例外のアドレスが1つある</para>
+
+    <para><command moreinfo="none">hosts allow = 150.203. EXCEPT 150.203.6.66</command></para>
+
+    <para>Example 2: 指定した network/netmask の範囲内のホストからのアクセスを許可する</para>
+
+    <para><command moreinfo="none">hosts allow = 150.203.15.0/255.255.255.0</command></para>
+
+    <para>Example 3: 個別に指定したホストからのアクセスを許可する</para>
+
+    <para><command moreinfo="none">hosts allow = lapland, arvidsjaur</command></para>
+
+    <para>Example 4: NISネットグループの「foonet」に含まれるホストからのアクセスを原則として許可するが、あるホストからのアクセスについては拒否する。</para>
+
+    <para><command moreinfo="none">hosts allow = @foonet</command></para>
+
+    <para><command moreinfo="none">hosts deny = pirate</command></para>
+
+    <note><para>実際のアクセスには、ユーザレベルで適切なパスワード指定する必要があることに注意。</para></note>
+
+    <para>ホストレベルのアクセス制御が期待通りになっているかどうかの確認手段については
+    <citerefentry><refentrytitle>testparm</refentrytitle>
+    <manvolnum>1</manvolnum></citerefentry> を参照のこと。</para>
+</description>
+
+<value type="example">150.203.5. myhost.mynet.edu.au</value>
+<value type="default"><comment>なし (全てのホストがアクセス許可される)</comment></value>
+</samba:parameter>

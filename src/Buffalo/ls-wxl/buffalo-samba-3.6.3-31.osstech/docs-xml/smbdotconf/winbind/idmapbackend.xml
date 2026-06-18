@@ -1,0 +1,51 @@
+<samba:parameter name="idmap backend"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1" hide="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	idmap backend は Winbindが SID/uid/gid のマッピングテーブルを
+        格納するための様々なバックエンドを利用するためのプラグイン
+        インターフェースを提供する。
+	</para>
+	
+	<para>
+	このオプションは、<smbconfoption name="idmap config"/>で何も指定
+	されていないときに、既定値として利用するバックエンドを指定する
+	ときに利用する。
+	</para>
+		
+	<para>
+	この既定値のバックエンドは、winbindで生成されたidmapの格納場所
+	も指定する。そのため、書き込み可能な<citerefentry>
+	<refentrytitle>idmap_tdb</refentrytitle> <manvolnum>8</manvolnum>
+	</citerefentry>や<citerefentry>
+	<refentrytitle>idmap_ldap</refentrytitle> <manvolnum>8</manvolnum>
+	</citerefentry>をidmapバックエンドとして強く推奨する。<citerefentry>
+	<refentrytitle>idmap_rid</refentrytitle> <manvolnum>8</manvolnum>
+	</citerefentry>や<citerefentry>
+	<refentrytitle>idmap_ad</refentrytitle> <manvolnum>8</manvolnum>
+	</citerefentry>は書き込み可能でないため、これらをidmapのバックエンド
+	に指定すると予想できない結果となる。
+	</para>		
+	
+	<para>
+	ridとadのバックエンドを利用する場合には<smbconfoption name="workgroup"/>で指定
+	されているドメイン名を<smbconfoption name="idmap config"/>の
+	パラメータで指定する。
+	</para>
+
+	<para> SID/uid/gid のバックエンドの例として tdb (<citerefentry>
+	<refentrytitle>idmap_tdb</refentrytitle><manvolnum>8</manvolnum></citerefentry>)、
+	ldap (<citerefentry><refentrytitle>idmap_ldap</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>)、 rid (<citerefentry>
+	<refentrytitle>idmap_rid</refentrytitle><manvolnum>8</manvolnum></citerefentry>)、
+	ad (<citerefentry><refentrytitle>idmap_tdb</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>)が提供されている。
+	</para>	
+
+</description>
+
+<value type="default">tdb</value>
+</samba:parameter>

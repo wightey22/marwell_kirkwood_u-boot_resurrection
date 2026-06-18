@@ -1,0 +1,15 @@
+<samba:parameter name="server signing"
+                 context="G"
+		 type="enum"
+                 basic="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、SMB署名を使うために、通信先のクライアントに対して、使用を有効にするか、もしくは要求するかを設定する。
+    設定可能な値は、<emphasis>auto</emphasis>、<emphasis>mandatory</emphasis>、<emphasis>disabled</emphasis> である。 
+    </para>
+
+    <para>auto に設定した場合、SMB 署名が有効になるが、強制はしない。
+    mandatory に設定すると、SMB 署名が必須となる。disable に設定すると、SMB 署名は有効にならない。</para>
+</description>
+<value type="default">Disabled</value>
+</samba:parameter>

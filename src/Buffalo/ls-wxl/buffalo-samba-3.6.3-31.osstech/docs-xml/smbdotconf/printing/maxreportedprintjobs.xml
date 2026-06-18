@@ -1,0 +1,17 @@
+<samba:parameter name="max reported print jobs"
+                 context="S"
+				 type="integer"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、ある時点で Samba の印刷キューのポートモニタが表示する印刷ジョブの最大数が設定される。
+	この数値を超過した場合、超過したジョブは表示されない。
+	0 が設定された場合は、表示される印刷ジョブの制限はなくなる。
+    </para>
+</description>
+
+<related>max print jobs</related>
+
+<value type="default">0</value>
+<value type="example">1000</value>
+</samba:parameter>

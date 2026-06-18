@@ -1,0 +1,16 @@
+<samba:parameter name="afs share"
+	         context="S"
+			 type="boolean"
+		 advanced="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、共有に対して AFS 特有の機能を有効にするかどうかを指定する。
+	もし有効な場合、<parameter>path</parameter> パラメータでエクスポートされているディレクトリをローカルの AFS インポートとして扱う。
+	特殊な AFS の機能というのは、もし configure 時に
+	--with-fake-kaserver オプションを有効にした場合に、
+	AFS トークンを作成しようとする機能などが含まれる。
+	</para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

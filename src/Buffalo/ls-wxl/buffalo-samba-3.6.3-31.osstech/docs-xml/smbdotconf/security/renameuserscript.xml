@@ -1,0 +1,25 @@
+<samba:parameter name="rename user script"
+                 context="G"
+                 advanced="1" developer="1"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、以下に記述する特別な条件下において、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> によって <emphasis>ROOT 権限で</emphasis> 実行されるスクリプトのフルパス名である。</para>
+
+    <para>
+    管理者権限もしくは SeAddUserPrivilege ユーザ権利を保持しているユーザは、（NT4 のドメイン ユーザー マネージャなどから）このスクリプトを実行して、POSIX ユーザの名前を変更することが可能となる。
+    <literal>%uold</literal> および <literal>%unew</literal> という 2 つの変数が利用可能で、各々古いユーザ名と新しいユーザ名とに置換される。
+    このスクリプトは成功時に 0 を返却し、それ以外の特に 0 以外の値を返却する必要がある。
+    </para>
+
+    <note><para>
+    このスクリプトは POSIX 機構でアクセスが行なわれるすべての情報について名前を変更する必要があるが、パスワード機構により必要とされる変更箇所が異なる。
+    tdbsam と smbpasswd の場合、各ファイル中の情報についての変更は自動的に行なわれるため、スクリプト側では POSIX のユーザ名とホームディレクトリなどの環境依存で必要とされるデータの変更だけを行なえば良い。
+    ホームディレクトリの名前自体を変更する必要があるかも検討すべきだろう。
+    ldapsam の場合、LDAP のネーミング属性（LDAP naming attribute）を変更することには潜在的な問題があるため、LDAP 中の情報については全く変更が行なわれない。
+    この場合、スクリプト側で責任を持って Samba がユーザの識別に用いる属性（UID）および同じディレクトリを利用する他のアプリケーションが参照する情報の変更を行なう必要がある。
+	</para></note>
+</description>
+<value type="default">no</value>
+</samba:parameter>

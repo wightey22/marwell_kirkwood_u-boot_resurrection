@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="StandAloneServer">
+<chapterinfo>
+	&author.jht;
+</chapterinfo>
+<title>スタンドアロンサーバ</title>
+
+<para>
+<indexterm><primary>スタンドアロンサーバ</primary></indexterm>
+<indexterm><primary>非ドメインメンバ</primary></indexterm>
+<indexterm><primary>最小のセキュリティ制御</primary></indexterm>
+スタンドアロンサーバは、ネットワーク上での独立したドメインコントローラである。
+それらはドメインメンバではなく、ワークグループサーバのように機能する。
+多くの場合、スタンドアロンサーバは、提供されたデータが容易にすべての利用者
+からアクセス可能という意図で、最低限のセキュリティ制御で設定されている
+サーバである。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>セキュア</primary></indexterm>
+<indexterm><primary>非セキュア</primary></indexterm>
+スタンドアロンサーバは、必要性によって、セキュアにも非セキュアにもできる。
+単純あるいは複雑な設定を取ることが出来る。上記のように、ドメインセキュリティ
+について、過大な説明にもかかわらず、多くは普通のインストールのままである。
+</para>
+
+<para>
+<indexterm><primary>読み込み専用ファイル</primary></indexterm>
+<indexterm><primary>シェアモード</primary></indexterm>
+<indexterm><primary>リードオンリ</primary></indexterm>
+<indexterm><primary>スタンドアロンサーバ</primary></indexterm>
+もしも、サーバに必要とされるものがすべて読み込み専用ファイルか、プリンタ
+のみならば、複雑な設定をするのは意味をなさない。たとえば、設計事務所
+が古い設計図と設計標準を格納しておく必要があるとする。すべての文書が
+変更されないままでいることが法律的に重要なので、誰もサーバにファイルを
+書き込めない。シェアモードのリードオンリスタンドアロンサーバは理想的
+な解決方法である。
+</para>
+
+<para>
+<indexterm><primary>単純さ</primary></indexterm>
+<indexterm><primary>プリンタ</primary></indexterm>
+<indexterm><primary>シェアモードサーバ</primary></indexterm>
+単純さを正当化するもう1つの状態は、一つの中央サーバから待ち行列に入れられる
+多くのプリンタを持っているオフィスである。全員がプリンタに印刷出来る要求が
+あるが、アクセス制御の必要がなく、プリンタサーバにはファイルがない場合である。
+繰り返すと、シェアモードスタンドアロンサーバはとても優れた解決方法を提供する。
+</para>
+</sect1>
+
+<sect1>
+<title>背景</title>
+
+<para>
+<indexterm><primary>スタンドアロンサーバ</primary></indexterm>
+<indexterm><primary>ローカル認証</primary></indexterm>
+<indexterm><primary>アクセス制御</primary></indexterm>
+<emphasis>standalone server</emphasis>という言葉は、ローカルな認証とその上で
+有効なすべてのリソースのアクセスを制御する機能を提供するという意味である。
+一般的に、これは、ローカルユーザデータベースがあると言うことを意味する。
+もう少し技術的な言葉で言うと、これは、マシン上のリソースは、
+<emphasis>share</emphasis>モードか<emphasis>user</emphasis>モードのいずれか
+が有効であるということである。
+</para>
+
+<para>
+<indexterm><primary>ユーザアカウントの作成</primary></indexterm>
+<indexterm><primary>ネットワークログオンサービスがない</primary></indexterm>
+<indexterm><primary>独立</primary></indexterm>
+ユーザアカウントを作成するため以外に特別な操作は必要ない。スタンドアロンサーバ
+はネットワークログオンサービスを提供しない。これは、このサーバを使うマシンは
+これに対するドメインログオンを実行しないことを意味する。ワークステーションが
+使うどんなログオン機能も、このマシンからは独立している。しかし、使用する
+ログオン名がローカルで持っているユーザ名をスタンドアロンサーバ上でローカルに
+変換(マップ)するために、任意のネットワークユーザを一致させることは必要である。
+このことを実行するためにはいくつかの方法がある。
+</para>
+
+<para>
+<indexterm><primary>ローカル認証データベース</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>非ドメインメンバ</primary></indexterm>
+Sambaはスタンドアロンサーバの定義中で少しだけ区別を曖昧にするのに
+役立つ。これは、SMBプロトコルの視点から、Sambaサーバがドメイン
+セキュリティコンテキストのメンバでないとしても、認証データベース
+がローカルかリモートサーバ上にあるという理由である。
+</para>
+
+<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>UNIXユーザデータベース</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>/etc/shadow</primary></indexterm>
+<indexterm><primary>ローカルのsmbpasswdファイル</primary></indexterm>
+<indexterm><primary>LDAPバックエンド</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+UNIXユーザデータベースを操作するPAMとネームサービススイッチ(NSS)を使って
+(<link linkend="pam">PAMに付いての節</link>を参照)、認証のソースは
+別のサーバ上にあってもよい。これを認証サーバと呼ぶ傾向がある。これは、
+SambaサーバはローカルのUNIX/Linuxシステムパスワードデータベース
+(<filename>/etc/passwd</filename>か<filename>/etc/shadow</filename>)か、
+ローカルのsmbpasswdファイルか、LDAPバックエンドか、認証のために、
+PAMとWinbind経由で他のCIFS/SMBサーバを使っても良いことを意味する。
+</para>
+
+</sect1>
+
+<sect1>
+<title>設定例</title>
+
+<para>
+<indexterm><primary>inspire simplicity</primary></indexterm>
+<indexterm><primary>complexity</primary></indexterm>
+<link linkend="simplynice">参照用文書サーバの例</link>と
+<link linkend="SimplePrintServer">センタ印刷サーバ</link>は単純さに
+ヒントを得てデザインされた。それは高度な創造性を試みることと、
+サーバとネットワーク設計においてとても複雑であることを説明することは
+とても簡単である。
+</para>
+
+<sect2 id="RefDocServer">
+<title>参照用文書サーバ</title>
+
+<para>
+<indexterm><primary>読み込みのみ</primary></indexterm>
+<indexterm><primary>参照用文書</primary></indexterm>
+<indexterm><primary>/export</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+誰でもアクセスできる読み込み専用データサーバの設定はとても単純である。既定値
+では、すべての共有は、&smb.conf;ファイルに何か書かれるまではリードオンリで
+ある。
+<link linkend="simplynice">参照用文書サーバの例</link>
+はこれを行うための&smb.conf;ファイルである。すべての参照用文書はディレクトリ
+<filename>/export</filename>に格納されていて、文書はnobody以外のユーザによって
+所有されていることを仮定する。ホームディレクトリは共有されず、UNIXシステム
+データベース<filename>/etc/passwd</filename>中にはユーザはいない。これは
+管理者にとって単純なシステムである。
+</para>
+
+<example id="simplynice">
+<title>参照用文書サーバ用のsmb.conf</title>
+<smbconfblock>
+<smbconfcomment> Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">&example.workgroup;</smbconfoption>
+<smbconfoption name="netbios name">&example.server.samba;</smbconfoption>
+<smbconfoption name="security">SHARE</smbconfoption>
+<smbconfoption name="passdb backend">guest</smbconfoption>
+<smbconfoption name="wins server">192.168.1.1</smbconfoption>
+<smbconfsection name="[data]"/>
+<smbconfoption name="comment">Data</smbconfoption>
+<smbconfoption name="path">/export</smbconfoption>
+<smbconfoption name="guest only">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+<blockquote>
+<attribution>Mark Twain</attribution>
+<para>
+もう少し準備に時間があれば、もう少し簡単にできた。
+</para>
+</blockquote>
+
+<para>
+<indexterm><primary>パスワードバックエンド</primary></indexterm>
+<indexterm><primary>guest</primary></indexterm>
+<indexterm><primary>unprivileged account names</primary></indexterm>
+<indexterm><primary>WINS</primary></indexterm>
+<link linkend="simplynice">この例</link>中で、マシン名は&example.server.samba;に設定
+され、ワークグループはローカルワークグループ(&example.workgroup;)の名前に設定され、
+ユーザがなじみのあるシステムと一緒に表示される。必要とされる唯一のパスワードバックエンド
+は、既定値の非制限アカウント名として使われることを許可する<quote>guest</quote>
+バックエンドである。このネットワーク上でWINSサーバがあるならば、もちろんそれを使う。
+</para>
+
+<para>
+米国空軍連隊長が言った有名なことは:
+A US Air Force Colonel was renowned for saying: <quote>最善は善の的(Better is the enemy of good enough!)</quote>。
+専門的に完全な解決を避けることと同様、複雑さを避けることに対して、しばしば健全な理由が
+存在する。不幸にも、トラブルがないことを保持するのにちょうど十分な術を、多くの
+ネットワーク管理者は引き続き覚える必要がある。
+</para>
+
+</sect2>
+
+<sect2 id="SimplePrintServer">
+<title>集中印刷サーバ</title>
+
+<para>
+<indexterm><primary>単純印刷サーバ</primary></indexterm>
+<indexterm><primary>ツール</primary></indexterm>
+単純な印刷サーバの設定は、システム上のすべての正しいツールがあるならば簡単である。
+</para>
+
+<orderedlist>
+<title>前提条件</title>
+	<listitem><para>
+	印刷サーバは管理不要でなければならない。
+	</para></listitem>
+
+	<listitem><para>
+	印刷サーバ印刷の、スプールと処理をするシステムはCUPSである。
+	(詳細情報は<link linkend="CUPS-printing">CUPS印刷システム</link>を参照のこと)。
+	</para></listitem>
+
+	<listitem><para>
+	印刷サーバはネットワークプリンタのみ処理を行う。ネットワーク管理者は
+	プリンタをサポートするためにCUPS環境を正しく設定している。
+	</para></listitem>
+
+	<listitem><para>
+	すべてのワークステーションはPostScriptドライバを使う。選択したプリンタ
+	ドライバはApple Color LaserWriterのためのWindows OS用のものを選択する。
+	</para></listitem>
+</orderedlist>
+
+<para>
+<indexterm><primary>印刷サーバ</primary></indexterm>
+<indexterm><primary>/var/spool/samba</primary></indexterm>
+<indexterm><primary>匿名</primary></indexterm>
+この例では、印刷サーバは入力したすべての印刷ジョブを、Sambaによって、CUPS
+印刷プロセッサに向けて送られたジョブが実行可能になるまで
+<filename>/var/spool/samba</filename>にスプールする。すべての入力された
+接続は匿名(guest)ユーザなので、匿名印刷を有効にするために、2つ設定が必要である。
+</para>
+
+<itemizedlist>
+<title>匿名印刷を有効にする</title>
+	<listitem><para>
+<indexterm><primary>ゲストアカウント</primary></indexterm>
+<indexterm><primary>nobody</primary></indexterm>
+<indexterm><primary>testparm</primary></indexterm>
+	UNIX/Linuxシステムは<command>guest</command>アカウントを持たねば
+	ならない。この既定値は、通常<command>nobody</command>である。
+	使用するバージョンで使っている正しい名前を探すためには、以下を実行する:
+<screen>
+&prompt;<userinput>testparm -s -v | grep "guest account"</userinput>
+</screen>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+	このアカウントはシステムのパスワードデータベース
+	(<filename>/etc/passwd</filename>)に存在するようにしておかねばならない。
+	</para>
+
+	<para>
+<indexterm><primary>パスワードの設定</primary></indexterm>
+<indexterm><primary>パスワードのロック</primary></indexterm>
+<indexterm><primary>passwd</primary></indexterm>
+	このアカウントに対してパスワードを設定するか、UNIXでの使用からロックすることは
+	良い考えである。ゲストアカウントが<literal>pcguest</literal>であると仮定した時、
+	以下を実行することでロックが出来る:
+<screen>
+&rootprompt; passwd -l pcguest
+</screen>
+	正確なコマンドは使用するUNIX/Linuxディストリビューションによって異なる。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>ディレクトリ</primary></indexterm>
+<indexterm><primary>ゲストアカウント</primary></indexterm>
+<indexterm><primary>有効</primary></indexterm>
+<indexterm><primary>mkdir</primary></indexterm>
+<indexterm><primary>chown</primary></indexterm>
+<indexterm><primary>chmod</primary></indexterm>
+	Sambaがファイルをスプールするディレクトリはゲストアカウントに対して
+	書き込み許可を持たねばならない。以下のコマンド操作で、このディレクトリ
+	が使えるようにする:
+<screen>
+&rootprompt;<userinput>mkdir /var/spool/samba</userinput>
+&rootprompt;<userinput>chown nobody.nobody /var/spool/samba</userinput>
+&rootprompt;<userinput>chmod a+rwt /var/spool/samba</userinput>
+</screen>
+	</para></listitem>
+</itemizedlist>
+
+<para>
+&smb.conf;ファイルの内容は<link linkend="AnonPtrSvr">匿名印刷の例</link>にある。
+</para>
+
+<example id="AnonPtrSvr">
+<title>匿名印刷のための&smb.conf;</title>
+<smbconfblock>
+<smbconfcomment> Global parameters</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">&example.workgroup;</smbconfoption>
+<smbconfoption name="netbios name">&example.server.samba;</smbconfoption>
+<smbconfoption name="security">SHARE</smbconfoption>
+<smbconfoption name="passdb backend">guest</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="printer admin">root</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="printable">Yes</smbconfoption>
+<smbconfoption name="use client driver">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+</smbconfblock>
+</example>
+
+
+<note><para>
+<indexterm><primary>MIME</primary><secondary>raw</secondary></indexterm>
+<indexterm><primary>raw printing</primary></indexterm>
+<indexterm><primary>/etc/mime.conv</primary></indexterm>
+<indexterm><primary>/etc/mime.types</primary></indexterm>
+<indexterm><primary>CUPS print filters</primary></indexterm>
+CUPSが有効なシステム上で、CUPSプリントフィルタ経由の中間処理なしで生データを
+直接プリンタに送る機能がある。このモードの操作が要求される場合、raw印刷デバイス
+の設定が必要である。また、<filename>/etc/mime.conv</filename>と
+<filename>/etc/mime.types</filename>ファイル中にraw mime ハンドラを有効にする
+設定も必要である。<link linkend="CUPS-printing">CUPS印刷サポート</link>、
+<link linkend="cups-raw">application/octet-streamで明示的にraw印刷を有効にする</link>
+を参照のこと。
+</para></note>
+
+<para>
+<indexterm><primary>CUPSライブラリAPI</primary></indexterm>
+<indexterm><primary>printcapファイルがない</primary></indexterm>
+<indexterm><primary>PDFフィルタ</primary></indexterm>
+<indexterm><primary>printcap名</primary></indexterm>
+<link linkend="AnonPtrSvr">匿名印刷の例</link>中では、CUPSライブラリAPI経由で
+直接印刷のためにCUPSを使用する。これは、すべてのプリンタはprintcapファイルを設定する
+必要なしにWindowsユーザから見えるようになるという意味である。もしも、プリンタの
+サブセットのみか、特別な種類のプリンタ(たとえばPDFフィルタ)を見せる必要がある
+ならば、<parameter>printcap name = cups</parameter>を
+<parameter>printcap name = /etc/samba/myprintcap</parameter>に置き換えても良い。
+この場合、指定されたファイルはWindowsネットワークユーザに見せるべきプリンタ名の
+一覧を含む必要がある。
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+<indexterm><primary>とても大きな間違い</primary></indexterm>
+<indexterm><primary>設定が複雑すぎる</primary></indexterm>
+よく発生するとても大きな間違いは、ネットワークの設定を複雑すぎるようにしてしまう
+ことである。その時に必要な最も簡単な解を使うこと。
+</para>
+
+</sect1>
+</chapter>

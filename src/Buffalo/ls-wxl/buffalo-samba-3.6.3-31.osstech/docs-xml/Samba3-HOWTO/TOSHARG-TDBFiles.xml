@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="tdb">
+
+<chapterinfo>
+  &author.jht;
+	
+  <pubdate>2008年5月28日</pubdate>
+</chapterinfo>
+
+<title>TDB ファイルの管理</title>
+
+<sect1>
+<title>特徴と利点</title>
+
+<para>
+<indexterm><primary>tdb</primary></indexterm>
+<indexterm><primary>Trivial Database</primary></indexterm>
+Samba は軽量なデータベース Trivial Database (tdb) を利用する。一時的や
+永続的なデータをそこに格納する。
+一部の tdb ファイルは Samba を再起動する前に破棄できるが、その他は
+Samba の設定や振る舞いにとって重要な情報を格納するために利用される。
+Samba のインストールについてよりよい管理を摸索している
+管理者の助けとなるように下記の情報は提供される。
+</para>
+
+<para>
+<indexterm><primary>tdb</primary></indexterm>
+<indexterm><primary>破損された</primary></indexterm>
+<indexterm><primary>バックアップ</primary></indexterm>
+<indexterm><primary>レストア</primary></indexterm>
+OSとともに商用ディストリビューションにSambaをパッケージする場合とアプライアン
+スの場合、十分に注意するとよいだろう。 tdb ファイルは破損することがあるため定
+期的にバックアップするべきである。適切なタイミングはシステムシャットダウン(バ
+ックアップ)とスタートアップ(バックアップからのレストア)である。
+</para>
+
+<table frame="all" id="TOSH-TDB">
+  <title>Samba の Trivial Database ファイル</title>
+  <tgroup cols="2">
+    <thead>
+      <row><entry>ファイル名</entry><entry>要保存</entry><entry>説明</entry></row>
+    </thead>
+    
+    <tbody>
+      <row><entry>account_policy.tdb</entry><entry>要</entry>
+	<entry><para>たとえばパスワード有効期限などのようなNT アカウントポリシー
+	設定など。</para></entry></row>
+      <row><entry>brlock.tdb</entry><entry>不要</entry>
+	<entry><para>バイトレンジロック。</para></entry></row>
+      <row><entry>browse.dat</entry><entry>不要</entry>
+	<entry><para>ブラウズリスト - 自動的に再構築される。</para></entry></row>
+      <row><entry>connections.tdb</entry><entry>不要</entry>
+	<entry><para>各共有への接続。最大接続数までに制限するためなどに利用される。</para></entry></row>
+      <row><entry>gencache.tdb</entry><entry>不要</entry>
+	<entry><para>汎用のキャッシュ用データベース。</para></entry></row>
+      <row><entry>group_mapping.tdb</entry><entry>要</entry>
+	<entry><para>
+	    グループマッピング情報を格納する。LDAP バックエンドを利用する際には使わない。
+      </para></entry></row>
+      <row><entry>lang_en.tdb</entry><entry>要</entry>
+	<entry><para>使用する言語のエンコーディング情報を格納する。</para></entry></row>
+      <row><entry>locking.tdb</entry><entry>不要</entry>
+	<entry><para>共有モードと oplock 情報を格納する。</para></entry></row>
+      <row><entry>login_cache.tdb</entry><entry>不要</entry>
+	<entry><para>パスワードの失敗のログを保管する。</para></entry></row>
+      <row><entry>messages.tdb</entry><entry>不要</entry>
+	<entry><para>Samba 内部メッセージングの追跡に使用する。</para></entry></row>
+      <row><entry>netsamlogon_cache.tdb</entry><entry>要</entry>
+	<entry><para>
+	    ドメインメンバからのリクエスト<emphasis>net_samlogon()</emphasis>
+	    からのユーザ net_info_3 構造体のキャッシュ。
+      </para></entry></row>
+      <row><entry>ntdrivers.tdb</entry><entry>要</entry>
+	<entry><para>インストールされたプリンタドライバ情報を格納する。</para></entry></row>
+      <row><entry>ntforms.tdb</entry><entry>要</entry>
+	<entry><para>インストールされたプリンタのフォーム情報を格納する。</para></entry></row>
+      <row><entry>ntprinters.tdb</entry><entry>要</entry>
+	<entry><para>インストールされたプリンタ情報を格納する。</para></entry></row>
+      <row><entry>printing ディレクトリ</entry><entry>要</entry>
+	<entry><para>
+	    キャッシュされた lpq 出力のプリントキュー毎の tdb ファイルを含むディレクトリ。
+      </para></entry></row>
+      <row><entry>registry.tdb</entry><entry>要</entry>
+	<entry><para>
+	    Windows レジストリスケルトン(regedit.exeを経由して接続)。
+      </para></entry></row>
+      <row><entry>sessionid.tdb</entry><entry>不要</entry>
+	<entry><para>
+	    <literal>utmp = yes</literal>機能をサポートするためのセッション情
+	    報。
+      </para></entry></row>
+      <row><entry>share_info.tdb</entry><entry>要</entry>
+	<entry><para>
+	    共有レベルの ACL 構成設定を格納する。ACLの既定値は
+	    <emphasis>全員 - フルコントロール</emphasis>である。
+      </para></entry></row>
+      <row><entry>unexpected.tdb</entry><entry>不要</entry>
+	<entry><para>
+	    発信リクエストとは異なるポートへ返信する Windows クライアントを
+	    サポートするため予期せぬパケットのキュー。
+      </para></entry></row>
+      <row><entry>winbindd_cache.tdb</entry><entry>不要</entry>
+	<entry><para>Winbind のユーザリストのキャッシュ。</para></entry></row>
+      <row><entry>winbindd_idmap.tdb</entry><entry>要</entry>
+	<entry><para>Winbind の ローカル IDMAP データベース。</para></entry></row>
+      <row><entry>wins.dat</entry><entry>不要</entry>
+	<entry><para>
+	    <parameter>wins support = yes</parameter>がセットされている間だけ
+	    利用される WINS データベース。再起動するたびに再構築または更新
+	    される。
+      </para></entry></row>
+      <row><entry>wins.tdb</entry><entry>要</entry>
+	<entry><para>
+	    全ての WINS データのための作業用の永続的なストレージ。&smb.conf; 
+	    ファイルの中で <parameter>wins support = yes</parameter> がセット
+	    されている時だけ利用される。
+	    注意: 手動で構成されたすべての WINS エントリを保有する。手動設定は 
+	    net ユーティリティを使用して行うことができる。
+      </para></entry></row>
+      <row><entry>secrets.tdb</entry><entry>要</entry>
+	<entry><para>
+	    この tdb ファイルは内部設定を格納する、例えば machine/domain SID、
+	    LDAPと共に使われる秘密パスワード、machine 秘密トークンなど。
+	    これは安全な場所に格納される必須ファイルである。ベンダーはこの
+	    ファイルを様々なフォルダに配置する。<command>smbd -b</command>で、
+	    使用するシステムでの配置を確認すること。
+      </para></entry></row>
+      <row><entry>schannel_store.tdb</entry><entry>要</entry>
+	<entry><para>
+	    SMB 署名と共に利用されるセキュア channel アクセストークン情報を格
+	    納する。
+      </para></entry></row>
+      <row><entry>passdb.tdb</entry><entry>要</entry>
+	<entry><para>
+	    tdbsamパスワードバックエンドを利用する場合、Samba の SAM アカウン
+	    ト情報を格納する。
+      </para></entry></row>
+    </tbody>
+  </tgroup>
+</table>
+
+</sect1>
+
+<sect1>
+<title>TDB ファイルの管理</title>
+
+<para>
+  <command>tdbbackup</command> ユーティリティは samba の tdb ファイルをバック
+  アップすることに使うツールである。
+  Samba の起動の前または正常稼働中に tdb ファイルの完全性を診断することにも
+  利用することができる。
+  ファイルにダメージを見つけると以前のバックアップを探す。ダメージを受けた
+  tdb ファイルのバックアップファイルがリストアされる。
+  <command>tdbbackup</command>ユーティリティは、いつでも安全に実行できる。
+  Samba が実行中であっても、どんな時でも tdb ファイルの完全性が確認できるよう
+  に設計された。
+</para>
+
+<para>
+  Samba サーバ上では Samba のスタートアップスクリプトの一部分としてすべての tdb ファ
+  イルをバックアップすることが推奨される。
+  以下のコマンドシンタックスが利用できる:
+</para>
+<screen>
+myserver# > cd /var/lib/samba
+myserver@ > tdbbackup *.tdb
+</screen>
+<para>
+  既定の拡張子は<filename>.bak</filename>である。
+  <literal>tdbbackup -s 'new_extension' *.tdb</literal>とスタートアップスクリ
+  プトで実行することで他の拡張子を指定することができる。
+</para>
+
+</sect1>
+
+</chapter>

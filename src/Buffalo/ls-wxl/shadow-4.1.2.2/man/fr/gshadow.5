@@ -1,0 +1,62 @@
+.\"     Title: gshadow
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Formats et conversions de fichiers
+.\"    Source: Formats et conversions de fichiers
+.\"
+.TH "GSHADOW" "5" "23/11/2008" "Formats et conversions de fich" "Formats et conversions de fich"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+gshadow \- informations cachées sur les groupes
+.SH "DESCRIPTION"
+.PP
+\fI/etc/gshadow\fR
+contient les informations cachées sur les groupes\&. Il contient des lignes avec les champs suivant séparés par des deux\-points\ \&:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'nom du groupe
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'mot de passe chiffré
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'liste d\'administrateurs du groupe séparés par des virgules
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'liste des membres du groupe séparés par des virgules
+.RE
+.PP
+Les champs \(Fo\ \&nom du groupe\ \&\(Fc et \(Fo\ \&mot de passe\ \&\(Fc doivent être remplis\&. Le mot de passe chiffré comprend 13 caractères pris dans l\'alphabet de 64 caractères a\-z, A\-Z, 0\-9, \e\&. et /\&. Consultez
+\fBcrypt\fR(3)
+pour plus d\'informations sur le traitement de cette chaîne\&. Si le champ du mot de passe contient une chaîne qui ne peut pas être un résultat valable de
+\fBcrypt\fR(3), par exemple si elle contient les caractères\ \&! ou *, alors l\'utilisateur ne pourra pas utiliser son mot de passe UNIX pour se connecter\&. Ceci peut dépendre de
+\fBpam\fR(7)\&.
+.PP
+Ces informations sont prioritaires sur tous les autres champs présents dans
+\fI/etc/group\fR\&.
+.PP
+Ce fichier ne doit pas être accessible en lecture par les utilisateurs normaux afin de maintenir la sécurité des mots de passe, en particuliers pour prévenir les attaques par dictionnaires\&.
+.SH "FICHIERS"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.SH "VOIR AUSSI"
+.PP
+
+\fBgroup\fR(5),
+\fBgpasswd\fR(5),
+\fBnewgrp\fR(1)\&.

@@ -1,0 +1,44 @@
+<samba:parameter name="ldap ssl"
+                 context="G"
+				 type="enum"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このオプションはSambaがLDAPサーバへの接続にSSLを利用するかを
+	指定する。以前のSambaのバージョンにおいて<filename moreinfo="none">
+	configureスクリプト</filename>の<command moreinfo="none">--with-ssl
+	</command>で指定されたSambaの古いSSLサポートとは<emphasis>関係ない。
+	</emphasis></para>
+
+	<para>LDAPサーバとの接続は可能な限り暗号化すべきである。これは、
+	<parameter moreinfo="none">Start_tls</parameter>パラメータを指定する、
+	または<smbconfoption name="passdb backend"/>におけるURLの指定に
+	<parameter moreinfo="none">ldaps://</parameter>を指定するか、のいずれか
+	によって設定される。</para>
+
+	<para><smbconfoption name="ldap ssl"/>オプションは、２つのうちいずれかを
+	選択する。</para>
+	<itemizedlist>
+		<listitem>
+			<para><parameter moreinfo="none">Off</parameter> = 
+			ディレクトリに問い合わせする時SSLを使わない。</para>
+		</listitem>
+		<listitem>
+			<para><parameter moreinfo="none">start_tls</parameter> = 
+			ディレクトリに問い合わせする際にLDAPv3 StartTLS拡張オプション
+			(RFC2830)を利用する。</para>			
+		</listitem>
+	</itemizedlist>
+	
+	<para>
+	このパラメータは<emphasis>rpc</emphasis>メソッドのみ影響する。
+	<emphasis>ads</emphasis>LDAPv3 StartTLS拡張オプション(RFC2830)で運用する場合、
+	<smbconfoption name="ldap ssl">yes</smbconfoption>と
+	<smbconfoption name="ldap ssl ads">yes</smbconfoption>と設定する。
+	<smbconfoption name="ldap ssl ads"/>の詳細については
+	<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>を参照。
+	</para>	
+
+</description>
+<value type="default">start tls</value>
+</samba:parameter>

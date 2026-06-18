@@ -1,0 +1,16 @@
+<samba:parameter name="nt acl support"
+                 context="S"
+                 advanced="1" wizard="1"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータにより、 <citerefentry>
+    <refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+    が UNIX のパーミッションを Windows NT
+    のアクセスコントロールリストにマップするかどうかが決定される。
+    対象となる UNIX のパーミッションは、
+    ファイルやディレクトリに設定された伝統的な UNIX の所有者とグループのパーミッションと POSIX ACL である。
+    このパラメータは、Samba 2.2.2 より前のリリースでは、グローバルパラメータであった。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

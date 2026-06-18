@@ -1,0 +1,16 @@
+<samba:parameter name="posix locking"
+				 type="boolean"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para><citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>
+	デーモンでは、 SMB クライアントによって行なわれたファイルロックの情報を記録するデータベースを管理している。
+	既定値の動作は、この内部データベースをPOSIXロックにもマッピング(反映)する。
+	SMB以外の方式(たとえばNFSやローカルなファイルアクセス)
+	経由で、ファイルにアクセスするPOSIX互換のアプリケーション
+        によって認識されたものと、整合性が取れると言うことである。
+	このパラメータを無効にする必要はまずないであろう。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

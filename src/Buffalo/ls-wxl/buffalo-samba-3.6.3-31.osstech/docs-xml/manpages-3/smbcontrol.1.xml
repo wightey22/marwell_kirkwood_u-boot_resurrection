@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbcontrol.1">
+
+<refmeta>
+	<refentrytitle>smbcontrol</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbcontrol</refname>
+	<refpurpose>smbd、nmbd または winbindd のプロセスにメッセージを送信する
+	</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbcontrol</command>
+		<arg>-i</arg>
+		<arg>-s</arg>
+	</cmdsynopsis>
+	
+	<cmdsynopsis>
+		<command>smbcontrol</command>
+		<arg>destination</arg>
+		<arg>message-type</arg>
+		<arg>parameter</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>smbcontrol</command> は動作中の <citerefentry>
+	<refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum>
+	</citerefentry>、<citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> や <citerefentry>
+	<refentrytitle>winbindd</refentrytitle><manvolnum>8</manvolnum>
+	</citerefentry> デーモンにメッセージを送る、
+	とても小さなプログラムである。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		&stdarg.help;
+		&stdarg.configfile;
+		<varlistentry>
+		<term>-i</term>
+		<listitem><para>対話的に動作する。それぞれのコマンドの
+		destination、message-type、parameter は標準入力より入力できる。
+		空のコマンドラインまたは "q" でプログラムは終了する。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>destination</term>
+		<listitem><para><parameter>nmbd</parameter>、
+		<parameter>smbd</parameter> かプロセス ID のどれか。</para>
+
+		<para>distinationに <parameter>all</parameter>を指定すると、
+		nmbdとwinbindを含む、動いているデーモンすべてに、"ブロードキャスト"
+		で、メッセージを送る。これは、Samba 3.3から変更になり、それ以前
+		では、smbdがこのパラメータを使う。</para>
+
+		<para>destination に <parameter>smbd</parameter> を指定すると
+		<filename>smbd.pid</filename>ファイルで指定されたsmbdデーモンに
+		メッセージが送られる。
+		</para>
+
+		<para>destination に <parameter>nmbd</parameter> を指定すると
+		<filename>nmbd.pid</filename> ファイルで指定されている nmbd
+		デーモンに対してメッセージが送られる。</para>
+
+		<para>destination に <parameter>winbindd</parameter> を指定すると
+		<filename>winbindd.pid</filename> ファイルで指定されている winbindd
+		デーモンに対してメッセージが送られる。</para>
+
+		<para>もし単一のプロセス ID が与えられたときは、メッセージは
+		その 1 つのプロセスにのみ送られる。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>message-type</term>
+		<listitem><para>メッセージの種類を指定する。詳細は
+		<constant>MESSAGE-TYPES</constant> を参照のこと。
+		</para></listitem></varlistentry>
+		
+
+	
+		<varlistentry>
+		<term>parameters</term>
+		<listitem><para>メッセージの種類によって必要なパラメータ。
+		</para>
+		</listitem>
+		</varlistentry>
+	</variablelist>
+	
+</refsect1>
+
+<refsect1>
+	<title>MESSAGE-TYPES</title>
+
+	<para>使用可能なメッセージの種類:</para>
+
+	<variablelist>
+	<varlistentry><term>close-share</term>
+	<listitem><para>smbd に対し、指名した共有に接続しているクライアントの
+	接続を閉じるように命令する。これはクライアントの他の共有への接続には
+	影響を与えないことに注意。このメッセージタイプはクライアント接続を
+	閉じたい共有名か、全ての開いてある共有を切断する "*" を引数として
+	受け取る。これは、共有のアクセスコントロールを変更したときに便利である。
+	このメッセージは <constant>smbd</constant> にのみ送ることができる。
+	</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>debug</term>
+	<listitem><para>メッセージはデバッグレベルを parameter
+	で指定された値に設定する。このメッセージはどの destination
+	に対しても送信できる。</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>force-election</term>
+	<listitem><para>このメッセージは <command>nmbd</command>
+	デーモンに新たにマスタブラウザの選定を始めさせる。</para>
+	</listitem></varlistentry>
+
+	<varlistentry>
+	<term>ping</term>
+	<listitem><para>メッセージは parameter で指定された数だけの "ping"
+	メッセージを送信し、同じ数だけの "pong" メッセージの応答を待つ。
+	このメッセージはどの destination に対しても 送信できる。</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>profile</term>
+	<listitem><para>メッセージはデーモンに parameter に基づいた profile
+	の設定に変更するメッセージを送信する。 parameter に "on" を指定すると
+	profile stats の収集が有効となり、"off" を指定すると profile stats
+	の収集が無効となり、"count" を指定すると count stats の収集のみが
+	有効となり (time stats は無効)、また、"flush" を指定したときは現在の
+	profile stats をゼロにする。 このメッセージはどの smbd および nmbd にも送信できる。</para>
+	</listitem></varlistentry>
+
+	<varlistentry>
+	<term>debuglevel</term>
+	<listitem><para>メッセージはデーモンの "debuglevel" を問い合わせる
+	メッセージを送信し、それを STDOUT に書き込む。このメッセージはどの
+	destination に対しても送信できる。</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>profilelevel</term>
+	<listitem><para>
+	メッセージはデーモンの "profile" を問い合わせる
+	メッセージを送信し、それを STDOUT に書き込む。このメッセージはどの
+	smbd および nmbd のデーモンに対しても送信することができる。
+	</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>printnotify</term>
+	<listitem><para>メッセージはプリンタに接続しているすべての Windows NT
+	クライアントへ printer notify message を送信する。このメッセージには
+	以下の引数を渡すことができる:
+	</para>
+	
+	<variablelist>
+
+	    <varlistentry>
+	    <term>queuepause printername</term>
+	    <listitem><para>指定したプリンタに対し、queue pause change notify
+	    メッセージを送信する。</para></listitem>
+ 	    </varlistentry>
+
+	    <varlistentry>
+	    <term>queueresume printername</term>
+	    <listitem><para>指定したプリンタに対し、queue resume change notify
+	    メッセージを送信する。</para></listitem>
+ 	    </varlistentry>
+
+		<varlistentry>
+	    <term>jobpause printername unixjobid</term>
+	    <listitem><para>指定したプリンタと UNIX の jobid に対し、job pause
+	    change notify メッセージを送信する。</para></listitem> 
+ 	    </varlistentry>
+
+	    <varlistentry>
+	    <term>jobresume printername unixjobid</term>
+	    <listitem><para>指定したプリンタと UNIX の jobid に対し、job resume
+	    change notify メッセージを送信する。</para></listitem>  
+	    </varlistentry>
+
+	    <varlistentry>
+	    <term>jobdelete printername unixjobid</term>
+	    <listitem><para>指定したプリンタと UNIX の jobid に対し、job delete
+	    change notify メッセージを送信する。</para></listitem> 
+	    </varlistentry>
+	</variablelist>
+
+	<para>このメッセージはイベントが起こったと通知するだけである。
+	実際にイベントを起こすわけではない。
+	</para>
+
+	<para>このメッセージは <constant>smbd</constant> に対してのみ
+	送信できる。</para>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>samsync</term>
+	<listitem><para>smbd に対して、PDC の sam database と同期をとるように
+	命令する (BDC になるように命令)。<constant>smbd</constant>
+	に対してのみ送信できる。</para>
+	<note><para>現在未実装。</para></note>
+	</listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>samrepl</term>
+	<listitem><para>sam の replication メッセージを順次送信する。
+	<constant>smbd</constant> に対してのみ送信できる。
+	手動で使用してはいけない。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>dmalloc-mark</term>
+	<listitem><para>dmalloc のマークをセットする。smbd と nmbd
+	の両方に対して送信することができる。Samba の dmalloc
+	サポートが有効になった状態でビルドされた場合にのみ使用できる。
+	</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>dmalloc-log-changed</term>
+	<listitem><para>
+	dmalloc-mark によってマークされた時点以降で、変更のあったポインタを
+	ダンプする。smbd と nmbd の両方に対して送信することができる。
+	Samba の dmalloc サポートが有効になった状態でビルドされた場合にのみ
+	使用できる。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>shutdown</term>
+	<listitem><para>指定されたデーモンを落とすことができる。
+	smbd と nmbd の両方に対して送信することができる。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>pool-usage</term>
+	<listitem><para>指定されたデーモン/プロセスの talloc(pool) memory
+	usage を、人間に読み取り可能な状態で表示する。smbd と nmbd の両方に
+	対して使用できる。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>drvupgrade</term>
+	<listitem><para>特定のドライバを使用しているプリンタのクライアントに
+	対し、ローカルのドライバをアップデートするように強制する。
+	smbd に対してのみ送信することができる。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+	<term>reload-config</term>
+	<listitem><para>デーモンに smb.conf 設定ファイルの再読み込みを
+	強制させる。<constant>smbd</constant>、<constant>nmbd</constant> か
+	<constant>winbindd</constant> に対して送信することができる。
+	</para></listitem>
+	</varlistentry>
+
+</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba 3 用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> and <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>.</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連ユーティリティは、
+	Andrew Tridgellによって作成された。 現在 Samba は、Samba Team によって
+	Linux カーネルの 開発と同様に、オープンソースプロジェクトとして
+	開発されている。</para>
+
+	<para>オリジナルのSambaマニュアルは、Karl Auer によって執筆された。
+	マニュアルのソースは Jeremy Allison によって YODL 形式に変換され、
+	Samba 2.0 リリース用に更新された。
+	(YODL はオープンソース・ソフトウエアの優れた作品である 
+	<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink> より入手可能。)
+	Samba 2.2 における DocBook形式への変換は Gerald Carter
+	によって行なわれた。Samba 3.0 における DocBook XML 4.2 形式への変換は
+	Alexander Bokovoy によって行われた。</para>	
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.3.6 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>太田俊哉 (ribbon@samba.gr.jp)</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>
+

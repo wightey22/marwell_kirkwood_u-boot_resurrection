@@ -1,0 +1,21 @@
+<samba:parameter name="write list"
+                 context="S"
+		 type="list"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>これは、サービスに対して読みとりおよび書き込み権が与えられるユーザのリストである。
+    接続したユーザがこのリストに存在している場合は、
+    例え <smbconfoption name="read only"/>
+    オプションが no であっても書き込み権が与えられる。このリストには、
+    @group という形式を用いることでグループ名を含めることもできる。</para>
+
+    <para>
+    Samba 3.0 において、このパラメータは 
+    <smbconfoption name="security">share</smbconfoption> では動作しない。これは仕様である。
+    </para>
+
+</description>
+<related>read list</related>
+<value type="default"></value>
+<value type="example">admin, root, @staff</value>
+</samba:parameter>

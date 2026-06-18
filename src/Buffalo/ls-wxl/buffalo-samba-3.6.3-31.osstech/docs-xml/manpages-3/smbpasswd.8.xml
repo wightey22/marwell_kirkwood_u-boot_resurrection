@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbpasswd.8">
+
+<refmeta>
+	<refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbpasswd</refname>
+	<refpurpose>ユーザーの SMB パスワードを変更する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbpasswd</command>
+		<arg choice="opt">-a</arg>
+		<arg choice="opt">-c &lt;config file&gt;</arg>	
+		<arg choice="opt">-x</arg>
+		<arg choice="opt">-d</arg>
+		<arg choice="opt">-e</arg>
+		<arg choice="opt">-D debuglevel</arg>
+		<arg choice="opt">-n</arg>
+		<arg choice="opt">-r &lt;remote machine&gt;</arg>
+		<arg choice="opt">-R &lt;name resolve order&gt;</arg>
+		<arg choice="opt">-m</arg>
+		<arg choice="opt">-U username[%password]</arg>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-s</arg>
+		<arg choice="opt">-w pass</arg>
+		<arg choice="opt">-W</arg>
+		<arg choice="opt">-i</arg>
+		<arg choice="opt">-L</arg>
+		<arg choice="opt">username</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは、<citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para>smbpasswd プログラムは、
+	<emphasis>root</emphasis>
+	ユーザーによって実行される場合とそうでない場合とで、いくつかの機能が異なる。
+	一般ユーザーによって実行される場合、ユーザーは
+	SMB パスワードを格納するあらゆるマシン上で、SMB セッションのために利用する自分のパスワードを変更することができる。
+	</para>
+
+	<para>デフォルト (引数なしで実行した場合) では、
+	ローカルマシン上の実行したユーザーの SMB パスワードの変更を試みる。
+	これは <command>passwd(1)</command> プログラムと似た動作となる。
+	<command>smbpasswd</command> は、
+	<emphasis>setuid root</emphasis> されていない点と、
+	クライアント/サーバーモードで動作し、同一ホストで動作している
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>
+	と通信する点が <command>passwd(1)</command> と異なる。
+	このため、パスワードを変更するには、
+	smbd デーモンがローカルマシン上で動作していなければならない。
+	UNIX マシン上では、通常、
+	暗号化された SMB パスワードは
+	<citerefentry><refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>
+	ファイルに保持される。</para>
+
+	<para>一般ユーザーが引数なしで実行すると、
+	smbpasswd は古い (現在の) SMB パスワードの入力を求めた後、
+	新しいパスワードが正しく入力されることを確実にするため、
+	新しいパスワードの入力を 2 回求める。
+	入力したパスワードは画面上には表示されない。
+	ユーザーにパスワードが割り当てられていない場合
+	(smbpasswd ファイルで「NO PASSWORD」という文字列が指定されている場合) は、
+	古いパスワードの入力を求められたときに
+	&lt;Enter&gt; キーだけを押すこと。</para>
+
+	<para>smbpasswd は、一般ユーザーが
+	Windows NT プライマリドメインコントローラーなどのリモートマシン上の
+	SMB パスワードを変更する際に使用することもできる。
+	詳細は下記の <parameter>-r</parameter> オプションと
+	<parameter>-U</parameter> オプションを参照のこと。</para>
+
+	<para>root が実行する場合、smbpasswd は smbpasswd ファイルへの
+	ユーザーの追加・削除、既存ユーザーの属性を変更することが可能である。
+	このとき、
+	<command>smbpasswd</command> はローカルの smbpasswd ファイルに
+	直接アクセスする。よって、 smbd が実行されていなくても変更を行うことが可能である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+	<variablelist>
+		<varlistentry>
+
+		<term>-a</term>
+		<listitem><para>このオプションは、
+		指定したユーザー username を新しいパスワードとともにローカルの
+		smbpasswd ファイルに追加することを指示する。
+		<!--
+		古いパスワードは要求されないので、括弧部分の翻訳は削除
+		(type &lt;Enter>&gt;for the old password)
+		-->
+		すでに指定されたユーザーが存在する場合はオプションは無視され、
+		通常どおりパスワード変更コマンドとして動作する。
+		注意: デフォルトのパスワードデータベースバックエンドは、
+		システムのパスワードファイル
+		(通常は <filename>/etc/passwd</filename>)
+		に同名のユーザーが存在いることを要求するため、
+		システムにユーザーが存在しないとユーザーの追加は失敗する。</para>
+
+		<para>このオプションは、
+		root が smbpasswd を実行するときだけ利用できる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-c</term>
+		<listitem><para>
+		このオプションは、既定値のファイルと位置ものを使うことが重要な時、
+		&smb.conf;設定ファイルのパスとファイル名を指定することに使うことが出来る。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-x</term>
+		<listitem><para>このオプションは、
+		指定したユーザー username をローカルの
+		smbpasswd ファイルから削除することを指示する。</para>
+
+		<para>このオプションは、
+		root が smbpasswd を実行するときだけ利用できる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-d</term>
+		<listitem><para>このオプションは、
+		ローカルの smbpasswd ファイル内の指定したユーザー username
+		を<constant>無効にすること</constant>を指示する。
+		これは、
+		smbpasswd ファイルのアカウント制御領域に
+		「<constant>D</constant>」
+		フラグを書き込むことで行なわれる。
+		こうすることで、
+		このユーザー名を利用した SMB の認証はすべて失敗するようになる。</para>
+
+		<para>smbpasswd ファイルが Samba 2.0 以前の古い形式の場合、
+		ユーザーのパスワードエントリに情報を書き込むための領域がないため、
+		<!--コマンドは-->このオプション指定は失敗する。
+		新旧のパスワードファイル形式についての詳細は、
+		<citerefentry><refentrytitle>smbpasswd</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> を参照のこと。
+		</para>
+
+		<para>このオプションは、
+		root が smbpasswd を実行するときだけ利用できる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-e</term>
+		<listitem><para>このオプションは、
+		ローカルの smbpasswd ファイル内の指定したユーザー username
+		を<constant>有効にすること</constant>を指示する。
+		アカウントが無効になっていなければ、このオプションはなんの効果もない。
+		アカウントを有効にすることで、
+		このユーザーは再び SMB の認証が受けられるようになる。
+		</para>
+
+		<para>smbpasswd ファイルが古い形式の場合、
+		<command>smbpasswd</command> はアカウントの有効化に失敗する。
+		新旧のパスワードファイル形式についての詳細は、
+		<citerefentry><refentrytitle>smbpasswd</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> を参照のこと。</para>
+
+		<para>このオプションは、
+		root が smbpasswd を実行するときだけ利用できる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-D debuglevel</term>
+		<listitem><para>デバッグレベルを
+		<replaceable>debuglevel</replaceable> に設定する。
+		<replaceable>debuglevel</replaceable>
+		は、0 から 10 までの整数である。
+		このパラメータを指定しないときのデフォルト値は 0 である。</para>
+
+		<para>この値を大きくするほど、
+		smbpasswd の動作に関するより詳細な情報がログファイルに記録される。
+		レベル 0 では、致命的なエラーと重大な警告のみが記録される。</para>
+
+		<para>1 より上のレベルは大量のログが生成されるので、
+                問題解決の時にのみ使用すべきである。
+		3 より上のレベルは開発者だけが利用するように設計されており、
+		莫大な量のログデータが生成される。
+		そのほとんどは非常に謎めいた内容となっている。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-n</term>
+		<listitem><para>このオプションは、
+		ローカルの smbpasswd ファイル内の指定したユーザー username
+		のパスワードをなくすよう指示する (すなわち、パスワードなしとなる)。
+		これは、
+		smbpasswd ファイルのパスワード保持領域の先頭部分に
+		「NO PASSWORD」という文字列を書き込むことで行なわれる。</para>
+
+		<para>
+		注意: smbpasswd ファイル内でパスワードが「NO PASSWORD」に設定されると、
+		そのユーザーが Samba サーバーにログオンするためには、
+		<filename>smb.conf</filename> ファイルの
+		[global] セクションに下記のパラメータを設定しなければならない:</para>
+
+		<para><command>null passwords = yes</command></para>
+
+		<para>このオプションは、
+		root が smbpasswd を実行するときだけ利用できる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-r remote machine name</term>
+		<listitem><para>このオプションは、
+		変更したいパスワードがどのマシン上にあるかを指定することができる。
+		このパラメータが指定されていないと、デフォルトはローカルホストになる。
+		<replaceable>remote machine name</replaceable>
+		には、パスワード変更を試みるために接続する
+		SMB/CIFS サーバーの NetBIOS 名を指定する。
+		この名前は、
+		Samba のすべてのプログラムで利用される標準的な名前解決方式によって、
+		IP アドレスへと変換される。
+		名前解決方式の設定については、
+		<parameter>-R name resolve order</parameter>
+		パラメータを参照のこと。</para>
+
+		<para>パスワードの変更対象となるユーザーの名前は、
+		smbpasswd 実行時の UNIX のログイン名となる。
+		異なるユーザー名のパスワードの変更方法については、
+		<parameter>-U username</parameter> パラメータを参照のこと。</para>
+
+		<para>注意:
+		Windows NT ドメインのパスワードを変更するには、
+		プライマリドメインコントローラーを指定しなければならない。
+		(バックアップドメインコントローラーは、
+		読み込み専用のユーザアカウントデータベースの複製を持っているだけで、
+                パスワードを変更することはできない)</para>
+
+		<para><emphasis>注意:</emphasis>
+		Windows 95/98 は実際のパスワードデータベースを持っていないため、
+                Windows 95/98 マシンを指定してもパスワードの変更はできない。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-R name resolve order</term>
+		<listitem><para>このオプションにより、smbpasswd のユーザーは、接続先のホストのNetBIOS 名の検索にどの名前解決サービスを使用するかを決めることができる。</para>
+
+		<para>オプションには、"lmhosts"、"host"、"wins"、"bcast"のいずれかを指定する。それぞれの名前解決は以下のように行われる。</para>
+			<itemizedlist>
+				<listitem><para><constant>lmhosts</constant>: Samba lmhosts ファイルで IP アドレスが検索される。lmhosts の行に NetBIOS 名にアタッチされるネームタイプがない場合(詳細については <citerefentry><refentrytitle>lmhosts</refentrytitle>
+	    <manvolnum>5</manvolnum></citerefentry> を参照)、ネームタイプがどれであるかは検索結果に影響しなくなる。</para></listitem>
+
+            <listitem><para><constant>host</constant>: システムの <filename>/etc/hosts
+            </filename>、NIS、DNS ルックアップを使用した、ホスト名 - IP アドレス間の標準の名前解決が行われる。名前解決の方法の詳細な部分は、IRIX、Solaris といった OS によって変わる。<filename>/etc/nsswitch.conf</filename> で制御できる場合もある。この方法は、検索される NetBIOS 名のタイプが 0x20 (サーバー) である時にのみ使用できる点に注意。さもなければ指定しても無視される。</para></listitem>
+
+            <listitem><para><constant>wins</constant>: <parameter>wins server</parameter> パラメータに指定された IP アドレスを持つ名前が検索される。WINS サーバーが指定されていなければ、無視される。</para></listitem>
+
+            <listitem><para><constant>bcast</constant>: 
+            <parameter>interfaces</parameter> パラメータに指定された既知のローカル･インターフェースそれぞれについてブロードキャストを行う。ターゲット・ホストがローカル接続サブネット上にある場合にしか使えないので、最も信頼性の低い名前解決法。</para></listitem>
+		</itemizedlist>
+		
+		<para>デフォルトの優先順位は、<command>lmhosts、host、wins、bcast</command> となる。このパラメータがない場合、あるいは<citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> ファイルにエントリがない場合、この順序で名前解決方法が試行される。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-m</term>
+		<listitem><para>このオプションは、
+		パスワードの変更対象のアカントがマシンアカウントであることを
+		smbpasswd に指示する。
+		現在のところ、このオプションは、Samba が
+		NT プライマリドメインコントローラーとして動作しているときに利用される。
+		</para>
+
+		<para>このオプションは、
+		root が smbpasswd を実行するときだけ利用できる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-U username</term>
+		<listitem><para>このオプションは、
+		<parameter>-r</parameter> オプションと共に利用する。
+		リモートマシン上のパスワードを変更する場合に、
+		<!--このオプションにより、-->
+		パスワード変更対象とする(リモート)マシン上のユーザー名を指定することができる。
+		これにより、
+		ユーザーがリモートマシン上で異なるユーザー名を持っている場合でも、
+		ユーザーはパスワードを変更することができる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-h</term>
+		<listitem><para>このオプションは、
+		<command>smbpasswd</command> のヘルプを表示する。
+		<!--
+		Samba 3.0.0 現在、以下の説明のような動作はしないので、翻訳から削除。
+		selecting the correct one for running as root
+		or as an ordinary user.
+		-->
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-s</term>
+		<listitem><para>
+		このオプションを指定すると、
+		smbpasswd は寡黙 (すなわちプロンプトを出さない) になり、
+		新旧のパスワードを (<command>passwd(1)</command> プログラムのように)
+		<filename>/dev/tty</filename> からは読み込まず、
+		標準入力から読み込むようになる。
+		このオプションは smbpasswd を扱うスクリプトを書くときに有用となる。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-w password</term>
+		<listitem><para>
+		このオプションは、Samba がLDAPサポートを指定してコンパイルされているときのみ利用できる。
+		<parameter>-w</parameter> オプションは、
+		<smbconfoption name="ldap admin dn"/>
+		に使用するパスワードを設定するために利用する。
+		注意:
+		パスワードは LDAP 管理者の DN をキーにして
+		<filename>secrets.tdb</filename> ファイルに格納される。
+		このため、
+		<smbconfoption><name>ldap admin dn</name></smbconfoption>
+		パラメータの値を変更した場合は、
+		パスワードの更新も必要になる。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-W</term>
+		<listitem><para><command>注意:</command>このオプションは標準入力からパスワードを受け取ることを除いて、"-w"と同じである。
+		</para>
+		<para>このパラメータはSambaがLDAPサポート付きでコンパイルされている場合に
+のみ有効である。<parameter>-W</parameter>スイッチは<smbconfoption name="ldap admin dn"/>と
+		ともに使われるパスワードを指定するのに使われる。
+		注意:
+		パスワードは LDAP 管理者の DN をキーにして
+		<filename>secrets.tdb</filename> ファイルに格納される。
+		このため、
+		<smbconfoption><name>ldap admin dn</name></smbconfoption>
+		パラメータの値を変更した場合は、
+		パスワードの更新も必要になる。
+		</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-i</term>
+		<listitem><para>このオプションは、
+		パスワードの変更対象のアカントがドメイン間信頼アカウントであることを
+		smbpasswd に指示する。
+		現在のところ、このオプションは、Samba が
+		NT プライマリドメインコントローラーとして動作しているときに利用される。
+		このアカウントには、
+		信頼する側のドメインに関する情報が含まれる。</para>
+
+		<para>このオプションは、
+		root が smbpasswd を実行するときだけ利用できる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-L</term>
+		<listitem><para>ローカルモードで起動する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>username</term>
+		<listitem><para>すべての <emphasis>root 専用</emphasis>
+		オプション用に、操作対象とするユーザーの名前を指定する。
+		ローカルの smbpasswd ファイルを直接修正する権限を持つ
+		root だけがこのパラメータを指定することができる。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>注意</title>
+	
+	<para>一般ユーザーが実行する場合、
+	<command>smbpasswd</command> はローカルの
+	smbd とクライアント/サーバーモードで通信するため、
+	機能するには smbd デーモンが動作していなければならない。
+	よくある問題として、
+	ローカルマシンで動作している <command>smbd</command>
+	にアクセス可能なホストを制限するため
+	<citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>
+	ファイルに
+	<parameter>allow hosts</parameter>
+	または
+	<parameter>deny hosts</parameter>
+	パラメータを設定したときに、
+	「localhost」にアクセス許可を与えるのを忘れてしまうことがある。</para>
+
+	<para>なお、smbpasswd コマンドは、
+	Samba が暗号化パスワードを使うように設定してあるときのみ利用できる。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+	<para>このマニュアルページは、Samba バージョン 3用に記述されている。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>, <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>.</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作られた。 Samba は現在、Linux
+	カーネルが開発されているような方法でのオープンソースプロジェクトである
+	Samba Team によって開発されている。</para>
+
+	<para>オリジナルの Samba のマニュアルページは Karl Auer によって書かれた。マニュアルページのソースは YODL 形式(別の、優秀なオープンソースソフトウェアで、<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">ftp://ftp.icce.rug.nl/pub/unix/</ulink>にある)で変換され、Jeremy Allison によって Samba 2.0 リリースのために更新された。
+	Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。 
+	Samba 3.0 のための DocBook XML 4.2 形式の変換は Alexander Bokovoy によって行われた。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+       <para>このドキュメントの Samba 3.0.0 対応の翻訳は、さとうふみやす によって行なわれた。</para>
+       <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉(ribbon@samba.gr.jp)によって行なわれた。</para>
+
+</refsect1>
+</refentry>
+

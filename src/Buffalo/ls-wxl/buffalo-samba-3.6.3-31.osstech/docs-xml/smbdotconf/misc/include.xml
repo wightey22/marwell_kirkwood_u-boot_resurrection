@@ -1,0 +1,25 @@
+<samba:parameter name="include"
+	         context="G"
+			 type="string"
+		 hide="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータを使うと、ある設定ファイル中に別の設定ファイルを挿入できる。
+	挿入されるファイルは、挿入された場所に記述されたかのように、
+	そのままの形で挿入される。</para>
+
+	<para>このパラメータには、<parameter moreinfo="none">%u</parameter>、
+	<parameter moreinfo="none">%P</parameter>、<parameter moreinfo="none">%S</parameter>パラメータを除き、標準の変数置換が適用される。</para>
+
+	<para>
+<parameter>include = registry</parameter> というパラメータには特殊な意味が
+ある。これはカレントディレクトリから <emphasis>registry</emphasis> という
+名前のファイルをインクルードする<emphasis>のではなく</emphasis>、
+レジストリーからグローバル設定を読み込む。詳細はレジストリーベースの設定
+に関する章を参照されたい。注意：このオプションはレジストリー共有を自動的に
+有効にする。
+	</para>
+</description>
+<value type="default"></value>
+<value type="example">/usr/local/samba/lib/admin_smb.conf</value>
+</samba:parameter>

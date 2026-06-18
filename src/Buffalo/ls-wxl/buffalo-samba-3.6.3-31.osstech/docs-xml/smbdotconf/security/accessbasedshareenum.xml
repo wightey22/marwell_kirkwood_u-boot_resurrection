@@ -1,0 +1,16 @@
+<samba:parameter name="access based share enum"
+		 type="boolean"
+                 context="S"
+                 basic="1" advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+     <para>
+あるサービスに対してこのパラメータが <constant>yes</constant> であれば、
+そのサービスで提供される共有は、
+（net view \\sambaserver などで）共有の一覧表示が行われる際に、
+共有に対して読み取りもしくは書き込みアクセス許可のあるユーザ以外から参照されなくなる。
+これは Access-based Enumeration　（訳注：Windows Server 2003 SP1 以降に導入された、アクセス許可のないフォルダを非表示にする機能）と同等の機能である。
+主な違いは、共有に対するアクセス許可のみが評価され、共有内のファイルのセキュリティ識別子は、一覧表示の際の参照可否の確認には使用されないことである。</para>
+ </description>
+ <value type="default">no</value>
+</samba:parameter>

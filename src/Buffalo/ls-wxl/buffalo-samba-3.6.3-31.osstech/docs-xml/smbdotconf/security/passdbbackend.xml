@@ -1,0 +1,63 @@
+<samba:parameter name="passdb backend"
+                 context="G"
+		 type="list"
+                 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+    <para>このオプションにより、管理者はユーザとグループ情報の格納に、どのような
+    機構(backend)を使用するかについて指定できる。これにより、再コンパイルなしで
+    機構を取り換えることが可能となる。</para>
+
+    <para>このパラメータは、機構の名称と、特定の機構に依存した「位置」を示す文字列
+      との 2 つの要素から構成されている。
+    この要素は「:」文字で区切られる。</para>
+
+    <para>指定可能な機構は以下のとおりである:
+	<itemizedlist>
+	    <listitem>
+		<para><command moreinfo="none">smbpasswd</command> - 古い平文のパスワード格納
+		  機構である。これを使うとSambaのいくつかの機能が動かない。
+		  オプションの引数として smbpasswd ファイルの位置を指定する。
+		</para>
+	    </listitem>
+
+	    <listitem>
+		<para><command moreinfo="none">tdbsam</command> -  TDB ベースのパスワード格納機構である。
+                オプションの引数として、 TDB ファイルへのパス (デフォルトは
+                <smbconfoption name="private dir"/> ディレクトリ内の passdb.tdb) を指定する。</para>
+	    </listitem>
+			
+	    <listitem>
+		<para><command moreinfo="none">ldapsam</command> - LDAP ベースのパスワード機構である。
+                オプションの引数として、 LDAP の URL (デフォルトは
+                <command moreinfo="none">ldap://localhost</command>) を指定する。</para>
+
+		<para>LDAP の接続は、可能な場合は暗号化される。
+                これは Start-TLS (<smbconfoption name="ldap ssl"/> を参照のこと) か
+                <parameter moreinfo="none">ldaps://</parameter> を URL 引数中で指定することにより行なわれる。</para>
+                <para>ダブルクォーテーションを使って複数のサーバを指定できる。
+		  複数のサーバが使用できるか否かは、使用するLDAP ライブラリ上の文法に
+		  依存する。</para>
+	    </listitem>
+	</itemizedlist>
+
+    </para>
+    <para>
+    以下に設定例を示す。
+<programlisting>
+passdb backend = tdbsam:/etc/samba/private/passdb.tdb 
+
+またはOpenLDAPの複数サーバLDAP URLの場合は、
+
+passdb backend = ldapsam:"ldap://ldap-1.example.com ldap://ldap-2.example.com"
+
+あるいは、NetscapeベースのLDAP ライブラリでの複数サーバLDAP URLの場合は、
+
+passdb backend = ldapsam:"ldap://ldap-1.example.com ldap-2.example.com"
+</programlisting>
+</para>
+</description>
+
+<value type="default">tdbsam</value>
+</samba:parameter>

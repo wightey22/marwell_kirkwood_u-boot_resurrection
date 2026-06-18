@@ -1,0 +1,20 @@
+<samba:parameter name="share:fake_fscaps"
+	context="G"
+	type="string"
+		 advanced="1" developer="0"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+	これはある種の、SPARSE_FILESビット(0x40)を設定しているかどうかを調べるために
+	QFSINFOコールを行う、特別なアプリケーションをサポートするために必要である。
+	もしもこのビットが設定されていない場合、特定のアプリケーションはSambaに
+	対して動作できなくなる。
+	<smbconfoption name="share:fake_fscaps">64</smbconfoption>を使うと
+	SPARSE_FILESファイルシステムケーパビリティフラグがセットされる。
+	ビットマスクを指定する他の10進値はごまかす(fake)ために必要である。
+	</para>
+
+</description>
+<value type="default">0</value>
+</samba:parameter>

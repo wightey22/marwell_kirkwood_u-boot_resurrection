@@ -1,0 +1,32 @@
+<samba:parameter name="nis homedir"
+	         context="G"
+			 type="boolean"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>NIS マップから、[home] 共有を提供するサーバを取得する。
+	automounter を使用する UNIX システムでは、
+	ユーザのホームディレクトリが、必要に応じてリモートサーバから
+	ワークステーションにマウントされるようになっていることが多い。</para>
+
+	<para> Samba のログオンサーバが実際のホームディレクトリを提供するサーバではなく、
+	 NFS経由でホームディレクトリをマウントしている場合、
+	クライアントに自分自身がホームディレクトリを提供する SMB サーバであるように見せると、
+	ユーザがホームディレクトリにアクセスするためには、
+	二段階のネットワークアクセスが必要になる(1つは SMB で、もう 1 つは NFS)。
+	これはとても遅くなることがある。</para>
+
+	<para> このオプションにより、
+	Samba は home 共有がログオンサーバとは異なるサーバにあるものとして扱うことが可能になり、
+	Samba デーモンがホームディレクトリを提供するサーバで動作している限り、
+	Samba クライアントは、ホームディレクトリを提供しているサーバ上の共有を直接マウントする。
+	Samba が home 共有の情報をクライアントに返すとき、
+	<smbconfoption name="homedir map"/> パラメータ
+	で指定された NIS マップに問い合わせて、そこにあるサーバの情報を利用する。</para>
+
+	<para> このオプションが機能するためには、NIS システムが動いていなければならず、
+	このオプションを指定した Samba サーバは、
+	ログオンサーバでなければならないことに注意すること。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

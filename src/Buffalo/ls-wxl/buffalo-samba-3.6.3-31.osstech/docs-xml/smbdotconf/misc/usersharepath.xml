@@ -1,0 +1,27 @@
+<samba:parameter name="usershare path"
+	         context="G"
+		 basic="1" advanced="1"
+		 type="string"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータにより、ユーザ定義共有の設定ファイルが格納されるファイルシステム上のディレクトリの絶対パスが指定される。
+	このディレクトリは root の所有でなければならず、その他(other)がアクセス可能であってはならず、グループの所有者のみが書き込み可能となっている必要がある。
+	加えて、ファイルの所有者による名前の変更と削除を制限するため、「sticky」ビットが設定されている必要がある (これは /tmp ディレクトリに対して通常行なわれる設定と同義である)。
+	このディレクトリのグループ所有者が、ユーザ定義共有を作成可能なユーザとなる。
+	このパラメータが設定されていない場合、誰もユーザ定義共有を作成できない。
+	</para>
+	<para>
+	一例として、ユーザ定義共有のディレクトリを /use/local/samba/lib/usershares
+	に設定する場合、以下のようにする。
+	<programlisting>
+	ls -ld /usr/local/samba/lib/usershares/
+	drwxrwx--T  2 root power_users 4096 2006-05-05 12:27 /usr/local/samba/lib/usershares/
+	</programlisting>
+	</para>
+	<para>
+	この場合、「power_users」グループのメンバのみがユーザ定義共有を作成できる。
+	</para>
+</description>
+<value type="default">NULL</value>
+</samba:parameter>

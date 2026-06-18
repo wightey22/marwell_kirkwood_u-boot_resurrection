@@ -1,0 +1,29 @@
+<samba:parameter name="min receivefile size"
+		type="integer"
+		context="G"
+		advanced="1" developer="1"
+		xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+<para>このオプションは、<citerefentry><refentrytitle>smbd</refentrytitle>
+<manvolnum>8</manvolnum></citerefentry> が、SMBwriteX要求を処理するときの
+  振る舞いを変更する。
+  署名無しのSMB/CIFS接続において、この設定値より大きなサイズのあらゆる
+  SMBwriteXの要求は、通常の方法では処理されず、より下層のカーネルの
+  recvfile や splice システムコールに処理をまかせる。
+  (Sambaがそのような呼び出しをユーザースペースでエミュレートしていなければ) 
+  もし可能であれば、これによってネットワークのソケットバッファから
+  ファイルシステムのバッファキャッシュへ直接ゼロコピーによる書き出しを
+  行うことを可能にする。
+  これによってパフォーマンスの向上があるかもしれないが、ユーザーはテストを
+  行うことが推奨される。
+  もし 0 を設定すると、Sambaは、SMBwriteX要求を通常の方法で処理する。
+  (SMB/CIFSでは16MBまで書き込むので)POSIXの large write supportを可能に
+  するためには、このオプションは 0 以外でなければならない。
+  最大値は 128kである。128kより大きな値は、警告無しで128kに設定される。</para>
+<para>このオプションは署名付きSMB接続では効果が無いことに注意すること</para>
+<para>デフォルトは 0 に設定され、このオプションは無効となっている</para>
+</description>
+
+<related>min receivefile size</related>
+<value type="default">0</value>
+</samba:parameter>

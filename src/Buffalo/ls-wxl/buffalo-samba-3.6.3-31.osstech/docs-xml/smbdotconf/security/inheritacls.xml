@@ -1,0 +1,21 @@
+<samba:parameter name="inherit acls"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、
+      親ディレクトリに既定値のACLが設定されており、サブディレクトリの作成時に、
+      その ACL の設定を引き継がせたい場合に用いられる。既定値ではディレクトリ作成時に
+      設定されるモードが用いられる。このオプションを有効にすると、モードが 0777 となり、
+      ディレクトリの既定値のACLを確実に継承できるようになる。
+
+      ネイティブなWindowsデータをメタデータとして格納する、VFSモジュールacl_xattrか
+      acl_tdbは、ロードされるどのような共有に対しても、WindowsのACLを正しく
+      エミュレートするために、このオプションを自動的にオンにする事が要求される
+      ことに注意。
+      
+    </para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

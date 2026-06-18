@@ -1,0 +1,19 @@
+<samba:parameter name="strict sync"
+                 context="S"
+		 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>(Windows 98 の Explorer を含む)多くの Windows アプリケーションは、
+    バッファのデータをフラッシュする処理を、ディスクに対し、同期を行う処理と取り違えているようである。
+    UNIX における同期処理は、カーネル内のディスクバッファに残っているデータが無事に記憶装置へ保存されたことをカーネルが確認するまで、プロセスを停止させる。
+    この処理は非常に遅く、頻繁に行うべきではない。
+    このパラメータを <constant>no</constant>(デフォルト)に設定すると、
+    <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry>
+    は Windows アプリケーションからの同期処理要求を無視する。
+    この場合でも、データが失われる可能性があるのは、 Samba が動作しているオペレーティングシステム自身がクラッシュしたときだけであるので、この設定による危険度は少ない。
+    また、 Windows 98 の Explorer を使ったファイルコピーのパフォーマンス問題が報告されているが、こちらも改善される。</para>
+</description>
+<related>sync always</related>
+<value type="default">no</value>
+</samba:parameter>

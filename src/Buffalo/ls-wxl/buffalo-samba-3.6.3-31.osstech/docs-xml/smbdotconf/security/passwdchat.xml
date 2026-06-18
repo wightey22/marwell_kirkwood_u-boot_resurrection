@@ -1,0 +1,56 @@
+<samba:parameter name="passwd chat"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータで指定される文字列は、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> とローカルなパスワード変更プログラムとの間でパスワード変更時に発生する
+    <emphasis>「やりとり(chat)」</emphasis> を制御する。
+    文字列には、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が
+    <smbconfoption name="passwd program"/>
+    で指定したプログラムに行なう送信内容と、それに対して期待される応答内容とを定義したやりとりの手順を記述する。
+    期待される応答がない場合、パスワードは変更されない。</para>
+
+    <para>このやりとりの手順は、
+    パスワード制御のためにどのような方法(たとえば NIS など)を使うかに依存するため、
+    通常サイト依存のものとなる。</para>
+
+    <para> このパラメータは、
+    <smbconfoption name="unix password sync"/>
+    パラメータが <constant>yes</constant> の時のみ利用される。
+    このやりとりは、smbpasswd ファイル中の SMBパスワードが変更される際に、
+    古いパスワードの平文へアクセスすることなしに、
+    <emphasis>ROOT権限で</emphasis> 呼び出される。
+    これは、root であれば以前のパスワードを知らなくても、ユーザのパスワードの再設定を行なうことができるからである。
+    NIS/YP を利用している場合、
+    <smbconfoption name="passwd program"/> は NIS マスタサーバ上で実行する必要がある
+    </para>
+
+    <para>文字列には、新パスワードに置換される、 <parameter moreinfo="none">%n</parameter> マクロや、
+    各々改行、復帰、タブ、空白を意味する標準的なマクロである、\n, \r,
+    \t, \s も記述できる。
+    さらに、この文字列には、任意の文字列に一致する '*' を記述してもよい。
+    ダブルクオーテーションは、空白を含む複数の文字列を 1 つの文字列と見なすのに使うことができる。</para>
+
+    <para> やりとりの手順中で、送信文字列としてピリオド「.」が指定されていた場合、実際にはなんの文字列も送られない。
+    同様に、受信文字列としてピリオドが指定されていた場合、
+    実際には何も受信しないことが期待されている。</para>
+
+    <para> <link linkend="PAMPASSWORDCHANGE"><parameter moreinfo="none">pam
+    password change</parameter></link> パラメータが <constant>yes</constant>
+    の場合、やりとりの手順は、任意の順番でマッチし、
+    成功したか否かは出力結果ではなく PAM の戻り値で判断される。
+    PAM の場合、\n マクロは無視される。</para>
+
+</description>
+
+<related>unix password sync</related>
+<related>passwd program</related>
+<related>passwd chat debug</related>
+<related>pam password change</related>
+
+<value type="default">*new*password* %n\n*new*password* %n\n *changed*</value>
+<value type="example">&quot;*Enter OLD password*&quot; %o\n &quot;*Enter NEW password*&quot; %n\n &quot;*Reenter NEW password*&quot; %n\n &quot;*Password changed*&quot;</value>
+</samba:parameter>

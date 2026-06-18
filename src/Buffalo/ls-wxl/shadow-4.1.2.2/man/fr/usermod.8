@@ -1,0 +1,215 @@
+.\"     Title: usermod
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "USERMOD" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+usermod \- Modifier un compte utilisateur
+.SH "SYNOPSIS"
+.HP 8
+\fBusermod\fR [\fIoptions\fR] \fILOGIN\fR
+.SH "DESCRIPTION"
+.PP
+La commande
+\fBusermod\fR
+modifie les fichiers d\'administration des comptes du système selon les modifications qui ont été indiquées sur la ligne de commande\&.
+.SH "OPTIONS"
+.PP
+Les options disponibles pour la commande
+\fBusermod\fR
+sont\ \&:
+.PP
+\fB\-a\fR, \fB\-\-append\fR
+.RS 4
+Ajouter l\'utilisateur aux groupes supplémentaires\&. N\'utilisez cette option qu\'avec l\'option
+\fB\-G\fR\&.
+.RE
+.PP
+\fB\-c\fR, \fB\-\-comment\fR \fICOMMENTAIRE\fR
+.RS 4
+La nouvelle valeur du champ de commentaire du fichier de mots de passe pour l\'utilisateur\&. Il est normalement modifié en utilisant l\'utilitaire
+\fBchfn\fR(1)\&.
+.RE
+.PP
+\fB\-d\fR, \fB\-\-home\fR \fIRÉP_PERSO\fR
+.RS 4
+Le nouveau répertoire de connexion de l\'utilisateur\&. Si l\'option
+\fB\-m\fR
+est fournie, le contenu du répertoire personnel actuel sera déplacé dans le nouveau répertoire personnel, qui sera créé si nécessaire\&.
+.RE
+.PP
+\fB\-e\fR, \fB\-\-expiredate\fR \fIDATE_FIN_VALIDITÉ\fR
+.RS 4
+Date à laquelle le compte utilisateur sera désactivé\&. La date est indiquée dans le format
+\fIAAAA\-MM\-JJ\fR\&.
+.RE
+.PP
+\fB\-f\fR, \fB\-\-inactive\fR \fIDURÉE_INACTIVITÉ\fR
+.RS 4
+Nombre de jours suivant la fin de validité d\'un mot de passe après lequel le compte est définitivement désactivé\&. Une valeur de 0 désactive le compte dès que le mot de passe a dépassé sa fin de validité, et une valeur de \-1 désactive cette fonctionnalité\&. La valeur par défaut est de \-1\&.
+.RE
+.PP
+\fB\-g\fR, \fB\-\-gid\fR \fIGROUPE\fR
+.RS 4
+Nom du groupe ou identifiant numérique du groupe de connexion initial de l\'utilisateur\&. Le nom du groupe doit exister\&. Un numéro de groupe doit se référer à un groupe déjà existant\&. Le numéro de groupe par défaut est de 1\&.
+.RE
+.PP
+\fB\-G\fR, \fB\-\-groups\fR \fIGROUPE1\fR[\fI,GROUPE2,\&.\&.\&.\fR[\fI,GROUPEN\fR]]]
+.RS 4
+A list of supplementary groups which the user is also a member of\&. Each group is separated from the next by a comma, with no intervening whitespace\&. The groups are subject to the same restrictions as the group given with the
+\fB\-g\fR
+option\&. If the user is currently a member of a group which is not listed, the user will be removed from the group\&. This behaviour can be changed via the
+\fB\-a\fR
+option, which appends the user to the current supplementary group list\&.
+.RE
+.PP
+\fB\-l\fR, \fB\-\-login\fR\fINOUVEAU_LOGIN\fR
+.RS 4
+The name of the user will be changed from
+\fILOGIN\fR
+to
+\fINEW_LOGIN\fR\&. Nothing else is changed\&. In particular, the user\'s home directory name should probably be changed manually to reflect the new login name\&.
+.RE
+.PP
+\fB\-L\fR, \fB\-\-lock\fR
+.RS 4
+Verrouiller le mot de passe d\'un utilisateur\&. Cette option ajoute un \(Fo\ \&!\ \&\(Fc devant le mot de passe chiffré, ce qui désactive le mot de passe\&. Vous ne pouvez pas utiliser cette option avec
+\fB\-p\fR
+ou
+\fB\-U\fR\&.
+.sp
+Note: if you wish to lock the account (not only access with a password), you should also set the
+\fIEXPIRE_DATE\fR
+to
+\fI1\fR\&.
+.RE
+.PP
+\fB\-o\fR, \fB\-\-non\-unique\fR
+.RS 4
+En combinaison avec l\'option
+\fB\-u\fR, cette option permet de changer l\'identifiant utilisateur vers une valeur déjà utilisée\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-password\fR \fIMOT_DE_PASSE\fR
+.RS 4
+Mot de passe chiffré, comme renvoyé par
+\fBcrypt\fR(3)\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shell\fR \fIINTERPRÉTEUR\fR
+.RS 4
+Nom du nouvel interpréteur de commandes initial (\(Fo\ \&login shell\ \&\(Fc) de l\'utilisateur\&. Si ce champ est vide, le système sélectionnera l\'interpréteur de commandes initial par défaut\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-uid\fR \fIUID\fR
+.RS 4
+Valeur numérique de l\'identifiant de l\'utilisateur\&. Cette valeur doit être unique, à moins que l\'option
+\fB\-o\fR
+ne soit utilisée\&. La valeur ne doit pas être négative\&. Les valeurs comprises entre 0 et 999 sont généralement réservées aux comptes système\&. Tous les fichiers possédés par l\'utilisateur et qui sont situés dans son répertoire personnel verront leur identifiant d\'utilisateur automatiquement modifié\&. Vous devrez modifier vous\-même les fichiers situés à l\'extérieur du répertoire personnel de l\'utilisateur\&.
+.RE
+.PP
+\fB\-U\fR, \fB\-\-unlock\fR
+.RS 4
+Déverrouiller le mot de passe d\'un utilisateur\&. Cela supprime le \(Fo\ \&!\ \&\(Fc situé devant le mot de passe chiffré\&. Vous ne pouvez pas utiliser cette option avec
+\fB\-p\fR
+ou
+\fB\-L\fR\&.
+.sp
+Note: if you wish to unlock the account (not only access with a password), you should also set the
+\fIEXPIRE_DATE\fR
+(for example to
+\fI99999\fR, or to the
+\fIEXPIRE\fR
+value from
+\fI/etc/default/useradd\fR)\&.
+.RE
+.SH "AVERTISSEMENTS"
+.PP
+\fBUsermod\fR
+ne vous permet pas de modifier le nom d\'un utilisateur qui est actuellement connecté\&. Vous devez vous assurer que l\'utilisateur nommé n\'est pas en train d\'exécuter un quelconque programme lorsque cette commande est exécutée si l\'UID numérique de l\'utilisateur est modifié\&. Vous devez modifier vous\-même le nom du propriétaire de tous les fichiers
+\fBcrontab\fR
+et des tâches
+\fBat\fR\&. Vous devez effectuer toutes les modifications impliquant NIS sur le serveur NIS\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAIL_DIR\fR (string)
+.RS 4
+Répertoire d\'attente des courriels (\(Fo\ \&mail spool directory\ \&\(Fc)\&. Ce paramètre est nécessaire pour manipuler les boîtes à lettres lorsque le compte d\'un utilisateur est modifié ou supprimé\&. S\'il n\'est pas spécifié, une valeur par défaut définie à la compilation est utilisée\&.
+.RE
+.PP
+\fBMAIL_FILE\fR (string)
+.RS 4
+Defines the location of the users mail spool files relatively to their home directory\&.
+.RE
+.PP
+The
+\fBMAIL_DIR\fR
+and
+\fBMAIL_FILE\fR
+variables are used by
+\fBuseradd\fR,
+\fBusermod\fR, and
+\fBuserdel\fR
+to create, move, or delete the user\'s mail spool\&.
+.PP
+If
+\fBMAIL_CHECK_ENAB\fR
+is set to
+\fIyes\fR, they are also used to define the
+\fBMAIL\fR
+environment variable\&.
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informations sécurisées sur les comptes utilisateurs\&.
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBchfn\fR(1),
+\fBchsh\fR(1),
+\fBpasswd\fR(1),
+\fBcrypt\fR(3),
+\fBgpasswd\fR(8),
+\fBgroupadd\fR(8),
+\fBgroupdel\fR(8),
+\fBgroupmod\fR(8),
+\fBlogin.defs\fR(5),
+\fBuseradd\fR(8),
+\fBuserdel\fR(8)\&.

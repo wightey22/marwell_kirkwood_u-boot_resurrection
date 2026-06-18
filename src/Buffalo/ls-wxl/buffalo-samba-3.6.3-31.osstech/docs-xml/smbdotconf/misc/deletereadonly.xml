@@ -1,0 +1,14 @@
+<samba:parameter name="delete readonly"
+		 context="S"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータにより、読み取り専用のファイルの削除が可能になる。
+	これは DOS の仕様ではないが、UNIX では可能な処理である。</para>
+		
+	<para>このオプションは、rcs のようなアプリケーションを動作させるのに有用で、
+	UNIX ファイルの所有者に関する仕様がファイルのパーミッション変更を妨げたり、
+	DOS の仕様が読み取り専用ファイルの削除を妨げたりする問題を回避する。</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

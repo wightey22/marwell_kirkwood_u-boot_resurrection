@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="umount.cifs.8">
+
+<refmeta>
+	<refentrytitle>umount.cifs</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>umount.cifs</refname>
+	<refpurpose>ルート権限のない一般ユーザが自身でマウントした Common Internet File System (CIFS) をアンマウントする。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+
+		<command>umount.cifs</command>
+		<arg choice="req">mount-point</arg>	
+		<arg choice="opt">-nVvhfle</arg>	
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para>umount.cifs は Linux の CIFS ファイルシステムをアンマウントする。
+	実際には <citerefentry><refentrytitle>umount</refentrytitle><manvolnum>8</manvolnum></citerefentry>
+	コマンドが /sbin ディレクトリにある umount.cifs を間接的に起動している。
+	但し、umount に -i オプションを指定した場合はこの限りではなく、
+	その場合は umount.cifs のような umount 補助プログラムは実行されない。
+	umount.cifs コマンドは Linux でのみ機能する。但し、カーネルが cifs ファイルシステムに対応している必要がある。
+	CIFS プロトコルは、SMB プロトコルの後継で、
+	よく知られた Open Source サーバである Samba 以外にも、殆どの Windows サーバや他の多くの商用サーバ、NAS 製品等で利用されている。
+	</para>
+
+	<para>
+	umount.cifs ユーティリティは、
+	一致する UNC 名 (サーバ側のネットワーク資源) からローカルディレクトリ <emphasis>mount-point</emphasis> を切り離し、
+	関連づけられたカーネル資源を解放する。
+	umount.cifs のファイルモードを setuid ルートに設定する (又はファイル /etc/permissions を同様の設定を行なう) ことで、
+	書込み許可を持つディレクトリへの共有を非ルートユーザが umount 出来るようになる。
+	ルートユーザに実行された
+	ルートユーザのみがアンマウント可能であるかどうかや、
+	/etc/fstab で明示的に指定されたエントリによってマウントやアンマウントを行なえるかどうかは、
+	典型的に umount.cifs ユーティリティの必要とするところではない。
+	詳細は <citerefentry><refentrytitle>fstab</refentrytitle> <manvolnum>5</manvolnum></citerefentry>
+	を参照のこと。</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+	<variablelist>
+        <varlistentry>
+                <term>--verbose</term>
+                <listitem><para>デバッグ情報も表示する</para></listitem>
+        </varlistentry>
+        <varlistentry>
+                <term>--no-mtab</term>
+                <listitem><para>アンマウントが正しく完了した場合でも mtab を更新しない (/proc/mounts は正しい情報を表示し続ける)</para></listitem>
+        </varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>備考</title>
+	
+	<para>(ルートユーザは常にアンマウントを実行可能なので)
+	このコマンドは通常 setuid を設定して使われることを意図されている。
+	umount.cifs を使う代わりに、
+	特定のユーザがマウントやアンマウント出来るように /etc/fstab に特定のエントリを追加しても構わない。</para>
+</refsect1>
+
+<refsect1>
+	<title>設定方法</title>
+		<para>
+設定を変更したり、cifs vfs 用のデバッグ情報を読んだりする場合は、
+基本的に Linux /proc ファイルシステム経由で行なう。
+ディレクトリ <filename>/proc/fs/cifs</filename> には、
+デバッグ情報を表示出来る様々な設定ファイルや擬似ファイルがある。
+より詳細な情報は、
+カーネルファイル <filename>fs/cifs/README</filename> を参照のこと。
+</para>
+</refsect1>
+
+<refsect1>
+	<title>バグ</title>
+
+	<para>現時点では、umount.cifs は umount ユーティリティと同一のロックを用いるマウントテーブルをロックしない。
+	このため、異なるプロセスから複数のアンマウントを実行しようとしてはならない。
+	(特に cifs マウントとそれ以外の種類のファイルシステムのマウントを同時にアンマウントしないように。)
+	</para>
+
+	<para>同一のマウントポイントを cifs 複数回マウントした場合、
+	umount.cifs は /etc/mtab の中でマッチするエントリのうち最後のものをマウントテーブルから削除するのではなく、
+	マッチするエントリの全てを削除する。
+	(実際には、umount.cifs は最後のものしかアンマウントしていない。)
+	疑似ファイル /proc/mounts は正しい情報を表示するので、
+	/etc/mtab にエントリが存在しなくても外のアンマウントを妨げることはない。
+	</para>
+
+	<para>バグ報告への対応では、まず最新版で試してみることを提案することがよくある。
+	それを試した後、
+	バグ報告の際には関連するソフトウェアの使用中バージョンを必ず報告に含めることを強くお願いしたい。
+	最低限、umount.cifs (umount.cifs -V を参照)、カーネル (/proc/version を参照)、
+	及び接続したいサーバタイプは含めておいて欲しい。
+	</para>
+</refsect1>
+
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは cifs vfs ファイルシステムバージョン 1.34 (Linux kernel 2.6.12 辺り) 用に書かれている。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para>
+	Linux カーネルソースツリーの Documentation/filesystems/cifs.txt 及び fs/cifs/README には、
+	追加のオプションや情報が書かれている。
+</para>
+        <para><citerefentry><refentrytitle>mount.cifs</refentrytitle>
+        <manvolnum>8</manvolnum></citerefentry></para>
+
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>Steve French</para>
+
+	<para>文法は umount ユーティリティにほぼ準拠し、マニュアルページは mount.cifs.8 にほぼ準拠する。
+	本マニュアルページは Steve French が作成した。</para> 
+	<para>Linux cifs vfs 及びユーザ空間ツール <emphasis>umount.cifs</emphasis> のメンテナは
+		<ulink url="mailto:sfrench@samba.org">Steve French</ulink> である。
+		これらプログラムに関する問い合わせは、
+		<ulink url="mailto:linux-cifs-client@lists.samba.org">Linux CIFS メーリングリスト</ulink> まで。 
+	</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>しらいたかし</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+</refentry>

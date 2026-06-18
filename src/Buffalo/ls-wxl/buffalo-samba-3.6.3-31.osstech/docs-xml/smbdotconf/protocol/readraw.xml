@@ -1,0 +1,25 @@
+<samba:parameter name="read raw"
+                 context="G"
+				 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、データをクライアントに転送する際に、
+    サーバ側で raw read SMB リクエストをサポートするかどうかを設定する。
+    </para>
+
+    <para> 有効な場合、
+    raw read SMB により、1パケットあたり 65535 バイトの読み込みが可能となる。
+    これは性能の向上に大きく貢献する。</para>
+
+    <para>ただし、クライアントによっては、ブロックサイズを誤認識したり、
+    大きなブロックサイズを利用できなかったりするので、その場合は、
+    raw read を無効にする必要があるだろう。</para>
+
+    <para> このパラメータは、システムのチューニングパラメータであり、
+    通常は設定を変更すべきものではない。</para>
+</description>
+<value type="default">yes</value>
+
+<related>write raw</related>
+</samba:parameter>

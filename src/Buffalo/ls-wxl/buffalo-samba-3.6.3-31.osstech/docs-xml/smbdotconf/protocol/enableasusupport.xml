@@ -1,0 +1,16 @@
+<samba:parameter name="enable asu support"
+                 context="G"
+                 advanced="1" developer="1"
+		 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>「Advanced Server for Unix (ASU)」というプロダクトを実行しているホストでは、
+    IPC コネクションのみをサポートするビルトイン [ADMIN$] 共有が作成されるなど、
+    ASU 特有の動作が幾つか存在する。長年、これは smbd の既定値の動作でもあった。
+    ところが、Print Migrator tool というマイクロソフトのアプリケーションでは、
+    リモートのサーバで [ADMIN$] というファイル共有がサポートされている必要がある。
+    このパラメータを無効にすることで、smb.conf に [ADMIN$] というファイル共有を作成することが可能になる。
+    </para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

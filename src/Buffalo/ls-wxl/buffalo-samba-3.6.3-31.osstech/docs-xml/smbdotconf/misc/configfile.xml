@@ -1,0 +1,24 @@
+<samba:parameter name="config file"
+                 context="G"
+				 type="string"
+		 hide="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このオプションを指定することで、デフォルトの設定ファイル
+	(通常<filename moreinfo="none">smb.conf</filename>)の代わりのファイルを利用して、
+	設定を上書きすることが可能になる。このオプション自身が
+	config file 中に記述されるため、これには「鶏と卵」問題がある。</para>
+
+	<para>そのため、このパラメータによって設定ファイルが変更されると、
+	新しい設定ファイルの内容が先頭からロードされる。
+	</para>
+
+	<para>このオプションには、通常の変数置換が適用されるので、
+	うまく使えばとても便利であろう。</para>
+
+	<para>指定された設定ファイルが存在しない場合は読み込まれない
+	(これにより、特定クライアントに対して、
+	特別な設定ファイルを指定するということが可能となる)。</para>
+</description>
+<value type="example">/usr/local/samba/lib/smb.conf.%m</value>
+</samba:parameter>

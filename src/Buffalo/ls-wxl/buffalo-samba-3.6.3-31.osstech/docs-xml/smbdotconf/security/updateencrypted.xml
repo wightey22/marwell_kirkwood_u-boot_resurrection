@@ -1,0 +1,36 @@
+<samba:parameter name="update encrypted"
+				 type="boolean"
+                 basic="1" advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> この真偽値パラメータにより、
+    平文パスワードでログインしたユーザのログオン時に、
+    そのユーザの暗号化(ハッシュ化)パスワードが自動的に smbpasswd ファイル中に格納されるようになる。
+    このオプションにより、暗号化パスワード認証を有効にする際、
+    ユーザに smbpasswd へのパスワード再入力を強制することなく、
+    平文パスワード認証
+    (平文パスワードによるユーザ認証情報がネットワーク上を流れて UNIX
+    側のアカウントデータベースで照会される)から暗号化パスワード認証
+    (SMB のチャレンジアンドレスポンス認証) への移行を行うことが可能になる。
+    これは便利なオプションで、
+    ある程度の時間をかけて徐々に暗号化パスワードへと移行することを可能にする。
+    すべてのユーザが smbpasswd ファイルに暗号化パスワードを格納したら、
+    このパラメータを <constant>no</constant> に設定すべきだろう。
+    </para>
+
+    <para>
+    <para>このパラメータは
+    <smbconfoption name="encrypt passwords"/>
+    が <constant>no</constant> に設定されている時のみ動作する。</para>
+    <smbconfoption name="encrypt passwords">Yes</smbconfoption> がデフォルトであるため、
+    <smbconfoption name="update encrypted"/> を動作させるには
+    このパラメータを <constant>no</constant> に設定する必要があることに注意。
+    </para>
+
+    <para> このパラメータが有効になっている場合であっても、
+    <command moreinfo="none">smbd</command> に接続するユーザは正しいパスワードを入力して、
+    (smbpasswdファイル中の)暗号化されたパスワードを更新する必要がある。
+    </para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<refentry id="ldbsearch.1">
+
+<refmeta>
+	<refentrytitle>ldbsearch</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>ldbsearch</refname>
+	<refpurpose>LDB データベース中のレコードを検索する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>ldbsearch</command>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-s base|one|sub</arg>
+		<arg choice="opt">-b basedn</arg>
+		<arg chioce="opt">-i</arg>
+		<arg choice="opt">-H LDB-URL</arg>
+		<arg choice="opt">検索条件</arg>
+		<arg choice="opt">属性</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>
+ldbsearch は、データベース中から指定された検索条件（書式については 
+ldapsearch(1) のマニュアルページを参照のこと）にマッチするレコードを検索する。
+見つかったそれぞれのレコードについて、指定された属性が表示される。
+	</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-h</term>
+		<listitem><para>
+		使用可能なオプションの一覧を表示する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>-H &lt;ldb-url&gt;</term>
+			<listitem><para>
+				接続するための LDB URL。詳細は ldb(7) を参照のこと。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>-s one|sub|base</term>
+			<listitem><para>使用する検索スコープ。順に１レベル、サブツリーおよび base。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>-i</term>
+			<listitem><para>検索条件を標準入力から読み込む。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+			<term>-b basedn</term>
+			<listitem><para>使用する base DN を指定する。</para></listitem>
+		</varlistentry>
+		
+	</variablelist>
+	
+</refsect1>
+
+<refsect1>
+	<title>環境変数</title>
+
+	<variablelist>
+		<varlistentry><term>LDB_URL</term>
+			<listitem><para>
+接続先 LDB の URL（ -H コマンドラインオプションで上書きできる）
+					</para></listitem>
+		</varlistentry>
+	</variablelist>
+	
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルは Samba スイートのバージョン 4.0 に適合する。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+
+	<para>ldb(7), ldbedit(1)</para>
+
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+		ldb は
+		 <ulink url="http://samba.org/~tridge/">Andrew Tridgell</ulink>
+		によって書かれた。
+	</para>
+
+	<para>
+問題を報告したり何らかの提案をしたい場合は、
+<ulink url="http://ldb.samba.org/"/> Web サイトで現在の連絡先と
+メンテナー情報を確認してほしい。
+	</para>
+
+	<para>このマニュアルページは Jelmer Vernooij により書かれた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+		によって行なわれた。</para>
+</refsect1>
+
+</refentry>

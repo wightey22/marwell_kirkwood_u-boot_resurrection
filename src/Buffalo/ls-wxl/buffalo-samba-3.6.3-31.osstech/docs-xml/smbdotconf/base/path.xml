@@ -1,0 +1,17 @@
+<samba:parameter name="path"
+                 context="S"
+                 basic="1" advanced="1" share="1" print="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>directory</synonym>
+<description>
+        <para>このパラメータは、サービスに接続したユーザがアクセスするディレクトリを指定する。印刷サービスの場合、これは印刷データがホストの印刷機構に送られる前にスプールされる場所になる。</para>
+
+	<para>ゲストアクセスを許可している印刷サービスの場合、サービスは読みとりのみにした上で、パスは全ユーザ書き込み可能として sticky ビットをセットすべきである。これはもちろん必須ではないが、このようにしない限りは、おそらく意図した設定を行なうことができないだろう。</para>
+
+	<para><parameter moreinfo="none">%u</parameter> は、クライアントが接続する際に使用した UNIX のユーザ名に置換される。<parameter moreinfo="none">%m</parameter> は、接続してきたマシンの NetBIOS 名に置換される。これらの置換機能は、ユーザに仮想的なホームディレクトリを設定する際非常に有用である。</para>
+
+    <para><smbconfoption name="root dir"/> が指定されていた場合、このパラメータもその影響を受けることに注意。</para>
+</description>
+<value type="default"></value>
+<value type="example">/home/fred</value>
+</samba:parameter>

@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbtar.1">
+
+<refmeta>
+	<refentrytitle>smbtar</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbtar</refname>
+	<refpurpose>SMB/CIFS の共有ディレクトリから直接 UNIX のテープ・ドライブへ
+	バックアップを行うためのシェル・スクリプト </refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbtar</command>
+		<arg choice="opt">-r</arg>
+		<arg choice="opt">-i</arg>
+		<arg choice="opt">-a</arg>
+		<arg choice="opt">-v</arg>
+		<arg choice="req">-s server</arg>
+		<arg choice="opt">-p password</arg>
+		<arg choice="opt">-x services</arg>
+		<arg choice="opt">-X</arg>
+		<arg choice="opt">-N filename</arg>
+		<arg choice="opt">-b blocksize</arg>
+		<arg choice="opt">-d directory</arg>
+		<arg choice="opt">-l loglevel</arg>
+		<arg choice="opt">-u user</arg>
+		<arg choice="opt">-t tape</arg>
+		<arg choice="req">filenames</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>smbtar</command> は <citerefentry><refentrytitle>smbclient
+	</refentrytitle><manvolnum>1</manvolnum></citerefentry> をハンドルする
+	とても小さいシェルスクリプトであり、SMB の共有ディレクトリを直接テープへ
+	ダンプする。</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-s server</term>
+		<listitem><para>共有がある SMB/CIFS サーバ。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-x service</term>
+		<listitem><para>サーバ上の接続する共有名。デフォルト値は "backup"。
+		</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-X</term>
+		<listitem><para>除外モード。tar の作成または復元から filenames...
+		を除外する。</para></listitem>
+		</varlistentry>
+
+
+
+		<varlistentry>
+		<term>-d directory</term>
+		<listitem><para>ファイルの復元/バックアップをおこなう前に移動する初期
+		<parameter>ディレクトリ</parameter>。</para></listitem>
+		</varlistentry>
+
+
+
+		<varlistentry>
+		<term>-v</term>
+		<listitem><para>冗長モード。</para></listitem>
+		</varlistentry>
+
+
+
+		<varlistentry>
+		<term>-p password</term>
+		<listitem><para>共有へアクセスするために使用するパスワード。
+		デフォルト値: なし。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-u user</term>
+		<listitem><para>接続するためのユーザ ID。
+		デフォルト値: UNIX のログイン名。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-a</term>
+		<listitem><para>DOS アーカイブ・ビット・モードをリセットし、ファイルがすでにアーカイブされていることがわかるようにする。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-t tape</term>
+		<listitem><para>テープ・デバイス。通常のファイルかテープ・デバイス
+		である。デフォルト値: <parameter>$TAPE</parameter> 環境変数。
+		設定されていなければ、<filename>tar.out</filename> という名前の
+		ファイル。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-b blocksize</term>
+		<listitem><para>ブロック化係数。既定値は 20。詳細な説明は <command>
+		tar(1)</command> を参照のこと。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-N filename</term>
+		<listitem><para>filename より新しいファイルだけをバックアップする。
+		例えば、ログ・ファイルを差分 (incremental) バックアップするのに
+		利用できる。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-i</term>
+		<listitem><para>差分 (incremental) モード。アーカイブ・ビットが
+		セットされているファイルだけバックアップする。アーカイブ・ビットは
+		各ファイルが読み出された後にリセットされる。</para></listitem>
+		</varlistentry>
+
+
+		<varlistentry>
+		<term>-r</term>
+		<listitem><para>復元。ファイルが tar ファイルから共有へ復元される。
+		</para></listitem>
+		</varlistentry>
+
+
+
+		<varlistentry>
+		<term>-l log level</term>
+		<listitem><para>ログ (デバッグ) のレベル。<citerefentry>
+		<refentrytitle>smbclient</refentrytitle><manvolnum>1</manvolnum>
+		</citerefentry> の <parameter>-d</parameter> フラグに相当する。 
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>環境変数</title>
+
+	<para><parameter>$TAPE</parameter> 変数は書き込み先となるデフォルトの
+	テープ・デバイスを指定する。-t オプションで上書きできる。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バグ</title>
+
+	<para><command>smbtar</command> スクリプトは普通の tar とは異なる
+	オプションを受け取る。また tar は smbclient から起動される。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>警告</title>
+
+	<para> セキュリティにいっそうの注意を払っているサイトでは、スクリプトが
+	PC のパスワードを扱うやり方を好まないだろう。バックアップと復元は共有全体に
+	対しても、ファイルの一覧に対しても動作する。smbtar は GNU tar
+	との親和性が高いが、ほかのバージョンの tar ではうまく動作しないかもしれない。
+	</para>
+</refsect1>
+
+
+<refsect1>
+	<title>診断</title>
+
+	<para><citerefentry><refentrytitle>smbclient</refentrytitle><manvolnum>1
+	</manvolnum></citerefentry> コマンドの <emphasis>DIAGNOSTICS</emphasis>
+	セクションを参照のこと。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>この man ページは、Samba システムのバージョン 3.用である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry>
+	<refentrytitle>smbclient</refentrytitle><manvolnum>1</manvolnum>
+	</citerefentry>, <citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>.</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作られた。Samba は現在 Linux カーネルが開発されている
+	ように、オープンソースプロジェクトである Samba Team
+	によって開発されている。</para>
+	
+<para><ulink noescape="1" url="mailto:poultenr@logica.co.uk">Ricky Poulten</ulink>  
+	が tar の拡張とこのマニュアルページを書いた。<command>smbtar</command>
+	スクリプトは <ulink noescape="1" url="mailto:Martin.Kraemer@mch.sni.de">
+	Martin Kraemer</ulink> によって大幅に改良し書き直された。拡張、改良、
+	バグフィックス、その他の提案 をしてくれた大勢に感謝する。マニュアルページは
+	YODL 形式 (別の、優秀なオープンソースソフトウェアで、<ulink noescape="1"
+	url="ftp://ftp.icce.rug.nl/pub/unix/">ftp://ftp.icce.rug.nl/pub/unix/
+	</ulink> にある) で変換され、Jeremy Allison によって Samba 2.0
+	リリースのために更新された。Samba 2.2 のための DocBook 形式への変換は
+	Gerald Carter が行った。Samba 3.0 のための DocBook XML 4.2 形式の変換は
+	Alexander Bokovoy が行った。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>佐藤 文優</para></listitem>
+		<listitem><para>高橋 基信 (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+	によって行なわれた。</para>
+</refsect1>
+
+</refentry>
+

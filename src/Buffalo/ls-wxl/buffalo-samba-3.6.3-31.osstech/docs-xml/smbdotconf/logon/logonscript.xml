@@ -1,0 +1,49 @@
+<samba:parameter name="logon script"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、
+	ユーザのログインが成功した際にダウンロードして実行される、
+	バッチファイル (.bat) や Windows NT のコマンドファイル (.cmd) を指定する。
+	ファイルは DOS 形式の行末(改行コード) CR/LF でなければならない。
+	ファイルの作成には DOS 形式のエディタを使うことが推奨される。</para>
+		
+	<para> スクリプトは
+	<smbconfsection name="[netlogon]"/> サービスからの相対パスで記述する必要がある。
+	[netlogon] サービスの <smbconfoption name="path"/> が <filename moreinfo="none">/usr/local/samba/netlogon</filename>
+	で、<smbconfoption name="logon script">STARTUP.BAT</smbconfoption> の場合、
+	実際にファイルがダウンロードされるパスは以下のものになる:
+<programlisting>
+	/usr/local/samba/netlogon/STARTUP.BAT
+</programlisting>
+	</para>
+
+	<para> バッチファイルの中身は自由に記述することが可能である。
+	推奨されるコマンドとしては、
+	各マシンを同じタイムサーバの時刻と同期するようにさせる
+	<command moreinfo="none">NET TIME \\SERVER /SET /YES</command> がある。
+	ほかには、共通に利用されるユーティリティ用に、例えば
+	<command moreinfo="none">NET USE U: \\SERVER\UTILS</command>
+	という設定を行なったり、サンプルとして 
+<programlisting>
+<userinput>NET USE Q: \\SERVER\ISO9001_QA</userinput>
+</programlisting> 
+        といった設定を行ったりすることが挙げられる。</para>
+
+	<para> [netlogon] 共有に対しては、
+	バッチファイルが改変されてセキュリティが侵害されてしまわないように、
+	書き込みアクセスを許可しないか、
+	安全な環境下でのみバッチファイルへの書き込み権限をユーザに与えるようにすること。
+	</para>
+
+	<para>このオプションには、標準の変数置換が適用されるため、
+	個々のユーザやマシン毎にログオンスクリプトを分けることが可能になる。</para>
+
+	<para>このパラメータは、Sambaがログオンサーバとして構成された場合のみ、
+	意味をもつ。</para>
+</description>
+<value type="default"></value>
+<value type="example">scripts\%U.bat</value>
+</samba:parameter>

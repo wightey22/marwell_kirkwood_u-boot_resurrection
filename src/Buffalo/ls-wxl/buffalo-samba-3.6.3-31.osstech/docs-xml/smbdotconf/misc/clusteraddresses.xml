@@ -1,0 +1,17 @@
+<samba:parameter name="cluster addresses"
+	         context="G"
+			 type="list"
+		 developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+このパラメータを使うと、nmbd が WINS サーバに登録する追加のアドレスを
+付加することができる。これらのアドレス(群)は、すべてのノード上で
+同時に存在しなければならないわけではないが、これらは WINS サーバに
+登録されるため、クライアントはこれらのうちのどのノードにも接続できる。
+	</para>
+</description>
+
+<value type="default"></value>
+<value type="example">10.0.0.1 10.0.0.2 10.0.0.3</value>
+</samba:parameter>

@@ -1,0 +1,152 @@
+.\"     Title: groupmod
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Polecenia Zarządzania Systemem
+.\"    Source: Polecenia Zarządzania Systemem
+.\"
+.TH "GROUPMOD" "8" "11/23/2008" "Polecenia Zarządzania Systemem" "Polecenia Zarządzania Systemem"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAZWA"
+groupmod \- modyfikuj definicję grupy systemowej
+.SH "SKŁADNIA"
+.HP 9
+\fBgroupmod\fR [\fIopcje\fR] \fIGRUPA\fR
+.SH "OPIS"
+.PP
+Polcenie
+\fBgroupmod\fR
+modifikuje definicję grupy
+\fIGRUPA\fR
+poprzez modifikację stosownego wpisu w bazie grup\&.
+.SH "OPCJE"
+.PP
+Polecenie
+\fBgroupmod\fR
+posiada następujące opcje:
+.PP
+\fB\-g\fR, \fB\-\-gid\fR\fIGID\fR
+.RS 4
+The group ID of the given
+\fIGROUP\fR
+will be changed to
+\fIGID\fR\&. The value of
+\fIGID\fR
+must be a non\-negative decimal integer\&. This value must be unique, unless the
+\fB\-o\fR
+option is used\&. Values between 0 and 999 are typically reserved for system groups\&. Any files that have the old group ID and must continue to belong to
+\fIGROUP\fR, must have their group ID changed manually\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Wyświetlenie komunikatu pomocy i zakończenie działania\&.
+.RE
+.PP
+\fB\-a\fR, \fB\-\-append\fR\fINOWA_GRUPA\fR
+.RS 4
+Nazwa grupy zostanie zmieniona z
+\fIGRUPA\fR
+na nazwę
+\fINOWA_GRUPA\fR\&.
+.RE
+.PP
+\fB\-o\fR, \fB\-\-non\-unique\fR
+.RS 4
+When used with the
+\fB\-g\fR
+option, allow to change the group
+\fIGID\fR
+to a non\-unique value\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-password\fR\fIHASŁO\fR
+.RS 4
+The encrypted password, as returned by
+\fBcrypt\fR(3)\&. The default is to disable the password\&.
+.RE
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "PLIKI"
+.PP
+\fI/etc/group\fR
+.RS 4
+Informacje o grupach użytkowników\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informacje chronione o grupach użytkowników\&.
+.RE
+.SH "KOD ZAKOŃCZENIA"
+.PP
+Polecenie
+\fBgroupmod\fR
+kończy działanie z następującymi wartościami kodów zakończenia:
+.PP
+\fI0\fR
+.RS 4
+poprawne zakończenie działania programu
+.RE
+.PP
+\fI2\fR
+.RS 4
+niepoprawna składnia polecenia
+.RE
+.PP
+\fI3\fR
+.RS 4
+nieprawidłowy argument opcji
+.RE
+.PP
+\fI4\fR
+.RS 4
+specified group doesn\'t exist
+.RE
+.PP
+\fI6\fR
+.RS 4
+specified group doesn\'t exist
+.RE
+.PP
+\fI9\fR
+.RS 4
+nazwa grupy już jest w użyciu
+.RE
+.PP
+\fI10\fR
+.RS 4
+nie można zaktualizować pliku z grupami
+.RE
+.SH "ZOBACZ TAKŻE"
+.PP
+\fBchfn\fR(1),
+\fBchsh\fR(1),
+\fBpasswd\fR(1),
+\fBgpasswd\fR(8),
+\fBgroupadd\fR(8),
+\fBgroupdel\fR(8),
+\fBuseradd\fR(8),
+\fBuserdel\fR(8),
+\fBusermod\fR(8)\&.

@@ -1,0 +1,18 @@
+<samba:parameter name="ntlm auth"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、<citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が NTLM レスポンスを用いてユーザ認証を行なうかどうかが設定される。
+      このパラメータを無効にすると、クライアントは LANMAN パスワードハッシュ
+      か NTLMv2 レスポンスを送信する必要がある。</para>
+    <para>このオプションと <command moreinfo="none">lanman
+    auth</command> の両方を無効にした場合、NTLMv2 ログインのみが可能となる。すべての
+    クライアントが NTLMv2 をサポートしているわけではなく、ほとんどの場合、NTLMv2 を
+    使用するためには、明示的に設定を行なうことが必要である。</para>
+</description>
+
+<value type="default">yes</value>
+</samba:parameter>

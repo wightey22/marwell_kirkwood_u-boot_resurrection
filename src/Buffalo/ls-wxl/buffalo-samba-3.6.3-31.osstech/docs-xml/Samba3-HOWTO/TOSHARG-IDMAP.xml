@@ -1,0 +1,1178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="idmapper">
+<chapterinfo>
+	&author.jht;
+</chapterinfo>
+
+<title>識別情報のマッピング(IDMAP)</title>
+
+<para>
+<indexterm><primary>Windows</primary></indexterm>
+<indexterm><primary>相互運用性</primary></indexterm>
+<indexterm><primary>IDMAP</primary></indexterm>
+<indexterm><primary>Windows Security Identifiers</primary><see>SID</see></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+Microsoft Windows オペレーティングシステムは、Sambaを実装したOSとの間での相互運用性を
+行うために、難しい問題を要求してくるといういくつかの特徴がある。この章では、
+SambaサーバをMicrosoft Windowsネットワーク環境に統合するための難問の1つを解決するために
+使う、Samba-3(バージョン 3.0.8以降)のメカニズムについて明示的に説明する。この章では、
+Windowsのセキュリティ識別子(SID)をUNIXのUIDとGIDについての識別情報マッピング(IDMAP)
+について説明する。
+</para>
+
+<para>
+いろいろな場面において十分に適用出来るようにするため、各可能なSambaの配布タイプに
+ついて解説を行う。これは、どのようにIDMAP機能が実装されたかについての概要によって
+フォローされる。
+</para>
+
+<para>
+<indexterm><primary>ネットワーククライアント</primary></indexterm>
+<indexterm><primary>IDMAP</primary></indexterm>
+<indexterm><primary>IDMAP infrastructure</primary></indexterm>
+<indexterm><primary>既定値の動作</primary></indexterm>
+IDMAP機能は、複数のSambaサーバ(またはSambaネットワーククライアント)がドメイン中で
+インストールされている場合に重要である。単一のSambaサーバにおいては、IDMAP基盤
+については余り気にかける必要はない。&smbmdash;既定値におけるSambaの動作はほとんど
+の場合、十分に使えるものである。複数のSambaサーバが使われる場合、あるサーバから
+別のサーバにデータを移動する時にはしばしばこれが必要で、それはやっかい事が始まる
+所でもある!
+</para>
+
+<para>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>nss_ldap</primary></indexterm>
+<indexterm><primary>NT4のドメインメンバ</primary></indexterm>
+<indexterm><primary>ADSのドメインメンバ</primary></indexterm>
+<indexterm><primary>security name-space</primary></indexterm>
+LDAPディレクトリ中にユーザとグループアカウント情報が格納されている場合、すべてのサーバは
+ユーザとグループに対して一貫したUIDとGIDを使うことが出来る。これは、NSSとnss_ldapツール
+を使うことで出来る。Sambaはローカルアカウントのみを使うように設定出来、その場合、IDMAP
+での問題が発生する範囲は若干少なくなる。これは、サーバが単一のドメインに属していて、
+ドメイン間の信頼関係が必要ない時に有効に動作する。別の言い方をすると、もしもSamba
+サーバがNT4ドメインのメンバかADSのドメインメンバである場合か、不慮のクロスオーバが
+ないように、セキュリティ名前空間を保持する必要がある場合、(すなわち、ユーザ
+<literal>DOMINICUS\FJones</literal>は<literal>FRANCISCUS\FJones</literal>という
+ユーザのアカウントリソースへのアクセスが出来ないようにしなければならない)
+<footnote>Sambaローカルアカウントモードは、<literal>DOMINICUS\FJones</literal>と
+<literal>FRANCISCUS\FJones</literal>の両者について、UNIXユーザ
+<literal>FJones</literal>へマッピングを行う。</footnote>クローズする試みは、
+IDMAP機能が設定されているという方法に対して提供されなければならない。
+</para>
+
+<para>
+<indexterm><primary>IDMAP</primary></indexterm>
+<indexterm><primary>domain access</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>one domain</primary></indexterm>
+IDMAPの使用は、Sambaサーバが一つ以上のドメインからワークステーションまたはサーバによって
+アクセスされる場合に重要であり、そのような場合、winbindを動作させることが重要で、そうする
+と、外部のSIDをローカルのUNIX UIDとGIDに解決(IDマッピング)することが出来るようになる。
+</para>
+
+<para>
+<indexterm><primary>winbindd</primary></indexterm>
+IDMAP機能は、Samba起動時に<command>winbindd</command>の実行を必要とする。
+</para>
+
+<sect1>
+<title>SambaサーバのサーバタイプとIDMAP</title>
+
+<para>
+<indexterm><primary>サーバタイプ</primary></indexterm>
+4つの基本的なサーバタイプがあり、これは、
+ <link linkend="ServerType">サーバタイプとセキュリティモードの章</link>に
+説明がある。
+</para>
+
+	<sect2>
+	<title>スタンドアロンSambaサーバ</title>
+
+	<para>
+	<indexterm><primary>スタンドアロンサーバ</primary></indexterm>
+	<indexterm><primary>Active Directory</primary></indexterm>
+	<indexterm><primary>NT4ドメイン</primary></indexterm>
+	スタンドアロンSambaサーバはWindows NT4ドメイン、Windows 200x Active Directory
+	ドメインかSambaドメインのメンバでない形で動く。
+	</para>
+
+	<para>
+	<indexterm><primary>IDMAP</primary></indexterm>
+	<indexterm><primary>identity</primary></indexterm>
+	<indexterm><primary>ローカルユーザ</primary></indexterm>
+	定義により、これは、ユーザとグループはローカルに作成/制御され、ネットワーク
+	ユーザの識別はローカルのUNIX/Linuxユーザログイン情報に一致しなければならない。
+	そのため、IDMAP機能はほとんど関心を払う必要はなく、winbindも不要で、IDMAP
+	機能は関連しないか、興味を持つべきものではない。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ドメインメンバサーバかドメインメンバクライアント</title>
+
+	<para>
+	<indexterm><primary>PDC</primary></indexterm>
+	<indexterm><primary>BDC</primary></indexterm>
+	<indexterm><primary>NT4</primary></indexterm>
+	<indexterm><primary>SID</primary></indexterm>
+	<indexterm><primary>Active Directory</primary></indexterm>
+	Samba-3はWindows NT4 PDCまたはBDCとして動作でき、それによって、Windows NT4と
+	互換性を持つドメイン制御プロトコルを提供する。Samba-3のファイルと印刷共有
+	プロトコルはすべてのバージョンのMicrosoft Windows製品と互換がある。Windows NT4は
+	Microsoft Windows Active Directoryと同様、広範囲にWindows SIDを使用する。
+	</para>
+
+	<para>
+	<indexterm><primary>MS Windows SID</primary></indexterm>
+	<indexterm><primary>UID</primary></indexterm>
+	<indexterm><primary>GID</primary></indexterm>
+	Samba-3ドメインメンバサーバとクライアントはMicrosoft Windows SIDと正しく相互に
+	処理を行わなければならない。入力されたSIDはローカルのUNIX UIDとGIDに変換され
+	なければならない。Sambaサーバから出力する情報は、適切なSIDでMicrosoft Windows
+	クライアントとサーバに提供されなければならない。
+	</para>
+
+	<para>
+	<indexterm><primary>ADS</primary></indexterm>
+	<indexterm><primary>winbind</primary></indexterm>
+	Windowsネットワークドメイン(NT4形式またはADS)のメンバであるSambaはいろいろな
+	方法で識別情報のマッピングを扱うように設定出来る。使用するメカニズムは、
+	<command>winbindd</command>デーモンが使われるか否かとどのようにwinbindの
+	機能が設定されているかに依存する。設定オプションの簡単な説明は以下の通り:
+	</para>
+
+	<variablelist>
+		<varlistentry><term>Winbindが使用されず、ユーザとグループがローカルの場合: </term>
+			<listitem>
+				<para>
+				<indexterm><primary>winbindd</primary></indexterm>
+				<indexterm><primary>smbd</primary></indexterm>
+				<indexterm><primary>ネットワークトラフィック</primary></indexterm>
+				<indexterm><primary>LoginID</primary></indexterm>
+				<indexterm><primary>アカウント名</primary></indexterm>
+				<indexterm><primary>getpwnam</primary></indexterm>
+				<indexterm><primary>NSS</primary></indexterm>
+				<indexterm><primary>ローカルユーザ</primary></indexterm>
+				<indexterm><primary>ローカルグループ</primary></indexterm>
+				<indexterm><primary>/etc/passwd</primary></indexterm>
+				<indexterm><primary>/etc/group</primary></indexterm>
+				<command>winbindd</command>が使われないと、Samba
+				(<command>smbd</command>)は、入力されたネットワークからの
+				情報の識別を解決するための、基本的なUNIX/Linuxメカニズムを
+				使用する。これは、セッションセットアップ要求時にLoginID
+				(アカウント名)を使い、getpwnam()システムファンクションコール
+				にそれを渡す。この呼び出しは最近のUNIX/Linuxシステム上では
+				ネームサービススイッチ(NSS)メカニズムを使うように実装されて
+				いる。"ユーザとグループがローカル"という場合、それらは
+				ローカルシステム上の、<filename>/etc/passwd</filename>と
+				<filename>/etc/group</filename>にそれぞれ格納されることを
+				意味する。
+				</para>
+
+				<para>
+				<indexterm><primary>SessionSetupAndX</primary></indexterm>
+				<indexterm><primary>/etc/passwd</primary></indexterm>
+				たとえば、ユーザ<literal>BERYLIUM\WambatW</literal>が
+				Sambaサーバに対して接続をオープンしようとする場合、
+				入力されるSessionSetupAndX要求は、<filename>/etc/passwd</filename>
+				ファイル中のユーザ<literal>WambatW</literal>を検索するために
+				システムを呼び出す。
+				</para>
+
+				<para>
+				<indexterm><primary>スタンドアロン</primary></indexterm>
+				<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+				<indexterm><primary>NT4</primary></indexterm>
+				<indexterm><primary>ADS</primary></indexterm>
+				<indexterm><primary>PDC</primary></indexterm>
+				<indexterm><primary>smbpasswd</primary></indexterm>
+				<indexterm><primary>tdbsam</primary></indexterm>
+				<indexterm><primary>passdbバックエンド</primary></indexterm>
+				この設定は、スタンドアロンSambaサーバ、ドメインメンバサーバ
+				(NT4またはADS)とsmbpasswdまたはtdbsamベースのSamba passdb
+				バックエンドを使うPDCに対して使うことが出来る。
+				</para>
+			</listitem>
+		</varlistentry>
+	
+		<varlistentry><term>Winbindは使わないが、ユーザとグループはNSS経由で解決する場合</term>
+			<listitem>
+				<para>
+				<indexterm><primary>ユーザアカウント</primary></indexterm>
+				<indexterm><primary>グループアカウント</primary></indexterm>
+				<indexterm><primary>ローカルアカウント</primary></indexterm>
+				<indexterm><primary>リポジトリ</primary></indexterm>
+				<indexterm><primary>NIS</primary></indexterm>
+				<indexterm><primary>LDAP</primary></indexterm>
+				この場合、ユーザとグループアカウントは、ローカルアカウントとして
+				取り扱われる。ローカルアカウントそのものとただ1つ違う点は、
+				共有可能なリポジトリ内にアカウントが格納されると言うことである。
+				一般的には、これは、NIS形式のデータベースか、そうでなければ
+				LDAP内にあると言うことである。
+				</para>
+
+				<para>
+				<indexterm><primary>スタンドアロン</primary></indexterm>
+				<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+				<indexterm><primary>NT4</primary></indexterm>
+				<indexterm><primary>ADS</primary></indexterm>
+				<indexterm><primary>PDC</primary></indexterm>
+				<indexterm><primary>smbpasswd</primary></indexterm>
+				<indexterm><primary>tdbsam</primary></indexterm>
+				この設定は、スタンドアロンSambaサーバ、ドメインメンバサーバ
+				(NT4またはADS)とsmbpasswdまたはtdbsamベースのSamba passdb
+                                バックエンドを使うPDCに対して使うことが出来る。
+				</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>Winbind/NSSと既定値のローカルなIDMAPテーブルの場合: </term>
+			<listitem>
+				<para>
+				<indexterm><primary>NT4ドメイン</primary></indexterm>
+				<indexterm><primary>ADSドメイン</primary></indexterm>
+				<indexterm><primary>winbind</primary></indexterm>
+				<indexterm><primary>ドメイン制御</primary></indexterm>
+				Windows NT4ドメインかADSドメインのメンバである単一のSamba
+				サーバか単純なSambaサーバのみを必要とするサイトは多数ある。
+				標準的なサーバの例は、ドメイン用のドメインコントローラ
+				からアカウント認証情報を入手するためにwinbindを使うように
+				設定され、ローカルアカウントを持たないアプライアンスの
+				ようなファイルサーバである。ドメイン制御機能は、Samba-3、
+				Microsoft Windows NT4かMicrosoft Windows Active Directory
+				によって提供される。
+				</para>
+
+				<para>
+				<indexterm><primary>UID numbers</primary></indexterm>
+				<indexterm><primary>GID numbers</primary></indexterm>
+				<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+				<indexterm><primary>winbind</primary></indexterm>
+				<indexterm><primary>SID</primary></indexterm>
+				Winbindは、この状態においては非常に有益である。必要と
+				されるすべては、&smb.conf;ファイル中で定義することが出来る
+				UIDとGIDの値の範囲である。<filename>/etc/nsswitch.conf</filename>
+				ファイルは、入力されたSIDを適切なUIDとGIDにマッピングする
+				ための、すべての難しい作業をこなす<command>winbind</command>
+				を使うために設定される。SIDはwinbindがそれを受け取る順で
+				UID/GIDに割り当てられる。
+				</para>
+
+				<para>
+				<indexterm><primary>UID</primary></indexterm>
+				<indexterm><primary>GID</primary></indexterm>
+				<indexterm><primary>IDMAP</primary></indexterm>
+				<indexterm><primary>corrupted file</primary></indexterm>
+				この設定は、複数のSambaサーバにまたがってUID/GIDとユーザや
+				グループとのマッピングが同一であることが求められる環境(サイト)
+				では実用的でない。この方法の危険性の1つは、winbind機構の
+				IDMAPデータベースファイルが壊れるか喪失した場合、IDMAP
+				ファイル修正、再生成しても、UIDやGIDが以前と異なるユーザや
+				グループにマッピングされてしまい、結果としてSambaサーバ上に
+				格納されたWindowsファイルの所有者が不正になってしまう可能性
+				がある点である。
+				</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>Winbind/NSSがRIDベースのIDMAPの場合: </term>
+			<listitem>
+				<para>
+				<indexterm><primary>RID</primary></indexterm>
+				<indexterm><primary>idmap_rid</primary></indexterm>
+				<indexterm><primary>ADS</primary></indexterm>
+				<indexterm><primary>LDAP</primary></indexterm>
+				IDMAP_RID機能はSamba 3.0.8から提供された。これは、
+				ADSスキーマ拡張を適用しないMicrosoft ADSを使用する
+				ことに関わりがあり、IDMAPテーブルをメンテナンスする
+				目的のためにLDAPディレクトリサーバをインストールして
+				いない、たくさんのサイトのために作業を簡単にする。
+				もしも単一のADSドメイン(ドメインのフォレストではなく
+				複数のドメインツリーでない)で、IDMAPテーブル問題に
+				対して単純なステレオタイプの解決方法を望んでいるなら、
+				IDMAP_RIDは明らかな選択肢である。
+				</para>
+
+				<para>
+				<indexterm><primary>idmap_rid</primary></indexterm>
+				<indexterm><primary>idmap uid</primary></indexterm>
+				<indexterm><primary>idmap gid</primary></indexterm>
+				<indexterm><primary>RID</primary></indexterm>
+				<indexterm><primary>SID</primary></indexterm>
+				<indexterm><primary>UID</primary></indexterm>
+				<indexterm><primary>idmapバックエンド</primary></indexterm>
+				<indexterm><primary>自動マッピング</primary></indexterm>
+				この機能は<parameter>idmap uid</parameter>と
+				<parameter>idmap gid</parameter>のレンジを割り当てることを
+				要求し、それが、SIDの相対識別子(RID)の部分を直接UIDのベースにRIDの
+				値を足した分に、自動マッピングするための、このレンジの
+				サブセットを割り当てることが可能な
+				<parameter>idmap uid</parameter>の範囲内であることを要求する。
+				たとえば、もしも<parameter>idmap uid</parameter>の範囲が
+				<constant>1000-100000000</constant>で、
+				<parameter>idmap backend = idmap_rid:DOMAIN_NAME=1000-50000000</parameter>
+				で、発生したSIDが
+				<constant>S-1-5-21-34567898-12529001-32973135-1234</constant>
+				という値ならば、結果のUIDは<constant>1000 + 1234 = 2234</constant>である。
+				</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>WinbindとNSS/LDAPバックエンドベースのIDMAP機能: </term>
+			<listitem>
+				<para>
+				<indexterm><primary>ドメインメンバ</primary></indexterm>
+				<indexterm><primary>winbind</primary></indexterm>
+				<indexterm><primary>SID</primary></indexterm>
+				<indexterm><primary>UID</primary></indexterm>
+				<indexterm><primary>GID</primary></indexterm>
+				<indexterm><primary>idmap gid</primary></indexterm>
+				<indexterm><primary>idmap uid</primary></indexterm>
+				<indexterm><primary>LDAP</primary></indexterm>
+				この設定では、<command>winbind</command>は&smb.conf;ファイル内で
+				指定された<parameter>idmap uid</parameter>と
+				<parameter>idmap gid</parameter>の範囲からSIDからUIDとGIDに
+				解決を行うが、ローカルのwinbind IDMAPテーブルを使う代わりに、
+				すべてのドメインメンバマシン(クライアントとサーバ)が共通の
+				IDMAPテーブルを共有できるためのLDAPディレクトリ中に格納された
+				ものを使う。
+				</para>
+
+				<para>
+				<indexterm><primary>idmapバックエンド</primary></indexterm>
+				<indexterm><primary>LDAPサーバ</primary></indexterm>
+				<indexterm><primary>LDAP redirects</primary></indexterm>
+				すべてのLDAP IDMAPクライアントは、&smb.conf;ファイル中の
+				<parameter>idmap backend</parameter>機能がLDAPリダイレクトを
+				正しく扱えないため、マスタLDAPサーバのみを使うということは
+				重要である。
+				</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>UNIX/LinuxのユーザとグループIDを解決するためにNSSを使うwinbindの場合: </term>
+			<listitem>
+				<para>
+				passdb バックエンドとしてのLDAPの使用はPDC、BDCとドメイン
+				メンバサーバに対する優れた解である。それは、UID、GIDと
+				一致したSIDがすべてのサーバ間で首尾一貫している事を
+				保証するきちんとした解である。
+				</para>
+
+				<para>
+				<indexterm><primary>LDAP</primary></indexterm>
+				<indexterm><primary>PADL</primary></indexterm>
+				LDAPベースのpassdbバックエンドの使用は、PADL nss_ldap
+				ユーティリティか同等品を要求する。この状況の場合、
+				winbindは外部のSID、すなわち、スタンドアロン
+				WindowsクライアントからのSID(すなわち、このドメインの
+				メンバでない)を他のドメインからのSIDと同じように
+				扱うために使われる。外部のUID/GIDは、ローカルのIDMAP
+				テーブルでwinbindを使う時と同じ方法で正確に、
+				割り当てられた範囲(idmap uidとidmap gid)にマップされる。
+				</para>
+
+				<para>
+				<indexterm><primary>nss_ldap</primary></indexterm>
+				<indexterm><primary>AD4UNIX</primary></indexterm>
+				<indexterm><primary>MMC</primary></indexterm>
+				nss_ldapツールセットはActive Directory経由と同様に、LDAP
+				経由でUIDとGIDにアクセスするために使われる。Active Directory
+				を使うために、AD4UNIXスキーマ拡張か、Microsoft Services for
+				UNIXバージョン3.5かそれ以降のどちらかをを、UNIXアカウント
+				認証情報を管理するために、ADSスキーマを	拡張するために
+				インストールしてADSスキーマを変更することが必要である。
+				ADSスキーマが拡張されると、Microsoft管理コンソール(MMC)
+				スナップインもADSのユーザとコンピュータ管理ツールから
+				UNIXの認証情報を設定/管理することが出来るようにインストール
+				される。各アカウントは、UIDとGIDデータがSambaによって使われる
+				ことが出来る前に、UNIXで有効な状態と分離されなければならない。
+				</para>
+			</listitem>
+		</varlistentry>
+
+	</variablelist>
+
+	</sect2>
+
+	<sect2>
+	<title>プライマリドメインコントローラ</title>
+
+	<para>
+	<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+	<indexterm><primary>SID</primary></indexterm>
+	<indexterm><primary>RID</primary></indexterm>
+	<indexterm><primary>algorithmic mapping</primary></indexterm>
+	Microsoft Windowsドメインセキュリティシステムは、アカウント作成のプロセスの
+	一部として、ユーザとグループSIDを生成する。WindowsはUNIXのUIDかGIDのような
+	概念を持たない。その代わり、固有のタイプのセキュリティ記述子を持つ。Sambaが
+	ドメインコントローラとして使われる時、各ユーザとグループに固有のSIDを生成する
+	手段を提供する。Sambaは、&smb.conf;ファイル中で指定されたベースの値にUID
+	またはGIDを2倍した値を足すという算術的に計算されたRIDを足すマシンとドメイン
+	SIDを生成する。この方法は<quote>算術的マッピング</quote>と呼ばれる。
+	</para>
+
+	<para>
+	<indexterm><primary>RID base</primary></indexterm>
+	例をあげると、もしもユーザのUIDが4321の場合、算術的なRIDベースが1000だとすると、
+	RIDは<literal>1000 + (2 x 4321) = 9642</literal>となる。そのため、もしもドメイン
+	SIDが<literal>S-1-5-21-89238497-92787123-12341112</literal>ならば、
+	結果のSIDは<literal>S-1-5-21-89238497-92787123-12341112-9642</literal>となる。
+	</para>
+
+	<para>
+	<indexterm><primary>on-the-fly</primary></indexterm>
+	<indexterm><primary>SID</primary></indexterm>
+	<indexterm><primary>passdb backend</primary></indexterm>
+	<indexterm><primary>ldapsam</primary></indexterm>
+	前述のタイプのSIDはSambaによって、自動的な機能としてその場で生成されるか
+	(<parameter>passdb backend = [tdbsam | smbpasswd]</parameter>を使った場合)、
+	あるいはLDAPベースのldapsam中でアカウントの一部として恒久的に格納されても
+	よい。
+	</para>
+
+	<para>
+	<indexterm><primary>SFU 3.5</primary></indexterm>
+	<indexterm><primary>ADS</primary></indexterm>
+	<indexterm><primary>ディレクトリスキーマ</primary></indexterm>
+	<indexterm><primary>アカウント属性</primary></indexterm>
+	<indexterm><primary>UID</primary></indexterm>
+	<indexterm><primary>GID</primary></indexterm>
+	<indexterm><primary>ADS スキーマ</primary></indexterm>
+	<indexterm><primary>アカウント管理</primary></indexterm>
+	<indexterm><primary>MMC</primary></indexterm>
+	ADSはUIDとGIDのような追加のアカウント属性に適応するために拡張できるディレクトリ
+	スキーマを使う。Microsoft Service for UNIX 3.5をインストールすると、通常のADS
+	スキーマをUNIXアカウント属性を含むように拡張する。これらはもちろん通常の
+	ADSアカウント管理のMMCインタフェーススナップインモジュールを等して別途管理され
+	なければならない。
+	</para>
+
+	<para>
+	<indexterm><primary>PDC</primary></indexterm>
+	<indexterm><primary>passdbバックエンド</primary></indexterm>
+	<indexterm><primary>BDC</primary></indexterm>
+	<indexterm><primary>LDAPバックエンド</primary></indexterm>
+	ドメイン内で使われるセキュリティ識別子は、競合を避けるためと完全性を保つために
+	管理されねばならない。NT4ドメインコンテキスト中で、PDCはすべてのセキュリティ
+	認証情報の、バックアップドメインコントローラ(BDC)への配布を管理する。現時点で、
+	そのような情報のために適したSambaドメインコントローラのpassdbバックエンドは、
+	LDAP中バックエンドのみである。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>バックアップドメインコントローラ</title>
+
+	<para>
+	<indexterm><primary>BDC</primary></indexterm>
+	<indexterm><primary>リードオンリアクセス</primary></indexterm>
+	<indexterm><primary>security credentials</primary></indexterm>
+	<indexterm><primary>LDAP</primary></indexterm>
+	<indexterm><primary>グループアカウント</primary></indexterm>
+	<indexterm><primary>write changes</primary></indexterm>
+	<indexterm><primary>ディレクトリ</primary></indexterm>
+	ユーザとグループアカウントの中の情報の変更はBDCからPDCに送られる。PDCのみが
+	ディレクトリに対して書き込むことができる。
+	</para>
+
+	<para>
+	IDMAPの情報は、すべてのドメインコントローラがマスタ(書き込み可能な)LDAPサーバに
+	対してアクセス可能である限り、LDAPサーバに直接書き込める。Samba-3は現時点で
+	IDMAPバックエンド中でLDAPリダイレクトを扱えない。これは、IDMAP機能をスレーブ
+	(複製される)LDAPサーバで使うのは危険だということである。
+	</para>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>IDMAPバックエンドの使用例</title>
+
+<para>
+<indexterm><primary>ドメインメンバサーバ</primary><see>DMS</see></indexterm>
+<indexterm><primary>ドメインメンバクライアント</primary><see>DMC</see></indexterm>
+<indexterm><primary>DMS</primary></indexterm>
+<indexterm><primary>DMC</primary></indexterm>
+<indexterm><primary>winbind</primary></indexterm>
+<command>winbind</command>を使う誰にとっても、下記の設定例は有用である。多くの場合、
+<command>winbind</command>は、ドメインメンバサーバ(DMS)とドメインメンバクライアント
+(DMC)を使うために一番興味がある事項である。
+</para>
+
+	<sect2>
+	<title>規定値のWinbind TDB</title>
+
+	<para>
+	2つの共通的な設定が使われる:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>
+		ネットワーク上にNT4 PDC(BDCがあってもなくても)かSambaPDC(BDCがあってもなくても)がある。
+		</para></listitem>
+
+		<listitem><para>
+		ネットワークは Microsoft Windows 200x ADSを使っている。
+		</para></listitem>
+	</itemizedlist>
+
+	<sect3>
+	<title>NT4形式のドメイン(Sambaドメインを含む)</title>
+
+	<para>
+	<link linkend="idmapnt4dms">NT4ドメインメンバサーバのsmb.con</link>は、NT4
+	 DMSに対する&smb.conf;ファイルのグローバルセクション部分の例を示す。
+	</para>
+
+<example id="idmapnt4dms">
+<title>NT4形式のドメインメンバサーバのsmb.conf</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MEGANET2</smbconfoption>
+<smbconfoption name="security">DOMAIN</smbconfoption>
+<smbconfoption name="idmap uid">10000-20000</smbconfoption>
+<smbconfoption name="idmap gid">10000-20000</smbconfoption>
+<smbconfoption name="template primary group">"Domain Users"</smbconfoption>
+<smbconfoption name="template shell">/bin/bash</smbconfoption>
+</smbconfblock>
+</example>
+
+	<para>
+	<indexterm><primary>winbind</primary></indexterm>
+	<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+	<command>winbind</command>の使用は、NSSの設定を必要とする。以下を含むように
+	<filename>/etc/nsswitch.conf</filename>のエントリを編集する:
+<screen>
+...
+passwd: files winbind
+shadow: files winbind
+group:  files winbind
+...
+hosts:  files [dns] wins
+...
+</screen>
+	ホストエントリでDNSを使う場合は、サイト上でDNSが使われている場合にのみ行う。
+	</para>
+
+	<para>
+	DMSを作成するには以下のような手順を踏む:
+	</para>
+
+	<procedure>
+		<step><para>
+		上記の設定を使って、&smb.conf;ファイルを作成するかインストールする。
+		</para></step>
+
+		<step><para>
+		以下を実行する:
+<screen>
+&rootprompt; net rpc join -UAdministrator%password
+Joined domain MEGANET2.
+</screen>
+	<indexterm><primary>join</primary></indexterm>
+	ドメインへの参加が成功するかどうかは、以下のコマンドで確認できる:
+<screen>
+&rootprompt; net rpc testjoin
+Join to 'MIDEARTH' is OK
+</screen>
+		ドメインへの参加が失敗した場合、以下のようなエラーメッセージが出力される:
+		<indexterm><primary>failed join</primary></indexterm>
+<screen>
+&rootprompt; net rpc testjoin
+[2004/11/05 16:34:12, 0] utils/net_rpc_join.c:net_rpc_join_ok(66)
+Join to domain 'MEGANET2' is not valid
+</screen>
+		</para></step>
+
+		<step><para>
+		<indexterm><primary>nmbd</primary></indexterm>
+		<indexterm><primary>winbind</primary></indexterm>
+		<indexterm><primary>smbd</primary></indexterm>
+		<command>nmbd, winbind,</command>と<command>smbd</command>をこの順番で起動する。
+		</para></step>
+	</procedure>
+
+	</sect3>
+
+	<sect3>
+	<title>ADSドメイン</title>
+
+	<para>
+	<indexterm><primary>domain join</primary></indexterm>
+	<indexterm><primary>ADSドメイン</primary></indexterm>
+	ADSドメインへの参加手続きは、NT4ドメインへの参加と似ているが、&smb.conf;ファイルは
+	<link linkend="idmapadsdms">ADSドメインメンバサーバのsmb.conf</link>で示された
+	内容の部分が異なる。
+	</para>
+
+<example id="idmapadsdms">
+<title>ADSドメインメンバサーバのsmb.conf</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">BUTTERNET</smbconfoption>
+<smbconfoption name="netbios name">GARGOYLE</smbconfoption>
+<smbconfoption name="realm">BUTTERNET.BIZ</smbconfoption>
+<smbconfoption name="security">ADS</smbconfoption>
+<smbconfoption name="template shell">/bin/bash</smbconfoption>
+<smbconfoption name="idmap uid">500-10000000</smbconfoption>
+<smbconfoption name="idmap gid">500-10000000</smbconfoption>
+<smbconfoption name="winbind use default domain">Yes</smbconfoption>
+<smbconfoption name="winbind nested groups">Yes</smbconfoption>
+<smbconfoption name="printer admin">"BUTTERNET\Domain Admins"</smbconfoption>
+</smbconfblock>
+</example>
+
+	<para>
+	<indexterm><primary>KRB</primary></indexterm>
+	<indexterm><primary>kerberos</primary></indexterm>
+	<indexterm><primary>/etc/krb5.conf</primary></indexterm>
+	<indexterm><primary>MIT</primary></indexterm>
+	<indexterm><primary>MIT kerberos</primary></indexterm>
+	<indexterm><primary>Heimdal</primary></indexterm>
+	<indexterm><primary>Heimdal kerberos</primary></indexterm>
+	ADSのDMS操作はkerberos(KRB)を使用すること要求する。これを動作させるため、
+	<filename>krb5.conf</filename>ファイルを設定する必要がある。正確な要求
+	内容は、どのバージョンのMITかHeimdal kerberosが使われているかに依存する。
+	現時点でMIT Kerberosのバージョンが1.3.5で、Heimdal が 0.61である最新の
+	バージョンのみを使うことを推奨する。
+	</para>
+
+	<para>
+	DMSを作成するには以下のステップを必要とする:
+	</para>
+
+	<procedure>
+		<step><para>
+		上記の設定で&smb.conf;ファイルを作成するかインストールする。
+		</para></step>
+
+		<step><para>
+		上記で示されたように、<filename>/etc/nsswitch.conf</filename>ファイルを編集する。
+		</para></step>
+
+		<step><para>
+		以下を実行する:
+		<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>join</tertiary></indexterm>
+<screen>
+&rootprompt; net ads join -UAdministrator%password
+Joined domain BUTTERNET.
+</screen>
+	ドメインへの参加が成功するか失敗するかは以下のコマンドで確認出来る:
+<screen>
+&rootprompt; net ads testjoin
+Using short domain name -- BUTTERNET
+Joined 'GARGOYLE' to realm 'BUTTERNET.BIZ'
+</screen>
+	</para>
+
+	<para>
+	ドメインへの参加が不正か失敗するかは以下を実行することで検出できる:
+<screen>
+&rootprompt; net ads testjoin
+GARGOYLE$@'s password:
+[2004/11/05 16:53:03, 0] utils/net_ads.c:ads_startup(186)
+  ads_connect: No results returned
+Join to domain is not valid
+</screen>
+		<indexterm><primary>エラーメッセージ</primary></indexterm>
+		<indexterm><primary>失敗</primary></indexterm>
+		<indexterm><primary>ログレベル</primary></indexterm>
+		<indexterm><primary>identify</primary></indexterm>
+		特定のエラーメッセージは、発生した不成功のタイプに依存するため、
+		上記とは異なるかもしれない。<parameter>log level</parameter>を10まで
+		増やし、テストを再実行し、失敗の真の原因を探るために､生成されたログ
+		ファイルを調べること。
+		</para></step>
+
+		<step><para>
+		<command>nmbd</command>, <command>winbind</command>と <command>smbd</command>
+		デーモンをこの順番で起動する。
+		</para></step>
+
+	</procedure>
+
+	</sect3>
+	</sect2>
+
+	<sect2>
+	<title>IDMAP_RIDを使うWinbind</title>
+
+	<para>
+	<indexterm><primary>idmap_rid</primary></indexterm>
+	<indexterm><primary>SID</primary></indexterm>
+	<indexterm><primary>RID</primary></indexterm>
+	<indexterm><primary>IDMAP</primary></indexterm>
+	<command>idmap_rid</command>機能は、ネイティブなwinbindとは異なり、新しい
+	ツールで、MicrosoftのSIDをUNIXのUIDとGIDに、予測可能なマッピングを作成する。
+	Samba IDMAP機能にこの手法を実装する一番の利点は、集中したIDMAPデータを保存する
+	必要性をなくすということである。不都合な点は、単一のADSドメイン内のみで使う
+	事ができる事と、ドメイン間信頼機能とは互換性がないことである。
+	</para>
+
+	<para>
+	<indexterm><primary>SID</primary></indexterm>
+	<indexterm><primary>ドメインの信頼を許可する</primary></indexterm>
+	<indexterm><primary>idmap uid</primary></indexterm>
+	<indexterm><primary>idmap gid</primary></indexterm>
+	このSIDからUID/GIDへのマッピングにおける代替手法はidmap_ridプラグインを
+	使って実現できる。このプラグインは、RIDに指定されたベース値を加える事に
+	よってUIDとGIDを引き出すために、ユーザSIDのRIDを使う。このユーティリティは
+	複数のドメイン環境とは互換がない、<quote>allow trusted domains = No</quote>
+	パラメータを指定することを要求する。<parameter>idmap uid</parameter>と
+	<parameter>idmap gid</parameter>の範囲を指定する必要がある。
+	</para>
+
+	<para>
+	<indexterm><primary>idmap_rid</primary></indexterm>
+	<indexterm><primary>realm</primary></indexterm>
+	idmap_rid機能はNT4/Samba形式のドメインとActive Directoryで使える。これをNT4
+	ドメインで使うためには、<parameter>realm</parameter>パラメータを含んでは
+	いけない。さらに、ドメインに参加するために使う手法は、
+	<constant>net rpc join</constant>を使う。
+	</para>
+
+	<para>
+	ADSドメイン環境での&smb.conf;ファイルの例は、
+	<link linkend="idmapadsridDMS">idmap_ridを使うADSドメインメンバのsmb.conf</link>
+	である。
+	</para>
+
+<example id="idmapadsridDMS">
+<title>idmap_ridを使うADSドメインメンバのsmb.conf</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">KPAK</smbconfoption>
+<smbconfoption name="netbios name">BIGJOE</smbconfoption>
+<smbconfoption name="realm">CORP.KPAK.COM</smbconfoption>
+<smbconfoption name="server string">Office Server</smbconfoption>
+<smbconfoption name="security">ADS</smbconfoption>
+<smbconfoption name="allow trusted domains">No</smbconfoption>
+<smbconfoption name="idmap backend">idmap_rid:KPAK=500-100000000</smbconfoption>
+<smbconfoption name="idmap uid">500-100000000</smbconfoption>
+<smbconfoption name="idmap gid">500-100000000</smbconfoption>
+<smbconfoption name="template shell">/bin/bash</smbconfoption>
+<smbconfoption name="winbind use default domain">Yes</smbconfoption>
+<smbconfoption name="winbind enum users">No</smbconfoption>
+<smbconfoption name="winbind enum groups">No</smbconfoption>
+<smbconfoption name="winbind nested groups">Yes</smbconfoption>
+<smbconfoption name="printer admin">"Domain Admins"</smbconfoption>
+</smbconfblock>
+</example>
+
+	<para>
+	<indexterm><primary>大きなドメイン</primary></indexterm>
+	<indexterm><primary>Active Directory</primary></indexterm>
+	<indexterm><primary>response</primary></indexterm>
+	<indexterm><primary>getent</primary></indexterm>
+	たくさんのユーザが居る大きなドメイン中で、ユーザとグループを列挙することを無効に
+	することは避けられない。例えば、Active Directory中に22000人ものユーザが居る
+	サイトで、winbindベースのユーザとグループの解決は、<command>winbind</command>を
+	最初に開始する時点から12分以上利用できない。列挙を無効にすると、瞬間的に反応が
+	返る。ユーザとグループの列挙を無効にすると言うことは、<command>getent passwd</command>
+	と<command>getent group</command>コマンドを使ってユーザかグループの一覧を
+	表示することが出来ないと言うことである。特定のユーザのみを検索することは
+	以下のような方法で可能である。
+	</para>
+
+	<para>
+	<indexterm><primary>NSS</primary></indexterm>
+	<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+	このツールを使用するには、ネイティブなwinbindの使用ごとにNSSの設定を必要とする。
+	以下のパラメータを含むように<filename>/etc/nsswitch.conf</filename>ファイルを
+	編集する。
+<screen>
+...
+passwd: files winbind
+shadow: files winbind
+group:  files winbind
+...
+hosts:  files wins
+...
+</screen>
+	</para>
+
+	<para>
+	以下の手順でidmap_rid機能を使うことが出来る:
+	</para>
+
+	<procedure>
+		<step><para>
+		上記の設定で&smb.conf;ファイルを作成またはインストールする。
+		</para></step>
+
+		<step><para>
+		    上記で示されたように<filename>/etc/nsswitch.conf</filename>ファイルを編集する。
+		</para></step>
+
+		<step><para>
+		以下を実行する:
+<screen>
+&rootprompt; net ads join -UAdministrator%password
+Using short domain name -- KPAK
+Joined 'BIGJOE' to realm 'CORP.KPAK.COM'
+</screen>
+		</para>
+
+		<para>
+		<indexterm><primary>failed join</primary></indexterm>
+		ドメインへの参加が不正または失敗するかは以下を実行することで検出できる:
+<screen>
+&rootprompt; net ads testjoin
+BIGJOE$@'s password:
+[2004/11/05 16:53:03, 0] utils/net_ads.c:ads_startup(186)
+  ads_connect: No results returned
+Join to domain is not valid
+</screen>
+		特定のエラーメッセージは、発生した問題のタイプに依存するため、上記と
+		異なるかもしれない。<parameter>log level</parameter>を10まであげて、
+		テストを再実行し、失敗の真の原因を識別するために生成したログファイルを
+		調べること。
+		</para></step>
+
+		<step><para>
+		<command>nmbd</command>, <command>winbind</command>と<command>smbd</command>
+		デーモンをこの順番で起動する。
+		</para></step>
+
+		<step><para>
+		この設定の動作は以下を実行することで検証できる:
+		<indexterm><primary></primary></indexterm>
+<screen>
+&rootprompt; getent passwd administrator
+administrator:x:1000:1013:Administrator:/home/BE/administrator:/bin/bash
+</screen>
+		</para></step>
+	</procedure>
+
+	</sect2>
+
+	<sect2>
+	<title>Winbindを使ったIDMAPデータのLDAPへの格納</title>
+
+	<para>
+	<indexterm><primary>ADAM</primary></indexterm>
+	<indexterm><primary>ADS</primary></indexterm>
+	IDMAPの情報をLDAP中に格納することは、NT4/Samba-3形式のドメインとADSドメインで
+	利用できる。OpenLDAPは、多くの標準準拠のLDAPサーバが使われているにもかかわらず、
+	この目的に多用されているLDAPサーバである。従って、このIDMAP設定を、Sun iPlanet
+	LDAP Server,Novell eDirectory, Microsoft ADS plus ADAMやその他で使うことは可能で
+	ある。
+	</para>
+
+	<para>
+	ADSドメインのための例は、
+	<link linkend="idmapldapDMS">LDAPを使うADSドメインメンバサーバ</link>にある。
+	</para>
+
+<example id="idmapldapDMS">
+<title>LDAPを使うADSドメインメンバサーバ</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">SNOWSHOW</smbconfoption>
+<smbconfoption name="netbios name">GOODELF</smbconfoption>
+<smbconfoption name="realm">SNOWSHOW.COM</smbconfoption>
+<smbconfoption name="server string">Samba Server</smbconfoption>
+<smbconfoption name="security">ADS</smbconfoption>
+<smbconfoption name="log level">1 ads:10 auth:10 sam:10 rpc:10</smbconfoption>
+<smbconfoption name="ldap admin dn">cn=Manager,dc=SNOWSHOW,dc=COM</smbconfoption>
+<smbconfoption name="ldap idmap suffix">ou=Idmap</smbconfoption>
+<smbconfoption name="ldap suffix">dc=SNOWSHOW,dc=COM</smbconfoption>
+<smbconfoption name="idmap backend">ldap:ldap://ldap.snowshow.com</smbconfoption>
+<smbconfoption name="idmap uid">150000-550000</smbconfoption>
+<smbconfoption name="idmap gid">150000-550000</smbconfoption>
+<smbconfoption name="template shell">/bin/bash</smbconfoption>
+<smbconfoption name="winbind use default domain">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+	<para>
+	<indexterm><primary>realm</primary></indexterm>
+	NT4またはSamba-3形式のドメインの場合、<parameter>realm</parameter>は使わず、
+	ドメインに参加するために使うコマンドは<command>net rpc join</command>である。
+	上記の例は、<link linkend="dbglvl">バグの報告</link>に記述されている高度な
+	エラー報告のテクニックも示している。
+	</para>
+
+	<para>
+	<indexterm><primary>MIT kerberos</primary></indexterm>
+	<indexterm><primary>Heimdal kerberos</primary></indexterm>
+	<indexterm><primary>/etc/krb5.conf</primary></indexterm>
+	MIT kerberosがインストールされている場合(バージョン 1.3.4以降)、以下の内容を
+	含むように<filename>/etc/krb5.conf</filename>を編集する:
+<screen>
+[logging]
+ default = FILE:/var/log/krb5libs.log
+ kdc = FILE:/var/log/krb5kdc.log
+ admin_server = FILE:/var/log/kadmind.log
+
+[libdefaults]
+ default_realm = SNOWSHOW.COM
+ dns_lookup_realm = false
+ dns_lookup_kdc = true
+
+[appdefaults]
+ pam = {
+   debug = false
+   ticket_lifetime = 36000
+   renew_lifetime = 36000
+   forwardable = true
+   krb4_convert = false
+ }
+</screen>
+	</para>
+
+	<para>
+	Heimdal kerberosがインストールされている場合、<filename>/etc/krb5.conf</filename>
+	ファイルは空白にするか(すなわち内容が無い)、以下の内容を含むように編集する:
+<screen>
+[libdefaults]
+        default_realm = SNOWSHOW.COM
+        clockskew = 300
+
+[realms]
+        SNOWSHOW.COM = {
+                kdc = ADSDC.SHOWSHOW.COM
+        }
+        
+[domain_realm]
+        .snowshow.com = SNOWSHOW.COM
+</screen>
+	</para>
+
+	<note><para>
+	Sambaは、<filename>/etc/krb5.conf</filename>ファイルがない時はHeimdalライブラリを
+	使えない。それが空白のファイルであるならば、Heimdal kerberosライブラリは使用可能
+	である。SambaがHeimdalライブラリを使う時には、自動的にこれを見つけることが出来る
+	ので、特に何も設定しなくても良い。
+	</para></note>
+
+	<para>
+	以下のエントリを含むようにNSS制御ファイル<filename>/etc/nsswitch.conf</filename>
+	を編集する:
+<screen>
+...
+passwd: files ldap
+shadow: files ldap
+group:  files ldap
+...
+hosts:  files wins
+...
+</screen>
+	</para>
+
+	<para>
+	<indexterm><primary>PADL</primary></indexterm>
+	<indexterm><primary>/etc/ldap.conf</primary></indexterm>
+	この解決方法のためには、<ulink url="http://www.padl.com">PADL</ulink>の
+	<command>nss_ldap</command>ツールセットが必要である。必要とされる情報を
+	<filename>/etc/ldap.conf</filename>ファイルに設定すること。以下は、
+	動作するファイルの例である:
+<screen>
+host    192.168.2.1
+base    dc=snowshow,dc=com
+binddn  cn=Manager,dc=snowshow,dc=com
+bindpw  not24get
+
+pam_password exop
+
+nss_base_passwd ou=People,dc=snowshow,dc=com?one
+nss_base_shadow ou=People,dc=snowshow,dc=com?one
+nss_base_group  ou=Groups,dc=snowshow,dc=com?one
+ssl     no
+</screen>
+	</para>
+
+	<para>
+	以下の手続きは動くようにするための設定手順である:
+	</para>
+
+	<procedure>
+		<step><para>
+		上記で示されたように&smb.conf;ファイルを設定する。
+		</para></step>
+
+		<step><para>
+		上記で示されたように<filename>/etc/krb5.conf</filename>ファイルを作成する。
+		</para></step>
+
+		<step><para>
+		上記で示されたように<filename>/etc/nsswitch.conf</filename>ファイルを設定する。
+		</para></step>
+
+		<step><para>
+		PADL nss_ldapツールセットをダウンロードし、コンパイルし、インストールする。
+		上記で示されたように<filename>/etc/ldap.conf</filename>ファイルを設定する。
+		</para></step>
+
+		<step><para>
+		LDAPサーバを設定し、以下のLDIFファイルで示されるような、IDMAPによって
+		必要とされるトップレベルのエントリをディレクトリに追加(初期化)する。
+<screen>
+dn: dc=snowshow,dc=com
+objectClass: dcObject
+objectClass: organization
+dc: snowshow
+o: The Greatest Snow Show in Singapore.
+description: Posix and Samba LDAP Identity Database
+
+dn: cn=Manager,dc=snowshow,dc=com
+objectClass: organizationalRole
+cn: Manager
+description: Directory Manager
+
+dn: ou=Idmap,dc=snowshow,dc=com
+objectClass: organizationalUnit
+ou: idmap
+</screen>
+		</para></step>
+
+		<step><para>
+		Samba DMSをADSドメインに、以下のコマンドを使って参加させる:
+<screen>
+&rootprompt; net ads testjoin
+Using short domain name -- SNOWSHOW
+Joined 'GOODELF' to realm 'SNOWSHOW.COM'
+</screen>
+		</para></step>
+
+		<step><para>
+		以下のようにして、Sambaの<filename>secrets.tdb</filename>ファイルに
+		LDAPサーバへのアクセスパスワードを格納する:
+<screen>
+&rootprompt; smbpasswd -w not24get
+</screen>
+		</para></step>
+
+		<step><para>
+		<command>nmbd</command>, <command>winbind</command>と<command>smbd</command>
+		デーモンをこの順番で起動する。
+		</para></step>
+	</procedure>
+
+	<para>
+	<indexterm><primary>診断</primary></indexterm>
+	ドメインへの参加が成功するか失敗するかを識別するため、この章の始めの方で
+	紹介された診断手続きに従うこと。多くの場合、失敗の理由が何も示されない
+	コマンドプロンプトの静かな結果によって、失敗は表示される。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>RFC2307bis Schema拡張を使ったADSからのIDMAPとNSSに対するLDAPの使用</title>
+
+	<para>
+	<indexterm><primary>rfc2307bis</primary></indexterm>
+	<indexterm><primary>スキーマ</primary></indexterm>
+	この方法はきれいなものではない。以下で提供される情報は手引きのみであり、かつ、
+	全くもって不確かで完全ではない。この方法は動く。数多くの巨大サイトで使用され、
+	耐えられるレベルのパフォーマンスを提供している。
+	</para>
+
+	<para>
+	&smb.conf;ファイルの例は
+	<link linkend="idmaprfc2307">NSS経由のRFC2307bisスキーマ拡張日付を使うADSドメインメンバサーバ</link>
+	にある。
+	</para>
+
+<example id="idmaprfc2307">
+<title>NSS経由のRFC2307bisスキーマ拡張日付を使うADSドメインメンバサーバ</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">BOBBY</smbconfoption>
+<smbconfoption name="realm">BOBBY.COM</smbconfoption>
+<smbconfoption name="security">ADS</smbconfoption>
+<smbconfoption name="idmap uid">150000-550000</smbconfoption>
+<smbconfoption name="idmap gid">150000-550000</smbconfoption>
+<smbconfoption name="template shell">/bin/bash</smbconfoption>
+<smbconfoption name="winbind cache time">5</smbconfoption>
+<smbconfoption name="winbind use default domain">Yes</smbconfoption>
+<smbconfoption name="winbind trusted domains only">Yes</smbconfoption>
+<smbconfoption name="winbind nested groups">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+	<para>
+	<indexterm><primary>nss_ldap</primary></indexterm>
+	DMSは通常の手順でドメインに参加しなければならない。更に追加で、PADL nss_ldap
+	ツールセットのコンパイルとインストールが必要である。以下のようにしてこのツールを
+	構築する:
+<screen>
+./configure --enable-rfc2307bis --enable-schema-mapping
+make install
+</screen> 
+	</para>
+
+	<para>
+	<indexterm><primary>/etc/nsswitch.conf</primary></indexterm>
+	<filename>/etc/nsswitch.conf</filename>ファイル中には以下の内容が必要である:
+<screen>
+...
+passwd: files ldap
+shadow: files ldap
+group:  files ldap
+...
+hosts:  files wins
+...
+</screen>
+	</para>
+
+	<para>
+	<indexterm><primary>/etc/ldap.conf</primary></indexterm>
+	<indexterm><primary>nss_ldap</primary></indexterm>
+	<filename>/etc/ldap.conf</filename>も設定しなければならない。特定の説明に
+	ついては、PADLのドキュメントとnss_ldapのソースコードを参照のこと。
+	</para>
+
+	<para>
+	次のステップではADSスキーマの準備を必要とする。これは、この章の残りの部分で
+	簡単に説明する。
+	</para>
+
+		<sect3>
+		<title>IDMAP, Active DirectoryとMicrosoftの Services for UNIX 3.5</title>
+
+		<para>
+		<indexterm><primary>SFU</primary></indexterm>
+		Microsoft Windows Service for UNIX (SFU)バージョン3.5は、Microsoftの
+		Webサイト<ulink url="http://www.microsoft.com/windows/sfu/">ダウンロード</ulink>
+		から自由にダウンロードできる。このツールをダウンロードする必要はあり、
+		以下のMicrosoftの手順に従ってインストールする。
+		</para>
+
+		</sect3>
+
+		<sect3>
+		<title>IDMAP, Active Directory と AD4UNIX</title>
+
+		<para>
+		AD4UNIXツールの取得とインストールの手順は、
+		<ulink url="http://www.geekcomix.com/cgi-bin/classnotes/wiki.pl?LDAP01/An_Alternative_Approach">
+		Geekcomix</ulink>
+		というWebサイトにある。
+		</para>
+
+		</sect3>
+
+	</sect2>
+
+</sect1>
+
+</chapter>

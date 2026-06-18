@@ -1,0 +1,39 @@
+<samba:parameter name="remote announce"
+	         context="G"
+		 advanced="1" developer="1"
+		 type="list"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このオプションにより、
+	<citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> 
+	は、指定したIPアドレスに対して設定したワークグループ情報を定期的にアナウンスするようになる。
+	</para>
+
+	<para>
+	これは、Samba サーバを通常のブラウズリストの交換ができない別のワークグループ上に表示させたい場合に有用である。
+	別のワークグループは、IP パケットを送信できるところであればどこにあってもよい。
+	</para>
+
+	<para>以下に例を示す:
+<programlisting>
+<command moreinfo="none">remote announce = 192.168.2.255/SERVERS 192.168.4.255/STAFF</command>
+</programlisting>
+	上記の設定は、<command moreinfo="nome">nmbd</command> が指定された2つのアドレスに対して、
+	指定されたワークグループ名を使って自身のアナウンスを行なう設定である。
+	ワークグループ名を指定しなかった場合、
+	<smbconfoption name="workgroup"/>
+	パラメータで指定された値が代わりに利用される。
+	</para>
+
+	<para>設定するIPアドレスとしては、
+	通常リモートネットワークのブロードキャストが用いられるが、
+	ネットワークが安定していれば、マスタブラウザのIPアドレスを指定することもできる。</para>
+
+	<para>
+	Samba HOWTO の Network Browsing 章を参照のこと。
+	</para>
+</description>
+
+<value type="default"></value>
+</samba:parameter>

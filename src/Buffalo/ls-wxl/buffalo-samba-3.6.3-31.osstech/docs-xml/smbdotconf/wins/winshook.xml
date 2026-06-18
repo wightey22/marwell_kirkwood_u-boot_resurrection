@@ -1,0 +1,34 @@
+<samba:parameter name="wins hook"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>Samba が WINS サーバとして動いている場合、このオプションによって、 WINS データベースに対して変更が行なわれる度に外部のプログラムが起動されるようになる。このオプションの主な目的は、ダイナミック DNS のような外部の名前解決データベースの動的な更新を実現することである。</para>
+
+	<para>wins hook パラメータは、以下の形式で呼びだされるスクリプト又は実行形式のプログラムを指定する。</para>
+
+	<para><command moreinfo="none">wins_hook operation name nametype ttl IP_list</command></para>
+
+	<itemizedlist>
+		<listitem>
+			<para>最初の引数は操作の指定であり、 &quot;add&quot;, &quot;delete&quot;, &quot;refresh&quot; のいずれかを取る。
+			ほとんどの場合、残りのパラメータで提供される情報が不足している場合、操作は無視される(訳注: sufficient は insufficient の typo と思われる)。 &quot;refresh&quot; は名前がまだ追加されていない時点で呼び出されることがあるので注意。この場合操作は add として扱われる。</para>
+		</listitem>
+
+		<listitem>
+			<para>3番目の引数は NetBIOS名のタイプで、2桁の16進数である。</para>
+		</listitem>
+
+		<listitem>
+			<para>4番目の引数は 名前の TTL(生存時間) で秒数単位である。</para>
+		</listitem>
+			
+		<listitem>
+			<para>5番目以降の引数は、その名前で現在登録されているIPアドレスである。リストが空の場合、名前は削除される。</para>
+		</listitem>
+	</itemizedlist>
+
+	<para>BIND の動的なDNS更新プログラムである <command>nsupdate</command> を呼び出すスクリプトのサンプルが、 Samba ソースコードの examples ディレクトリに格納されている。</para>
+</description>
+</samba:parameter>

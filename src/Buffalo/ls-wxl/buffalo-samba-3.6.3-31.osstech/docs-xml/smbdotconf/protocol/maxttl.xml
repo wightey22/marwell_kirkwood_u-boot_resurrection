@@ -1,0 +1,15 @@
+<samba:parameter name="max ttl"
+                 context="G"
+				 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションは、 <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> がブロードキャストを利用したりWINSサーバを利用したりして
+    NetBIOS 名を要求する際の NetBIOS 名のデフォルトのTTL(time to live)を(秒単位で)設定する。
+    このパラメータを変更する必要はないであろう。
+    デフォルトは3日である。
+    </para>
+</description>
+<value type="default">259200</value>
+</samba:parameter>

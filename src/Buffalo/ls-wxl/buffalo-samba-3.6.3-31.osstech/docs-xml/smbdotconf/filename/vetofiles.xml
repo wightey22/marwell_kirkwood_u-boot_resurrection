@@ -1,0 +1,53 @@
+<samba:parameter name="veto files"
+                 context="S"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	<para>このパラメータは、
+	一覧することもアクセスすることもできないファイルとディレクトリのリストを指定する。
+	リストの各エントリは '/' で区切ること。これにより、
+	エントリ中に空白文字を用いることが可能になっている。
+	'*'と '?'は DOS のワイルドカードと同様、
+	複数のファイルやディレクトリを指定するために利用できる。</para>
+
+	<para>各エントリはDOSの形式ではなく、
+	UNIXでのパス形式である必要があり、
+	UNIX のディレクトリ区切りである '/'を<emphasis>含めてはならない</emphasis>。
+		</para>
+
+	<para>
+	<smbconfoption name="case sensitive"/> オプションが、この処理に影響することに注意。
+	</para>
+		
+	<para>veto files パラメータの利用に際して注意すべき重要な点が、
+	ディレクトリ削除時の動作である。
+	削除されるディレクトリに veto files パラメータに一致するファイルが存在する場合、
+	<smbconfoption name="delete veto files"/> パラメータが
+	<parameter moreinfo="none">yes</parameter> でない限り、削除は<emphasis>失敗</emphasis>する。</para>
+
+	<para>このパラメータを設定した場合は、
+	ファイルやディレクトリの一覧を取得する際、
+	すべてのファイルとディレクトリについて、
+	このパラメータのマッチング処理が行なわれるようになるため、
+	Samba の性能に影響が発生する。</para>
+
+	<para>
+	以下に設定例を記載する:
+<programlisting>
+; Veto any files containing the word Security,
+; any ending in .tmp, and any directory containing the
+; word root.
+veto files = /*Security*/*.tmp/*root*/
+
+; Veto the Apple specific files that a NetAtalk server
+; creates.
+veto files = /.AppleDouble/.bin/.AppleDesktop/Network Trash Folder/
+</programlisting>
+	</para>
+
+</description>
+<related>hide files</related>
+<related>case sensitive</related>
+
+<value type="default">アクセスできないファイルやディレクトリはない</value>
+</samba:parameter>

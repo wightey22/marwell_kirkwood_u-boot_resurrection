@@ -1,0 +1,25 @@
+<samba:parameter name="aio write size"
+                 context="S"
+		 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+  <para>
+Samba が非同期 I/O サポート付きでビルドされており、かつこの整数パラメータ
+が非ゼロ値にセットされている場合、ファイルをライトする際に要求された I/O
+サイズがこの値より大きければ、Samba は非同期ライトを行う。
+注意：非同期ライトが行われるのは、non-chained と non-chaining ライトで、
+かつライトキャッシュを使わない場合に限られる。</para>
+
+  <para>
+Samba 3.0 における非同期 I/O におけるサポートは、リードとライトを合わせて
+10個までの、未解決の非同期リクエストに限られる。</para>
+  
+  <related>write cache size</related>
+  <related>aio read size</related>
+</description>
+
+<value type="default">0</value>
+<value type="example">16384<comment>
+リクエストサイズが 16KB を超えるライトについて非同期 I/O を使用する。
+    </comment></value>
+</samba:parameter>

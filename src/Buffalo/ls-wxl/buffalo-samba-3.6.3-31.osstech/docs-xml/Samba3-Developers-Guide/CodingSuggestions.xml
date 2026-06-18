@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="CodingSuggestions">
+<chapterinfo>
+	<author>
+		<firstname>Steve</firstname><surname>French</surname>
+	</author>
+	<author>
+		<firstname>Simo</firstname><surname>Sorce</surname>
+	</author>
+	<author>
+		<firstname>Andrew</firstname><surname>Bartlett</surname>
+	</author>
+	<author>
+		<firstname>Tim</firstname><surname>Potter</surname>
+	</author>
+	<author>
+		<firstname>Martin</firstname><surname>Pool</surname>
+	</author>
+</chapterinfo>
+
+<title>コーディングに対する助言</title>
+
+<para>
+Sambaにコードを追加したい場合は...
+</para>
+
+<para>
+Sambaのためのコードを書こうとしているプログラマーが直面する難題の一つは、プロジェクト中で
+最も活躍している人によって使われているコーディングの習慣を理解することである。それらの
+習慣はほとんど説明がなく、ポータビリティ、安定性、あるいはコードの一貫性などを
+改善するのに役立っている。このドキュメントは、現時点での、Sambaプロジェクト上で
+使われている、重要なコーディングの慣習のいくつかについて説明しようと試みている。
+コーディングの慣習は長い期間には少し変わり、わかりにくい移植性の考慮点について
+より多く学習するように、進歩していく。すでにある
+<filename>samba/source/internals.doc</filename>と
+<filename>samba/source/architecture.doc</filename>というドキュメントは補足情報を
+提供する。
+</para>
+
+<para>
+コーディングスタイルに付いて、おおざっぱに関連した質問は、非常に個人的で、
+このドキュメントはそのような主題について言及はしないが、Sambaソース中では
+8桁ごとのタブが好まれるように見受けられることは言っておこう。もしも、コーディング
+スタイルについてのトピックに興味があるのであれば、2つの、しばしば引用される
+文書は以下の通りである:
+</para>
+
+<para>
+<ulink url="http://lxr.linux.no/source/Documentation/CodingStyle">http://lxr.linux.no/source/Documentation/CodingStyle</ulink>
+</para>
+
+<para>
+<ulink url="http://www.fsf.org/prep/standards_toc.html">http://www.fsf.org/prep/standards_toc.html</ulink>
+</para>
+
+<para>
+しかし、Samba内でのコーディングスタイルはコードを投稿する多くの異なったプログラマーが
+いるという理由で変化に富んでいることに注意。
+</para>
+
+<para>
+以下は、Sambaに新しいコードを追加するときに使うべきいくつかの考慮点である。
+まず最初に、そして、最も重要な、覚えておいてほしい点は以下の通り:
+</para>
+
+<para>
+移植性は、デ・ファクトで、存在する、実際の世界でのCIFS/SMB実装のような、
+ネットワークの互換性が、関数を追加するときに一番考慮することである。
+Sambaがコンパイルできるプラットフォームは多数あり、存在するSambaコード中で
+起動されないライブラリ関数への呼び出しを追加するときには注意すること。
+また、数多くの異なった、SambaがサポートしようとするSMB/CIFSクライアントがあり、
+SNIA CIFS技術参照(あるいは最新のMicrosoftリファレンス文書あるいは
+SMB標準についてのX/Open書籍)を、すべてが完全に準拠していないことにも注意。
+</para>
+
+<para>
+以下はその他の助言である:
+</para>
+
+<orderedlist>
+
+<listitem><para>
+    テキスト表示のために、printfの代わりにd_printfを使う
+    理由:翻訳された言語のテキストへの置き換えを有効にする。
+</para></listitem>
+
+<listitem><para>
+	freeの代わりに SAFE_FREEを使う
+	理由: nullポインタをトラップすることを減らす。
+</para></listitem>
+
+<listitem><para>
+    bzeroを使わないで、memsetあるいはZERO_STRUCT と ZERO_STRUCTPマクロを使う
+	理由: これは POSIX ではない
+</para></listitem>
+
+<listitem><para>
+    strcpyとstrlenを使わない(safe_*という同等品を使う)
+    理由:バッファオーバランによるトラップを防ぐため
+</para></listitem>
+
+<listitem><para>
+    getopt_longを使わないでその代わりにpopt関数を使う
+    理由:互換性
+</para></listitem>
+
+<listitem><para>
+    明示的に、parmが入力のみの場合、関数中に渡すparmはconst識別子を追加する
+    (若干議論があるところではあるが、constは#definedで処理できる)
+</para></listitem>
+
+<listitem><para>
+    argとしてva_listに渡すときか、あるものを他に割り当てるときには、
+    VA_COPY()マクロを使うこと
+    理由:いくつかのプラットフォーム上では、va_listは、各関数中で初期化しなければならない
+    構造体であり、そうでない場合にはセグメンテーションフォルトになり得る。
+</para></listitem>
+
+<listitem><para>
+    スレッドを使わない
+    理由:移植性(archtecture.docを参照)
+</para></listitem>
+
+<listitem><para>
+    Cファイル中の新しいヘッダを明示的にインクルードしない - 新しいヘッダファイルは
+    include.hに1回だけ追加することによりインクルードすべきである。
+    理由:一貫性
+</para></listitem>
+
+<listitem><para>
+    明示的に関数をexternしない(それらはproto.h内に"make proto"によって自動生成される)
+    理由:一貫性
+</para></listitem>
+
+<listitem><para>
+    SMBをアンパックするときにはエンディアン依存性がない安全なマクロを使う
+    (byteorder.hとinternals.docを参照)
+    理由:すべての人がIntelチップを使うとは限らない
+</para></listitem>
+
+<listitem><para>
+    文字セットハンドリングのユニコード実装に注意(internals.docを参照)。
+    pull_*  と push_* と convert_string を参照。
+    理由:国際化
+</para></listitem>
+
+<listitem><para>
+    英語のみであることを仮定しないこと
+    理由:同上
+</para></listitem>
+
+<listitem><para>
+    in/outパラメータを使わないようにする(関数は、戻りデータに対し、
+    入力パラメータを上書きする)
+    理由:安定性の問題を引き起こすため
+</para></listitem>
+
+<listitem><para>
+    著作権記述が正しいかを確認し、Tridgeが書いていないコードにその名前を追加しないこと。
+    もしもコードを書いていないのであれば、GPLなSambaのコードの残りと共存できるように
+    すること。
+</para></listitem>
+
+<listitem><para>
+    バイトデータによって指定された長さのためのDATA_BLOBの使用を考えること。
+    理由:安定性
+</para></listitem>
+
+<listitem><para>
+    関数のようにデータベース用のtdbを利用すること。
+    理由:一貫性
+</para></listitem>
+
+<listitem><para>
+    直接SAM_ACCOUNT構造体にアクセスしないこと。pdb_get...() と pdb_set...()関数経由で
+    それにアクセスすべきである。
+    理由:安定性、一貫性
+</para></listitem>
+
+<listitem><para>
+    passdbに対してパスワードを直接チェックせず、常時check_password()インタフェースを
+    使うこと。
+    理由:長期間における互換性
+</para></listitem>
+
+<listitem><para>
+    可能なところでは、asprintfの代わりにpstringsとfstringsを使うことを試みること。
+</para></listitem>
+
+<listitem><para>
+    //のような C++コメントの代わりに通常のCのコメント / * を使うこと。C++のコメント形式が
+    C99の標準の一部だとしても、いくつかの古いCコンパイラはそれを受け付けない。
+</para></listitem>
+
+<listitem><para>
+    コードの要点を説明するAPI関数と構造体、使用法と特別な条件や結果についての
+    ドキュメントを書くようにすること。2つの*印 / ** で始まるコメントでそれらを
+    マークすると、このファイル中からDoxygenによって拾い出せるように出来る。
+</para></listitem>
+
+<listitem><para>
+    範囲を小さくするように心がけること。これは、可能なときにはいつでも関数/変数を
+    静的にさせるということになる。固有の名前空間を汚染させることは望んでいない。
+    各モジュールは、外部から参照できる関数や変数を最小限にすべきである。
+</para></listitem>
+
+<listitem><para>
+    一箇所に隔離された特定のコードの範囲を指示するために、関数ポインタを使うこと。
+    特定の1まとまりの機能を数多くの場所に分散してしまうことを望んでいない - 
+    これは、障害を引き起こしやすくコードのメンテナンスが難しくなるからである。
+    その代わり、インタフェースを設計し、特定の機能の実装への関数ポインタを含む
+    テーブルを使う。これはコマンドインタプリタのためには特に重要である。
+</para></listitem>
+
+<listitem><para>
+    他の誰かがコードを追加することと、そのコードを維持することのようなことが
+    何であるかについて注意深く考えること。
+</para></listitem>
+
+</orderedlist>
+
+<para>
+上記のような助言は単純であるが、その情報は新しいコード上でされる型どおりのやり直しを
+手助けするかもしれない。前述の一覧は新しいサポートルーチンとして定期的に変更され、
+マクロが追加される事が期待される。
+</para>
+</chapter>

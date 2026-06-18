@@ -1,0 +1,875 @@
+This is cfdisk.info, produced by makeinfo version 4.7 from cfdisk.texi.
+
+   Copyright (C) 2006 Free Software Foundation, Inc.
+
+   Permission is granted to copy, distribute and/or modify this document
+under the terms of the GNU Free Documentation License, Version 1.1 or
+any later version published by the Free Software Foundation; with no
+Invariant Sections, with no Front-Cover Texts, and with no Back-Cover
+Texts.  A copy of the license is included in the section entitled "GNU
+Free Documentation License".
+
+INFO-DIR-SECTION GNU partitioning software
+START-INFO-DIR-ENTRY
+* cfdisk: (cfdisk).                         GNU cfdisk User Manual
+END-INFO-DIR-ENTRY
+
+
+File: cfdisk.info,  Node: Top,  Next: About,  Up: (dir)
+
+GNU cfdisk User Manual
+**********************
+
+This document describes the use of GNU Cfdisk, a curses-based program
+for creating, destroying, resizing, checking and copying hard drive
+partitions, and the file systems on them.
+
+* Menu:
+
+* About::
+* Using cfdisk::
+* Bugs::
+* See also::
+* Copying this manual::
+
+
+File: cfdisk.info,  Node: About,  Next: Using cfdisk,  Prev: Top,  Up: Top
+
+1 About
+*******
+
+* Menu:
+
+* Name::
+
+
+File: cfdisk.info,  Node: Name,  Up: About
+
+1.1 Name
+========
+
+GNU cfdisk - curses-based partition table manipulator (clone of Linux
+cfdisk)
+
+
+File: cfdisk.info,  Node: Using cfdisk,  Next: Bugs,  Prev: About,  Up: Top
+
+2 Using cfdisk
+**************
+
+* Menu:
+
+* Invoking cfdisk::
+* Overview::
+* Options::
+* Units::
+* Usage::
+* Flags::
+
+
+File: cfdisk.info,  Node: Invoking cfdisk,  Next: Overview,  Up: Using cfdisk
+
+2.1 Invoking cfdisk
+===================
+
+cfdisk [options] [device]
+
+
+File: cfdisk.info,  Node: Overview,  Next: Options,  Prev: Invoking cfdisk,  Up: Using cfdisk
+
+2.2 Overview
+============
+
+Hard disks can be divided into logical disks called partitions (or disk
+slices in the BSD world), which are described in a partition table,
+which is also called a disklabel.
+
+   For ordinary use, like file storage or operation system
+installation, you will most likely need at least one partition,
+although with most modern operating system, you might also want to
+create several partitions, including one for swap space. For example,
+you usually create a seperate partition for home directories. For more
+information on what partitions you need for your operating system, look
+at its installation manual.
+
+   GNU cfdisk is a menu-driven program for creating and editing
+partition tables. It has support for DOS and MAC type partition tables,
+BSD and SUN type disklabels and others.
+
+   If you don't specify the device of the disk, cfdisk tries to look
+for devices and opens the first device available. On most GNU/Linux
+distributions device is usually one of the following:
+
+          /dev/hda /dev/hdb /dev/sda /dev/sdb
+
+
+   IDE disks are usually using /dev/hd[a-h] for device names, SCSI
+disks - /dev/sd[a-p]. The partitions will take the device name followed
+by the partition number, e.g. /dev/hda1. If you are using a GNU/Linux
+operating system, you can see /usr/src/linux/Documentation/devices.txt
+for more infomation on device naming.
+
+   A DOS type partition table can have up to four `primary' partitions,
+which get numbers 1-4. One of the primary partitions may be used as an
+`extended' partition, which is used as a container for more partitions,
+which are called `logical' and take numbers starting from 5.
+
+   A BSD/SUN type disklabel can hold up to 8 partitions, and an
+IRIX/SGI type disk label, called `dvh' in cfdisk can hold up to 16.
+
+
+File: cfdisk.info,  Node: Options,  Next: Units,  Prev: Overview,  Up: Using cfdisk
+
+2.3 Options
+===========
+
+`-h, --help'
+     Displays a help message.
+
+`-v, --version'
+     Displays the program's version.
+
+`-a, --arrow-cursor'
+     Use an arrow cursor, instead of reverse video highlighting, in
+     case your terminal doesn't support it.
+
+`-z, --new-table'
+     Create a new partition table on the disk. This is useful if  you
+     want  to  change the partition table type or want to repartition
+     you entire drive. Note that this does not delete the  old  table
+     on the disk until you commit the changes.
+
+`-u, --units=UNIT'
+     Sets the default display units to UNIT. A list of possible units
+     is given below.
+
+`-t, --list-partition-types'
+     Displays a list of supported partition types and features.
+
+
+
+File: cfdisk.info,  Node: Units,  Next: Usage,  Prev: Options,  Up: Using cfdisk
+
+2.4 Units
+=========
+
+You can choose in what unit cfdisk should display quantities like
+partition sizes. You can choose from sectors, percents, bytes,
+kilobytes, etc. Note that one kilobyte is equal to 1,000 bytes, as this
+is consistent with the SI prefixes and is used by hard disk
+manufacturers. If you prefer to see the sizes in units with binary
+prefixes, you should instead select one kilo binary byte (kibibyte),
+which is equal to 1,024 bytes. Whatever display unit you have chosen,
+you can always enter the quantities in the unit of your choice, for
+example 1000000B or 1000kB.
+
+`compact'
+     Display each size in the most suitable unit from B, kB, MB, GB and
+     TB.
+
+`B'
+     One byte
+
+`kB '
+     One kilobyte (1,000 bytes)
+
+`MB'
+     One megabyte (1,000,000 bytes)
+
+`GB'
+     One gigabyte (1,000,000,000 bytes)
+
+`TB'
+     One terabyte (1,000,000,000,000 bytes)
+
+`KiB'
+     One kilo binary byte (1,024 bytes)
+
+`MiB'
+     One mega binary byte (1,048,576 bytes)
+
+`GiB'
+     One giga binary byte (1,073,741,824 bytes)
+
+`TiB'
+     One tera binary byte (1,099,511,627,776 bytes)
+
+`s'
+     One sector. It depends on the sector size of the disk. You can use
+     it if you want to see or choose the exact size in sectors.
+
+`%'
+     One percent from the size of the disk
+
+`cyl'
+     One cylinder. It depends on the cylinder size.
+
+`chs'
+     Use CHS display units.
+
+
+
+File: cfdisk.info,  Node: Usage,  Next: Flags,  Prev: Units,  Up: Using cfdisk
+
+2.5 Usage
+=========
+
+GNU cfdisk uses a simple menu driven interface, which attempts to be
+clear and easy to use. It shows a list of the partitions, showing basic
+information about them, such as number, size, type and filesystem. If
+the partition contains no filesystem, on certain partition table types
+the partition system type is displayed in brackets. You to navigate
+through the partitions using the up and down arrow keys on your
+keyboard. You can perform actions on the selected partition either by
+pressing their shortcut key, or by navigating through the menu of
+actions with the left and right arrow and launching it by pressing the
+enter key. Other choice menus are also usable with both shortcut keys
+and direct selection, and the Esc key is usually used to cancel the
+choice. The actions are not performed immediately, but only after you
+decide to commit the changes to the disk. Here is a list of the
+possible actions and their shortcut keys.
+
+`n'
+     If you have selected a free space, creates a new partition
+     residing on it. The possible types of the new partition, such as
+     Primary, Extended and Logical are shown in the type column in the
+     partition list. For example if the free space is part of the
+     extended partition, its type will be displayed as Logical. If
+     multiple types are possible, a choice menu will appear. You can
+     select primary partition with the `p' key and extended partition
+     with `e', or alternatively you can cancel the creation with `c'.
+     You will be asked in which part of the free space you want to
+     place the partition. You can place it in the beginning with `s',
+     at the end with `e'. If you want to select a custom region and
+     specify exact start and end of the partition, you should press
+     `c'. You will then prompted about the size of the partition, the
+     default choice creates a partition on the entire free space.
+     Please note that you can enter the size in any of the units given
+     above. If you don't specify a unit after the number, the default
+     unit is used. At this point, you will be asked about the
+     filesystem type. If you don't know what partition type suits you,
+     check operating system documentation about supported filesystems,
+     ext3 is usually a safe choice. The partition will be created at
+     the close as possible to your choice and you will be warned if it
+     is too small or too large for the filesystem you have selected.
+
+`d'
+     Delete the selected partition so you can use it to create another
+     partition on the free space left by it.
+
+`f'
+     Creates a new file system on the selected partition. You will be
+     asked to choose from a list of the filesystem types that are
+     supported for creation. Please note that this requires that all
+     changes you made so far are commited to the disk. If there is
+     already a filesystem on the partition, it is destroyed.
+
+`c'
+     Checks the consistency of the filesystem.  It is useful to see
+     whether it is safe to perform operations like resize on the
+     partitions. It performs a very basic check on the filesystem, so
+     if you want to make a more thorough test or fix the errors on the
+     filesystem, you should an external utility like e2fsck for ext2 or
+     reiserfsck for reiserfs. Please note that the check is limited on
+     some filesystem types (ext2, ext3 and reiserfs at the time of
+     writing of the manual), but if the partition contains errors
+     resize will gracefully fail without destroying the filesystem.
+
+`r'
+     Resizes the partition without destroying the data on it, or just
+     changes the partition size. The latter is useful if you want to
+     resize the partition with external utilities or if you want to
+     create a new filesystem on it. Don't use it if you don't know what
+     you are doing. If resizing of the filesystem on the partition is
+     supported you will be asked what to do. Pressing `r' resizes,
+     while pressing `c' just changes the partition size. Then like when
+     creating a new partition you will be asked to choose among the
+     possible places and sizes to place the partition. The choices are
+     between placing it at the beginning of the free space before it
+     with `b', leaving its starting point fixed with `s' and placing it
+     at end of the free space after it with `e'. You are adviced to
+     check the partition before performing resize, and backup the data
+     if possible. Resizing requires that all changes you made so far
+     are commited to the disk.
+
+`o'
+     Moves the partition to another place on the hard disk. You will be
+     asked to select on which free space to put the partition and then
+     prompted for a position and size, in the same manner as when
+     creating a new partition. The new place of the partition can't
+     overlap with the old one. If this is what you need, you should try
+     using the resize function, instead. Moving the partition requires
+     that all changes you made so far are commited to the disk.
+
+`y'
+     Copies another partition over the selected one. This destroys all
+     data on the current partition and requires all changes to be
+     commited to the disk. You are not limited to select a partition
+     only from the device you are currently editing. You will be asked
+     about device and partition. You can't copy an extended partition.
+
+`s'
+     Run a filesystem rescue by looking for deleted partitions within a
+     free space. It requires that everything is commited to the disk
+     immediately. Looking for partitions over the existing partitions
+     is not supported and doesn't seem much meaningful, but if you need
+     it, you can try deleting the partitions. You can select the range
+     where to look for partitions by pressing `c', or if you want to
+     check the whole free space, you should press `g'.
+
+`b'
+     Shows a list of the flags allowing you to change them. You will
+     most likely need this to make the partition bootable. It is not
+     recommended to touch any flags other than the bootable flag. Do
+     not do it, unless you know what they are for, and have in mind
+     that changing certain flags is known not to work. You change the
+     flag by pressing space or enter, and you leave the list with Esc.
+     See the next section a description of all possible flags.
+
+`t'
+     Changes the system type on the partition. This does not convert
+     the filesystem, it just changes the information stored in the
+     partition. This is useful for cases where the system type on the
+     partition doesn't match the filesystem type, for example you have
+     an fat32 partition on an DOS type partition table, having an ext2
+     filesystem on it. Changing the system type is not really
+     meaningful on all partition table types. The default is to
+     automatically determine the system type from the current
+     filesystem with `a'. You can also select a custom filesystem by
+     pressing `c', but this is not recommended. Direct choosing a
+     specific system type is not supported.
+
+`m'
+     If the partition table type supports partition names, this allows
+     you to change it. This is not working on all partition table
+     types, as the partition names could be used for other purposes,
+     like identifying the partition type or filesystem.
+
+`x'
+     If you have selected the extended partition, this makes it as big
+     as possible, so you have more place for partitions inside it. It
+     should expand the partition up to the beginning of the first
+     partition after it.
+
+`z'
+     If you have selected the extended partition, this makes it as
+     small as possible. You should need this, if you want to create
+     more primary partitions after the logical partitions contained in
+     the extended. If the extended partition contains no partitions,
+     this deletes it.
+
+`u'
+     This allows you to select the display units. This changes the
+     units used to display the sizes in the partition list and the
+     default unit that is used on size prompts, though you are not
+     limited to it when entering sizes. See the "Units" section for
+     more information. The shortcuts are `b', `k', `m', `g', `t' for
+     bytes, decimal kilobytes, megabytes, etc., `K', `M', `G' and `T'
+     for the binary equivalents, `c' for percents, `a' to automatically
+     choose the most suitable (`Compact'), `s' for sectors, `y' for
+     cylinders, `C' for C/H/S values.
+
+`i'
+     Displays a short info about the partition, like its device (or at
+     least what cfdisk believes that should be its device), the system
+     type of the partition in the partition table (most useful if you
+     are editing a DOS type partition table), the exact start and end
+     of the partition.
+
+`w'
+     Writes the changes in the partition to the disk and notifies the
+     operating system to reread it. Do this after you have completed
+     editing your partition table. This might destroy data on your
+     disk, if you have deleted partitions, and so on, so be careful. If
+     the partition table is not re-read correctly by the operating
+     system, you should reboot your computer.
+
+`q'
+     Quits the program. If you have made changes and you haven't
+     commited them to the disk, they will be lost.
+
+`h'
+     Displays a short help. If you have reached this point, it is
+     highly unlikely that you need it.
+
+
+
+File: cfdisk.info,  Node: Flags,  Prev: Usage,  Up: Using cfdisk
+
+2.6 Flags
+=========
+
+`boot'
+     (Mac, MS-DOS, PC98) - should be enabled if you want to boot off the
+     partition.  The semantics vary between disk labels.  For MS-DOS
+     disk labels, only one partition can be bootable.  If you are
+     installing LILO on a partition that partition must be bootable.
+     For PC98 disk labels, all ext2 partitions must be bootable (this is
+     enforced by Parted).
+
+`lba'
+     (MS-DOS) - this flag can be enabled to tell MS DOS, MS Windows 9x
+     and MS Windows ME based operating systems to use Linear (LBA) mode.
+
+`root'
+     (Mac) - this flag should be enabled if the partition is the root
+     device to be used by Linux.
+
+`swap'
+     (Mac) - this flag should be enabled if the partition is the swap
+     device to be used by Linux.
+
+`hidden'
+     (MS-DOS, PC98) - this flag can be enabled to hide partitions from
+     Microsoft operating systems.
+
+`raid'
+     (MS-DOS) - this flag can be enabled to tell linux the partition is
+     a software RAID partition.
+
+`LVM'
+     (MS-DOS) - this flag can be enabled to tell linux the partition is
+     a physical volume.
+
+`PALO'
+     (MS-DOS) - this flag can be enabled so that the partition can be
+     used by the Linux/PA-RISC boot loader, palo.
+
+`PREP'
+     (MS-DOS) - this flag can be enabled so that the partition can be
+     used as a PReP boot partition on PowerPC PReP or IBM RS6K/CHRP
+     hardware.
+
+
+
+File: cfdisk.info,  Node: Bugs,  Next: See also,  Prev: Using cfdisk,  Up: Top
+
+3 Bugs
+******
+
+There are no known bugs. We are in early stages for development, so be
+careful.
+
+
+File: cfdisk.info,  Node: See also,  Next: Copying this manual,  Prev: Bugs,  Up: Top
+
+4 See also
+**********
+
+fdisk(8), mkfs(8), parted(8)
+
+
+File: cfdisk.info,  Node: Copying this manual,  Prev: See also,  Up: Top
+
+Appendix A Copying this manual
+******************************
+
+* Menu:
+
+* GNU Free Documentation License::  License for copying this manual
+
+
+File: cfdisk.info,  Node: GNU Free Documentation License,  Up: Copying this manual
+
+A.1 GNU Free Documentation License
+==================================
+
+                        Version 1.1, March 2000
+
+     Copyright (C) 2000 Free Software Foundation, Inc.
+     51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
+
+     Everyone is permitted to copy and distribute verbatim copies
+     of this license document, but changing it is not allowed.
+
+  0. PREAMBLE
+
+     The purpose of this License is to make a manual, textbook, or other
+     written document "free" in the sense of freedom: to assure everyone
+     the effective freedom to copy and redistribute it, with or without
+     modifying it, either commercially or noncommercially.  Secondarily,
+     this License preserves for the author and publisher a way to get
+     credit for their work, while not being considered responsible for
+     modifications made by others.
+
+     This License is a kind of "copyleft", which means that derivative
+     works of the document must themselves be free in the same sense.
+     It complements the GNU General Public License, which is a copyleft
+     license designed for free software.
+
+     We have designed this License in order to use it for manuals for
+     free software, because free software needs free documentation: a
+     free program should come with manuals providing the same freedoms
+     that the software does.  But this License is not limited to
+     software manuals; it can be used for any textual work, regardless
+     of subject matter or whether it is published as a printed book.
+     We recommend this License principally for works whose purpose is
+     instruction or reference.
+
+  1. APPLICABILITY AND DEFINITIONS
+
+     This License applies to any manual or other work that contains a
+     notice placed by the copyright holder saying it can be distributed
+     under the terms of this License.  The "Document", below, refers to
+     any such manual or work.  Any member of the public is a licensee,
+     and is addressed as "you".
+
+     A "Modified Version" of the Document means any work containing the
+     Document or a portion of it, either copied verbatim, or with
+     modifications and/or translated into another language.
+
+     A "Secondary Section" is a named appendix or a front-matter
+     section of the Document that deals exclusively with the
+     relationship of the publishers or authors of the Document to the
+     Document's overall subject (or to related matters) and contains
+     nothing that could fall directly within that overall subject.
+     (For example, if the Document is in part a textbook of
+     mathematics, a Secondary Section may not explain any mathematics.)
+     The relationship could be a matter of historical connection with
+     the subject or with related matters, or of legal, commercial,
+     philosophical, ethical or political position regarding them.
+
+     The "Invariant Sections" are certain Secondary Sections whose
+     titles are designated, as being those of Invariant Sections, in
+     the notice that says that the Document is released under this
+     License.
+
+     The "Cover Texts" are certain short passages of text that are
+     listed, as Front-Cover Texts or Back-Cover Texts, in the notice
+     that says that the Document is released under this License.
+
+     A "Transparent" copy of the Document means a machine-readable copy,
+     represented in a format whose specification is available to the
+     general public, whose contents can be viewed and edited directly
+     and straightforwardly with generic text editors or (for images
+     composed of pixels) generic paint programs or (for drawings) some
+     widely available drawing editor, and that is suitable for input to
+     text formatters or for automatic translation to a variety of
+     formats suitable for input to text formatters.  A copy made in an
+     otherwise Transparent file format whose markup has been designed
+     to thwart or discourage subsequent modification by readers is not
+     Transparent.  A copy that is not "Transparent" is called "Opaque".
+
+     Examples of suitable formats for Transparent copies include plain
+     ASCII without markup, Texinfo input format, LaTeX input format,
+     SGML or XML using a publicly available DTD, and
+     standard-conforming simple HTML designed for human modification.
+     Opaque formats include PostScript, PDF, proprietary formats that
+     can be read and edited only by proprietary word processors, SGML
+     or XML for which the DTD and/or processing tools are not generally
+     available, and the machine-generated HTML produced by some word
+     processors for output purposes only.
+
+     The "Title Page" means, for a printed book, the title page itself,
+     plus such following pages as are needed to hold, legibly, the
+     material this License requires to appear in the title page.  For
+     works in formats which do not have any title page as such, "Title
+     Page" means the text near the most prominent appearance of the
+     work's title, preceding the beginning of the body of the text.
+
+  2. VERBATIM COPYING
+
+     You may copy and distribute the Document in any medium, either
+     commercially or noncommercially, provided that this License, the
+     copyright notices, and the license notice saying this License
+     applies to the Document are reproduced in all copies, and that you
+     add no other conditions whatsoever to those of this License.  You
+     may not use technical measures to obstruct or control the reading
+     or further copying of the copies you make or distribute.  However,
+     you may accept compensation in exchange for copies.  If you
+     distribute a large enough number of copies you must also follow
+     the conditions in section 3.
+
+     You may also lend copies, under the same conditions stated above,
+     and you may publicly display copies.
+
+  3. COPYING IN QUANTITY
+
+     If you publish printed copies of the Document numbering more than
+     100, and the Document's license notice requires Cover Texts, you
+     must enclose the copies in covers that carry, clearly and legibly,
+     all these Cover Texts: Front-Cover Texts on the front cover, and
+     Back-Cover Texts on the back cover.  Both covers must also clearly
+     and legibly identify you as the publisher of these copies.  The
+     front cover must present the full title with all words of the
+     title equally prominent and visible.  You may add other material
+     on the covers in addition.  Copying with changes limited to the
+     covers, as long as they preserve the title of the Document and
+     satisfy these conditions, can be treated as verbatim copying in
+     other respects.
+
+     If the required texts for either cover are too voluminous to fit
+     legibly, you should put the first ones listed (as many as fit
+     reasonably) on the actual cover, and continue the rest onto
+     adjacent pages.
+
+     If you publish or distribute Opaque copies of the Document
+     numbering more than 100, you must either include a
+     machine-readable Transparent copy along with each Opaque copy, or
+     state in or with each Opaque copy a publicly-accessible
+     computer-network location containing a complete Transparent copy
+     of the Document, free of added material, which the general
+     network-using public has access to download anonymously at no
+     charge using public-standard network protocols.  If you use the
+     latter option, you must take reasonably prudent steps, when you
+     begin distribution of Opaque copies in quantity, to ensure that
+     this Transparent copy will remain thus accessible at the stated
+     location until at least one year after the last time you
+     distribute an Opaque copy (directly or through your agents or
+     retailers) of that edition to the public.
+
+     It is requested, but not required, that you contact the authors of
+     the Document well before redistributing any large number of
+     copies, to give them a chance to provide you with an updated
+     version of the Document.
+
+  4. MODIFICATIONS
+
+     You may copy and distribute a Modified Version of the Document
+     under the conditions of sections 2 and 3 above, provided that you
+     release the Modified Version under precisely this License, with
+     the Modified Version filling the role of the Document, thus
+     licensing distribution and modification of the Modified Version to
+     whoever possesses a copy of it.  In addition, you must do these
+     things in the Modified Version:
+
+       A. Use in the Title Page (and on the covers, if any) a title
+          distinct from that of the Document, and from those of
+          previous versions (which should, if there were any, be listed
+          in the History section of the Document).  You may use the
+          same title as a previous version if the original publisher of
+          that version gives permission.
+
+       B. List on the Title Page, as authors, one or more persons or
+          entities responsible for authorship of the modifications in
+          the Modified Version, together with at least five of the
+          principal authors of the Document (all of its principal
+          authors, if it has less than five).
+
+       C. State on the Title page the name of the publisher of the
+          Modified Version, as the publisher.
+
+       D. Preserve all the copyright notices of the Document.
+
+       E. Add an appropriate copyright notice for your modifications
+          adjacent to the other copyright notices.
+
+       F. Include, immediately after the copyright notices, a license
+          notice giving the public permission to use the Modified
+          Version under the terms of this License, in the form shown in
+          the Addendum below.
+
+       G. Preserve in that license notice the full lists of Invariant
+          Sections and required Cover Texts given in the Document's
+          license notice.
+
+       H. Include an unaltered copy of this License.
+
+       I. Preserve the section entitled "History", and its title, and
+          add to it an item stating at least the title, year, new
+          authors, and publisher of the Modified Version as given on
+          the Title Page.  If there is no section entitled "History" in
+          the Document, create one stating the title, year, authors,
+          and publisher of the Document as given on its Title Page,
+          then add an item describing the Modified Version as stated in
+          the previous sentence.
+
+       J. Preserve the network location, if any, given in the Document
+          for public access to a Transparent copy of the Document, and
+          likewise the network locations given in the Document for
+          previous versions it was based on.  These may be placed in
+          the "History" section.  You may omit a network location for a
+          work that was published at least four years before the
+          Document itself, or if the original publisher of the version
+          it refers to gives permission.
+
+       K. In any section entitled "Acknowledgments" or "Dedications",
+          preserve the section's title, and preserve in the section all
+          the substance and tone of each of the contributor
+          acknowledgments and/or dedications given therein.
+
+       L. Preserve all the Invariant Sections of the Document,
+          unaltered in their text and in their titles.  Section numbers
+          or the equivalent are not considered part of the section
+          titles.
+
+       M. Delete any section entitled "Endorsements".  Such a section
+          may not be included in the Modified Version.
+
+       N. Do not retitle any existing section as "Endorsements" or to
+          conflict in title with any Invariant Section.
+
+     If the Modified Version includes new front-matter sections or
+     appendices that qualify as Secondary Sections and contain no
+     material copied from the Document, you may at your option
+     designate some or all of these sections as invariant.  To do this,
+     add their titles to the list of Invariant Sections in the Modified
+     Version's license notice.  These titles must be distinct from any
+     other section titles.
+
+     You may add a section entitled "Endorsements", provided it contains
+     nothing but endorsements of your Modified Version by various
+     parties--for example, statements of peer review or that the text
+     has been approved by an organization as the authoritative
+     definition of a standard.
+
+     You may add a passage of up to five words as a Front-Cover Text,
+     and a passage of up to 25 words as a Back-Cover Text, to the end
+     of the list of Cover Texts in the Modified Version.  Only one
+     passage of Front-Cover Text and one of Back-Cover Text may be
+     added by (or through arrangements made by) any one entity.  If the
+     Document already includes a cover text for the same cover,
+     previously added by you or by arrangement made by the same entity
+     you are acting on behalf of, you may not add another; but you may
+     replace the old one, on explicit permission from the previous
+     publisher that added the old one.
+
+     The author(s) and publisher(s) of the Document do not by this
+     License give permission to use their names for publicity for or to
+     assert or imply endorsement of any Modified Version.
+
+  5. COMBINING DOCUMENTS
+
+     You may combine the Document with other documents released under
+     this License, under the terms defined in section 4 above for
+     modified versions, provided that you include in the combination
+     all of the Invariant Sections of all of the original documents,
+     unmodified, and list them all as Invariant Sections of your
+     combined work in its license notice.
+
+     The combined work need only contain one copy of this License, and
+     multiple identical Invariant Sections may be replaced with a single
+     copy.  If there are multiple Invariant Sections with the same name
+     but different contents, make the title of each such section unique
+     by adding at the end of it, in parentheses, the name of the
+     original author or publisher of that section if known, or else a
+     unique number.  Make the same adjustment to the section titles in
+     the list of Invariant Sections in the license notice of the
+     combined work.
+
+     In the combination, you must combine any sections entitled
+     "History" in the various original documents, forming one section
+     entitled "History"; likewise combine any sections entitled
+     "Acknowledgments", and any sections entitled "Dedications".  You
+     must delete all sections entitled "Endorsements."
+
+  6. COLLECTIONS OF DOCUMENTS
+
+     You may make a collection consisting of the Document and other
+     documents released under this License, and replace the individual
+     copies of this License in the various documents with a single copy
+     that is included in the collection, provided that you follow the
+     rules of this License for verbatim copying of each of the
+     documents in all other respects.
+
+     You may extract a single document from such a collection, and
+     distribute it individually under this License, provided you insert
+     a copy of this License into the extracted document, and follow
+     this License in all other respects regarding verbatim copying of
+     that document.
+
+  7. AGGREGATION WITH INDEPENDENT WORKS
+
+     A compilation of the Document or its derivatives with other
+     separate and independent documents or works, in or on a volume of
+     a storage or distribution medium, does not as a whole count as a
+     Modified Version of the Document, provided no compilation
+     copyright is claimed for the compilation.  Such a compilation is
+     called an "aggregate", and this License does not apply to the
+     other self-contained works thus compiled with the Document, on
+     account of their being thus compiled, if they are not themselves
+     derivative works of the Document.
+
+     If the Cover Text requirement of section 3 is applicable to these
+     copies of the Document, then if the Document is less than one
+     quarter of the entire aggregate, the Document's Cover Texts may be
+     placed on covers that surround only the Document within the
+     aggregate.  Otherwise they must appear on covers around the whole
+     aggregate.
+
+  8. TRANSLATION
+
+     Translation is considered a kind of modification, so you may
+     distribute translations of the Document under the terms of section
+     4.  Replacing Invariant Sections with translations requires special
+     permission from their copyright holders, but you may include
+     translations of some or all Invariant Sections in addition to the
+     original versions of these Invariant Sections.  You may include a
+     translation of this License provided that you also include the
+     original English version of this License.  In case of a
+     disagreement between the translation and the original English
+     version of this License, the original English version will prevail.
+
+  9. TERMINATION
+
+     You may not copy, modify, sublicense, or distribute the Document
+     except as expressly provided for under this License.  Any other
+     attempt to copy, modify, sublicense or distribute the Document is
+     void, and will automatically terminate your rights under this
+     License.  However, parties who have received copies, or rights,
+     from you under this License will not have their licenses
+     terminated so long as such parties remain in full compliance.
+
+ 10. FUTURE REVISIONS OF THIS LICENSE
+
+     The Free Software Foundation may publish new, revised versions of
+     the GNU Free Documentation License from time to time.  Such new
+     versions will be similar in spirit to the present version, but may
+     differ in detail to address new problems or concerns.  See
+     `http://www.gnu.org/copyleft/'.
+
+     Each version of the License is given a distinguishing version
+     number.  If the Document specifies that a particular numbered
+     version of this License "or any later version" applies to it, you
+     have the option of following the terms and conditions either of
+     that specified version or of any later version that has been
+     published (not as a draft) by the Free Software Foundation.  If
+     the Document does not specify a version number of this License,
+     you may choose any version ever published (not as a draft) by the
+     Free Software Foundation.
+
+A.1.1 ADDENDUM: How to use this License for your documents
+----------------------------------------------------------
+
+To use this License in a document you have written, include a copy of
+the License in the document and put the following copyright and license
+notices just after the title page:
+
+       Copyright (C)  YEAR  YOUR NAME.
+       Permission is granted to copy, distribute and/or modify this document
+       under the terms of the GNU Free Documentation License, Version 1.1
+       or any later version published by the Free Software Foundation;
+       with the Invariant Sections being LIST THEIR TITLES, with the
+       Front-Cover Texts being LIST, and with the Back-Cover Texts being LIST.
+       A copy of the license is included in the section entitled ``GNU
+       Free Documentation License''.
+
+   If you have no Invariant Sections, write "with no Invariant Sections"
+instead of saying which ones are invariant.  If you have no Front-Cover
+Texts, write "no Front-Cover Texts" instead of "Front-Cover Texts being
+LIST"; likewise for Back-Cover Texts.
+
+   If your document contains nontrivial examples of program code, we
+recommend releasing these examples in parallel under your choice of
+free software license, such as the GNU General Public License, to
+permit their use in free software.
+
+
+
+Tag Table:
+Node: Top661
+Node: About1031
+Node: Name1145
+Node: Using cfdisk1289
+Node: Invoking cfdisk1484
+Node: Overview1633
+Node: Options3510
+Node: Units4336
+Node: Usage5789
+Node: Flags15301
+Node: Bugs16767
+Node: See also16945
+Node: Copying this manual17087
+Node: GNU Free Documentation License17304
+
+End Tag Table

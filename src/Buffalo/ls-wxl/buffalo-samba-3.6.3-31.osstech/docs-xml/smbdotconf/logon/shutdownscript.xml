@@ -1,0 +1,52 @@
+<samba:parameter name="shutdown script"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータは、 <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> が呼び出すことで、
+	シャットダウン処理を実行するスクリプトのフルパス名である。</para>
+
+	<para>サーバに接続しているユーザが <constant>SeRemoteShutdownPrivilege</constant> 権利を有している場合、
+	このコマンドはroot権限で実行される。</para>
+
+	<para>%m %t %r %f パラメータは以下のように展開される:</para>
+	
+	<itemizedlist>
+		<listitem>
+			<para><parameter moreinfo="none">%m</parameter> はサーバに送信されるシャットダウンメッセージに置換される。</para>
+		</listitem>
+		
+		<listitem>
+			<para><parameter moreinfo="none">%t</parameter> は実際にシャットダウン処理が開始されるまでに待機する時間(秒単位)に置換される。</para>
+		</listitem>
+		
+		<listitem>
+			<para><parameter moreinfo="none">%r</parameter> は <emphasis>-r</emphasis> スイッチに置換される。これは NT の「シャットダウン後再起動」を意味する。</para>
+		</listitem>
+		
+		<listitem>
+			<para><parameter moreinfo="none">%f</parameter> は <emphasis>-f</emphasis> スイッチに置換される。これは NT の「アプリケーションが応答しない場合でも強制的にシャットダウンする」を意味する。</para>
+		</listitem>
+	</itemizedlist>
+
+	<para>シャットダウンスクリプト例を以下に示す:
+<programlisting format="linespecific">
+#!/bin/bash
+		
+time=$2
+let time=&quot;${time} / 60&quot;
+let time=&quot;${time} + 1&quot;
+
+/sbin/shutdown $3 $4 +$time $1 &amp;
+
+</programlisting>
+シャットダウン処理から復帰することはないので、この処理はバックグラウンドで実行する必要がある。
+</para>
+</description>
+<related>abort shutdown script</related>
+<value type="default"></value>
+<value type="example">/usr/local/samba/sbin/shutdown %m %t %r %f</value>
+</samba:parameter>

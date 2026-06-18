@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="Packaging">
+<chapterinfo>
+	<author>
+		<firstname>Jelmer</firstname><surname>Vernooij</surname>
+	</author>
+</chapterinfo>
+
+<title>パッケージングについての注意</title>
+
+<sect1>
+<title>バージョン番号の付与方法</title>
+
+<para>
+是非是非<filename>source/VERSION</filename>中にベンダバージョンサフィックスと番号を
+設定し、使用するパッケージのバージョニングを含めるために
+<filename>source/script/mkvesion.sh</filename>を呼び出してほしい。ベンダバージョンを
+作成するための関数を設定することがそこでは出来る。これにより、個別に構築したSambaシステム
+(しばしばパッチを当てたパッケージ)から標準のSambaシステムを区別するのがとても容易になる。
+例えば、良いバージョンの例は以下の通り:
+</para>
+
+<para><programlisting>
+Version 2.999+3.0.alpha21-5 for Debian
+</programlisting></para>
+
+</sect1>
+
+<sect1>
+<title>モジュール</title>
+
+<para>
+Samba3 はプラグインとしてSambaの一部を構築することをサポートしている。これは、たとえば、
+ldapまたはmysqlサポートを別パッケージにすることが可能となり、その結果、通常のSamba
+パッケージがLDAPやmysqlに依存しないようにすることが出来る。Sambaの多くの部分をプラグイン
+として構築するためには、以下のように行う:
+</para>
+
+<para>
+The option <literal>--with-shared-modules</literal>は、たとえばidmap_XXX and vfs_XXX
+のような特定のモジュールをサポートするために維持されている。例えば、
+<literal>--with-shared-modules=idmap_ad</literal>である。公式のリリース中で
+サポートしないように、<command>configure</command>コマンドにこのパラメータを使用する。
+</para>
+
+<para>
+<programlisting>
+./configure --with-shared-modules=rpc,vfs,auth,pdb,charset
+</programlisting>
+</para>
+
+</sect1>
+
+
+</chapter>

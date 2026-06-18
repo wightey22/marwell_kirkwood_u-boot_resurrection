@@ -1,0 +1,48 @@
+<samba:parameter name="logon home"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、Windows 95/98/NT Workstation
+	がSambaのPDCに対してログオンする際に用いられるホームディレクトリの位置を指定する。
+	これにより、例えば</para>
+		
+	<para><prompt moreinfo="none">C:\&gt;</prompt><userinput moreinfo="none">NET USE H: /HOME</userinput>
+	</para>
+
+	<para>のような形式でコマンドプロンプトから接続を行うことが可能となる。</para>
+
+	<para>このオプションには、通常の変数置換が適用されるため、
+	個々のユーザやマシン毎にログオンスクリプトを分けることが可能になっている。</para>
+
+	<para>このパラメータは、Windows 9x ワークステーションにおいて、
+	移動プロファイルをユーザのホームディレクトリのサブディレクトリに格納するために利用することが可能である。
+	この場合、以下のような設定を行う:</para>
+
+	<para><command moreinfo="none">logon home = \\%N\%U\profile</command></para>
+
+	<para> これにより、Samba はクライアントから NetUserGetInfo 
+	リクエストなどで情報を要求された場合に上記文字列を返却するが、その際変数置換が行なわれる。
+	Windows 9x のクライアントは、ユーザが <command moreinfo="none">net use /home</command> 
+	コマンドを発行した際には、この情報の \\server\share 部分だけを用いるが、
+	プロファイルを扱う場合は文字列全体を利用する。</para>
+
+	<para>Sambaの以前のバージョンでは、
+	<parameter moreinfo="none">logon home</parameter>ではなく、<smbconfoption name="logon path"/> が用いられていた。
+	このため、<command moreinfo="none">net use /home</command> がうまく動作しなかったが、
+	プロファイルをホームディレクトリの外に置くことが可能であった。
+	現在の実装は正しい実装である。上記のような技を用いることで、
+	このパラメータをプロファイルの位置の設定にも利用することが可能になっている。</para>
+
+	<para>
+	この機能を無効とするには、<smbconfoption name="logon home">""</smbconfoption> のように空の文字列を設定する。
+	</para>
+
+	<para>このパラメータは、Sambaがログオンサーバとして構成された場合のみ、
+	意味をもつ。</para>
+	<para>訳注: Samba 3.0 系列で LDAP や TDB を認証データベースとして用いている場合、これらの値はユーザ毎に保持され、本パラメータは指定がなかった際の既定値を設定するものとなる。</para>
+</description>
+<value type="default">\\%N\%U</value>
+<value type="example">\\remote_smb_server\%U</value>
+</samba:parameter>

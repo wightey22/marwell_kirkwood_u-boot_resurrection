@@ -1,0 +1,24 @@
+<samba:parameter name="create krb5 conf"
+	context="G"
+	type="string"
+		 advanced="1" developer="0"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+	  このパラメータを<value type="example">no</value>にすると、winbindが
+	  固有の krb5.confを作成することを防止する。krb5ライブラリがADのサイトを
+	  認識せず、そのため、可能性のある任意のドメインコントローラから対象として
+	  外すことがとても多いという理由で、winbindは通常これを行う。winbindは
+	  サイトを認識し、固有のkrb5.confファイルを作成することにより、
+	  krb5ライブラリがローカルのDCを使うようにする。
+	</para>
+	<para>
+	  winbindがこれを行うことを防止することは、winbindが知ることの出来ない、
+	  システム上にある、システムのkrb5.conf中に特別なオプションを追加しなければ
+	  ならない場合に必要かもしれない。
+	</para>
+
+</description>
+<value type="default">yes</value>
+</samba:parameter>

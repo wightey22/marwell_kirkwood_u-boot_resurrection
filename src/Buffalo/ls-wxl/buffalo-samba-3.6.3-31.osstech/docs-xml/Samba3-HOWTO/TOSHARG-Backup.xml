@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="Backup">
+<chapterinfo>
+	&author.jht;
+</chapterinfo>
+
+<title>バックアップテクニック</title>
+
+<sect1>
+<title>特徴と利点</title>
+
+<para>
+<indexterm><primary>バックアップ</primary></indexterm>
+<indexterm><primary>UNIX システムファイル</primary></indexterm>
+<indexterm><primary>システムツール</primary></indexterm>
+<indexterm><primary>Samba メーリングリスト</primary></indexterm>
+Samba プロジェクトは 10 才を超えている。 Samba の歴史の初期のころ、
+UNIX の管理者はその重要な実装者であった。 UNIX 管理者は UNIX システムツール
+を使って UNIX システムファイルをバックアップしている。
+過去 4 年間にわたって増加している Microsoft ネットワーク管理者は、 Samba に
+興味を持っている。
+このことは、 Samba メーリングリスト上のバックアップについての質問に反映され
+ている。
+</para>
+
+</sect1>
+
+<sect1>
+<title>バックアップ手段についての議論</title>
+
+<para>
+<indexterm><primary>メカノセット</primary></indexterm>
+<indexterm><primary>トレーニングコース</primary></indexterm>
+Microsoft Windows トレーニングコースで議論されている間、
+親 UNIX 派の代表一人が Windows NT4 が UNIX に比べ限定されていることを
+指摘してクラスを驚かせた。
+彼は UNIX をメカノセット (訳注:組立玩具。穴が空いた様々な形をした板を、
+ボルトとナットで組み合わせて様々な形を作る) に例えた。シンプル、効率的、
+で、組み合わせれば、望まれるいかなる成果への到達性がある、無限の道具
+である。
+</para>
+
+<para>
+<indexterm><primary>ネットワーク擁護者</primary></indexterm>
+<indexterm><primary>明らかな用途がより好まれる</primary></indexterm>
+Windows ネットワーク擁護者の一人が反論した。
+もしメカノセットを望むなら購入しただろう。
+しかし、複雑な単独のツールが、彼女のような人たちによってより好まれる。
+求められる以上のことを行うが、明らかな用途と意図によってなされるためだ。
+</para>
+
+<para>
+<indexterm><primary>相当な注意</primary></indexterm>
+<indexterm><primary>調査</primary></indexterm>
+<indexterm><primary>バックアップソリューション</primary></indexterm>
+ここにある情報は、あるがままでかつ適合性や適切さの推奨をしているものではないこと
+に注意すること。ネットワーク管理者は、どんなバックアップソリューションを構築す
+る前にも、無償か商用のソフトウェアのいずれも相当な注意による調査を実行することが
+奨励される。
+</para>
+
+<para>
+あなたが参照したいと思うだろう有用な Web サイトを最近偶然見つけた。
+場所は<ulink noescape="1" url="http://www.allmerchants.com/Software/Backup_Software/">
+www.allmerchants.com</ulink>である。
+</para>
+
+<para>
+以下の３つのフリーソフトウェアプロジェクトもまた考えてみる価値があるだろう。
+</para>
+
+	<sect2>
+	<title>BackupPC</title>
+
+	<para>
+	<indexterm><primary>BackupPC</primary></indexterm>
+	<indexterm><primary>rsync</primary></indexterm>
+	<indexterm><primary>rsyncd</primary></indexterm>
+	BackupPC バージョン 2.0.0
+	は <ulink url="http://backuppc.sourceforge.net">SourceForge</ulink> で
+	リリースされている。新しい機能は
+	<command>rsync/rsyncd</command> のサポートと CGI インタフェースの国際
+	化 (英語、フランス語、スペイン語とドイツ語を含む) を含む。
+	</para>
+
+	<para>
+<indexterm><primary>BackupPC</primary></indexterm>
+<indexterm><primary>ラップトップ</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>smbclient</primary></indexterm>
+<indexterm><primary>tar</primary></indexterm>
+<indexterm><primary>rsh</primary></indexterm>
+<indexterm><primary>ssh</primary></indexterm>
+<indexterm><primary>rsync</primary></indexterm>
+	BackupPC は Linux 、 UNIX と Windows PC とラップトップからサーバまで
+	をバックアップするための Perl ベースのハイパフォーマンスパッケージで
+	ある。
+	BackupPC は高度な設定が可能でインストールと保守が簡単である。
+	クライアントデータを引き出すために (smbclient を通して) SMB 、 
+	<command>tar</command> over <command>rsh/ssh</command> 、または 
+	<command>rsync/rsyncd</command> が使用される。
+	</para>
+
+	<para>
+<indexterm><primary>RAID</primary></indexterm>
+<indexterm><primary>ローカルディスク</primary></indexterm>
+<indexterm><primary>ネットワークストレージ</primary></indexterm>
+	ディスクと RAID システムのコストの減少によって、サーバのローカルディスク
+	やネットワークストレージに多数のマシンのバックアップを行うことが実用的、
+	効果的になった。 BackupPC はこれを行う。
+	</para>
+
+	<para>
+	重要な特徴は、同一ファイルのプーリング (サーバのディスクスペースの多大
+	なる倹約) 、圧縮、そしてバックアップのブラウズとリストアができ
+	る包括的な CGI インタフェースである。
+	</para>
+
+	<para>
+<indexterm><primary>GNU GPL</primary></indexterm>
+	BackupPC は GNU GPL ライセンスで配布されるフリーソフトウェアである。
+	BackupPC サーバが Linux/UNIX/freenix で動作する。またクライアントは
+	Linux 、 UNIX 、 Windows 9x/Me/200x/XP と Mac OSX でテストされた。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>Rsync</title>
+
+	<para>
+<indexterm><primary>rsync</primary></indexterm>
+<indexterm><primary>ftp</primary></indexterm>
+<indexterm><primary>http</primary></indexterm>
+<indexterm><primary>scp</primary></indexterm>
+<indexterm><primary>rcp</primary></indexterm>
+<indexterm><primary>チェックサム検索</primary></indexterm>
+	<command>rsync</command> は、ファイルやディレクトリツリーを効率的にコ
+	ピーする柔軟なプログラムである。</para>
+
+	<para><command>rsync</command> は、どのファイルをコピーするのか、どのよ
+	うに転送するかを設定するための多数のオプションがある。 rsync は
+	<command>ftp, http, scp</command> 、または <command>rcp</command> の
+	代替として使われるかもしれない。</para>
+
+	<para>
+<indexterm><primary>リモートアップデートプロトコル</primary></indexterm>
+<indexterm><primary>差分転送</primary></indexterm>
+<indexterm><primary>差分</primary></indexterm>
+	rsync リモートアップデートプロトコルによって、 rsync は 2 つのファイル
+	の差分のみをネットワークを通して転送することができる。
+	rsync パッケージに同梱されているテクニカルレポートに説明されている効
+	率的なチェックサム検索アルゴリズムを利用している。</para>
+
+	<para>rsync のその他の特徴</para>
+
+	<itemizedlist>
+
+		<listitem>
+		  <para>
+		    リンク、デバイスファイル、所有者、グループ、パーミッション
+		    のコピーをサポート。
+		  </para>
+		</listitem>
+
+		<listitem>
+		  <para>
+		    GNU tar に似た exclude と exclude-from オプション。
+		  </para>
+		</listitem>
+
+		<listitem>
+		  <para>
+		    CVS がするように同じファイルを無視する CVS exclude モード。
+		  </para>
+		</listitem>
+
+		<listitem>
+		  <para>
+		    透過的なリモートシェルの利用。 rsh と ssh を含む。
+		  </para>
+		</listitem>
+
+		<listitem>
+		  <para>
+		    root 権限を要求しない。
+		  </para>
+		</listitem>
+
+		<listitem>
+		  <para>
+		    待ち時間による損失を最小化するためにファイル転送のパイプライン化。
+		  </para>
+		</listitem>
+
+		<listitem>
+		  <para>
+		    匿名または認証された rsync サーバのサポート (ミラーリング
+		    に理想的)。
+		  </para>
+		</listitem>
+	</itemizedlist>
+
+	</sect2>
+
+	<sect2>
+	<title>Amanda</title>
+
+	<para>
+	<indexterm><primary>Amanda</primary></indexterm>
+	<indexterm><primary>native dump</primary></indexterm>
+	<indexterm><primary>GNU tar</primary></indexterm>
+	Amanda (the Advanced Maryland Automatic Network Disk Archiver) は、
+	複数のホストを単一の大きな容量のテープドライブへバックアップするための
+	単一のマスターバックアップサーバを LAN 管理者がセットアップできる
+	バックアップシステムである。
+
+	Amanda はシステム付属の dump と GNU tar を両方または片方を使い、様々な
+	バージョンの UNIX が稼働する多数のワークステーションをバックアップする
+	ことができる。最新のバージョンでは Samba を使って Microsoft Windows ホ
+	ストをバックアップすることも可能である。
+	</para>
+
+	<para>
+	Amanda に関するさらなる情報は、<ulink url="http://www.amanda.org/">
+	www.amanda.org/ サイト</ulink> を参照すること。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>BOBS: Browseable Online Backup System</title>
+
+	<para>
+	<indexterm><primary>BOBS</primary></indexterm>
+	Browseable Online Backup System (BOBS) は一揃いのオンラインバックアッ
+	プシステムである。
+	大きなディスクをバックアップを格納するために利用する。 Web ブラウザを
+	利用してファイルをブラウズすることができる。
+	AppleDouble とアイコンファイルのような特殊なファイルを取り扱うことができる。
+	</para>
+
+	<para>
+	BOBS のホームページは<ulink url="http://bobs.sourceforge.net/">
+	bobs.sourceforge.net</ulink> である。
+	</para>
+
+	</sect2>
+
+</sect1>
+
+</chapter>

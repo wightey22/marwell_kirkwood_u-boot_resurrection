@@ -1,0 +1,30 @@
+<samba:parameter name="ldapsam:trusted"
+	context="G"
+	type="string"
+		 advanced="1" developer="0"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+	デフォルトで、ドメインコントローラとして動作し、認証に LDAP を用いている Samba は、ユーザやグループの情報を取得するために、UNIX の NSS サブシステムを必要とする。
+	UNIX がユーザ情報を /etc/passwd や /etc/group に格納する機構からすると、これは明らかに非効率である。
+	ユーザが把握する必要がある重要な項目の一つに、所属グループの一覧がある。
+	通常の UNIX のユーザ管理機構であれば、/etc/group ファイルの全体を参照するか、LDAP 環境においては NSS 機構を用いて同様のことを行なう。
+	UNIX には group のメンバを参照するのに最適化された関数が存在している。
+	しかし、残念なことに、ユーザやグループを扱うその他の関数については、こうした最適化は行なわれていない。
+	</para>
+
+	<para>
+	o Samba を大規模環境に適用させるため、<smbconfoption name="ldapsam:trusted">yes</smbconfoption>
+	オプションにより、Samba に関係するユーザおよびグループのデータベースは LDAP 標準の posixAccount/posixGroup 属性に格納されているとみなす。
+	さらに、Samba の AUXILIARY(補助) オブジェクトクラスについても、同じ LDAP オブジェクト中に POSIX データとして格納されているものとみなす。
+	これらの前提条件に適合する場合、
+	<smbconfoption name="ldapsam:trusted">yes</smbconfoption> を設定することが可能となる。
+	この場合、Samba はユーザ情報の NSS に対する問い合わせを完全にバイパスする。
+	最適化された LDAP クエリにより、ログオンや管理作業が劇的に高速化される。
+	LDAP データベースのサイズにもよるが、共通的なクエリについては、100 倍以上の高速化が容易に達成される。
+	</para>
+
+</description>
+<value type="default">no</value>
+</samba:parameter>

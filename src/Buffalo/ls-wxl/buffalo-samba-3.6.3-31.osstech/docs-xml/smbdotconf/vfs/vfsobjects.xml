@@ -1,0 +1,11 @@
+<samba:parameter name="vfs objects"
+		type="list"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>vfs object</synonym>
+<description>
+	<para>このパラメータは、 Samba の VFS I/O 操作において用いられるバックエンド名を指定する。デフォルトでは通常のディスク I/O 操作が行なわれるが、 VFS オブジェクトによりこの操作を変更することが可能である。</para>
+</description>
+<value type="default"/>
+<value type="example">extd_audit recycle</value>
+</samba:parameter>

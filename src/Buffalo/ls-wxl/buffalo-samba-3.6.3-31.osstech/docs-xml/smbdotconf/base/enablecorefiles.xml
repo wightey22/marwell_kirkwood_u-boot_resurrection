@@ -1,0 +1,15 @@
+<samba:parameter name="enable core files"
+                 context="G"
+                 basic="1" advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+
+<description>
+        <para>このパラメータは、コアダンプが内部出口(internal exits)に書かれるように
+	  指定する。通常これは<constant>yes</constant>に設定する。
+	  決してこれを変更してはならない。
+	</para>
+</description>
+
+	<value type="default">yes</value>
+	<value type="example">no</value>
+</samba:parameter>

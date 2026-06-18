@@ -1,0 +1,25 @@
+<samba:parameter name="ldap admin dn"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+				 <description>
+
+	 <para>
+	<smbconfoption name="ldap admin dn"/> は、 Samba
+	がユーザのアカウント情報を取得するために ldap サーバに接続する際に
+	用いられる、Distinguished Name (DN) を指定する。
+	<smbconfoption name="ldap admin dn"/> は、
+	<filename moreinfo="none">private/secrets.tdb</filename> ファイルに
+	格納された admin dn のパスワードとともに用いられる。
+	これがどのように連携するかについての詳細な情報は、
+	<citerefentry><refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>
+	のマニュアルページを参照のこと。</para>
+
+	<para>
+	<smbconfoption name="ldap admin dn"/> には完全な DN 名を指定する必要がある。
+	<smbconfoption name="ldap suffix"/> の値が <smbconfoption name="ldap admin dn"/> に付加されることはない。
+	</para>
+</description>
+</samba:parameter>

@@ -1,0 +1,15 @@
+<samba:parameter name="msdfs root"
+                 context="S"
+		 tye="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para><constant>yes</constant>に設定された場合、 Samba はその共有を DFS ルートとして扱うため、クライアントは、その共有ディレクトリをルートとする DFS (分散ファイルシステム)ツリーを参照することが可能になる。
+	DFS リンクの作成は、共有ディレクトリ内で
+	<filename>msdfs:serverA\\shareA,serverB\\shareB</filename> のような形式でシンボリックリンクを作成することにより行なわれる。
+	DFS ツリーを Samba で構成する際の詳細情報については、
+	Samba3-HOWTO の MSDFS の章を参照のこと。</para>
+</description>
+<related>host msdfs</related>
+<value type="default">no</value>
+<para><smbconfoption name="host msdfs"/>も参照のこと</para>
+</samba:parameter>

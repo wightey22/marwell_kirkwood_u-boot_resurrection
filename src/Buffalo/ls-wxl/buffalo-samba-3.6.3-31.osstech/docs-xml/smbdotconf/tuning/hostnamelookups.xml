@@ -1,0 +1,13 @@
+<samba:parameter name="hostname lookups"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>Samba が(負荷のかかる)ホスト名検索を行なうか、 IP アドレスを使用するかを指定する。現在ホスト名検索を使用している箇所としては、
+    <command moreinfo="none">hosts deny</command> および <command moreinfo="none">hosts allow</command> の確認箇所などが挙げられる。
+    </para>
+</description>
+<value type="default">no</value>
+<value type="example">yes</value>
+</samba:parameter>

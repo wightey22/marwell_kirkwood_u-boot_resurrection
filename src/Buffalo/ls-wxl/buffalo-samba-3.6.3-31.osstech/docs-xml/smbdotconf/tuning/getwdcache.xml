@@ -1,0 +1,10 @@
+<samba:parameter name="getwd cache"
+                 context="G"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>これはチューニングのためのオプションである。このパラメータを有効にすると、 getwd() の呼び出し時間を減らすためのあるキャッシュアルゴリズムが有効になる。特に
+    <smbconfoption name="wide smbconfoptions"/> パラメータが <constant>no</constant> に設定された場合は、パフォーマンスに対して相当な効果がある。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

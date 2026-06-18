@@ -1,0 +1,25 @@
+<samba:parameter name="ldap replication sleep"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	Samba が読みとり専用の LDAP レプリカに対して、書き込みの要求を行なった際には、読み書き可能なマスタサーバと通信するようにリダイレクトを行なう。
+	その後マスタサーバは、変更を最初に通信した「ローカル」サーバに対して複製を行なうが、特に遅い回線越しの場合、これには数秒の時間を要する。
+	特にドメインへの参加といったクライアント側の処理については、「成功」した処理が LDAP のデータに即座に反映されないことで、
+	混乱する可能性がある。
+	</para>
+        
+	<para>
+	このオプションにより、LDAP サーバに変更が反映されるのを待つために Samba が短い時間待機するようになる。
+	遅延の大きいネットワークの場合、LDAP の複製に要する時間をネットワークモニタで取得の上、それに応じて値を増減すればよいだろう。
+	データの複製が完了したかどうかについてのチェックが行なわれるわけではない点に注意すること。
+	</para>
+	
+        <para>
+	この値はミリ秒単位で指定する。最大値は 5000 (5秒)である。
+	</para>
+</description>
+<value type="default">1000</value>
+</samba:parameter>

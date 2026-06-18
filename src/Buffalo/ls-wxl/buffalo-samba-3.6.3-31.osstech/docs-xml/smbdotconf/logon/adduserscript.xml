@@ -1,0 +1,47 @@
+<samba:parameter name="add user script"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、以下に記述する特別な条件下において、 <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> によって <emphasis>ROOT 権限で</emphasis> 実行されるスクリプトのフルパス名である。</para>
+
+	<para>通常、Samba サーバでは、サーバ上のファイルにアクセスするすべてのユーザに対して対応する UNIX ユーザが存在している必要がある。しかし、Windows NT のアカウントデータベースをユーザデータベースのマスタとして使うサイトでは、 Samba サーバ上のユーザの作成や保守を Windows NT の PDC と同期して行なうのは骨の折れる作業である。このオプションにより、Samba サーバに対してユーザがアクセスした時点で smbd が UNIX のユーザを <emphasis>必要に応じて</emphasis> 作成することが可能になる。</para>
+
+	<para>このオプションを使う場合、 <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> は <emphasis>決して</emphasis>
+	<smbconfoption name="security">share</smbconfoption> で構成されていてはならず、
+	<smbconfoption name="add user script"/> には、
+	作成される UNIX のユーザ名を表す <parameter moreinfo="none">%u</parameter> を引数にとり、
+	UNIX ユーザを作成するスクリプトのフルパス名が設定されている必要がある。
+	</para>
+
+	<para>Windows のユーザが Samba サーバにアクセスしようとして、
+	ログイン(SMB プロトコルの session setup) を行なう時に、 
+	<citerefentry><refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum></citerefentry> は、送信されたユーザ名とパスワードを認証するために、 
+	<smbconfoption name="password server"/> と通信を行なう。
+	認証が成功すると、 <command moreinfo="none">smbd</command> は
+	UNIX 上のパスワードデータベース中から対応する UNIX のユーザを検索して
+	Windows のユーザに対応づけようとする。この検索が失敗し、
+	<smbconfoption name="add user script"/>	が設定されていると、 
+	<command moreinfo="none">smbd</command> は、 
+	<parameter moreinfo="none">%u</parameter> 引数を作成すべきユーザ名に展開した上で、
+	設定されたスクリプトを <emphasis>ROOT 権限で</emphasis> 呼び出す。</para>
+
+	<para>スクリプトがユーザの作成に成功すると、 <command moreinfo="none">smbd
+	</command> は、その UNIX ユーザがすでに存在していたかのようにして処理を継続する。このようにして、存在する Windows NT のアカウントに対応する UNIX のユーザが動的に作成される。</para>
+
+	<para>
+	(訳注: この他に、Samba のドメイン環境において add user script はリモートからの要求によりユーザを作成するという重要な役割がある。)
+	</para>
+
+	<para>
+	<smbconfoption name="security"/>, <smbconfoption name="password server"/>,
+	<smbconfoption name="delete user script"/> も参照のこと。
+	</para>
+</description>
+
+<value type="default"/>
+<value type="example">/usr/local/samba/bin/add_user %u</value>
+</samba:parameter>

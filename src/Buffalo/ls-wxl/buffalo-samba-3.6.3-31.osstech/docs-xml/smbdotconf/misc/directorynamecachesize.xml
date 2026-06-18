@@ -1,0 +1,14 @@
+<samba:parameter name="directory name cache size"
+		 context="S"
+		 type="integer"
+		 advanced="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  このパラメータは、ディレクトリネームキャッシュのサイズを指定する。
+	  これは*BSDシステムではoffにする必要がある。
+	</para>
+
+</description>
+<value type="default">100</value>
+</samba:parameter>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbspool.8">
+
+<refmeta>
+	<refentrytitle>smbspool</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbspool</refname>
+	<refpurpose>印刷ファイルを SMB プリンタへ送信する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbspool</command>
+		<arg choice="req">job</arg> 
+		<arg choice="req">user</arg> 
+		<arg choice="req">title</arg> 
+		<arg choice="req">copies</arg> 
+		<arg choice="req">options</arg> 
+		<arg choice="opt">filename</arg> 
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para>smbspoolは印刷ファイルをSMBプリンタに送るための
+	とても小さい印刷スプール用プログラムである。
+	Common UNIX Printing System との互換性のため
+	コマンドライン引数は位置に依存するが、smbspool を任意の印刷システムで使ったり
+	プログラムやスクリプトから使ったりすることもできる。</para>
+
+	<para><emphasis>DEVICE URI</emphasis></para>
+
+	<para>smbspool は印刷先を Uniform Resource Identifier ("URI") を用いて指定する。
+	手段は "smb" を用いる。この文字列はいくつかの形式を取ることができる:</para>
+
+	<itemizedlist>
+		<listitem><para>smb://server/printer</para></listitem>
+		<listitem><para>smb://workgroup/server/printer</para></listitem>
+		<listitem><para>smb://username:password@server/printer</para></listitem>
+		<listitem><para>smb://username:password@workgroup/server/printer</para></listitem>
+	</itemizedlist>
+
+	<para>smbspool は 環境変数 <envar>DEVICE_URI</envar>からURI を得ようとする。
+	もし<envar>DEVICE_URI</envar>がなければ、smbspoolは、<quote>smb://</quote> が
+	プログラム名であったらargv[0]を、そうでなければargv[1]をを参照する。</para>
+
+	<para><command>exec(2)</command> を使うプログラムは
+	argv[0] に URI を渡すことができる。一方シェルスクリプトは 
+	smbspool を起動する以前に環境変数<envar>DEVICE_URI</envar>
+	を設定しなければならない。</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<itemizedlist>
+		<listitem><para>job 引数 (argv[1]) にはジョブID番号が入るが、
+		現在 smbspool では使われていない。
+		</para></listitem>
+
+		<listitem><para>user 引数 (argv[2]) には印刷ユーザの名前が入るが、
+		現在 smbspool では使われていない。
+		</para></listitem>
+
+		<listitem><para>title 引数 (argv[3]) には
+		ジョブのタイトル文字列が入り、印刷ジョブを送信する時に
+		リモートファイル名として渡される。</para></listitem>
+
+		<listitem><para>copies 引数 (argv[4]) には
+		名前が指定されたファイルを印刷する部数が入る。
+		もしファイル名が指定されていなければ smbspool は
+		この引数を使用しない。</para></listitem>
+
+		<listitem><para>option 引数 (argv[5]) には
+		印刷オプションが単一文字列で入るが、現在 
+		smbspool では使われていない。</para></listitem>
+
+		<listitem><para>filename 引数 (argv[6]) には
+		印刷するファイルの名前が入る。もしこの引数が指定されなければ
+		印刷ファイルは標準入力から読み込まれる。</para>
+		</listitem>
+	</itemizedlist>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページはバージョン3のSamba用である。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> と <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+<para><command>smbspool</command> は、Easy Software Products の Michael Sweet によって書かれた。</para>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+    Andrew Tridgell によって作られた。Samba は現在 Linux カーネルが
+    開発されているような方法でのオープンソースプロジェクトである 
+    Samba Team によって開発されている。</para>
+	
+	<para>オリジナルの Samba の マニュアルページは Karl Auer によって書かれた。
+	マニュアルページは YODL 形式(別の、優秀なオープンソースソフトウェアで、
+	<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">ftp://ftp.icce.rug.nl/pub/unix/</ulink>にある)
+	で変換され、Jeremy Allison によって Samba 2.0 リリースのために更新された。
+	Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。
+	Samba 3.0 のための DocBook XML 4.2 形式への変換は Alexander Bokovoy が行った。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+       <para>このドキュメントの Samba 3.0.0 対応の翻訳は、ちかましゅうへい によって行なわれた。</para>
+       <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉(ribbon@samba.gr.jp)によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>
+

@@ -1,0 +1,15 @@
+<samba:parameter name="ldap idmap suffix"
+                 context="G"
+		 advanced="1" developer="1"
+		 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは idmap mapping の情報の保存先のサフィックスを
+	指定する。このパラメータが設定されていない場合、
+	<smbconfoption name="ldap suffix"/> の値が代わりに使用される。
+	サフィックスの文字列には、<smbconfoption name="ldap suffix"/>
+	の文字列が付加されるため、相対 DN で指定を行なうこと。</para>
+</description>
+<value type="default"></value>
+<value type="example">ou=Idmap</value>
+</samba:parameter>

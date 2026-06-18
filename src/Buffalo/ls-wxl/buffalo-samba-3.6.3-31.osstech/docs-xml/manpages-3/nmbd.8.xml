@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="nmbd.8">
+
+<refmeta>
+	<refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>nmbd</refname>
+	<refpurpose>NetBIOS over TCP/IP クライアントへの
+	NetBIOS ネームサーバ機能の提供</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>nmbd</command>
+		<arg choice="opt">-D</arg>
+		<arg choice="opt">-F</arg>
+		<arg choice="opt">-S</arg>
+		<arg choice="opt">-a</arg>
+		<arg choice="opt">-i</arg>
+		<arg choice="opt">-o</arg>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-V</arg>
+		<arg choice="opt">-d &lt;debug level&gt;</arg>
+		<arg choice="opt">-H &lt;lmhosts file&gt;</arg>
+		<arg choice="opt">-l &lt;log directory&gt;</arg>
+		<arg choice="opt">-p &lt;port number&gt;</arg>
+		<arg choice="opt">-s &lt;configuration file&gt;</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+	<para>このプログラムは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+	<para><command>nmbd</command>
+	は、Windows95/98/Me、 Windows NT、Windows XP
+	や LanManager クライアントなどの SMB/CIFS クライアントによる
+	NetBIOS over TCP/IP のネームサービスのリクエストを認識し、
+	応答することができるサーバである。
+	また、Windows の「ネットワークコンピュータ」
+	で表示されるコンピュータの一覧を
+	作り出すブラウジングのプロトコルにも対応している。 </para>
+
+	<para>SMB/CIFS クライアントは、起動時に SMB/CIFS サーバを探索し、
+	サーバが用いている IP アドレスを確認しようとする。</para>
+
+	<para>サービスの中でもとりわけ <command>nmbd</command> は、
+	そのようなリクエストを監視し、自分の NetBIOS 名が指定されたなら、
+	自身の IP アドレスを返答する。
+	「自分の NetBIOS 名」は、
+	既定値では動作しているホストのプライマリDNS 名であるが、
+	これは &smb.conf; の <smbconfoption name="netbios name"/> 
+	によって変更可能である。
+	このように <command>nmbd</command> は、 自分の名前(復数の場合もある)を、
+	ブロードキャストの問い合わせに対して返答する。nmbd が返す追加の名前を、
+	<citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry>
+	設定ファイル中のパラメータで設定することができる。</para>
+
+	<para><command>nmbd</command> は、WINS (Windows Internet Name Service)
+	サーバとしても利用できる。
+	基本的にこれが意味することは、WINS データベースサーバとして、
+	受け取った名前登録要求からデータベースを構築でき、
+	またクライアントからの名前の問い合わせに応答することができるということである。
+	</para>
+
+	<para>さらに <command>nmbd</command> は、WINS proxy として動作でき、
+	WINS サーバに対して WINS プロトコルで交信することができないクライアントからの、
+	ブロードキャスト要求を中継することができる。 </para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-D</term>
+		<listitem><para>このパラメータが指定されると、<command>nmbd</command> はデーモンとして動作する。
+		すなわち、自分自身を分離してバックグラウンドで動作し、適切なポートのリクエストを処理する。 
+		既定では、<command>nmbd</command> はデーモンとして動作しない。
+		推奨しないが、nmbd は <command>inetd</command> からのメタ・デーモンとしても動作可能である。 
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-F</term>
+		<listitem><para>
+		このパラメータを指定すると、
+		<command>nmbd</command>
+		のメインプロセスはデーモン化しなくなる。
+		つまり、
+		2 回の <command>fork(2)</command> と端末からの切り離しを行なわない。
+		通常通り接続要求を処理するための子プロセスが生成されるが、
+		メインプロセスは終了しない。
+		この動作方式は、
+		Daniel J. Bernstein 作の <command>daemontools</command>
+		パッケージに含まれる
+		<command>supervise</command> と <command>svscan</command>
+		や、
+		AIX のプロセスモニターなど、プロセス監視の下で
+		<command>nmbd</command>
+		を動作させるのに都合がよい。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-S</term>
+		<listitem><para>このパラメータが指定されると、<command>nmbd</command> は
+		ファイルではなく標準出力にログを出力する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-i</term>
+		<listitem><para>このパラメータが指定されると、
+		サーバがシェルのコマンドライン上から起動されてもサーバはデーモンとはならずに「対話的に」動作する。
+		このパラメータにより、コマンドラインから起動した際に暗黙的にデーモンモードとなることが抑止される。
+		また、<constant>-S</constant> パラメータが指定されていたとしても、
+		<command>nmbd</command> は標準出力にログを出力する。
+		</para></listitem>
+		</varlistentry>
+
+		&stdarg.help;
+		
+		<varlistentry>
+		<term>-H &lt;filename&gt;</term>
+		<listitem><para>NetBIOS lmhosts ファイルの指定。lmhosts ファイルは、
+		NetBIOS 名と IP アドレスの組で構成されるリストである。 
+		これは、nmbd サーバによってロードされ、任意の NetBIOS 名を解決する問い合わせのために、
+		<citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry>中で記述されている、
+		<smbconfoption name="name resolve order"/>
+		名前解決メカニズムに従って、サーバが必要とする
+		NetBIOS 名の問い合わせを解決するために使われる。
+		このファイルの内容は、 <command>nmbd</command> が、
+		任意の名前問い合わせに応答する時には<emphasis>決して使われない</emphasis>ことに注意。
+		このファイルに行を追加すると、
+		このホストからの NetBIOS 解決に<emphasis>のみ</emphasis>影響する。</para>
+
+		<para>
+		このファイルへの既定値のパス名は、
+		Samba をビルドする過程でバイナリに埋め込まれる。
+		共通のデフォルト値は、
+		<filename>/usr/local/samba/lib/lmhosts</filename>、
+		<filename>/usr/samba/lib/lmhosts</filename> または
+		<filename>/etc/samba/lmhosts</filename> である。
+
+		このファイルの内容の詳細は、
+		<citerefentry><refentrytitle>lmhosts</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> マニュアルページを参照のこと。</para></listitem>
+		</varlistentry>
+
+		&popt.common.samba;
+		
+		<varlistentry>
+		<term>-p &lt;UDP port number&gt;</term>
+		<listitem><para>UDP ポート番号には正の整数を指定する。
+		このオプションは、<command>nmbd</command> が名前問い合わせに返答する、
+		既定値の UDP ポート番号(通常は137)を変更する。
+		あなたがどんな場面でも助けを必要としない専門家でない限り、
+		このオプションを使用してはならない! </para></listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>関連ファイル</title>
+
+	<variablelist>
+		<varlistentry>
+		<term><filename>/etc/inetd.conf</filename></term>
+		<listitem><para>サーバが <command>inetd</command>
+		メタ・デーモン経由で動作しているならば、このファイルは
+		メタ・デーモンのための適切な起動情報を含む必要がある。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><filename>/etc/rc</filename></term>
+		<listitem><para>(またはシステムが使う初期化スクリプト)</para>
+
+		<para>サーバをデーモンとして起動させるならば、
+		このファイルにサーバに応じた適切なスタートアップ
+		手順を含む必要がある。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><filename>/etc/services</filename></term>
+		<listitem><para>サーバを <command>inetd</command>
+		メタ・デーモン経由で起動させるなら、このファイルにサービス名
+		(例えば netbios-ssn)とサービスポート(例えば139)、
+		プロトコルタイプ(例えば tcp)のマッピングを含んでいなければいけない。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term><filename>/usr/local/samba/lib/smb.conf</filename></term>
+		<listitem><para>これは、
+		<citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> のデフォルトの位置である。
+		本ファイルのこれ以外の標準的なインストール位置は、
+		<filename>/usr/samba/lib/smb.conf</filename> と
+		<filename>/etc/samba/smb.conf</filename> である。
+		</para>
+
+		<para>WINS サーバとして動作させるなら
+		(<citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry>
+		マニュアルページの
+		<smbconfoption name="wins support"/>
+		パラメータを参照)、
+		<command>nmbd</command> は、Samba がインストールされた場所の下に作成される
+		<filename>var/locks</filename> ディレクトリ中の
+		<filename>wins.dat</filename> ファイルに WINS データベースを格納する。
+		</para>
+
+		<para><command>nmbd</command> が <emphasis>
+		ブラウズマスタ</emphasis> (
+		<citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> マニュアルページの
+		<smbconfoption name="local master"/> パラメータを参照)
+		として動作している場合、
+		<command>nmbd</command> は、Samba がインストールされた場所の下に作成される
+		<filename>var/locks</filename> ディレクトリ中の
+		<filename>browse.dat</filename> ファイルにブラウジングのデータベースを格納する。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>シグナル</title>
+
+	<para><command>nmbd</command> プロセスをシャットダウンするために、
+	SIGKILL(-9) を使用した場合、
+	名前データベースが整合性の崩れた状態で残ってしまう可能性があるため、
+	最後の手段として以外には <emphasis>決して</emphasis>推奨しない。
+	正しい方法は、SIGTERM(-15) を送り、<command>nmbd</command> が自ら終了するまで待つことである。</para>
+
+	<para><command>nmbd</command> が SIGHUP を受け取ると、名前の一覧を
+	<filename>/usr/local/samba/var/locks</filename> ディレクトリ
+	(または Samba 自身がインストールされた場所の配下に作成される
+	<filename>var/locks</filename> ディレクトリ)中のファイル
+	<filename>namelist.debug</filename> にダンプする。
+	同様に nmbd はサーバデータベースを <filename>log.nmb</filename>
+	ファイルにダンプする。</para>
+
+	<para><citerefentry><refentrytitle>smbcontrol</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry> を使うと
+	nmbd のデバッグ・ログ・レベルを上げたり下げたりできる
+	(SIGUSR[1|2] シグナルは Samba 2.2 からもはや使用されていない)。
+	これにより、通常は低いログ・レベルで動作させた状態で、
+	一時的な問題を診断することができる。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>この man ページは、Samba システムのバージョン 3 用になっている。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para>
+	<citerefentry><refentrytitle>inetd</refentrytitle><manvolnum>8</manvolnum></citerefentry>、
+	<citerefentry><refentrytitle>smbd</refentrytitle><manvolnum>8</manvolnum></citerefentry>、
+	<citerefentry><refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>、
+	<citerefentry><refentrytitle>smbclient</refentrytitle><manvolnum>1</manvolnum></citerefentry>、
+	<citerefentry><refentrytitle>testparm</refentrytitle><manvolnum>1</manvolnum></citerefentry>、
+	<citerefentry><refentrytitle>testprns</refentrytitle><manvolnum>1</manvolnum></citerefentry>、
+	Internet RFC の <filename>rfc1001.txt</filename>、<filename>rfc1002.txt</filename>。
+	その他 CIFS(以前のSMB)の仕様を以下のWebページにあるリンクから入手できる:
+	<ulink noescape="1" url="http://samba.org/cifs/">
+	http://samba.org/cifs/</ulink> 。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作られた。Samba は現在 Linux カーネルが
+	開発されているような方法でのオープンソースプロジェクトである
+	Samba Team によって開発されている。</para>
+
+	<para>オリジナルの Samba の マニュアルページは Karl Auer によって書かれた。
+	マニュアルページは YODL 形式(別の、優秀なオープンソースソフトウェアで、
+	<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink> にある)
+	で変換され、Jeremy Allison によって Samba 2.0 リリースのために更新された。
+	Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。
+	Samba 3.0 のための DocBook XML 4.2 形式への変換は
+	Alexander Bokovoy が行った。</para>
+</refsect1>
+	
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.0.23 - 3.5.3  対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>たかはしもとのぶ (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>ちかましゅうへい</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+
+	<para>Samba 3.0.23 - 3.0.24 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+	<para>Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉 (ribbon@samba.gr.jp) によって行なわれた。</para>
+</refsect1>
+
+
+</refentry>

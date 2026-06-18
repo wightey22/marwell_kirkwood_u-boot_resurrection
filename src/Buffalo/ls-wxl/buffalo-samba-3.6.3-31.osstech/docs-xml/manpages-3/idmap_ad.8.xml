@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="idmap_ad.8">
+
+<refmeta>
+	<refentrytitle>idmap_ad</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>idmap_ad</refname>
+	<refpurpose>Winbind用のSambaの idmap_adバックエンド</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<title>説明</title>
+	<para>idmap_adプラグインは、RFC2307/SFUスキーマ拡張を使うADサーバからの
+       idマッピングをWinbindが読み出す方法を提供する。このモジュールは&quot;idmap&quot;
+	APIのみに実装され、リードオンリである。マッピングは、posixAccount/posixGroupクラスと、ユーザに対する
+相対的な属性型/属性値ペアとAD中のグループオブジェクトを管理者によって前もって
+追加することを提供されることが必要である。</para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>IDMAP オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>range = low - high</term>
+		<listitem><para>
+              　これは、バックエンドが信頼できるuidとgidレンジの有効な一致を定義する。
+		レンジはフィルタとして振る舞うことに注意。もしも、指定された任意のUIDまたはGIDが
+		レンジを外れてしまうAD内に格納されていたならば、レンジは無視され、対応する
+		マップは破棄される。ローカルとリモートで定義されたIDの、偶然のUID/GIDの重なりを防ぐために、それは意図されている。</para></listitem>
+		</varlistentry>
+		<varlistentry>
+		<term>schema_mode = &lt;rfc2307 | sfu &gt;</term>
+		<listitem><para>
+                                                                        			Active Directory に関するユーザとグループ情報を問い合わせるときに、idmap_adを
+		使うべきであるスキーマを定義する。これは、Windows 2003 R2またはService for Unix(SFU)
+スキーマ中に含まれているRFC2307スキーマサポートよりも簡単である。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>使用例</title>
+	<para>
+        以下の例は、どのように、プリンシパルと信頼されたADドメインから相対的なidマッピングを
+	検索するかを示している。もしも、信頼されたドメインが存在するidと競合するならば、
+	それは、あらかじめ解決されていなければならず、順番が競合したマッピングはその時点
+	で解決されていることについては何らの保証もない。
+
+	この例はまた、どのように、BULITINのような内部のバックエンドを使うことが出来る
+ローカルのid割り当てのために競合しない小さなレンジを残すための方法を示している。</para>
+
+	<programlisting>
+	[global]
+	idmap backend = tdb
+	idmap uid = 1000000-1999999
+	idmap gid = 1000000-1999999
+	idmap config CORP : backend  = ad
+	idmap config CORP : range = 1000-999999
+	</programlisting>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+オリジナルの Samba ソフトウェアと関連するユーティリティは、 Andrew Tridgell によって作成された。現在 Samba は Samba Team によって、 Linux カーネルの開発と同様のオープンソースプロジェクトとして開発が 行なわれている。</para>
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの翻訳は
+	<itemizedlist>
+		<listitem><para>武田保真</para></listitem>
+		<listitem><para>たかはしもとのぶ</para></listitem>
+		<listitem><para>太田俊哉(ribbon@samba.gr.jp)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+</refentry>

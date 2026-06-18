@@ -1,0 +1,57 @@
+<samba:parameter name="dfree command"
+	         context="S"
+			 type="string"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para><parameter moreinfo="none">dfree command</parameter> パラメータは、
+	Samba のディスク空き容量の計算で問題が発生するシステムでのみ利用すること。
+	Ultrix では問題の発生することが知られているが、
+	他のオペレーティングシステムで発生するかも知れない。
+	この問題は、各々のディレクトリの一覧表示の終了時に
+	「終了 再試行 無視 (Abort Retry Ignore)」のエラーが発生する形で顕在化する。</para>
+
+	<para>このパラメータでは、
+	総ディスク容量と空き容量を計算する内部ルーチンを置き換える外部スクリプトを指定する。
+	以下に、この機能を果たすスクリプトの仕様を示す。
+	</para>
+
+	<para>
+	Samba 3.0.21 において、このパラメータは共有単位に設定可能なパラメータとなり、
+	新たに追加された <smbconfoption name="dfree cache time"/> パラメータにより、
+	高負荷のシステムにおいて、このスクリプトの出力結果をキャッシュできるようになった。
+	</para>
+
+	<para> 外部スクリプトは、対象となるファイルシステム中のディレクトリを示すパラメータ 1 つを受け取る。
+	これは通常 <filename moreinfo="none">./</filename>という文字列からなる。
+	スクリプトはアスキー文字で 2 つの整数を返さなければならない。
+	1 つめはブロック単位のディスク総容量で、 2 つめは利用できるブロック数でなければならない。
+	3 番目の戻り値として、オプションでブロックサイズをバイト単位で返却させることもできる。
+	デフォルトのブロックサイズは 1024 バイトである。</para>
+
+	<para>注意: スクリプトは、setuid や setgid しては <emphasis>ならず</emphasis>、
+	(root のみ書き込み可能で)所有者は root である必要がある。</para>
+
+	<para>dfree スクリプト(実行可能にする必要がある)を以下に示す:
+<programlisting format="linespecific"> 
+#!/bin/sh
+df $1 | tail -1 | awk '{print $(NF-4),$(NF-2)}'
+</programlisting>
+        </para>
+        <para>
+	もしくは、以下のようなものも考えられる(Sys V ベースのシステムの場合):
+<programlisting format="linespecific"> 
+#!/bin/sh
+/usr/bin/df -k $1 | tail -1 | awk '{print $3&quot; &quot;$5}'
+</programlisting>
+</para>
+<para>
+	システムによっては、コマンド名をフルパスで記述する必要がある場合があるので注意。</para>
+
+	<para>
+	デフォルトは内部ルーチンにより、ディスクの総容量と空き容量が計算される。
+	</para>
+
+</description>
+<value type="example">/usr/local/samba/bin/dfree</value>
+</samba:parameter>

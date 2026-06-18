@@ -1,0 +1,3451 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="classicalprinting">
+
+<chapterinfo>
+	<author>
+		<firstname>Kurt</firstname><surname>Pfeifle</surname>
+		<affiliation>
+			<orgname>Danka Deutschland GmbH</orgname>
+			<address><email>kpfeifle@danka.de</email></address>
+		</affiliation>
+	</author>
+	&author.jerry;
+	&author.jht;
+	<pubdate>May 31, 2003</pubdate>
+</chapterinfo>
+
+<title>旧式の印刷サポート</title>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>ミッションクリティカル</primary></indexterm>
+印刷はユーザに取ってしばしばミッションクリティカルなサービスである。Sambaは、
+Windows ワークステーションからなるクライアントネットワークのために、信頼性が
+あり、シームレスなこのサービスを提供出来る。
+</para>
+
+<para>
+<indexterm><primary>印刷サービス</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>スタンドアロンサーバ</primary></indexterm>
+<indexterm><primary>ファイルサービス</primary></indexterm>
+<indexterm><primary>専用印刷サーバ</primary></indexterm>
+<indexterm><primary>印刷サーバ</primary></indexterm>
+<indexterm><primary>印刷サポート</primary></indexterm>
+<indexterm><primary>Point'n'Print</primary></indexterm>
+<indexterm><primary>プリンタ追加ウィザード</primary></indexterm>
+<indexterm><primary>ドライバのアップロード</primary></indexterm>
+<indexterm><primary>ドライバの管理</primary></indexterm>
+<indexterm><primary>ドライバのインストール</primary></indexterm>
+<indexterm><primary>print accounting</primary></indexterm>
+<indexterm><primary>Common UNIX Printing System</primary><see>CUPS</see></indexterm>
+Samba印刷サービスは、ファイルサービス機能と並列に、あるいは専用のサーバ上で、スタンド
+アロンかドメインメンバサーバで動かす事が出来る。これは、必要に応じて強力に、あるいは
+比較的穏やかにセキュアにすることが出来る。設定は簡単になることも複雑になることもある。
+有効な認証スキームは、以前の章にあるようなファイルサービス用に説明されたのと基本的に
+同じである。全体的に、現在、Sambaの印刷サポートは、多くの場合、付加機能を付けた上で、
+Windows NTまたはWindows2000印刷サーバと完全に対等で、置き換えることが出来る。
+クライアントはクライアント上でなじみのある<literal>ポイント アンド プリント</literal>
+メカニズムを通して、ドライバをダウンロードし、プリンタをインストールできる。
+<literal>ログオンスクリプト</literal>で実行されるプリンタのインストールは何の問題もない。
+管理者はおなじみの<literal>プリンタ追加ウィザード</literal>を使ってクライアントで
+使うことによって、ドライバのアップロードと管理ができる。更に追加の便利な機能としては、
+ドライバとプリンタ管理はコマンド行かスクリプトを通して実行でき、これは、大量の
+プリンタがある場合により効率的である。もしも、集中した印刷ジョブの利用状況管理
+(訳注:原文はaccount)(すべての単一ページの追跡といろいろな統計レポートに生データを
+供給すること)が必要とされる場合、この機能は、Sambaサーバ下の印刷サブシステムとして、
+新しい共通UNIX印刷システム(CUPS)によって最もよくサポートされている。
+</para>
+
+<para>
+<indexterm><primary>BSD</primary></indexterm>
+<indexterm><primary>CUPS</primary></indexterm>
+この章では、より現代的なUNIXのBSDとSystem V形式の印刷システムによって実装された、
+Sambaの印刷機能の基礎を概観する。この章中の情報の大多数はCUPSにも適用出来る。
+もしもCUPSを使っているならば、次の章に飛んでも良いが、すべきことのうち少なくとも
+いくつかはきっと取りこぼすだろう。さらなる情報は、
+<link linkend="CUPS-printing">CUPS 印刷環境</link>を参照のこと。
+</para>
+
+<note>
+<para>
+<indexterm><primary>Windows XP Professional</primary></indexterm>
+<indexterm><primary>Windows 200x/XP</primary></indexterm>
+<indexterm><primary>Windows NT4</primary></indexterm>
+ほとんどの以下の例はWindows XP Professionalクライアントで評価されている。この文書で
+コマンドを発行した結果を記述しているところは、Windows 200x/XPクライアントでほとんど
+同じだが詳細では多少違っている事を心に留めておくこと。Windows NT4は更に多少異なる。
+</para>
+</note>
+
+</sect1>
+
+<sect1>
+<title>技術的な序論</title>
+
+<para>
+<indexterm><primary>印刷サポート</primary></indexterm>
+<indexterm><primary>印刷サブシステム</primary></indexterm>
+<indexterm><primary>印刷システム</primary></indexterm>
+Sambaの印刷サポートは、常時それが動作しているUNIX OS上の、インストールされている印刷
+サブシステム上に依存している。Sambaは<literal>仲介者</literal>である。Windows(か
+他のSMB)クライアントから印刷ファイルを受け取り、それをさらなる処理のために実際の印刷
+システムに渡す。そのため、両方に接続する必要がある。すなわち、Windows印刷クライアントと
+UNIX印刷システムである。それゆえ、異なった機能と異なった形でアクセスされる、種々の
+UNIX印刷サブシステムと同様、おのおのが異なって振る舞う種々のクライアントOSの間での違いを
+認める必要がある。
+</para>
+
+<para>
+<indexterm><primary>UNIXでの印刷</primary></indexterm>
+<indexterm><primary>CUPS</primary></indexterm>
+この章では伝統的なUNIX印刷方式について取り扱う。次の章では、より最新のCUPSについて、
+より詳しく説明する。
+</para>
+
+<important><para>
+<indexterm><primary>CUPS</primary></indexterm>
+CUPSユーザに注意:次の章まで飛ばないこと。ここのみで説明がある重要な情報を読み飛ばすことになる!
+</para></important>
+
+<para>
+<indexterm><primary>印刷設定</primary></indexterm>
+<indexterm><primary>problematic print</primary></indexterm>
+<indexterm><primary>印刷処理</primary></indexterm>
+<indexterm><primary>印刷フィルタリング</primary></indexterm>
+現在、Samba管理の側面において、最も問題があることの一つは印刷の設定であることは、Samba
+メーリングリスト上で投稿されたことでも明らかである。多くの新しいSamba管理者は、Sambaが
+ある種の印刷処理を実行しているというような印象を持っている。保証するが、Sambaは
+何らの印刷処理をも実行しない。何らの印刷フィルタリングも行わない。
+</para>
+
+<para>
+<indexterm><primary>データストリーム</primary></indexterm>
+<indexterm><primary>ローカルスプール領域</primary></indexterm>
+<indexterm><primary>スプールされたファイル</primary></indexterm>
+<indexterm><primary>ローカルシステムの印刷</primary></indexterm>
+Sambaは、ローカルスプール領域にスプールされる、クライアントからデータストリーム
+(印刷ジョブ)を受け取る。印刷ジョブ全部を受け取ると、SambaはローカルのUNIX/Linux印刷
+コマンドを起動し、それに対してスプールされたファイルを渡す。それはローカルの印刷
+サブシステムを起動し、正しく印刷ジョブを処理し、プリンタに対してデータを渡す。
+</para>
+
+<sect2>
+<title>クライアントからSambaへの印刷ジョブの処理</title>
+
+<para>
+Sambaサーバ経由でWindowsクライアントからUNIXプリンタへの印刷がうまくいくためには、
+6つ(潜在的には7つ)のステージがある:
+</para>
+
+<orderedlist>
+	<listitem><para>プリンタ共有に対してWindowsがコネクションをオープンする。</para></listitem>
+
+	<listitem><para>Sambaはユーザを認証しなければならない。</para></listitem>
+
+	<listitem><para>Windowsがネットワーク経由でSambaのスプール領域に印刷ファイルの
+	コピーを送る。</para></listitem>
+
+	<listitem><para>Windowsはコネクションをクローズする。</para></listitem>
+
+	<listitem><para>Sambaは、UNIX印刷サブシステムの印刷領域経由でファイルを扱う
+	ために印刷コマンドを起動する。</para></listitem>
+
+	<listitem><para>UNIX印刷サブシステムが印刷ジョブを処理する。</para></listitem>
+
+	<listitem><para>印刷ファイルはSambaスプール領域から明示的に削除される必要がある。
+	これの要素は使用しているマシンのプリントスプーラの構成の設定に依存する。
+	</para></listitem>
+</orderedlist>
+</sect2>
+
+<sect2>
+<title>印刷に関連する設定パラメータ</title>
+
+<para>
+<indexterm><primary>グローバルレベル</primary></indexterm>
+<indexterm><primary>サービスレベル</primary></indexterm>
+<indexterm><primary>印刷の動作</primary></indexterm>
+Sambaの印刷動作を制御するための設定パラメータは多数ある。それらの概要については
+&smb.conf;のマニュアルページを参照してほしい。他のパラメータと同様、グローバルレベル
+(一覧上で<emphasis>G</emphasis>とタグが付いているもの)とサービスレベル
+(<emphasis>S</emphasis>)パラメータがある。
+</para>
+
+<variablelist>
+	<varlistentry><term>グローバルパラメータ</term>
+		<listitem><para>これらは明示的に共有定義に<emphasis>記述しなくても良い</emphasis>。
+		もしもエラーになったならば、(もしも動作させたならば)<command>testparm</command>
+		ユーティリティでそれを見つけることが出来、そのことを表示する。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term>サービスレベルパラメータ</term>
+		<listitem><para>これらは&smb.conf;中の<smbconfsection name="[global]"/>
+		セクションで指定しても良い。この場合、個人毎すべてかサービスレベルの
+		共有の既定値の動作を定義する(同じパラメータに対して異なった設定の定義を
+		を持たない形で提供されるので、グローバルの既定値を上書きする)。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>簡単な印刷設定</title>
+
+<para>
+<indexterm><primary>BSD形式の印刷方式</primary></indexterm>
+<indexterm><primary>簡単な印刷方式</primary></indexterm>
+<indexterm><primary>クライアントに対して印刷を有効にする</primary></indexterm>
+<indexterm><primary>印刷環境</primary></indexterm>
+<link linkend="simpleprc">BSD印刷環境での簡単な設定</link>は、簡単な印刷の設定を示して
+いる。もしも現在使っている環境と比較して、OSベンダによってあらかじめ設定されている追加の
+パラメータを見つけるかもしれない。以下は、パラメータについての議論と説明である。この例は
+多くのパラメータを使っていない。しかし、多くの環境において、すべてのクライアントに対して
+印刷を有効にする有効な&smb.conf;ファイルを提供するためには、これは十分である。
+</para>
+
+<example id="simpleprc">
+<title>BSD印刷環境での簡単な設定</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="printing">bsd</smbconfoption>
+<smbconfoption name="load printers">yes</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="printable">yes</smbconfoption>
+<smbconfoption name="public">yes</smbconfoption>
+<smbconfoption name="writable">no</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>testparm</primary></indexterm>
+<indexterm><primary>間違った設定</primary></indexterm>
+<indexterm><primary>ページャプログラム</primary></indexterm>
+これは単に例としての設定である。Sambaはすべての設定パラメータに対して既定値を割り当てて
+いる。既定値は保守的でかつ賢明な値となっている。パラメータが&smb.conf;ファイル中で指定
+されたならば、それは既定値を上書きする。rootで<command>testparm</command>ユーティリティ
+を実行すると、&smb.conf;ファイルの設定のように両方の既定値とすべての設定を報告する
+機能がある。<command>Testparm</command>は間違った設定のすべてに対して警告を表示する。
+完全な出力は360行を軽く超えるので、その結果をページャプログラムに渡しても良いだろう。
+</para>
+
+<para>  
+<indexterm><primary>設定の文法</primary></indexterm>
+<indexterm><primary>綴りミスに対する寛容さ</primary></indexterm>
+<indexterm><primary>大文字小文字を区別しない</primary></indexterm>
+設定ファイルの文法は理解するのが簡単である。その文法について細かいことを知らなくても
+よい。この文書のどこかで説明されているが、Sambaはある種の綴りミスには寛容であり
+(たとえば、<smbconfoption name="browsable"/>の代わりに<smbconfoption name="browseable"/>
+など)、綴りは大文字小文字を無視する。論理値に対して、<parameter>Yes/No</parameter>か
+<parameter>True/False</parameter>を使うことも出来る。名前のリストは、カンマ、空白か
+タブで分離できる。
+</para>
+
+<sect2>
+<title><command>testparm</command>による設定の検査</title>
+
+<para>
+<indexterm><primary>印刷関連の設定</primary></indexterm>
+<indexterm><primary>lp</primary></indexterm>
+<indexterm><primary>print</primary></indexterm>
+<indexterm><primary>spool</primary></indexterm>
+<indexterm><primary>driver</primary></indexterm>
+<indexterm><primary>ports</primary></indexterm>
+<indexterm><primary>testparm</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>印刷の設定</primary></indexterm>
+<indexterm><primary>プリンタの設定</primary></indexterm>
+<indexterm><primary>スプールのパス</primary></indexterm>
+暗黙で使えるものを含む、Samba中で印刷に関連したすべての(あるいはほとんど全部)を見る
+ためには、以下で概要を説明しているコマンドを使う。このコマンドは
+<command>testparm</command>の出力中に現れるすべての
+<constant>lp</constant>、<constant>print</constant>、<constant>spool</constant>、<constant>driver</constant>,
+<constant>ports</constant>と<constant>[</constant>を検出する。これは、動作している
+<command>smbd</command>の印刷設定の簡便な概要を提供する。このコマンドは個別に作成された
+プリンタ共有かそれが使えるスプールパスを表示しない。
+<link linkend="simpleprc">上記の例</link>で示される設定で設定したSambaの出力は以下の
+ようになる:
+<screen>
+&rootprompt;<userinput>testparm -s -v | egrep "(lp|print|spool|driver|ports|\[)"</userinput>
+ Load smb config files from /etc/samba/smb.conf
+ Processing section "[homes]"
+ Processing section "[printers]"
+ 
+ [global]
+        smb ports = 139 445
+        lpq cache time = 10
+        load printers = Yes
+        printcap name = /etc/printcap
+        disable spoolss = No
+        enumports command =
+        addprinter command = 
+        deleteprinter command = 
+        show add printer wizard = Yes
+        os2 driver map =
+        printer admin =
+        min print space = 0
+        max print jobs = 1000
+        printable = No
+        printing = bsd
+        print command = lpr -r -P'%p' %s
+        lpq command = lpq -P'%p'
+        lprm command = lprm -P'%p' %j
+        lppause command =
+        lpresume command =
+        printer name =
+        use client driver = No
+
+ [homes]
+
+ [printers]
+        path = /var/spool/samba
+        printable = Yes
+</screen>
+</para>
+
+<para>
+Sambaの既定値の動作によって暗黙で追加される設定を検査するのは簡単である。
+<emphasis>確認:Sambaの将来の関係で重要かもしれない。</emphasis>
+</para>
+
+<note><para>
+Samba-3中の<command>testparm</command>は2.2.xのものとは動作が異なる。<quote>-v</quote>
+スイッチなしで使うと、実際に書かれた設定のみを表示する。使用している完全な設定を見る
+ためにはtestparmに<quote>-v</quote>オプションを追加する。
+</para></note>
+
+</sect2>
+
+<sect2>
+<title>手っ取り早い設定の検証</title>
+
+<para> 
+<indexterm><primary>トラブルシュート</primary></indexterm>
+<indexterm><primary>testparm</primary></indexterm>
+<indexterm><primary>パラメータ</primary></indexterm>
+<indexterm><primary>検査</primary></indexterm>
+どのようなステージでもトラブルシュートをする必要があるので、常時、最初にこの点に戻り、
+<command>testparm</command>が期待しているパラメータを表示するかを検査する。
+個人的な経験から忠告すると、<smbconfoption name="load printers"/>パラメータを
+コメントアウトすることを試すこと。もしも2.2.xシステムの動作が、私の環境のようで
+あれば、以下のような表示が出る:
+</para>
+
+<para><screen>
+&rootprompt;grep "load printers" /etc/samba/smb.conf
+        #  load printers = Yes
+        # This setting is commented out!!
+ 
+&rootprompt;testparm -v /etc/samba/smb.conf | egrep "(load printers)"
+        load printers = Yes
+</screen></para>
+
+<para>
+<indexterm><primary>設定のコメントアウト</primary></indexterm>
+<indexterm><primary>プリンタの公開</primary></indexterm>
+この設定をコメントアウトするとSambaが自分のプリンタを公開させなくすると仮定したが、
+実際には引き続き公開している。理由を理解するのには時間がかかった。少なくともこれに
+よって、もはや馬鹿にされることはない。
+<screen>
+&rootprompt;<userinput>grep -A1 "load printers" /etc/samba/smb.conf</userinput>
+        load printers = No
+        # The above setting is what I want!
+        #  load printers = Yes
+        # This setting is commented out!
+
+&rootprompt;<userinput>testparm -s -v smb.conf.simpleprinting | egrep "(load printers)"</userinput>
+        load printers = No
+</screen></para>
+
+<para>
+<indexterm><primary>明示的な設定</primary></indexterm>
+パラメータを明示的に<smbconfoption name="load printers">No</smbconfoption>に設定する時
+にのみ、Sambaは意向にかなう。そのため、以下を強く推奨する:
+</para>
+
+<itemizedlist>
+	<listitem><para>コメントアウトしたパラメータには決して頼らない。</para></listitem>
+
+	<listitem><para>常時、そう動作させたいと意図するものについては、明示的に
+	パラメータを設定する。</para></listitem>
+
+	<listitem><para>意向を反映しないかもしれない隠れた設定を、見える化するために
+	<command>testparm</command>を使う。</para></listitem>
+</itemizedlist>
+
+<para>
+以下は最小の設定ファイルである:
+<screen>
+&rootprompt;<userinput>cat /etc/samba/smb.conf-minimal</userinput>
+        [printers]
+</screen></para>
+
+<para>
+<indexterm><primary>testparm</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+この例は、任意のSamba構成ファイルをテストするために、<command>testparm</command>を
+使って表示すべきである。実際、現在動いているシステム(正確に何をやっているか知っている
+限り)を<emphasis>変更しない</emphasis>ことを勧める。smbd再起動後にのみ変更の影響が
+反映されるという仮定に頼ってはいけない!これは本当ではない。Sambaは60秒ごととクライアント
+からの接続時に再読込を行う。適用する事を意図しない製品のクライアントのために､変更に
+直面しなければならないかもしれない。そのほか、いくつかの興味深いことに注意するとよい。
+<command>testparm</command>は、この最低限の構成を使う時にSambaの印刷設定がどうあるかを
+識別するために便利である。以下では、見つけようと思っているものがある:
+<screen>
+&rootprompt;<userinput>testparm -v smb.conf-minimal | egrep "(print|lpq|spool|driver|ports|[)"</userinput>
+ Processing section "[printers]"
+ WARNING: [printers] service MUST be printable!
+ No path in service printers - using /tmp
+
+        lpq cache time = 10
+        load printers = Yes
+        printcap name = /etc/printcap
+        disable spoolss = No
+        enumports command =
+        addprinter command =
+        deleteprinter command =
+        show add printer wizard = Yes
+        os2 driver map =
+        printer admin =
+        min print space = 0
+        max print jobs = 1000
+        printable = No
+        printing = bsd
+        print command = lpr -r -P%p %s
+        lpq command = lpq -P%p
+        printer name =
+        use client driver = No
+
+ [printers]
+        printable = Yes
+</screen></para>
+
+<para>
+<command>testparm</command>は2つの警告を表示する:
+</para>
+
+<itemizedlist>
+	<listitem><para><smbconfsection name="[printers]"/>セクションが印刷可能と指定していない。</para></listitem>
+	<listitem><para>どのスプールディレクトリを使うかをSambaに指定していない。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>compile-time options</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+<indexterm><primary></primary></indexterm>
+<indexterm><primary></primary></indexterm>
+しかし、これは致命的ではなく、Sambaは動作するように既定値を設定する。が、この例を
+頼らず、使わないでほしい。これは、自分が何を要求しているかを正確にわかっている設定と
+注意深い設計を手助けするために用意された。使用しているシステムからの結果は、異なった
+コンパイル時オプションによって構築されたSambaで、いくつかのパラメータによっていろいろと
+変わる。<emphasis>警告:</emphasis>有効な行の<emphasis>行末に</emphasis>コメントサイン
+を置いてはいけない。この場合、パラメータは無視される(行頭にコメントサインを置いたのと
+同じになる)。最初にこれは使用しているSambaのバージョンのバグではないかと思った。しかし、
+マニュアルページには明確に
+<literal>パラメータ値の内部の空白は、正確にその通りに保持される</literal>と書いてある。
+これは、たとえば以下のような行があると
+<smbconfblock>
+<smbconfcomment>これはLPRngを印刷システムとして定義する。</smbconfcomment>
+<smbconfoption name="printing"> lprng</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+定義したい値として<literal>=</literal>記号の後の文字列すべてを尊重する。これは、不正な
+値なので無視され、この場所では既定値が使われる。
+</para>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>拡張印刷設定</title>
+
+<para>
+<indexterm><primary>拡張BSD印刷環境</primary></indexterm>
+<indexterm><primary>BSD形式の印刷</primary></indexterm>
+<indexterm><primary>CUPS</primary></indexterm>
+<indexterm><primary>testparm</primary></indexterm>
+<link linkend="extbsdpr">拡張BSD印刷環境の設定</link>は、BSD形式の印刷設定中の印刷に
+関連した設定のためのより詳細な設定を表示する。下記は、いろいろなパラメータの議論と
+説明である。昔からのUNIX/Linuxマシン上で最も一般的に使われているので、BSD形式の
+印刷環境を使う事をした。主に新しいシステムでは、別の章で議論されているCUPSを使う
+だろう。例は、既定値で設定されていないという理由で、指定するのが不要なたくさんの
+パラメータを明示的にリストアップする。よりスリムな&smb.conf;を使うことも、
+<command>testparm</command>を使う事も、既定値に設定されているすべてのパラメータを
+&smb.conf;から削除して最適化するために、<command>SWAT</command>を使う事もできる。
+</para>
+
+<example id="extbsdpr">
+<title>拡張BSD印刷環境設定</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="printing">bsd</smbconfoption>
+<smbconfoption name="load printers">yes</smbconfoption>
+<smbconfoption name="show add printer wizard">yes</smbconfoption>
+<smbconfoption name="printcap name">/etc/printcap</smbconfoption>
+<smbconfoption name="printer admin">@ntadmin, root</smbconfoption>
+<smbconfoption name="max print jobs">100</smbconfoption>
+<smbconfoption name="lpq cache time">20</smbconfoption>
+<smbconfoption name="use client driver">no</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="printable">yes</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="browseable">no</smbconfoption>
+<smbconfoption name="guest ok">yes</smbconfoption>
+<smbconfoption name="public">yes</smbconfoption>
+<smbconfoption name="read only">yes</smbconfoption>
+<smbconfoption name="writable">no       </smbconfoption>
+
+<smbconfsection name="[my_printer_name]"/>
+<smbconfoption name="comment">Printer with Restricted Access</smbconfoption>
+<smbconfoption name="path">/var/spool/samba_my_printer</smbconfoption>
+<smbconfoption name="printer admin">kurt</smbconfoption>
+<smbconfoption name="browseable">yes</smbconfoption>
+<smbconfoption name="printable">yes</smbconfoption>
+<smbconfoption name="writable">no</smbconfoption>
+<smbconfoption name="hosts allow">0.0.0.0</smbconfoption>
+<smbconfoption name="hosts deny">turbo_xp, 10.160.50.23, 10.160.51.60</smbconfoption>
+<smbconfoption name="guest ok">no</smbconfoption>
+</smbconfblock></example>
+
+<para>
+<indexterm><primary></primary></indexterm>
+<indexterm><primary></primary></indexterm>
+<indexterm><primary></primary></indexterm>
+これは設定の例である。OSベンダによって提供されている設定ファイル中でのすべての設定は
+ここにはない。明示的に設定されていないSamba設定パラメータは、既定値で賢明な値に設定
+されている。すべての設定を見るには、<constant>root</constant>になり、
+<command>testparm</command>ユーティリティを使う。<command>testparm</command>は
+設定の間違いを指摘する。
+</para>
+
+<sect2>
+<title>設定の説明詳細</title>
+
+<para>
+以下は<link linkend="extbsdpr">拡張BSD印刷環境の設定</link>についての議論である。
+</para>
+
+<sect3>
+<title>[global]セクション</title>
+
+<para>
+<indexterm><primary>グローバルセクション</primary></indexterm>
+<indexterm><primary>特別セクション</primary></indexterm>
+<indexterm><primary>個別のセクション</primary></indexterm>
+<indexterm><primary>共有</primary></indexterm>
+<smbconfsection name="[global]"/>セクションは4つの特別なセクションの1つであり
+(残りは<smbconfsection name="[homes]"/>, <smbconfsection name="[printers]"/>と
+ <smbconfsection name="[print$]"/>)、これらはサーバ全体に適用されるすべてのパラメータを
+含んでいる。ここにはグローバルな意味を持つパラメータのみが配置される。すべての他の
+セクションと共有に対しての既定値の設定を定義する、サービスレベルのパラメータを含む
+こともできる。この方法は設定を簡単化し、同じ値を繰り返し設定することを防ぐ(設定
+できる個別のセクションか共有内で行えるが、グローバルに設定した共有の設定と他の値の
+指定を上書きする)。
+</para>
+
+<variablelist>
+	<varlistentry><term><smbconfoption name="printing">bsd </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>既定値の印刷コマンド</primary></indexterm>
+<indexterm><primary>RFC 1179</primary></indexterm>
+<indexterm><primary>printing</primary></indexterm>
+<indexterm><primary>CUPS</primary></indexterm>
+<indexterm><primary>LPD</primary></indexterm>
+<indexterm><primary>LPRNG</primary></indexterm>
+<indexterm><primary>SYSV</primary></indexterm>
+<indexterm><primary>HPUX</primary></indexterm>
+<indexterm><primary>AIX</primary></indexterm>
+<indexterm><primary>QNX</primary></indexterm>
+<indexterm><primary>PLP</primary></indexterm>
+<indexterm><primary>queue control</primary></indexterm>
+		BSD(RFC 1179形式かLPR/LPD)として知られてもいる)BSDのために適用出来る
+		Sambaが使う既定値の印刷コマンドを指定する。一般的に、
+		<parameter>printing</parameter>パラメータは、仮定している印刷サブシステム
+		をSambaに告げる。SambaはCUPS, LPD, LPRNG, SYSV, HPUX, AIX, QNXと PLPを
+		サポートしている。各システムは異なった<smbconfoption name="print command"/>
+		(と他のキュー制御コマンド)を既定値としている。
+		</para>
+
+		<caution><para>
+<indexterm><primary>サービスレベル</primary></indexterm>
+<indexterm><primary>SOFTQ 印刷システム</primary></indexterm>
+		<smbconfoption name="printing"/>パラメータは通常サービスレベルの
+		パラメータである。<smbconfsection name="[global]"/>セクション中のここに
+		含まれた後、異なった設定をしていないすべてのプリンタ共有に効果が及ぶ。
+		Samba-3はもはやSOFTQ印刷サービスをサポートしない。
+		</para></caution>
+	</listitem></varlistentry>
+
+	<varlistentry><term><smbconfoption name="load printers">yes </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>プリンタ共有</primary></indexterm>
+<indexterm><primary>printcap</primary></indexterm>
+<indexterm><primary>共有の分割</primary></indexterm>
+<indexterm><primary>UNIXのプリンタ</primary></indexterm>
+		Sambaにすべての有効なプリンタ共有を自動的に作成させる。有効なプリンタ
+		共有はprintcapファイルをスキャンすることで調べる。作成されたすべての
+		プリンタ共有はブラウジングでも表示される。もしもこのパラメータを使う
+		場合、各プリンタ毎に分割する必要はない。自動的に作成されたプリンタ
+		共有のおのおのは、<smbconfsection name="[printers]"/>セクション中に
+		ある設定オプションの設定の複製である
+		(<parameter>load printers = no</parameter>の設定は、
+		誰でも見えて使えるようにしたくないいくつかのものをする(leaving out)、
+		各UNIXプリンタを指定できるようにする)。
+		</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term><smbconfoption name="show add printer wizard">yes </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>プリンタ追加ウィザード</primary></indexterm>
+<indexterm><primary>Printers</primary></indexterm>
+<indexterm><primary>ネットワークコンピュータ</primary></indexterm>
+<indexterm><primary>net view</primary></indexterm>
+<indexterm><primary>アップロードされたドライバ</primary></indexterm>
+		設定は通常既定値によって有効になっている(たとえパラメータが&smb.conf;
+		中で指定されていなくても)。これは、Sambaホストの共有リストの中での
+		<guiicon>プリンタ</guiicon>フォルダ中に
+		<guiicon>プリンタ追加ウィザード</guiicon>が出る原因である(
+		<guiicon>ネットワークコンピュータ</guiicon>か
+		<command>net view</command>コマンドで見られる)。これを無効にするには、
+		明示的に<constant>no</constant>と設定する必要がある(コメントアウトは
+		十分ではない)。<parameter>プリンタ追加ウィザード</parameter>は
+		<smbconfsection name="[print$]"/>共有にプリンタドライバをアップロード
+		させ、それをプリンタに関連づけるか(もしもそれぞれのキューが動作の前に
+		存在するならば)、以前にアップロードされたドライバとプリンタドライバを
+		交換する)。
+		</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term><smbconfoption name="max print jobs">100 </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>print jobs</primary></indexterm>
+		ある時間にSambaサーバ上で有効な印刷ジョブを最大100までに設定する。この数よりも
+		大きなジョブをクライアントが投稿すると、"サーバ上に容量がありません"という
+		エラーメッセージがSambaサーバからクライアントに返す。ゼロという設定(既定値)
+		は全く<emphasis>制限がない</emphasis>事を意味する。
+		</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term><smbconfoption name="printcap name">/etc/printcap </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>CUPS</primary></indexterm>
+<indexterm><primary>有効なプリンタ</primary></indexterm>
+<indexterm><primary>printcap</primary></indexterm>
+		Sambaに有効なプリンタ名ののリストがどこにあるかを告げる。CUPSを使って
+		いる場合、printcapファイルが書かれているかを確認する。これは
+		<filename>cupsd.conf</filename>ファイル中の<constant>Printcap</constant>
+		ディレクティブによって制御される。
+	</para></listitem></varlistentry>
+
+	<varlistentry><term><smbconfoption name="printer admin">@ntadmin </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>ドライバの追加</primary></indexterm>
+<indexterm><primary>/etc/group</primary></indexterm>
+<indexterm><primary>プリンタ共有</primary></indexterm>
+<indexterm><primary>プリンタプロパティの設定</primary></indexterm>
+		ntadminグループメンバはドライバを追加するためとプリンタプロパティを設定することが
+		出来るようにすべきである(<constant>ntadmin</constant>は単なる例としての名前で
+		ある。有効なUNIXグループ名が必要である)。rootは暗黙的にいつでも
+		<smbconfoption name="printer admin"/>である。グループ名の前に付く
+		<literal>@</literal>記号は<filename>/etc/group</filename>中の名前である。
+		printer adminは、MS-RPC
+		(<link linkend="cups-msrpc">Samba-2.2からの印刷環境開発</link>を参照)
+		によって提供されるリモート管理インタフェース経由でプリンタのすべてを操作出来る。
+		より大きなシステムでは、<smbconfoption name="printer admin"/>パラメータは
+		通常共有単位に存在するパラメータである。こうすると、各プリンタ共有の管理者に
+		異なったグループを割り当てる事ができる。
+	</para></listitem></varlistentry>
+
+	<varlistentry><term><smbconfoption name="lpq cache time">20 </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>lpq command</primary></indexterm>
+<indexterm><primary>lpq cache time</primary></indexterm>
+		lpqコマンドの結果のキャッシュ時間を制御する。これは、過度にlpqコマンドが
+		呼ばれる事を防ぎ、高負荷のプリントサーバの負荷を減少させる。
+	</para></listitem></varlistentry>
+
+	<varlistentry><term><smbconfoption name="use client driver">no </smbconfoption></term>
+		<listitem><para>
+<indexterm><primary>Windows NT/200x/XP</primary></indexterm>
+		もしも<constant>yes</constant>に設定されると、Windows NT/200x/XPクライアント
+		のみに(Windows 95/98/MEには関係ない)影響する。このパラメータの既定値は
+		<constant>No</constant>で(あるいは<constant>False</constant>)である。
+		これは、Sambaサーバ上で有効なドライバがインストールされているプリント共有
+		では(<constant>yes</constant>か<constant>true</constant>を設定して)
+		<emphasis>決して有効にしてはならない</emphasis>。より詳細な説明は、
+		&smb.conf;マニュアルページを参照のこと。
+	</para></listitem></varlistentry>
+</variablelist>
+
+</sect3>
+
+<sect3 id="ptrsect">
+<title>[printers]セクション</title>
+
+<para>
+<indexterm><primary>printersセクション</primary></indexterm>
+<indexterm><primary>printcap</primary></indexterm>
+printersセクションは2つめの特別なセクションである。もしもこの名前のセクションが&smb.conf;
+中に現れると、Samba起動時に、printcapファイル中で見つかるすべてのプリンタ名に対してプリンタ
+共有を作成するので、ユーザはSambaホスト上のprintcapファイル中で定義されている任意の
+プリンタに接続できる。このセクションを最低の設定ですべてのプリンタを共有するための、
+便利なショートカットとして見なすことができる。これはまた、すべてのプリンタに対する
+既定値として適用すべき設定のためのコンテナでもある(より詳細は、&smb.conf;マニュアル
+ページを参照)。この内側にあるコンテナの設定は共有レベルパラメータでなければならない。
+</para>
+
+<variablelist>
+	<varlistentry><term><smbconfoption name="comment">All printers </smbconfoption></term>
+		<listitem><para>
+		<smbconfoption name="comment"/>は、クライアントが
+		<guiicon>ネットワークコンピュータ</guiicon>か<command>net view</command>
+		コマンド経由でサーバに問い合わせた時、有効な共有一覧を表示する時に、
+		共有のそばに表示される。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="printable">yes </smbconfoption></term>
+		<listitem><para>
+		<smbconfsection name="[printers]"/>サービスはprintableとして
+		<emphasis>定義されねばならない</emphasis>。もしもそれ以外を指定すると、
+		smbdは起動時にロードを停止する。このパラメータは、このサービスに対して
+		<smbconfoption name="path"/>パラメータで指定したディレクトリ中に、
+		オープン、書き込みとスプールファイルの投稿を、接続したクライアントに
+		許可する。これは、ファイル共有とプリンタ共有とを区別するために、
+		Sambaによって使われる。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="path">/var/spool/samba </smbconfoption></term>
+		<listitem><para>
+		入力された印刷ファイルをSambaによってスプールするためのディレクトリを
+		指定しなければならない。<emphasis>UNIX印刷サブシステムの設定中で指定された
+		スプールディレクトリと同じに設定してはならない!</emphasis>パスは通常
+		<emphasis>sticky</emphasis>ビットを設定した、その他に書き込み可能な
+		ディレクトリを指定する。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="browseable">no </smbconfoption></term>
+		<listitem><para>
+		<smbconfoption name="printable">yes</smbconfoption>のときは常時
+		<constant>no</constant>に設定する。これは、共有それ自身が、
+		<command>net view</command>コマンドか、エクスプローラのブラウズリスト
+		中で有効な共有の一覧中で不可視にする(もちろん個々のプリンタを見る
+		ことは出来る)。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="guest ok">yes </smbconfoption></term>
+		<listitem><para>
+		もしも、このプリンタが<constant>yes</constant>に設定されているならば、
+		印刷サービスに接続する時にパスワードを必要としない。アクセスは、
+		<smbconfoption name="guest account"/>の権限で許可される。多くのシステム
+		では、ゲストアカウントは"nobody"という名前にマップされる。このユーザは
+		通常空白のパスワード尾持つUNIXのpasswdファイルにあるが、UNIXログインは
+		無効である。いくつかのシステムでは、ゲストアカウントユーザは印刷権限を
+		持たないかもしれない。<command>su - guest</command>を使い、以下の
+		システムの印刷コマンドを動かし、使用するシステムのguestユーザ中で
+		ロギングすることでこれをテストする:
+		</para>
+	
+		<para>
+		<userinput>lpr -P printername /etc/motd</userinput>
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="public">yes </smbconfoption></term>
+		<listitem><para>
+		<smbconfoption name="guest ok">yes</smbconfoption>の同義語である。
+		<smbconfoption name="guest ok">yes</smbconfoption>を設定すると、
+		これは本当にここにある必要はない(これは
+		<quote>同じ共有に対して2つの矛盾している設定が偶然あるときはどうなるか?</quote>
+		という興味深い質問を導く。答えはSambaが最後に見つけたものが使われる。
+		<command>testparm</command>は同じ共有に対して同じパラメータに対する
+		異なった設定に対しては注意を喚起しない。異なったユーザ名で
+		<parameter>guest account</parameter>パラメータに対して複数の行を
+		設定することでこれをテストでき、次にtestparmを動作させて、どの行が
+		Sambaによって本当に使われるかを見る事ができる)。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="read only">yes </smbconfoption></term>
+		<listitem><para>
+		通常(共有の他のタイプのために)サービスのディレクトリ中で、ユーザによる
+		ファイルの作成と変更を防止する。しかし、<emphasis>printable</emphasis>
+		サービス中では、<emphasis>常時</emphasis>ディレクトリへの書き込みが許可
+		されるが(もしもユーザの権限として接続が許可されているならば)、
+		それは印刷スプール操作経由でのみである。通常の書き込み操作は許可
+		されない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="writable">no </smbconfoption></term>
+		<listitem><para>
+		これは<smbconfoption name="read only">yes</smbconfoption>の同義語である。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+</sect3>
+
+<sect3>
+<title>任意の[my_printer_name]セクション</title>
+
+<para>
+<indexterm><primary>プリンタドライバのロード</primary></indexterm>
+<indexterm><primary>名前の衝突</primary></indexterm>
+もしも、<parameter>[my_printer_name]</parameter>セクションが、
+<smbconfoption name="printable">yes</smbconfoption>を含んで&smb.conf;ファイル中にある
+場合、Sambaはこれをプリンタ共有と見なして設定する。Windows 9x/Meクライアントは、
+共有名が8文字以上の場合、接続かプリンタドライバのロードで問題が発生するかもしれない。
+存在するユーザかファイル共有の名前と競合する、プリンタ共有名を付けてはならない。
+クライアントからの接続時に、Sambaは常時その名前を最初に持つものを見つけようとする。
+もしもそれが見つかると、これに対して接続を行い、同じ名前を持つプリンタ共有には接続
+できない!
+</para>
+
+<?latex \newpage ?>
+<variablelist>
+	<varlistentry><term><smbconfoption name="comment">Printer with Restricted Access </smbconfoption></term>
+		<listitem><para>
+		上記で書いたとおりのコメントである。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="path">/var/spool/samba_my_printer </smbconfoption></term>
+		<listitem><para>
+		このプリンタに対するスプール領域のディレクトリを既定値の代わりに設定する。
+		これは異なって設定する必要はないが、オプションは有効である。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="printer admin">kurt </smbconfoption></term>
+		<listitem><para>
+		printer admin定義は、この一般的な<smbconfsection name="[printers]"/>共有から
+		明示的に定義されたプリンタ共有と違う。もし要求がなければ、可能であればそれを
+		表示しない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="browseable">yes </smbconfoption></term>
+		<listitem><para>
+		これは、クライアントが、<guiicon>ネットワークコンピュータ</guiicon>で
+		ブラウズするのが便利なように、プリンタをブラウズ可能にする。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="printable">yes </smbconfoption></term>
+		<listitem><para>
+		<link linkend="ptrsect">20.4.1.2節</link>を参照。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="writable">no </smbconfoption></term>
+		<listitem><para>
+		<link linkend="ptrsect">20.4.1.2節</link>を参照。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="hosts allow">10.160.50.,10.160.51. </smbconfoption></term>
+		<listitem><para>
+		<smbconfoption name="hosts allow"/>と<smbconfoption name="hosts deny"/>
+		パラメータを使って特定の数値でのアクセス制御を試す。これは、決して安全な
+		賭けではない。これは使用しているプリンタをセキュアにする方法ではない。この
+		行は、最初に評価されるアクセス制御中での特定のサブネットからの、すべての
+		クライアントを許可する。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="hosts deny">turbo_xp,10.160.50.23,10.160.51.60 </smbconfoption></term>
+		<listitem><para>
+		すべての一覧表示されたホストはここでは許可されない(たとえ許可された
+		サブネットにあったとしても)。見ての通り、NetBIOSホスト名をここに書くのと
+		同様にIPアドレス名前を付けることが出来る。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="guest ok">no </smbconfoption></term>
+		<listitem><para>
+		このプリンタはゲストアカウントには公開していない。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+</sect3>
+
+<sect3>
+<title>印刷コマンド</title>
+
+<para>
+<indexterm><primary>印刷コマンド</primary></indexterm>
+<indexterm><primary>印刷サブシステム</primary></indexterm>
+<indexterm><primary>temporary location</primary></indexterm>
+<indexterm><primary>シェルスクリプト</primary></indexterm>
+各セクション(か<smbconfsection name="[printers]"/>セクション中で)はプリンタを
+定義し、<parameter>print command</parameter>は定義されるかもしれない。これは、その
+プリンタに対するSambaの印刷スプールディレクトリ中に位置するファイルを処理するコマンドを
+設定する。(もしも覚えているならば、このスプールディレクトリは<smbconfoption name="path"/>
+パラメータで設定される)。通常、このコマンドはSambaが動いているホストの印刷サブ
+システムに、適切なシステムの印刷コマンドを使ってスプールファイルを渡す。しかし、もしも
+この必要性に要求がなければ、たぶんそうだろう。デバッグかその他の理由で、ファイルの印刷
+より何かが完全に異なることを行う事を望んでも良い。例は、プリンティングをデバッグする
+ために必要とする時、さらなる調査のために一時的な場所に印刷ファイルをコピーするだけの
+コマンドである。もしも、固有の印刷コマンドを作る場合(か印刷コマンドシェルスクリプトの
+開発)、Sambaスプールディレクトリからファイルを削除する必要があることに注意をはらうこと。
+そうしないと、すぐにディスクがいっぱいになってしまうだろう。
+</para>
+</sect3>
+
+<sect3>
+<title>既定値のUNIXシステム印刷コマンド</title>
+
+<para>
+<indexterm><primary>既定値の印刷コマンド</primary></indexterm>
+設定ファイル中で明示的に設定されていない場合、Sambaがほとんどの場合、多くのパラメータ
+について、内蔵の値を使うということは、以前の説明で理解されているかと思う。
+<smbconfoption name="print command"/>でも同じである。既定値の印刷コマンドは
+<smbconfoption name="printing"/>パラメータの設定に依存して変わる。
+<link linkend="printOptions">既定値の印刷設定</link>に一覧があるコマンド中で、
+<emphasis>X</emphasis>が<emphasis>p,s,J</emphasis>のようなものである、
+<emphasis>%X</emphasis>形式を持ついくつかのパラメータに気がつくだろう。
+これらの文字は、それぞれプリンタの名前、スプールファイルとジョブIDを表す。これらは、
+キーとなる印刷オプションの概要を提供する
+<link linkend="printOptions">既定値の印刷設定</link>中に詳細が説明されているが、
+CUPSの場合は特別で、<link linkend="CUPS-printing">CUPS印刷サポート</link>で
+説明があるので、ここに記述はない。
+</para>
+
+<table frame='all' id="printOptions">
+	<title>既定値の印刷設定</title>
+	<tgroup cols='2' align='left' colsep='1' rowsep='1'>
+		<colspec align="left"/>
+		<colspec align="left"/>
+	<thead>
+		<row>
+		<entry>設定</entry>
+		<entry>既定値の印刷コマンド</entry>
+		</row>
+	</thead>
+	<tbody>
+		<row>
+		<entry><smbconfoption name="printing">bsd|aix|lprng|plp</smbconfoption></entry>
+		<entry>印刷コマンドは<command>lpr -r -P%p %s</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">sysv|hpux</smbconfoption></entry>
+		<entry>印刷コマンドは<command>lp -c -P%p %s; rm %s</command></entry>
+		</row>
+		<row>
+		<entry> <smbconfoption name="printing">qnx</smbconfoption></entry>
+		<entry>印刷コマンドは<command>lp -r -P%p -s %s</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">bsd|aix|lprng|plp</smbconfoption></entry>
+		<entry>lpq コマンドは<command>lpq -P%p</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">sysv|hpux</smbconfoption></entry>
+		<entry>lpq コマンドは<command>lpstat -o%p</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">qnx</smbconfoption></entry>
+		<entry>lpq コマンドは<command>lpq -P%p</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">bsd|aix|lprng|plp</smbconfoption></entry>
+		<entry>lprm コマンドは<command>lprm -P%p %j</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">sysv|hpux</smbconfoption></entry>
+		<entry>lprm コマンドは<command>cancel %p-%j</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">qnx</smbconfoption></entry>
+		<entry>lprm コマンドは<command>cancel %p-%j</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">bsd|aix|lprng|plp</smbconfoption></entry>
+		<entry>lppause コマンドは<command>lp -i %p-%j -H hold</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">sysv|hpux</smbconfoption></entry>
+		<entry>lppause コマンド(...は存在しない)</entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">qnx</smbconfoption></entry>
+		<entry>lppause コマンド(...は存在しない)</entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">bsd|aix|lprng|plp</smbconfoption></entry>
+		<entry>lpresume コマンドは<command>lp -i %p-%j -H resume</command></entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">sysv|hpux</smbconfoption></entry>
+		<entry>lpresume コマンド(...は存在しない)</entry>
+		</row>
+		<row>
+		<entry><smbconfoption name="printing">qnx</smbconfoption></entry>
+		<entry>lpresume コマンド(...は存在しない)</entry>
+		</row>
+	</tbody>
+	</tgroup>
+</table>
+
+<para>
+<indexterm><primary>CUPS API</primary></indexterm>
+<indexterm><primary>cupsd.conf</primary></indexterm>
+<indexterm><primary>自動生成されたprintcap</primary></indexterm>
+<indexterm><primary>libcups</primary></indexterm>
+<parameter>printing = CUPS</parameter>用に、もしもSambaがlibcupsを使うようにコンパイル
+されたならば、ジョブの投稿にCUPS APIを使用する(通常使わない位置に自動生成された
+printcap ファイルに書き込むために、使用しているシステム中の<filename>cupsd.conf</filename>
+ファイルが設定されている場合、<smbconfoption name="printcap">cups</smbconfoption>を
+設定するのはよい方法である)。ほかの場合は、Sambaは印刷処理のために、-orawオプションを
+付けて、System Vの印刷コマンドにマップする。これはすなわち、
+<command>lp -c -d%p -oraw; rm %s</command>を使うことである。
+<parameter>printing = cups</parameter>の場合と、もしもSambaがlibcupsを使うように
+コンパイルされた場合、手動で設定したprint commandは何であっても無視される!
+</para>
+
+</sect3>
+
+<sect3>
+<title>カスタム印刷コマンド</title>
+
+<para>
+<indexterm><primary>印刷ジョブ</primary></indexterm>
+<indexterm><primary>スプーリング</primary></indexterm>
+サービスに対して印刷ジョブのスプーリングが終了後、<smbconfoption name="print command"/>
+はスプールファイルを処理するためにsystem()呼び出し経由でSambaによって使われる。
+通常指定されたコマンドはホストの印刷サブシステムにスプールファイルを投稿する。
+しかし、これが本当にそうであるというべき要求は全くない。印刷サブシステムは
+それ固有のスプールファイルを削除しないかもしれないので、指定したコマンドは何であっても、
+それが処理された後にスプールファイルは消去されるようにすべきである。
+</para>
+
+<para>
+<indexterm><primary>伝統的な印刷処理</primary></indexterm>
+<indexterm><primary>カスタマイズした印刷コマンド</primary></indexterm>
+<indexterm><primary>内蔵コマンド</primary></indexterm>
+<indexterm><primary>マクロ</primary></indexterm>
+伝統的な印刷システムに対して作成した固有の印刷コマンドを使うことについては何ら違いは
+ない。しかし、固有のものを動かしたくないのであれば(訳注:to roll your own)、各印刷
+サブシステムに対してSambaが使う既定値の内蔵コマンドについて熟知すべきである
+(<link linkend="printOptions">既定値の印刷設定</link>を参照)。最後のパラグラフに
+一覧表示されているすべてのコマンドには<emphasis>%X</emphasis>という形式のパラメータが
+ある。これらは<emphasis>マクロ</emphasis>かショートカットで、真のオブジェクトの
+名前のためのプレースフォルダとして使われる。このようなプレースフォルダを使って、
+コマンドを動かしたとき、Sambaは自動的に適切な値に置き換える。印刷コマンドは
+すべてのSambaマクロ置換を扱える。印刷に関しては、以下の以下のものは特別に扱われる:
+</para>
+
+<itemizedlist>
+	<listitem><para><parameter>%s, %f</parameter> &smbmdash; スプールファイル名へのパス。</para></listitem>
+	<listitem><para><parameter>%p</parameter> &smbmdash; 適切なプリンタ名。</para></listitem>
+	<listitem><para><parameter>%J</parameter> &smbmdash; クライアントから送られたジョブ名。</para></listitem>
+	<listitem><para><parameter>%c</parameter> &smbmdash; (もしも分かるならば)スプールされたジョブのページ数。</para></listitem>
+	<listitem><para><parameter>%z</parameter> &smbmdash; スプールされた印刷ジョブのサイズ(バイト単位)。</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>既定値のプリンタ</primary></indexterm>
+印刷コマンドは少なくとも<parameter>%s</parameter>か<parameter>%f</parameter>のどちらか
+1つを使っている必要がある。<parameter>%p</parameter>の使用は任意である。もしも
+プリンタ名が指定されないと、<parameter>%p</parameter>は印刷コマンドから何のメッセージも
+なしに取り去られる。この場合、ジョブは既定値のプリンタに送られる。
+</para>
+
+<para>
+<indexterm><primary>グローバルのprint command</primary></indexterm>
+<indexterm><primary>スプールファイル</primary></indexterm>
+<smbconfsection name="[global]"/>セクション中で指定されると、指定されたprint commandは
+固有のprint commandを持たない任意の印刷サービスに対して使われる。もしも、印刷サービスの
+ためのprint commandも、グローバルのprint commandも指定されない場合、スプールファイルは
+作成されるが処理されない!最も重要なことは、印刷ファイルは削除されず、そのため、ディスク
+スペースを消費してしまうと言うことである。
+</para>
+
+<para>
+<indexterm><primary>nobodyアカウント</primary></indexterm>
+<indexterm><primary>ゲストアカウント</primary></indexterm>
+印刷は、<emphasis>nobody</emphasis>アカウントを使うとき、ある種のUNIXでは失敗するかも
+しれない。もしもそのような事態に遭遇したら、代替のゲストアカウントを作成し、印刷権限を
+付与する。このゲストアカウントを、<smbconfsection name="[global]"/>セクション中に、
+<parameter>guest account</parameter>パラメータを使って設定する。
+</para>
+
+<para>
+<indexterm><primary>環境変数</primary></indexterm>
+<indexterm><primary>印刷コマンド</primary></indexterm>
+<indexterm><primary>印刷ジョブ</primary></indexterm>
+非常に複雑な印刷コマンドを構成することも出来る。印刷コマンドはUNIXシェルに渡される
+ようにする必要がある。シェルは通常のように指定されている環境変数を展開できる(UNIXの
+環境変数<parameter>$variable</parameter>を、Sambaの印刷コマンドの中で指定するための
+形式は<parameter>%$variable</parameter>である)。下記の動作する
+<smbconfoption name="print command"/>の例では、以下は印刷ジョブのログを
+<filename>/tmp/print.log</filename>に取り、ファイルを印刷し、次にそれを削除する。
+セミコロン(<quote>;</quote>)は通常通り、シェルスクリプト中でのコマンドの分離符号である:
+</para>
+
+<para><smbconfblock>
+	<smbconfoption name="print command">echo Printing %s &gt;&gt; /tmp/print.log; lpr -P %p %s; rm %s</smbconfoption>
+</smbconfblock></para>
+
+<para>
+動作させるシステム上で、通常どのようにファイルを印刷するかに例が依存することを考慮して、
+固有のコマンドを変更しなければならないかもしれない。既定値の
+<smbconfoption name="print command"/>パラメータは、<smbconfoption name="printing"/>
+の設定状態に依存して代わる。他の例は下記の通り:
+</para>
+
+<para><smbconfblock>
+<smbconfoption name="print command">/usr/local/samba/bin/myprintscript %p %s</smbconfoption>
+</smbconfblock></para>
+</sect3>
+</sect2>
+</sect1>
+
+<sect1 id="cups-msrpc">
+<title>Samba-2.2からの印刷環境</title>
+
+<para>
+<indexterm><primary>LanMan</primary></indexterm>
+<indexterm><primary>MS-RPC</primary></indexterm>
+<indexterm><primary>SPOOLSS</primary></indexterm>
+Samba-2.2.xより前は、Windowsクライアントへの印刷サーバサポートは、
+<emphasis>LanMan</emphasis>印刷機能に限定されていた。これは、Windows 9x/Me PCがプリンタを
+共有するときのものと同じプロトコルレベルである。2.2.0リリースの最初から、Sambaは
+ネイティブなWindows NTの印刷方式のサポートを開始した。これらは
+<emphasis>MS-RPC</emphasis> (Remote Procedure Call)経由で実装されている。MS-RPCは
+すべての印刷のために、<emphasis>SPOOLSS</emphasis>という名前付きパイプを使用する。
+</para>
+
+<para>
+新しいSPOOLSSサポートによって提供される追加の機能は以下を含む:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+<indexterm><primary>ポイントアンドプリント</primary></indexterm>
+	オンデマンドでWindows 95/98/NT/2000クライアントにプリンタドライバのダウンロードを
+	サポートする(<emphasis>Point'n'Print</emphasis>)。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>プリンタウィザードの追加</primary></indexterm>
+	Windows NTの<emphasis>Add Printer Wizard</emphasis> (APW)か
+	<ulink url="http://imprints.sourceforge.net/">Imprints</ulink>ツールセット経由で
+	プリンタドライバをアップロードする。
+	</para></listitem>
+
+	<listitem><para>	
+<indexterm><primary>MS-RPC</primary></indexterm>
+<indexterm><primary>印刷呼び出し</primary></indexterm>
+<indexterm><primary>StartDocPrinter</primary></indexterm>
+<indexterm><primary>EnumJobs()</primary></indexterm>
+<indexterm><primary>Win32 印刷API</primary></indexterm>
+	StartDocPrinter, EnumJobs()のような、ネイティブなMS-RPC印刷呼び出しをサポートする
+	(Win32印刷APIについてのより詳細な情報は
+	<ulink url="http://msdn.microsoft.com/">MSDN documentation</ulink>を参照のこと)。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>ACL</primary></indexterm>
+<indexterm><primary>プリンタオブジェクト</primary></indexterm>
+	プリンタオブジェクト上のNTアクセス制御(ACL)のサポート。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>printer queue</primary></indexterm>
+	スプールされたジョブ情報のための、内部データベースを使用することによる、プリンタ
+	キュー操作のサポートの改善(種々の<filename>*.tdb</filename>ファイルによって
+	実装された)。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+Samba-3へのアップデートによって便利になることは、そのプリンタをActive Directory(かLDAP)
+に公開できることである。
+</para>
+
+<para>
+<indexterm><primary>プリンタの公開</primary></indexterm>
+Microsoft Windows NTサーバとSambaでの操作の間には基本的な違いが存在する。Windows NTは
+共有しないローカルプリンタのインストールを許可する。これは任意のWindows NTマシン(サーバか
+クライアント)はユーザがワークステーションとして使えるという不自然な結果となる。Sambaは、
+既定値か、プリンタ固有の共有経由での特定の定義のどちらかで、有効にしたすべてのプリンタを
+公開する。
+</para>
+
+<para>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>MS-RPC</primary></indexterm>
+<indexterm><primary>Everyone group</primary></indexterm>
+<indexterm><primary>権限</primary></indexterm>
+<indexterm><primary>プリンタの既定値のアクセスパーミッション</primary></indexterm>
+Windows NT/200x/XP Professionalクライアントは標準SMBプリンタ共有を使ってはならない。
+それらはMS-RPCを使って他のWindows NTホスト上の任意のプリンタに直接印刷が出来る。これは、
+もちろん、クライアントがプリンタリソースを提供しているリモートホスト上で必要な権限を
+持っていることを仮定している。プリンタに対してWindows NTによって割り当てられている
+既定値のパーミッションは、よく知られた<emphasis>Everyone</emphasis>グループに印刷の
+パーミッションを与える(Windows 9x/Meタイプの古いクライアントは、共有されたプリンタ
+への印刷のみ出来る)。
+</para>
+
+<sect2>
+<title>Sambaサーバ上でのポイントアンドプリントによるクライアントドライバ</title>
+
+<para>
+<indexterm><primary>プリンタドライバ</primary></indexterm>
+このことが意味することについて多くの混乱がある。次のような疑問がしばしば質問される。
+<quote>Windowsクライアントからの印刷をサポートするためにSambaホスト上にプリンタ
+ドライバをインストールすることは必要か否か?</quote>答えは No で不必要である。
+</para>
+
+<para>
+<indexterm><primary>ドライバのインストール</primary></indexterm>
+<indexterm><primary>プリントキュー</primary></indexterm>
+もちろん、Windows NT/2000クライアントではドライバを<emphasis>ローカルに</emphasis>
+(次にSambaベースの印刷キューに繋ぎ)インストールするためにそれらのAPWも動かすことも
+できる。これはWindows 9x/Meクライアントによって使われるのと同じ手法である(しかし、
+Samba 2.2.0では、プリンタに対する有効なドライバをSambaサーバが処理することを
+Windows NT/2000クライアントが要求させる、というバグがある。これはSamba 2.2.1で
+修正されている)。
+</para>
+
+<para>
+<indexterm><primary>プリンタドライバ</primary></indexterm>
+<indexterm><primary>アップロード</primary></indexterm>
+しかし、これはSambaサーバの<smbconfsection name="[print$]"/>共有中にプリンタドライバを
+インストールする新しい機能であり、これはとても便利である。次に、
+<emphasis>すべての</emphasis>クライアント(95/98/MEを含む)はこのプリンタ共有に最初に
+接続した時にインストールされているドライバを入手する。この
+<smbconfsection name="[print$]"/>中へのドライバの<emphasis>アップロード</emphasis>
+または<emphasis>供託</emphasis>と、以下の存在するSambaプリンタ共有へ、このドライバを
+結びつけることは異なった手段で達成できる:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	NT/200x/XP Professionalクライアント上で<emphasis>APW</emphasis>を動かす(これは95/98/MEクライアントでは動かない)。
+	</para></listitem>
+
+	<listitem><para>
+	<emphasis>Imprints</emphasis>ツールセットを使う。
+	</para></listitem>
+
+	<listitem><para>
+	<emphasis>smbclient</emphasis>と<emphasis>rpcclient</emphasis>コマンド行ツールを使う。
+	</para></listitem>
+
+	<listitem><para>
+	<emphasis>cupsaddsmb</emphasis>を使う(CUPS印刷システムのみ動作し、LPR/LPD、LPRngなどでは動かない)。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>ドライバのアップロード</primary></indexterm>
+<indexterm><primary>ポイントアンドプリント</primary></indexterm>
+Sambaはスプールされたファイルに対してどのような方法でも、これらのアップロードされた
+ドライバを使わない。これらのドライバは、Sambaによってサポートされている
+<quote>ポイントアンドプリント</quote>メカニズム経由でダウンロード、インストールする
+クライアントによって完全に使われる。クライアントは、プリンタ(かUNIX印刷システム)が
+要求する形式に印刷ファイルを生成するためにこれらドライバを使う。Sambaが受け取る
+印刷ファイルは、必要に応じてすべてのさらなる処理のために責任のある、UNIX印刷システムに
+渡される。
+</para>
+</sect2>
+
+<sect2>
+<title>無効になった [printer$]セクション</title>
+
+	<para>
+<indexterm><primary>printer$ share</primary></indexterm>
+<indexterm><primary>printer driver</primary></indexterm>
+	2.2より前のSambaのバージョンでは<parameter>[printer$]</parameter>という名前の
+	共有を使う事が出来た。この名前はWindows 9x/Meクライアントがそれによって共有される
+	プリンタによって作成された、同じ、名前付きのサービスから取られている。
+	Windows 9x/Meプリンタサーバは、プリンタドライバのダウンロードをサポートするために、
+	ードオンリのアクセス(かつパスワードなし)のサービスを常時用意している。しかし、
+	Sambaの最初の実装では、<parameter>printer driver location</parameter>という名前の、
+	共有単位で使われるパラメータが使えた。これはそのプリンタに関連するドライバ
+	ファイルの位置を指定した。<parameter>printer driver</parameter>という名前の他の
+	ラメータは、クライアントに送られるプリンタドライバ名を定義する手段を提供した。
+	</para>
+
+	<para>
+<indexterm><primary>プリンタドライバファイル</primary></indexterm>
+<indexterm><primary>読み書きアクセス</primary></indexterm>
+<indexterm><primary>ACLs</primary></indexterm>
+	<parameter>printer driver file</parameter>を含むこれらのパラメータは、Samba-3
+	では取り除かれ、使う事は出来ない。共有名<smbconfsection name="[print$]"/>は
+	ダウンロード可能なプリンタドライバの位置のために使われる。これは、Windows NT
+	が動いているPCが、それによって共有されるプリンタによって作成された、
+	<smbconfsection name="[print$]"/>という共有名から取られている。Windows NTの
+	印刷サーバは、プリンタドライバのダウンロードとアップロードをサポートするために、
+	読み書きアクセス(そのACLのコンテキスト中で)を提供する、
+	<smbconfsection name="[print$]"/>というサービスを常時提供している。これは
+	Windows 9x/Meクライアントがこの時点で捨てられるという事を意味するわけではない。
+	それらにはSambaの<smbconfsection name="[print$]"/>共有がきちんとサポートする
+	ものを使える。
+	</para>
+</sect2>
+
+<sect2>
+<title>[print$]共有の作成</title>
+
+<para>
+<indexterm><primary>プリンタドライバ</primary></indexterm>
+プリンタドライバファイルのアップロード/ダウンロードをサポートするために、まずはじめに
+<smbconfsection name="[print$]"/>という名前のファイル共有を作成しなければならない。
+この共有の公開される名前は、Microsoft Windowsクライアント中で埋め込まれている。
+これは、プリンタドライバファイルを検索しようとした時に、正確にこの前のサービスを
+探すように、Windowsクライアントがプログラムされているため、改名することは出来ない。
+</para>
+
+<para>
+グローバルパラメータを追加するためにサーバのファイルを変更し、
+<smbconfsection name="[print$]"/>ファイル共有を作成すべきである(もちろん、
+たとえば<smbconfoption name="path"/>のようないくつかのパラメータの値は、サイトに
+よって適切な値に置き換えるべきである)。<link linkend="prtdollar">[print\$] の例</link>
+を参照。
+</para>
+
+<example id="prtdollar">
+<title>[print$] の例</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfcomment>ドライバの追加と設定を可能にすべき、ntdomainグループのメンバ</smbconfcomment>
+<smbconfcomment>プリンタのプロパティ。rootは常時'printer admin'と仮定される。</smbconfcomment>
+<smbconfoption name="printer admin">@ntadmin</smbconfoption>
+<smbconfcomment>...</smbconfcomment>
+
+<smbconfsection name="[printers]"/>
+<smbconfcomment>...</smbconfcomment>
+
+<smbconfsection name="[print$]"/>
+<smbconfoption name="comment">プリンタドライバのダウンロード領域</smbconfoption>
+<smbconfoption name="path">/etc/samba/drivers</smbconfoption>
+<smbconfoption name="browseable">yes</smbconfoption>
+<smbconfoption name="guest ok">yes</smbconfoption>
+<smbconfoption name="read only">yes</smbconfoption>
+<smbconfoption name="write list">@ntadmin, root</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+もちろん、<smbconfoption name="path"/>パラメータによって名付けられたディレクトリが、
+UNIXファイルシステム上に存在するようにしておく必要もある。
+</para>
+
+</sect2>
+
+<sect2>
+<title>[print$]セクションのパラメータ</title>
+
+<para>
+<indexterm><primary>特別なセクション</primary></indexterm>
+<indexterm><primary>特別な節</primary></indexterm>
+<indexterm><primary>potential printer</primary></indexterm>
+<indexterm><primary>ドライバのダウンロード</primary></indexterm>
+<indexterm><primary>ローカルプリントドライバ</primary></indexterm>
+<smbconfsection name="[print$]"/>は&smb.conf;中で特別なセクションである。これは、
+潜在的なプリンタドライバダウンロードに関連する設定を含み、ローカルプリンタドライバの
+インストールのためにWindowsクライアントによって使われる。以下のパラメータはこの共有
+セクションでしばしば必要とされるものである:
+</para>
+
+<variablelist>
+	<varlistentry><term><smbconfoption name="comment">プリンタドライバダウンロード領域</smbconfoption></term>
+		<listitem><para>
+		共有リスト中に一覧表示された時に、共有のそばにあるコメント(通常Windows
+		クライアントはそれを見る事ができないが、
+		<command>smbclient -L sambaserver</command>の出力中にも表示される)。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="path">/etc/samba/printers </smbconfoption></term>
+		<listitem><para>
+		UNIXの観点からのWindowsドライバファイルの保存場所の位置のパス。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="browseable">no </smbconfoption></term>
+		<listitem><para>
+		<guimenu>ネットワークコンピュータ</guimenu>でクライアントに
+		<smbconfsection name="[print$]"/>共有を見せないようにさせる。
+		<command>cmd</command>シェルで以下を実行すると:
+<screen>
+&dosprompt; <command>net use g:\\sambaserver\print$</command>
+</screen>
+		任意のクライアントから引き続き見る事ができる。これは、Windows
+		エクスプローラから<guimenu>ネットワークドライブの割り当て</guimenu>
+		からでも行う事が出来る。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="guest ok">yes </smbconfoption></term>
+		<listitem><para>
+		すべてのゲストユーザにこの共有をリードオンリにする。クライアント上への
+		ダウンロードとプリンタのドライバのインストールを行うためのアクセスは
+		許可される。<parameter>guest ok = yes</parameter>が必要かどうかは、
+		どのようにサイトが設定されているかに依存する。もしもユーザがSamba
+		ホスト上のアカウントを持つことを許可されているならば、これは何の
+		問題もない。
+		</para>
+
+		<note><para> 
+		もし、Sambaサーバによって認証されることを、すべてのWindows NTユーザが
+		保証されているならば(たとえば、もしも、NTドメインサーバ経由でSambaが
+		認証するとき、ユーザはすでにWindows NTセッションのためにログオンするために
+		ドメインコントローラによって認証されていた場合)、ゲストアクセスは
+		不要である。もちろん、ばかげたアカウントとセキュリティについて
+		心配せずに、ワークグループ環境で印刷を行いたいのであれば、ゲストアクセス
+		のための共有を設定する。同じように、<smbconfsection name="[global]"/>
+		セクション中で、
+		<smbconfoption name="map to guest">Bad User</smbconfoption>
+		を追加することを考えるべきである。これを使う前に、このパラメータが
+		行う事を理解しておくこと。
+		</para></note>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="read only">yes </smbconfoption></term>
+		<listitem><para>
+		誰でもがドライバファイルをアップロード(あるいはドライバの設定の変更)する
+		ことは望まないので、この共有を書き込み不可にする。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry><term><smbconfoption name="write list">@ntadmin, root </smbconfoption></term>
+		<listitem><para>
+		<smbconfsection name="[print$]"/>は以前の設定によってリードオンリになって
+		いるので、<parameter>write list</parameter>も一緒に作成すべきである。UNIX
+		グループは先頭に<quote>@</quote>が付いたものである。共有上にファイルの
+		アップデートを必要とするこの一覧にあるユーザは、(一般的にパブリックな
+		リードオンリアクセスの例外として)書き込みが許可される。
+		通常この設定中で管理者レベルのユーザのみ指名したいであろう。もしもこれが
+		非rootアカウントである場合、アカウントはグローバルの
+		<smbconfoption name="printer admin"/>パラメータ中で言及されるべきである。
+		ファイル共有上の設定についてのより詳細な情報は、&smb.conf;マニュアル
+		ページを参照のこと。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+
+</sect2>
+
+<sect2>
+<title>[print$]共有ディレクトリ</title>
+
+<para>
+Windows NT印刷サーバが、複数のクライアントアーキテクチャによってドライバのダウンロードが
+出来るようにするために、<smbconfsection name="[print$]"/>サービス内にいくつかのサブ
+ディレクトリを作成しなければならない(すなわち、<smbconfoption name="path"/>パラメータに
+よって指定されたUNIXのディレクトリ)。これらはサポートされる各クライアントアーキテクチャ
+に一致する。Sambaは同様にこのモデルに追従する。<smbconfsection name="[print$]"/>共有
+それ自身の名前と同じように、サブディレクトリは下記に一覧表示された名前と正確に一致
+しなければならない(サポートする必要のないアーキテクチャのサブディレクトリはなくても
+よい)。
+</para>
+
+<para>
+すなわち、下記のように、<smbconfsection name="[print$]"/>共有配下に、サポートしたい
+各アーキテクチャのためのディレクトリを作成する。
+<programlisting>
+[print$]--+
+          |--W32X86           # serves drivers to Windows NT x86
+          |--WIN40            # serves drivers to Windows 95/98
+          |--W32ALPHA         # serves drivers to Windows NT Alpha_AXP
+          |--W32MIPS          # serves drivers to Windows NT R4000
+          |--W32PPC           # serves drivers to Windows NT PowerPC
+</programlisting>
+</para>
+
+<important><title>必要とされるパーミッション</title>
+	<para>
+	Sambaホスト上に新しいドライバを追加するためには、2つの条件のうちの1つを真にしておかねばならない:
+	</para>
+
+	<itemizedlist>
+		<listitem><para>
+		Sambaホストに接続する時に使われるアカウントはUIDが0でなければならない(すなわちrootアカウント)。
+		</para></listitem>
+
+		<listitem><para>
+		Sambaホストに接続する時に使われるアカウントは<emphasis>printer admin</emphasis>リスト中に列挙されねばならない。
+		</para></listitem>
+	</itemizedlist>
+
+	<para>
+	もちろん、接続されたアカウントは<smbconfsection name="[print$]"/>下のサブ
+	ディレクトリファイルを追加するための書き込み許可が必要である。すべてのファイル
+	共有は既定値で<quote>リードオンリ</quote>に設定されていることを覚えておくこと。
+	</para>
+</important>
+
+<para>
+要求された<smbconfsection name="[print$]"/>サービスと関連したサブディレクトリを作成した
+後、Windows NT 4.0/200x/XPクライアントワークステーションの所に行く。
+<guiicon>ネットワークコンピュータ</guiicon>か<guiicon>マイネットワーク</guiicon>を
+開き、Sambaホストをブラウズする。所定のサーバを選択後、その
+<guiicon>プリンタとFAX</guiicon>フォルダに移動する。そうすると、Sambaホスト上で
+定義されたプリンタ共有にい位置するプリンタの一覧の初期値を見る事ができる。
+</para>
+</sect2>
+</sect1>
+
+<sect1>
+<title>[print$]へのドライバのインストール</title>
+
+<para>
+&smb.conf;中に<smbconfsection name="[print$]"/>共有を無事作成でき、&smb.conf;ファイルを
+強制的にSambaに再読込させただろうか?であれば問題はない。しかし、新しい機能を使うには
+まだもう少し手間がかかる。この共有中にクライアントドライバファイルをインストールする
+必要がある。そのため、まだこの共有は空の状態である。不幸にも、そこにドライバファイルを
+コピーするだけでは十分ではない。正しくインストールする必要があり、そうすると、各
+ドライバに対する適切なレコードがSamba内部データベース中に存在するようになり、
+Microsoft Windowsクライアントから要求された正しいドライバを提供することが出来るように
+なる。さらに、控えめに言ってもそれは厳重さが必要である。下記では
+<smbconfsection name="[print$]"/>中にドライバをインストールする2つの代替方法について
+説明する:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	任意のUNIXワークステーションから、Sambaのコマンドラインユーティリティ
+	<command>rpcclient</command>を、種々のサブコマンド
+	(<command>adddriver</command>と<command>setdriver</command>など)を組み合わせて
+	使う。
+	</para></listitem>
+
+	<listitem><para>
+	任意のWindows NT/200x/XPクライアントワークステーションから、GUI
+	(<guiicon>プリンタのプロパティ</guiicon>と<guiicon>プリンタの追加ウィザード</guiicon>)
+	を走らせる。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+後者のオプションが、おそらくより易しいであろう(たとえプロセスが最初多少奇妙に振る舞うとしても)。
+</para>
+
+<sect2>
+<title>プリンタの追加ウィザードによるドライバのインストール</title>
+
+<para>
+プリンタは、最初、実際のプリンタドライバがそれに割り当てられていない状態で、クライ
+アントのエクスプローラからアクセスされる、Sambaホストの<guiicon>プリンタ</guiicon>
+フォルダに一覧表示される。既定値で、このドライバの名前は空の文字列に設定されている。
+これは変更しなければならない。NT/2000/XPクライアントから、ローカルの
+<guiicon>プリンタ追加ウィザード</guiicon>(APW)を動かすことで、この作業ができる。
+</para>
+
+<para>
+有効なプリンタドライバのインストールは簡単である。ドライバを割り当てたいプリンタに
+対するプリンタのプロパティを表示させなければならない。Windowsのエクスプローラを
+起動し、<guiicon>ネットワークコンピュータ</guiicon>を開き、Sambaホストをブラウズし、
+Sambaの<guiicon>プリンタ</guiicon>フォルダを開き、プリンタアイコンを右クリックし、
+<guimenu>プロパティ</guimenu>を選択する。これでプリンタと既定値の
+<constant>NULL</constant>ドライバが割り当てられているキューのためのドライバ
+プロパティが見えるようになる。そして、<quote>
+デバイス設定が表示できません。指定されたプリンタのドライバがインストールされて
+いません。スプーラのプロパティのみ表示されます。ドライバを今インストールしますか?
+</quote>というエラーメッセージが表示される。
+</para>
+
+<para>
+ここで、<guibutton>Yes</guibutton>をクリックしては<emphasis>いけない</emphasis>!
+その代わり、エラーダイアログで<guibutton>No</guibutton>をクリックする。これで、
+プリンタプロパティウインドウが表示される。ここから、プリンタへのドライバの割り当ての
+手順は公開されている。以下を選べる:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	インストール済みのポップアップリストからドライバを選択。通常は最初リストは空である。
+	</para></listitem>
+
+	<listitem><para>
+	新しいプリンタドライバをインストールするために<guibutton>新しいドライバ</guibutton>
+	をクリック(これはAPWを起動する)。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+一度APWが起動すると、Windows中でなじみがある、ものと手続きは正確に同じである(Windows NT
+上のプリンタドライバインストール手続きに慣れていることを仮定している)。接続を確認し、
+<smbconfoption name="printer admin"/>権限を持つユーザとしてセットアップ(ユーザが
+権限を持つか分からない場合は<command>smbstatus</command>でチェックしてみる)。
+クライアントOSに対して<application>Windows NT x86</application>の代わりのプリンタ
+ドライバをインストールしたい場合、プリンタプロパティダイアログの<guilabel>共有</guilabel>
+タブを使う必要がある。
+</para>
+
+<para>
+管理者(root)アカウント(<smbconfoption name="printer admin"/>パラメータで指定されたもの)
+で接続していると仮定すると、さらに、このダイアログを使ってACLと既定値のデバイスの設定
+のようなプリンタのプロパティをも修正できる。既定値のデバイス設定のためには、
+<link linkend="inst-rpc"><command>rpcclient</command>を使った印刷ドライバのインストール</link>
+に助言が書いてあることを考慮してほしい。
+</para>
+</sect2>
+
+<sect2 id="inst-rpc">
+<title><command>rpcclient</command>を使った印刷ドライバのインストール</title>
+
+<para>
+<smbconfsection name="[print$]"/>にプリンタドライバをインストールし、有効な方法で
+それを設定するための2番目の方法は、UNIXコマンドラインから行う方法である。これは、
+4つの異なったステップを必要とする。
+</para>
+
+<orderedlist>
+	<listitem><para>
+	要求されたドライバファイルについての情報を集め、ファイルを収集する。
+	</para></listitem>
+
+	<listitem><para>
+	<smbconfsection name="[print$]"/>共有の正しいサブディレクトリ中にドライバ
+	ファイルを置く(おそらく<command>smbclient</command>を使うだろう)。
+	</para></listitem>
+
+	<listitem><para>
+	<command>rpcclient</command>コマンドラインユーティリティを起動し、その
+	<command>adddriver</command>サブコマンドを使う。
+	</para></listitem>
+
+	<listitem><para>
+	<command>rpcclient</command>をもう一度起動し、<command>setdriver</command>
+	サブコマンドを使う。
+	</para></listitem>
+</orderedlist>
+
+<para>
+以下の節で、これらのステップのおのおのについて詳細な説明を行う。
+</para>
+
+<sect3>
+<title>ドライバファイルの識別</title>
+
+<para>
+<indexterm><primary>ドライバファイル</primary></indexterm>
+<indexterm><primary>ドライバ CDROM</primary></indexterm>
+<indexterm><primary>inf ファイル</primary></indexterm>
+ドライバファイルを見つけるためには2つのオプションがある。プリンタに付属のドライバ
+CD-ROMの内容を検査することが出来る。CD-ROM上にある<filename>*.inf</filename>ファイルの
+位置を覚えておく。これは<filename>*.inf</filename>ファイルが無いかもしれないので、
+出来ない場合もある。残念なことに、最近ではベンダ固有のインストールプログラムを使う
+傾向がある。これらのインストールパッケージはしばしば何らかのWindows上での書庫形式
+を使っている。更に追加で、インストール処理中にファイル名が改名されるかもしれない。
+これは、必要とされるドライバファイルの識別がとても難しくなることを意味する。
+</para>
+
+<para>
+<indexterm><primary>W32X86</primary></indexterm>
+次に、2番目のオプションがある。ドライバをWindowsクライアント上にローカルに
+インストールし、インストール後にそれが使うファイル名とパスを調査する
+(サポートしたい各クライアントプラットフォーム毎にこの手続きを繰り返さなければ
+ならない。ここでは、すべてのWindows NT/200x/XPクライアントのためにMicrosoftによって
+使われる名前である、<application>W32X86</application>プラットフォームのみを
+表示する)。
+</para>
+
+<para>
+<indexterm><primary>ドライバファイル</primary></indexterm>
+ドライバファイルを認識する良い方法は、ドライバの<guilabel>プロパティ</guilabel>
+ダイアログでテストページを印刷してみることである(<guilabel>全般</guilabel>タブ)。
+次に、印刷されたドライバファイルのリストを見てみる。Windows(とSamba)が
+<guilabel>ドライバファイル</guilabel>、<guilabel>データファイル</guilabel>、
+<guilabel>設定ファイル</guilabel>と(オプションの)
+<guilabel>依存するドライバファイル</guilabel>(これはWindows NTでは若干変わる)の
+何を呼び出しているかを認識する必要がある。次のステップのためにすべてのファイル名を
+記録する必要がある。
+</para>
+
+<para>
+<indexterm><primary>rpcclient</primary></indexterm>
+<indexterm><primary>enumdrivers</primary></indexterm>
+<indexterm><primary>getdriver</primary></indexterm>
+ドライバファイル名と関連するパスを迅速にテストする別の方法は、<command>rpcclient</command>
+ユーティリティによって提供される。<command>enumdrivers</command>か
+<command>getdriver</command>サブコマンドを指定し、infoレベルを<filename>3</filename>に
+してこれを動かす。以下の例では、<emphasis>TURBO_XP</emphasis>がWindows PCの名前である
+(この場合、これはWindows XP Professionalラップトップ)。<constant>KDE-BITSHOP</constant>
+という名前のSambaサーバからTURBO_XPにローカルにドライバをインストールしたとする。
+次に対話的な<command>rpcclient</command>を動かす。そうすると、
+<command>rpcclient /></command>が表示され、このプロンプトの状態でサブコマンドが入力
+出来るようになる。これは練習として残しておこう。次に、1つのサブコマンド行を実行し、
+すぐに終了するような<option>-c</option>オプションをつけて<command>rpcclient</command>
+を起動する。これは大量のプリンタとドライバのために自動作業を行うスクリプトを作成する
+時に使う手法である。異なる引用符を使い分けて単語間の異なった空白を解決するように注意:
+</para>
+
+<para><screen>
+&rootprompt;<userinput>rpcclient -U'Danka%xxxx' -c \
+	'getdriver "Heidelberg Digimaster 9110 (PS)" 3' TURBO_XP</userinput>
+cmd = getdriver "Heidelberg Digimaster 9110 (PS)" 3
+
+[Windows NT x86]
+Printer Driver Info 3:
+  Version: [2]
+  Driver Name: [Heidelberg Digimaster 9110 (PS)]
+  Architecture: [Windows NT x86]
+  Driver Path: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\HDNIS01_de.DLL]
+  Datafile: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.ppd]
+  Configfile: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\HDNIS01U_de.DLL]
+  Helpfile: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\HDNIS01U_de.HLP]
+  
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.DLL]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.INI]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.dat]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.cat]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.def]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.hre]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.vnd]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\Hddm91c1_de.hlp]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\HDNIS01Aux.dll]
+  Dependentfiles: [C:\WINNT\System32\spool\DRIVERS\W32X86\2\HDNIS01_de.NTF]
+  
+  Monitorname: []
+  Defaultdatatype: []
+</screen></para>
+
+<para>
+<indexterm><primary>ドライバファイル</primary></indexterm>
+<indexterm><primary>ドライバパス</primary></indexterm>
+<indexterm><primary>WIN40</primary></indexterm>
+<indexterm><primary>W32X86</primary></indexterm>
+このドライバは大量の<guilabel>依存ファイル</guilabel>(しかしながらこれは
+悪い場合である)を持つことに気がついても良いだろう。また、不思議なことに、
+<guilabel>ドライバファイル</guilabel>はここで<guilabel>ドライバファイル</guilabel>
+にタグ付けされている。インストールされた、いわゆる<application>WIN40</application>
+アーキテクチャに対してまだサポートをしていない。この名前は、Microsoftによって
+Windows 9x/Meプラットフォームに使われる。もしもこれらをサポートしたいならば、
+<application>W32X86</application>(すなわち、Windows NT/2000クライアント)
+Windows PC上に、それらのために追加でWindows 9x/Meドライバをインストールしなければ
+ならない。このPCは、Windows NT,2000あるいはXPで動いたとしても、Windows 9x/Me
+への機能提供も出来る。
+</para>
+
+<para>
+<indexterm><primary>UNC notation</primary></indexterm>
+<indexterm><primary>Windowsエクスプローラ</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+<smbconfsection name="[print$]"/>共有が通常
+<guiicon>ネットワークコンピュータ</guiicon>経由でアクセス出来るので、そこにアクセス
+するためにWindowsエクスプローラからUNC記述を使う事が出来る。Windows 9x/Meドライバ
+ファイルは<filename>WIN40</filename>ディレクトリの<filename>0</filename>という
+サブディレクトリで終わる。これらに対するフルパスアクセスは
+<filename>\\WINDOWSHOST\print$\WIN40\0\</filename>である。
+</para>
+
+<note><para>
+Windows 2000とWindowsXP上のより最新のドライバは、<quote>2</quote>の代わりに
+<quote>3</quote>というサブディレクトリ中にインストールされる。Windows NT中で使われる
+バージョン2のドライバはカーネルモードで動作する。Windows2000ではこれを変更した。
+それは引き続きカーネルモードのドライバを使えるが(もしAdminによって有効にされれば)、
+そのネイティブモードのプリンタドライバはユーザモードで動作する。これは、この目的の
+ために設計されたドライバを要求する。これらのタイプのドライバは<quote>3</quote>
+サブディレクトリにインストールされる。
+</para></note>
+</sect3>
+
+<sect3>
+<title>Windowsクライアントの[print$]共有からのドライバファイルの取得</title>
+
+<para>
+ここで、以前のステップで認識したすべてのドライバファイルを収集する必要がある。さて、
+どこからそれを得ればよいだろうか?最後のファイルを識別する手段中で調査した、同じ
+<smbconfsection name="[print$]"/>共有とそのPCからそれを検索しないのだろうか?これを
+行うのに<command>smbclient</command>が使える。<command>getdriver</command>によって
+分かったパスと名前を使える。下記のコマンドライン業は、可読性向上のために、継続行文字を
+入れて編集できる:
+<screen>
+&rootprompt;<userinput>smbclient //TURBO_XP/print\$ -U'Danka%xxxx' \ 
+   -c 'cd W32X86/2;mget HD*_de.* hd*ppd Hd*_de.* Hddm*dll HDN*Aux.DLL'</userinput>
+
+added interface ip=10.160.51.60 bcast=10.160.51.255 nmask=255.255.252.0
+Got a positive name query response from 10.160.50.8 ( 10.160.50.8 )
+Domain=[DEVELOPMENT] OS=[Windows 5.1] Server=[Windows 2000 LAN Manager]
+<prompt>Get file Hddm91c1_de.ABD? </prompt><userinput>n</userinput>
+<prompt>Get file Hddm91c1_de.def? </prompt><userinput>y</userinput>
+getting file \W32X86\2\Hddm91c1_de.def of size 428 as Hddm91c1_de.def
+<prompt>Get file Hddm91c1_de.DLL? </prompt><userinput>y</userinput>
+getting file \W32X86\2\Hddm91c1_de.DLL of size 876544 as Hddm91c1_de.DLL
+[...]
+</screen></para>
+
+<para>
+このコマンドが完了すると、カレントローカルディレクトリにファイルが置かれる。この時点で、
+セミコロンで分離した、<option>-c</option>パラメータのためにいくつかのコマンドが渡される
+ことにおそらく気がつくだろう。これは、<command>smbclient</command>コマンドが再度終了
+する前にリモートのWindowsサーバ上で順番にすべてのコマンドを実行するようにさせる。
+</para>
+
+<para>
+<indexterm><primary>WIN40</primary></indexterm>
+<application>WIN40</application>アーキテクチャが、Windows 9x/Me/XPクライアントをサポート
+しなければならないために、手続きを繰り返すことを忘れないこと。さらに、それらの
+アーキテクチャは<filename>WIN40/0/</filename>サブディレクトリにあることを忘れないこと。
+これがいったん終わると、Sambaサーバの<smbconfsection name="[print$]"/>共有にある、
+収集されたファイルを格納するために<command>smbclient. ..put</command>を動作させる
+ことができる。
+</para>
+</sect3>
+
+<sect3>
+<title>[print$]へのドライバファイルインストール</title>
+
+<para>
+次は、<smbconfsection name="[print$]"/>共有にドライバファイルを配置する作業である。この
+共有へのUNIXパスは&smb.conf;ファイル中で以前に定義した事を忘れないこと。また、サポート
+したい異なったWindowsクライアントタイプのためには、サブディレクトリを作成する。たとえば
+もしも、<smbconfsection name="[print$]"/>が<filename>/etc/samba/drivers/</filename>
+というUNIXパスにマップされているならば、ドライバファイルは以下のように配置すべきである:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	すべてのWindows NT, 2000,と XPクライアント用は <filename>/etc/samba/drivers/W32X86/</filename>
+	だが、<filename>2</filename>サブディレクトリ中ではない。
+	</para></listitem>
+
+	<listitem><para>
+	すべてのWindows 95, 98,とMeクライアント用は <filename>/etc/samba/drivers/WIN40/</filename>
+	だが、<filename>0</filename>サブディレクトリ中ではない。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>smbclient</primary></indexterm>
+<indexterm><primary>getdriver</primary></indexterm>
+再度、ネットワーク経由で、ドライバファイルを転送するためにsmbclientを使う。オリジナルの
+<emphasis>Windows</emphasis>インストールに対して<command>getdriver</command>を走らせた
+事により情報を得た同じファイルとパスを指定する。しかし、ここでは、
+<emphasis>Samba/UNIX</emphasis>印刷サーバの<smbconfsection name="[print$]"/>共有中に
+ファイルを格納する。
+<screen>
+&rootprompt;<userinput>smbclient //SAMBA-CUPS/print\$ -U'root%xxxx' -c \
+  'cd W32X86; put HDNIS01_de.DLL; \
+  put Hddm91c1_de.ppd; put HDNIS01U_de.DLL;        \
+  put HDNIS01U_de.HLP; put Hddm91c1_de.DLL;        \
+  put Hddm91c1_de.INI; put Hddm91c1KMMin.DLL;      \
+  put Hddm91c1_de.dat; put Hddm91c1_de.dat;        \
+  put Hddm91c1_de.def; put Hddm91c1_de.hre;        \
+  put Hddm91c1_de.vnd; put Hddm91c1_de.hlp;        \
+  put Hddm91c1_de_reg.HLP; put HDNIS01Aux.dll;     \
+  put HDNIS01_de.NTF'</userinput>
+
+added interface ip=10.160.51.60 bcast=10.160.51.255 nmask=255.255.252.0
+Got a positive name query response from 10.160.51.162 ( 10.160.51.162 )
+Domain=[CUPS-PRINT] OS=[UNIX] Server=[Samba 2.2.7a]
+putting file HDNIS01_de.DLL as \W32X86\HDNIS01_de.DLL
+putting file Hddm91c1_de.ppd as \W32X86\Hddm91c1_de.ppd
+putting file HDNIS01U_de.DLL as \W32X86\HDNIS01U_de.DLL
+putting file HDNIS01U_de.HLP as \W32X86\HDNIS01U_de.HLP
+putting file Hddm91c1_de.DLL as \W32X86\Hddm91c1_de.DLL
+putting file Hddm91c1_de.INI as \W32X86\Hddm91c1_de.INI
+putting file Hddm91c1KMMin.DLL as \W32X86\Hddm91c1KMMin.DLL
+putting file Hddm91c1_de.dat as \W32X86\Hddm91c1_de.dat
+putting file Hddm91c1_de.dat as \W32X86\Hddm91c1_de.dat
+putting file Hddm91c1_de.def as \W32X86\Hddm91c1_de.def
+putting file Hddm91c1_de.hre as \W32X86\Hddm91c1_de.hre
+putting file Hddm91c1_de.vnd as \W32X86\Hddm91c1_de.vnd
+putting file Hddm91c1_de.hlp as \W32X86\Hddm91c1_de.hlp
+putting file Hddm91c1_de_reg.HLP as \W32X86\Hddm91c1_de_reg.HLP
+putting file HDNIS01Aux.dll as \W32X86\HDNIS01Aux.dll
+putting file HDNIS01_de.NTF as \W32X86\HDNIS01_de.NTF
+</screen>
+<indexterm><primary>PPD</primary></indexterm>
+<indexterm><primary>PostScriptドライバ</primary></indexterm>
+<indexterm><primary>adddriver</primary></indexterm>
+ヒュー;これはとても大量なタイプ量である!ほとんどのドライバはより小さい。多くはたった
+3つの汎用Postscriptドライバファイルと1つのPPDのみを持つ。Windowsマシンからの
+<filename>W32X86</filename>の<filename>2</filename>サブディレクトリからファイルを検索した
+時、Sambaサーバの同じサブディレクトリ中に(今は)それらを置かない。この再配置は、
+間もなく動く(そして、それらを必要とすべき場合、<filename>WIN40/</filename>サブ
+ディレクトリ中に、Windows 9x/Meアーキテクチャのためのファイルを置くことを忘れない)、
+<command>adddriver</command>によって自動的に行われる。
+</para>
+
+</sect3>
+
+<sect3>
+<title><command>smbclient</command>によるドライバインストールの確認</title>
+
+<para>
+<indexterm><primary>smbclient</primary></indexterm>
+<indexterm><primary>SSH</primary></indexterm>
+次は、所定の場所にファイルがあるかどうかを確認する。これは、<command>smbclient</command>
+で行える(が、もちろん、SSH経由でログインし、標準のUNIXシェルアクセスを通して行える)。
+</para>
+
+<para><screen>
+&rootprompt;<userinput>smbclient //SAMBA-CUPS/print\$ -U 'root%xxxx' \
+	-c 'cd W32X86; pwd; dir; cd 2; pwd; dir'</userinput>
+ added interface ip=10.160.51.60 bcast=10.160.51.255 nmask=255.255.252.0
+Got a positive name query response from 10.160.51.162 ( 10.160.51.162 )
+Domain=[CUPS-PRINT] OS=[UNIX] Server=[Samba 2.2.8a]
+
+Current directory is \\SAMBA-CUPS\print$\W32X86\
+.                                  D        0  Sun May  4 03:56:35 2003
+..                                 D        0  Thu Apr 10 23:47:40 2003
+2                                   D        0  Sun May  4 03:56:18 2003
+HDNIS01Aux.dll                      A    15356  Sun May  4 03:58:59 2003
+Hddm91c1KMMin.DLL                   A    46966  Sun May  4 03:58:59 2003
+HDNIS01_de.DLL                      A   434400  Sun May  4 03:58:59 2003
+HDNIS01_de.NTF                      A   790404  Sun May  4 03:56:35 2003
+Hddm91c1_de.DLL                     A   876544  Sun May  4 03:58:59 2003
+Hddm91c1_de.INI                     A      101  Sun May  4 03:58:59 2003
+Hddm91c1_de.dat                     A     5044  Sun May  4 03:58:59 2003
+Hddm91c1_de.def                     A      428  Sun May  4 03:58:59 2003
+Hddm91c1_de.hlp                     A    37699  Sun May  4 03:58:59 2003
+Hddm91c1_de.hre                     A   323584  Sun May  4 03:58:59 2003
+Hddm91c1_de.ppd                     A    26373  Sun May  4 03:58:59 2003
+Hddm91c1_de.vnd                     A    45056  Sun May  4 03:58:59 2003
+HDNIS01U_de.DLL                     A   165888  Sun May  4 03:58:59 2003
+HDNIS01U_de.HLP                     A    19770  Sun May  4 03:58:59 2003
+Hddm91c1_de_reg.HLP                 A   228417  Sun May  4 03:58:59 2003
+              40976 blocks of size 262144. 709 blocks available
+
+Current directory is \\SAMBA-CUPS\print$\W32X86\2\
+.                                  D        0  Sun May  4 03:56:18 2003
+..                                 D        0  Sun May  4 03:56:35 2003
+ADOBEPS5.DLL                        A   434400  Sat May  3 23:18:45 2003
+laserjet4.ppd                       A     9639  Thu Apr 24 01:05:32 2003
+ADOBEPSU.DLL                        A   109568  Sat May  3 23:18:45 2003
+ADOBEPSU.HLP                        A    18082  Sat May  3 23:18:45 2003
+PDFcreator2.PPD                     A    15746  Sun Apr 20 22:24:07 2003
+              40976 blocks of size 262144. 709 blocks available
+</screen></para>
+
+<para>
+<indexterm><primary>ポイントアンドプリント</primary></indexterm>
+<indexterm><primary>プリンタドライバファイル</primary></indexterm>
+<indexterm><primary>印刷キュー</primary></indexterm>
+<filename>2</filename>サブディレクトリ(おそらく以前のインストールで)中に、すでに
+ドライバファイルが存在することに注意。いったん新しいドライバのためのファイルがそこに
+あると、クライアント上からそれらを使うことが出来るようにするためからは違ういくつかの
+ステップを処理することになる。この時点で行うべき唯一のことは、Windowsエクスプローラから
+print$共有を開いて、ファイル共有から普通のファイルを検索するのと同じように、クライアント
+から、それらを検索することである。しかし、それはポイントアンドプリント単位でそれらを
+インストールしない。その理由は、Sambaはまだそれらのファイルが特別か、すなわち、
+<emphasis>プリンタドライバファイル</emphasis>かどうかを知らないのと、それらのドライバ
+ファイルが属する印刷キューがどれかを知らないということによる。
+</para>
+</sect3>
+
+<sect3>
+<title><command>adddriver</command>を付けた<emphasis>printer driver files</emphasis>の実行</title>
+
+<para>
+<indexterm><primary>adddriver</primary></indexterm>
+<indexterm><primary>ドライバファイルの登録</primary></indexterm>
+<indexterm><primary>TDBデータベース</primary></indexterm>
+次に、<smbconfsection name="[print$]"/>共有中に今アップロードしたファイルの特別な
+カテゴリについてSambaに通知する必要がある。これは、<command>adddriver</command>で
+行える。これは、Samba内部のTDBデータベースファイルにドライバを登録するように表示
+してくる。以下のコマンドと出力は、可読性向上のために編集してある:
+<screen>
+&rootprompt;<userinput>rpcclient -Uroot%xxxx -c 'adddriver "Windows NT x86" \
+  "dm9110:HDNIS01_de.DLL: \
+  Hddm91c1_de.ppd:HDNIS01U_de.DLL:HDNIS01U_de.HLP:   \
+  NULL:RAW:Hddm91c1_de.DLL,Hddm91c1_de.INI,          \
+  Hddm91c1_de.dat,Hddm91c1_de.def,Hddm91c1_de.hre,   \
+  Hddm91c1_de.vnd,Hddm91c1_de.hlp,Hddm91c1KMMin.DLL, \
+  HDNIS01Aux.dll,HDNIS01_de.NTF,                     \
+  Hddm91c1_de_reg.HLP' SAMBA-CUPS</userinput>
+
+cmd = adddriver "Windows NT x86" \
+  "dm9110:HDNIS01_de.DLL:Hddm91c1_de.ppd:HDNIS01U_de.DLL:   \
+  HDNIS01U_de.HLP:NULL:RAW:Hddm91c1_de.DLL,Hddm91c1_de.INI, \
+  Hddm91c1_de.dat,Hddm91c1_de.def,Hddm91c1_de.hre,          \
+  Hddm91c1_de.vnd,Hddm91c1_de.hlp,Hddm91c1KMMin.DLL,        \
+  HDNIS01Aux.dll,HDNIS01_de.NTF,Hddm91c1_de_reg.HLP"
+
+Printer Driver dm9110 successfully installed.
+</screen></para>
+
+<para>
+<indexterm><primary>NT_STATUS_UNSUCCESSFUL</primary></indexterm>
+<indexterm><primary>エラーメッセージ</primary></indexterm>
+<indexterm><primary>adddriver</primary></indexterm>
+このステップの後、ドライバはプリントサーバ上のSambaによって認識される。このコマンドを
+入力するときには特別に注意を払う必要がある。フィールドの順番を交換しないこと。それは
+明白である。他の変更は、ドライバファイルのインストールが成功するかもしれないが、
+ドライバの実行が不可能になる。そのため、注意を払うこと!adddriverコマンドの文法に関する
+ヒントはマニュアルページにあり、必要ならばより詳細な記述を見ておくこと。
+</para>
+</sect3>
+
+<sect3>
+<title><command>adddriver</command>処理完了の確認</title>
+
+<para>
+ファイルをドライバファイルとしてSambaが認識したことを示す表示の1つは、
+<computeroutput>successfully installed</computeroutput>というメッセージである。
+他のものは、<command>adddriver</command>コマンドによってファイルが
+<filename>2</filename>サブディレクトリ中に動かされた、という事実である。これは再度
+<command>smbclient</command>コマンドで確認できる:
+<screen>
+&rootprompt;<userinput>smbclient //SAMBA-CUPS/print\$ -Uroot%xx \
+	-c 'cd W32X86;dir;pwd;cd 2;dir;pwd'</userinput>
+ added interface ip=10.160.51.162 bcast=10.160.51.255 nmask=255.255.252.0
+ Domain=[CUPS-PRINT] OS=[UNIX] Server=[Samba 2.2.7a]
+
+  Current directory is \\SAMBA-CUPS\print$\W32X86\
+  .                                  D        0  Sun May  4 04:32:48 2003
+  ..                                 D        0  Thu Apr 10 23:47:40 2003
+  2                                   D        0  Sun May  4 04:32:48 2003
+                40976 blocks of size 262144. 731 blocks available 
+
+  Current directory is \\SAMBA-CUPS\print$\W32X86\2\
+  .                                  D        0  Sun May  4 04:32:48 2003
+  ..                                 D        0  Sun May  4 04:32:48 2003
+  DigiMaster.PPD                      A   148336  Thu Apr 24 01:07:00 2003
+  ADOBEPS5.DLL                        A   434400  Sat May  3 23:18:45 2003
+  laserjet4.ppd                       A     9639  Thu Apr 24 01:05:32 2003
+  ADOBEPSU.DLL                        A   109568  Sat May  3 23:18:45 2003
+  ADOBEPSU.HLP                        A    18082  Sat May  3 23:18:45 2003
+  PDFcreator2.PPD                     A    15746  Sun Apr 20 22:24:07 2003
+  HDNIS01Aux.dll                      A    15356  Sun May  4 04:32:18 2003
+  Hddm91c1KMMin.DLL                   A    46966  Sun May  4 04:32:18 2003
+  HDNIS01_de.DLL                      A   434400  Sun May  4 04:32:18 2003
+  HDNIS01_de.NTF                      A   790404  Sun May  4 04:32:18 2003
+  Hddm91c1_de.DLL                     A   876544  Sun May  4 04:32:18 2003
+  Hddm91c1_de.INI                     A      101  Sun May  4 04:32:18 2003
+  Hddm91c1_de.dat                     A     5044  Sun May  4 04:32:18 2003
+  Hddm91c1_de.def                     A      428  Sun May  4 04:32:18 2003
+  Hddm91c1_de.hlp                     A    37699  Sun May  4 04:32:18 2003
+  Hddm91c1_de.hre                     A   323584  Sun May  4 04:32:18 2003
+  Hddm91c1_de.ppd                     A    26373  Sun May  4 04:32:18 2003
+  Hddm91c1_de.vnd                     A    45056  Sun May  4 04:32:18 2003
+  HDNIS01U_de.DLL                     A   165888  Sun May  4 04:32:18 2003
+  HDNIS01U_de.HLP                     A    19770  Sun May  4 04:32:18 2003
+  Hddm91c1_de_reg.HLP                 A   228417  Sun May  4 04:32:18 2003
+                40976 blocks of size 262144. 731 blocks available
+</screen></para>
+
+<para>
+他の検査方法は、印刷関連のTDBファイルのタイムスタンプが更新されたという事
+(と、もしも条件がそろえば、そのファイルサイズが増えたこと)である。
+</para>
+</sect3>
+
+<sect3>
+<title>Sambaがドライバを認識したかの確認</title>
+
+<para>
+<indexterm><primary>registered</primary></indexterm>
+この時点で、ドライバはSambaによって登録された。ほんの少しの時間でこのことを確認できる。
+しかし、このドライバはまだ特定のプリンタに対して関連づけられていない。少なくとも3つの
+方法で、ドライバファイルのステータスを確認できる:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+<indexterm><primary>ネットワークコンピュータ</primary></indexterm>
+<indexterm><primary>プリンタとFAX</primary></indexterm>
+<indexterm><primary>プリンタアイコン</primary></indexterm>
+<indexterm><primary>Windows95/98/ME</primary></indexterm>
+<indexterm><primary>Windows NT/2000/XP</primary></indexterm>
+	任意のWindowsクライアントの、ネットワークコンピュータによるブラウズから、Samba
+	ホストを検索し、Sambaの<guiicon>プリンタとFAX</guiicon>フォルダを開く。任意の
+	プリンタアイコンを選択し、右クリックしてプリンタの
+	<guimenuitem>プロパティ</guimenuitem>を選択する。<guilabel>詳細</guilabel>タブを
+	クリックする。そのプリンタに対するドライバを示すフィールドがここにある。ドロップ
+	ダウンメニューでそのドライバを変更できる(知らずにこれをしないように気をつける
+	こと)。Sambaが理解しているすべてのドライバの一覧を、これを使うことで見ることが
+	できる。新しいものがその中にあるべきである(クライアントの各タイプはこの固有の
+	アーキテクチャリストの中にのみ見ることができる。もしも各プラットフォーム用に
+	インストールされた各ドライバが無いならば、Windows95/98/MEかWindows NT/2000/XP
+	を見たときとは、このリストは違っている)。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>ネットワークコンピュータ</primary></indexterm>
+	Windows 200x/XPクライアント(Windows NTではなく)の
+	<guiicon>ネットワークコンピュータ</guiicon>によるブラウズから、Sambaサーバを
+	探し、サーバの<guiicon>プリンタ</guiicon>フォルダを開き、空白の部分(プリンタが
+	ハイライトされていないようにして)を右クリックする。
+	<guimenuitem>サーバのプロパティ</guimenuitem>を選択する。
+	<guilabel>ドライバ</guilabel>タブ上で、新しいドライバが一覧表示されていることが
+	確認できる。この表示は、そのドライバに属するファイルの一覧を調べるのにも使える
+	(これはWindows NTでは動作せず、Windows 2000とWindows XPでのみ動作する。
+	Windows NTは<guimenuitem>ドライバ</guimenuitem>タブを提供しない)。この
+	ダイアログをより簡単に起動するための代替の方法は、DOSプロンプトで入力する方法
+	である(もちろん、<replaceable>SAMBA-CUPS</replaceable>の代わりに使用している
+	Sambaサーバの名前を使わなければならない)。
+	<screen>
+	<userinput>rundll32 printui.dll,PrintUIEntry /s /t2 /n\\<replaceable>SAMBA-CUPS</replaceable></userinput>
+	</screen>
+	</para>
+	</listitem>
+
+	<listitem><para>
+	UNIXプロンプトから、<replaceable>SAMBA-CUPS</replaceable>になっている場所を
+	使用しているSambaホストの名前にして、xxxxは、rootに割り当てられている実際の
+	Sambaのパスワードにして以下のコマンド(かあるいはその変形)を動かす:
+	<screen>
+	<userinput>rpcclient -U'root%xxxx' -c 'enumdrivers' <replaceable>SAMBA-CUPS</replaceable></userinput>
+	</screen>
+	</para>
+
+	<para>
+	これで、Sambaが知っているすべてのドライバが表示される。新しいものはこの中に
+	あるべきである。しかし、<parameter>[Windows NT x86]</parameter>ヘッデイング
+	配下のもののみが一覧表示され、その部分をインストールしていないため、
+	<smbconfsection name="[Windows 4.0]"/>配下はない。3番目のカラムは、他に
+	インストールされたドライバを、各サポートしたアーキテクチャ用に、一度に
+	2度表示する。新しいドライバは<application>Windows NT 4.0 or 2000</application>
+	のみに表示される。<application>Windows 95, 98, と Me</application>に存在
+	しているようにするためには、WIN40アーキテクチャとサブディレクトリに対する
+	完全な手続きを繰り返さなければならない。
+	</para></listitem>
+</itemizedlist>
+</sect3>
+
+<sect3>
+<title>指定したドライバ名の自由度</title>
+
+<para>
+<indexterm><primary>adddriver</primary></indexterm>
+ドライバに好みの名前を付けることが出来る。前と同じファイルではあるが、異なったドライバ
+名を付けて<command>adddriver</command>ステップを繰り返したいのならば、以下のように
+行う:
+<screen>
+&rootprompt;<userinput>rpcclient -Uroot%xxxx         \
+  -c 'adddriver "Windows NT x86"                     \
+  "mydrivername:HDNIS01_de.DLL:              \
+  Hddm91c1_de.ppd:HDNIS01U_de.DLL:HDNIS01U_de.HLP:   \
+  NULL:RAW:Hddm91c1_de.DLL,Hddm91c1_de.INI,          \
+  Hddm91c1_de.dat,Hddm91c1_de.def,Hddm91c1_de.hre,   \
+  Hddm91c1_de.vnd,Hddm91c1_de.hlp,Hddm91c1KMMin.DLL, \
+  HDNIS01Aux.dll,HDNIS01_de.NTF,Hddm91c1_de_reg.HLP' SAMBA-CUPS
+  </userinput>
+
+cmd = adddriver "Windows NT x86" \
+ "mydrivername:HDNIS01_de.DLL:Hddm91c1_de.ppd:HDNIS01U_de.DLL:\
+  HDNIS01U_de.HLP:NULL:RAW:Hddm91c1_de.DLL,Hddm91c1_de.INI,           \
+  Hddm91c1_de.dat,Hddm91c1_de.def,Hddm91c1_de.hre,                    \
+  Hddm91c1_de.vnd,Hddm91c1_de.hlp,Hddm91c1KMMin.DLL,                  \
+  HDNIS01Aux.dll,HDNIS01_de.NTF,Hddm91c1_de_reg.HLP"
+
+Printer Driver mydrivername successfully installed.
+</screen></para>
+
+<para>
+<indexterm><primary>プリントキュー</primary></indexterm>
+<indexterm><primary>rpcclient</primary></indexterm>
+<indexterm><primary>adddriver</primary></indexterm>
+任意のプリントキューにそのドライバをバインドすることが出来る(しかし、ターゲットの
+プリンタに関して意味をなすキューへのドライバを連携させる事については、責任を
+追わねばならない)。繰り返し<command>rpcclient</command> <command>adddriver</command>
+コマンドを実行することは出来ない。おのおのの実行は、それぞれのサブディレクトリ中に
+それらを移動することで、<smbconfsection name="[print$]"/>共有中にファイルを配置して
+しまったので、各<command>rpcclient ... adddriver</command>コマンドの前に
+<command>smbclient ... put</command>を1回実行させなければならない。
+</para>
+</sect3>
+
+<sect3>
+<title><command>setdriver</command>を付けた<command>rpcclient</command>の実行</title>
+
+<para> 
+<indexterm><primary>プリンタドライバのマッピング</primary></indexterm>
+<indexterm><primary>TDB</primary></indexterm>
+Sambaはどのプリンタがどのドライバに対応しているかを知る必要がある。ドライバからプリンタ
+へのマッピングを作成し、この情報をSambaのTDBファイルに格納する。
+<command>rpcclient setdriver</command>はこれを正しく処理する:
+<screen>
+&rootprompt;<userinput>rpcclient -U'root%xxxx' -c 'setdriver dm9110 mydrivername' <replaceable>SAMBA-CUPS</replaceable></userinput>
+ cmd = setdriver dm9110 mydrivername
+
+Successfully set dm9110 to driver mydrivername.
+</screen></para>
+
+<para>
+これはまずい、こういう事は期待していない。この時点では、指定する名前を繰り返す:
+<screen>
+&rootprompt;<userinput>rpcclient -U'root%xxxx' -c 'setdriver dm9110 dm9110' <replaceable>SAMBA-CUPS</replaceable></userinput>
+ cmd = setdriver dm9110 dm9110
+Successfully set dm9110 to driver dm9110.
+</screen></para>
+
+<para>
+コマンドの文法は下記の通り:
+<screen>
+<userinput>rpcclient -U'root%<replaceable>sambapassword</replaceable>' -c 'setdriver <replaceable>printername</replaceable> \
+ <replaceable>drivername</replaceable>' <replaceable>SAMBA-Hostname</replaceable></userinput>. 
+</screen>
+これで、ほとんどの仕事が完了したが、まだ全部ではない。
+</para>
+
+<note><para>
+<command>setdriver</command>コマンドは、Sambaがそのプリンタをすでに知っているときにのみ
+成功する。2.2.x中にあるバグは、新しくインストールされたプリンタの認識を妨害する。Samba
+を再起動するか、少なくともこれに対応するために、動作中のすべてのsmbdに対してHUPシグナルを
+<userinput>kill -HUP `pidof smbd`</userinput>のように送信する必要がある。
+</para></note>
+</sect3>
+</sect2>
+</sect1>
+
+<sect1>
+<title>クライアントドライバのインストール方法</title>
+
+<para>
+Don Quixote曰く、<quote>論より証拠</quote>。印刷することでセットアップした内容の証明が
+できる。そのため、クライアントPC上にプリンタドライバをインストールしてみよう。が、
+これは思ったよりも簡単ではない。以下で説明する。
+</para>
+
+<sect2>
+<title>最初のクライアントドライバインストール</title>
+
+<para>
+特に重要なことは、最初のクライアントPCへのインストール(各アーキテクチャプラットフォーム
+ごとに)である。一度これが正常に終わると、その後他のクライアントへは、簡単にセットアップ
+でき、さらなる注意事項は必要ない。以下でフォローすることは、推奨する最初の手順の説明で
+ある。ここから先はクライアントワークステーションで作業する。そのクライアントからの接続が
+書き込みできない<emphasis>bad user</emphasis> nobodyにマップされていないことを確認する。
+DOSプロンプトで以下を入力する:
+</para>
+
+<para><userinput>net use \\<replaceable>SAMBA-SERVER</replaceable>\print$ /user:root</userinput></para>
+
+<para>
+必要であれば、<smbconfoption name="printer admin"/>で定義している他の有効なユーザに
+rootを置き換える。異なったユーザですでに接続しているならば、エラーメッセージが表示
+される。Windowsは共有の接続からログオフする概念が内容に見えるので、その接続のridを
+取得するのに簡単な方法はない(ローカルワークステーションからのログオフと混同しない
+ように。それは別の事柄である)。Windows NT/200x上では、<emphasis>workstation</emphasis>
+サービスを再起動することで、すべての smb/cifs接続から強制的にログオフすることが
+できる。Windows ファイルエクスプローラとWindows用のMSIEのすべてを閉じることを試みる
+ことができる。苦肉の策として、再起動しても良い。自動的な再接続の設定が無いことを
+理解すること。別のワークステーションに行ってそこからつなぐ方が簡単かもしれない。
+printer adminユーザとして接続出来た後(Samba上の<command>smbstatus</command>コマンドで
+これを確認できる)、Windowsワークステーションから以下を実行する:
+</para>
+
+<procedure>
+	<step><para>
+	<guiicon>ネットワークコンピュータ</guiicon>を開く。
+	</para></step>
+
+	<step><para>
+	Sambaサーバをブラウズする。
+	</para></step>
+
+	<step><para>
+	その<guiicon>プリンタとFAX</guiicon>フォルダを開く。
+	</para></step>
+
+	<step><para>
+	プリンタを選択して右クリックする。
+	</para></step>
+
+	<step><para>
+	<guimenuitem>接続</guimenuitem>を選択(Windows NT4/200xでは
+	おそらくそれは<guimenuitem>インストール</guimenuitem>であろう)。
+	</para></step>
+</procedure>
+
+<para>
+新しいプリンタ(Sambaサーバ上で<replaceable>printername</replaceable>という名前の)が
+<emphasis>ローカル</emphasis>のプリンタフォルダ中に現れるはずである
+(<guimenu>スタート</guimenu> -> <guimenuitem>設定</guimenuitem> -> 
+<guimenuitem>コントロールパネル</guimenuitem> -> <guiicon>プリンタとFAX</guiicon>
+で確認)。
+</para>
+
+<para>
+<indexterm><primary>印刷テストページ</primary></indexterm>
+おそらくは、印刷テストページを出力しようとしているだろう。全部終わった後、プリンタの
+プロパティを開き、<guimenu>全般</guimenu>タブ上に、これを行うためのボタンがある。
+しかし、やってみると"<literal>印刷テストページを印刷できませんでした</literal>"という
+エラーメッセージが表示される。これは、そのドライバに対して有効なデバイスモードセット
+がないか、<quote>プリンタドライバデータ</quote>セットが引き続き不完全状態という理由
+による。
+</para>
+
+<para>
+有効な<parameter>デバイスモード</parameter>を、ドライバのために設定する必要がある。
+それがどういう意味かはこれから説明する。
+</para>
+</sect2>
+
+<sect2 id="prt-modeset">
+<title>新しいプリンタに対するデバイスモードの設定</title>
+
+<para>
+Windows NT/200x/XPクライアントからプリンタが完璧に使えるようにするには、以下の作業が
+必要である:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+<indexterm><primary>デバイスモード</primary></indexterm>
+	有効な<emphasis>デバイスモード</emphasis>は、プリンタ用のドライバによって生成
+	される(紙のサイズ、方向と両面印刷の設定などを定義)。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>プリンタドライバデータ</primary></indexterm>
+	ドライバによって生成される<emphasis>プリンタドライバデータ</emphasis>の完全なセット。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>ntprinters.tdb</primary></indexterm>
+<indexterm><primary>ntdrivers.tdb</primary></indexterm>
+<indexterm><primary>printing.tdb</primary></indexterm>
+<indexterm><primary>ntforms.tdb</primary></indexterm>
+<indexterm><primary>TDBデータベースファイル</primary></indexterm>
+これらのどれかが不完全だと、クライアントはせいぜい最適な出力以下しか作成できない。最悪の
+場合、プリンタから読めないゴミが出力されたり、何も出なかったりするか、印刷時にエラー
+メッセージが出る。Sambaは名前つきの値と、すべての印刷に関連する情報をその内部TDB
+データベースファイル(<filename>ntprinters.tdb</filename>, <filename>ntdrivers.tdb</filename>,
+<filename>printing.tdb</filename>,と <filename>ntforms.tdb</filename>)に格納する。
+</para>
+
+<para>
+デバイスモードとプリンタドライバデータのセットはすべてのプリントキュープロパティの
+ための基本的な設定の集合体であり、賢明な方法で初期化される。デバイスモードとプリンタ
+ドライバデータは、印刷サーバ(Sambaホスト)上で健全な値に初期化されるべきであり、
+そして、クライアントは直接それらを使い始めることが出来る。どのように初期の健全な
+値を設定したらよいだろうか?これは、以下の節で説明されるように、あるNT
+(か200x/XPクライアント)からドライバをリモートでアクセスすることで行える。
+</para>
+
+<para>
+有効なデバイスモードは<smbconfoption name="printer admin"/>かrootによってのみ初期化できる
+(理由は明白であろう)ことに気がつくこと。デバイスモードはプリンタドライバプログラムそれ
+自身を実行することのみで正しく設定できる。SambaはこのWin32プラットフォームドライバ
+プログラムを実行できないので、この設定は初期状態ではNULLになる(クライアントが使うためには
+有効な設定ではない)。幸いなことに、ほとんどのドライバは、APWの助けかrpcclientで
+<smbconfsection name="[print$]"/>にアップロードされた時、必要であれば、自動的にプリンタ
+ドライバデータを生成する。
+</para>
+
+<para>
+最初の有効なデバイスモードの生成と設定は、しかし、Sambaサーバ上にそれをクライアントから
+設定するには若干のトリックを必要とする。最も簡単な方法は、サーバのプリンタ上のページの
+方向を単純に変更することである。これは求められる効果を起こすために、クライアント上で
+プリンタドライバプログラムを実行することで十分であり、Sambaサーバに新しいデバイスモードを
+戻す。これを行うためには、Windowsクライアントから、ネイティブなWindows NT/200x/XPプリンタ
+プロパティを、下記のようにして使うことが出来る:
+</para>
+
+<procedure>
+<title>プリンタドライバ設定の初期化手続き</title>
+	<step><para>
+	<guiicon>ネットワークコンピュータ</guiicon>をブラウズする。
+	</para></step>
+
+	<step><para>
+	Sambaサーバを見つける。
+	</para></step>
+
+	<step><para>
+	Sambaサーバの<guiicon>プリンタとFAX</guiicon>フォルダを開く。
+	</para></step>
+
+	<step><para>
+	問い合わせ中の共有プリンタを選択する。
+	</para></step>
+
+	<step><para>
+	プリンタ上で右クリックする(最後の節の説明に従っているならすでにここにいるはずである)。
+	</para></step>
+
+	<step><para>
+	コンテキストメニューの下部にある<guimenu>プロパティ</guimenu>を選択する(もっと上に
+	引き続き<guimenuitem>接続</guimenuitem>エントリを表示しているなら、直近の節で説明
+	したように、ドライバのインストールを完了するためにそれをクリックする必要がある)。
+	</para></step>
+
+	<step><para>
+	<guilabel>詳細</guilabel>タブに移動し、<guibutton>印刷の定義</guibutton>をクリックする。
+	</para></step>
+
+	<step><para>
+	ページの設定を<guimenuitem>縦</guimenuitem>から<guimenuitem>横</guimenuitem>に変更する(そして戻す)。
+	</para></step>
+
+	<step><para>
+	変更が実際に効果を引き起こすように、ページ方向の変更の確定を確実に行う。
+	</para></step>
+
+	<step><para>
+	そこに居る間、他のクライアントにおけるドライバインストール時に適用される、
+	印刷の既定値を設定してもよい。
+	</para></step>
+</procedure>
+
+<para>
+この手続きは、クライアントプラットフォーム上でプリンタドライバプログラムを動かし、
+正しいデバイスモードをSambaにフィードバックし、そして、それをTDBファイルに格納する。
+一度ドライバがクライアント上にインストールされると、もしもSambaのprinter admin
+ユーザであれば、<emphasis>local</emphasis>の<guiicon>プリンタ</guiicon>フォルダに
+アクセスすることによって、類似したステップを行うことも出来る。ここから、印刷作業は
+期待した通りに動作する。
+</para>
+
+<para>
+<indexterm><primary>既定値のdevmode</primary></indexterm>
+Sambaには、プリンタのための既定値のデバイスモードを生成するための、サービスレベルの
+<parameter>default devmode</parameter>という名前のパラメータがある。ある種のドライバ
+機能は既定値のプロパティの値でうまく機能する。その他はクライアントのスプーラサービス
+をクラッシュするかもしれない。そのたえm、このパラメータの使用には注意が必要である。
+プリンタに対する有効なデバイスモードをクライアントに作成させることと、使用している
+サーバにそれを格納することは、常時よりよい方法である。
+</para>
+</sect2>
+
+<sect2>
+<title>追加のクライアントドライバインストール</title>
+
+<para>
+<indexterm><primary>追加のドライバ</primary></indexterm>
+各追加ドライバは、今説明してきたことと同じ方法でインストールできる。
+<command>ネットワークコンピュータ</command>をブラウズし、Sambaサーバ上の
+<guiicon>プリンタ</guiicon>アイコンを開き、<guiicon>プリンタ</guiicon>を右クリックし、
+<guimenuitem>接続</guimenuitem>を選択する。一度これが完了すると(数秒以上はかからない
+が、ネットワークに依存するので、分単位でかかるときもある)、クライアント
+ワークステーションの、ローカルの<guiicon>プリンタとFAX</guiicon>フォルダ
+中に新しいプリンタが現れる。
+</para>
+
+<para>
+Windows 200x/XP Professionalワークステーション上で以下のコマンドを使うことによって、
+ローカルの<guiicon>プリンタとFAX</guiicon>フォルダを開くことが出来る。
+<screen>
+<userinput>rundll32 shell32.dll,SHHelpShortcuts_RunDLL PrintersFolder</userinput>
+</screen>
+一方Windows NT 4.0ワークステーションでは以下のように行う:
+<indexterm><primary>rundll32</primary></indexterm>
+<screen>
+<userinput>rundll32 shell32.dll,Control_RunDLL MAIN.CPL @2</userinput>
+</screen>
+</para>
+
+<para>
+<guilabel>DOS プロンプト</guilabel>ウィンドウ内か、<guimenu>スタート</guimenu>メニュー
+中の<guimenuitem>コマンドを指定して実行</guimenuitem>のどちらかで入力できる。
+</para>
+</sect2>
+
+<sect2>
+<title>常時最初のクライアントからの接続はrootか<quote>printer admin</quote>で行う</title>
+
+<para>
+Sambaサーバ上にドライバをインストール後(その<smbconfsection name="[print$]"/>共有中に)、
+常時最初のクライアントインストールを正しく完了させねばならない。クライアントから
+<smbconfoption name="printer admin"/>として、まさしくその最初の接続を確立することを
+習慣づけるようにすること。これは、以下のように行う:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	最初の有効な<emphasis>デバイスモード</emphasis>が実際に初期化される(詳細な説明は
+	<link linkend="prt-modeset">新しいプリンタ上のデバイスモードの設定</link>を参照)。
+	</para></listitem>
+
+	<listitem><para>	
+	今後のすべてのクライアントインストールのための、使用しているプリンタの既定値の
+	プリンタ設定は期待するようになる。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+上の方向を横に変更し、<guiicon>適用</guiicon>をクリックし、再度戻すことでこれを行う。
+次に、他の設定を変更する(たとえば、常時 <guiicon>A4</guiicon>を使っているときに、
+紙のサイズを<guiicon>レター</guiicon>に既定値を変更したくないであろう?既定値として
+<guiicon>両面印刷</guiicon>にプリンタを設定したいかもしれないなど)。
+</para>
+
+<para>
+<indexterm><primary>runas</primary></indexterm>
+Sambaプリンタにrootとして接続するためには、以下のコマンドをWindows 200x/XPのDOS
+プロンプトから実行する:
+<screen>
+&dosprompt;<userinput>runas /netonly /user:root "rundll32 printui.dll,PrintUIEntry /p /t3 /n 
+	\\<replaceable>SAMBA-SERVER</replaceable>\<replaceable>printername</replaceable>"</userinput>
+</screen>
+</para>
+
+<para>
+<constant>root</constant>のSambaパスワードを入力し、しばらく待ち、
+<guibutton>印刷の既定値</guibutton>をクリックし、すべてのクライアントで使われる既定値と
+すべきジョブオプションを設定する。代替として、<smbconfoption name="printer admin"/>の
+設定中のメンバの中の名前をrootの代わりとして使うことが出来る。
+</para>
+
+<para>
+これで、他のすべてのユーザは同じ方法でドライバのダウンロードとインストールが
+(<literal>ポイントアンドプリント</literal>を使って)出来るようになり、既定値も
+同じように設定される。もしも、このステップに失敗したら、ユーザからたくさんの
+問い合わせが来ることになるが、たくさんおしゃべりが出来て楽しいことになるだろう。
+</para>
+</sect2>
+</sect1>
+
+<sect1>
+<title>その他のテクニック</title>
+
+<para>
+ドライバはインストールされた。クライアントによるポイントアンドプリントインストールは
+準備ができた。最初のクライアントマシンでダウンロードして使ってみてもよいが、ちょっと
+待ってほしい。その前に、有用だと思われる、ちょっとした助言とこつをここで伝授する。
+たとえば、前の節で助言したような、プリンタに既定値を設定しなかったとする。利用者は
+多くの問題に不満を言うだろう(たとえば、<quote>各ジョブにレターからA4への紙のサイズの
+変更を必要とし、それが格納できない</quote>など)。
+</para>
+
+<sect2>
+<title>クライアントドライバのための既定値の印刷操作の設定</title>
+
+<para>
+最後の文は、若干のユーザと管理者には複雑な気持ちになるかもしれない。何時間もかけて
+苦労したのに、設定をセーブできると思ったらそれが出来なかった。それはやった人の
+問題ではない。混乱する点は、プリンタ名上で右クリックをした時にポップアップされる複数の
+タブを持つダイアログ中で<guimenuitem>プロパティ</guimenuitem>を選択したとき、同一である
+ように見える2つのダイアログが現れ、それぞれは3つの異なった方法でプリンタのオプション
+設定を手助けすると言ってくるということである。これの完璧な答えは、Sambaの既定値の
+ドライバ設定FAQにある:
+</para>
+
+<formalpara><title><quote>Windows 200x/XP上ですべてのユーザで既定値のプリンタオプションを
+設定しセーブできない。なぜ?</quote></title>
+
+<para>
+どのようにそれを行っている?操作を間違っているのではないか(確かにそれを見つけるのは簡単
+ではないが)。すべてを設定するダイアログを起動するのに3つのやり方がある。すべての3つの
+ダイアログは同じように見えるが、そのうちの1つが意図したものである。すべてのユーザのために
+AdministratorかPrint Administratorでこれを行う必要がある。XP Professionalでどのように
+これを再現したかは以下の通り:
+</para>
+
+<orderedlist numeration="upperalpha">
+	<listitem><para>最初の<quote>間違った</quote>方法:
+	<orderedlist numeration="arabic">
+		<listitem><para>Open the <guiicon>Printers</guiicon> folder.</para></listitem>
+
+		<listitem><para>プリンタ(<emphasis>cupshost上のリモートプリンタ</emphasis>)を右クリックし、
+		コンテキストメニューの<guimenu>印刷のプリファレンス...</guimenu>を選択する。</para></listitem>
+
+		<listitem><para>しっかりとこのダイアログを見て、どのように見えるかを覚えておくこと。</para></listitem>
+	</orderedlist></para></listitem>
+
+	<listitem><para>2番目の<quote>間違った</quote>方法:
+		<orderedlist numeration="arabic">
+			<listitem><para><guimenu>プリンタ</guimenu>フォルダを開く。</para></listitem>
+
+			<listitem><para>プリンタ(<emphasis>cupshost上のリモートプリンタ</emphasis>)
+			を右クリックし、コンテキストメニューの
+			<guimenuitem>プロパティ</guimenuitem></para>を選択する。</listitem>
+
+			<listitem><para><guilabel>全般</guilabel>タブをクリックする。
+			</para></listitem>
+
+			<listitem><para><guibutton>印刷のプリファレンス...</guibutton>
+			ボタンをクリックする。</para></listitem>
+
+			<listitem><para>新しいダイアログが開く。このダイアログを開いたままにして
+			親のダイアログに戻る。</para></listitem>
+		</orderedlist>
+	</para></listitem>
+
+	<listitem><para>
+	3番目の正しい方法(これを最初に行うべきであり、そのあと上記で説明した2番目の方法の
+	ステップ1と2を行う):
+	</para>
+
+		<orderedlist numeration="arabic">
+			<listitem><para><guilabel>詳細</guilabel>タブをクリックする
+			(もしもすべてが<quote>灰色で選択できない</quote>ならば、十分な
+			権限を持つユーザでログインしていない)。</para></listitem>
+
+			<listitem><para><guibutton>印刷の既定値</guibutton>ボタンを
+			クリックする。</para></listitem>
+
+			<listitem><para>2つの新しいタブ上のどれかで、
+			<guilabel>詳細</guilabel>ボタンをクリックする。</para></listitem>
+
+			<listitem><para>新しいダイアログが開く。これを他と比較する。これらは
+			<quote>B.5</quote>からのものとA.3からのものと比較したときに同じか?</para></listitem>
+		</orderedlist>
+	</listitem>
+</orderedlist>
+
+<para>
+2つの設定ダイアログで何らかの違いがあっただろうか?そうではないはずであろう。しかし、
+最後のもののみ、ステップC.1からC.6までの処理は、新しいユーザのために既定値となる、
+任意の設定を恒常的に保存する。もしも全クライアントに同じ既定値を設定したいならば、
+クライアントがドライバをダウンロードする前に(上記のAまたはBの手順に従うことで、
+クライアントはユーザ毎の既定値を後で設定出来る)、管理者
+(<smbconfoption name="printer admin"/>)としてそれらのステップを行う必要がある。
+Windows 200x/XPはユーザ毎の既定値設定が出来、その管理者はそれら固有の設定を行う前に
+それを提供する。同一に見えるダイアログの親は、そのウィンドウ名が微妙に違っている。
+1つは<computeroutput>サーバBar上のプリンタFoo用の既定値の印刷値</computeroutput>
+(これが必要なもの)と呼ばれ、もう1つは、
+<quote><computeroutput>サーバBar上のプリンタFooの用の印刷設定</computeroutput></quote>
+と呼ばれる。最後のものは、プリンタを右クリックし、<guimenuitem>印刷設定...</guimenuitem>
+を選択した時に現れるものである。これは、Windows NTの時代に使うことを教わったものであり、
+Windows 200x/XPはで同じように試すのはとても自然である。同じように見えるものに到達する
+異なったパスがあるとは夢にも思わないだろうが、機能は異なり、すべてのユーザに既定値を
+設定するダイアログである。
+</para></formalpara>
+
+<tip><para>(Windows 200x/XP上で)このコマンドを動かしてみる(正しい権限を持つユーザで):
+<indexterm><primary>rundll32</primary></indexterm>
+</para>
+
+<para><userinput>
+rundll32 printui.dll,PrintUIEntry /p /t3 /n\\<replaceable>SAMBA-SERVER</replaceable>\<replaceable>printersharename</replaceable>
+</userinput></para>
+
+<para>
+<guilabel>印刷の既定値</guilabel>ボタン(必要としているもの)があるタブを見るには以下のコマンドを実行する:
+</para>
+
+<para><userinput>
+rundll32 printui.dll,PrintUIEntry /p /t0 /n\\<replaceable>SAMBA-SERVER</replaceable>\<replaceable>printersharename</replaceable>
+</userinput></para>
+
+<para>
+<guilabel>印刷のプリファレンス</guilabel>ボタンを持つタブを見るには
+(システム全体の既定値を設定しない)、DOSプロンプト内でコマンドを実行するか、
+<guimenu>スタート</guimenu> -> <guimenuitem>実行</guimenuitem>を選択する。
+</para>
+</tip>
+
+</sect2>
+
+<sect2>
+<title>大量のプリンタのサポート</title>
+
+<para>
+昨今のSamba 開発フェーズにおいて浮かび上がった問題は、さまざまな種類のプリンタに関して
+ドライバのダウンロードサポートが必要なことである。Windows NT の APW(Add Printer Wizard)
+を使うやり方は(控えめに言っても)筋が良いとはいえない。一人でクリック祭りをやりながら
+プリンタのインストールをやりつつ反復性緊張症候群(RSS)の苦痛をを味わいたくなければ、
+非会話的なスクリプトについて検討する必要があるだろう。
+</para>
+
+<para>
+複数のプリンタが同じドライバを使う場合、<command>rpcclient setdriver</command>コマンドは
+インストールされたキューに結合されたドライバを設定するために使える。もしもドライバが
+<smbconfsection name="[print$]"/>で一度更新され、印刷用TDBファイルに登録されると、
+複数の印刷キューによって使うことができる。この場合、すべてのキューに対して
+(<command>adddriver</command>を繰り返し実行する必要なしに)
+<command>rpcclient</command>の<command>setprinter</command>サブコマンドを繰り返す必要が
+ある。以下はどのようにこれを達成するかの例である:
+</para>
+
+<para><screen>
+&rootprompt;<userinput>rpcclient <replaceable>SAMBA-CUPS</replaceable> -U root%<replaceable>secret</replaceable> -c 'enumdrivers'</userinput>
+ cmd = enumdrivers
+ 
+ [Windows NT x86]
+ Printer Driver Info 1:
+   Driver Name: [infotec  IS 2075 PCL 6]
+ 
+ Printer Driver Info 1:
+   Driver Name: [DANKA InfoStream]
+ 
+ Printer Driver Info 1:
+   Driver Name: [Heidelberg Digimaster 9110 (PS)]
+ 
+ Printer Driver Info 1:
+   Driver Name: [dm9110]
+
+ Printer Driver Info 1:
+   Driver Name: [mydrivername]
+
+ [....]
+</screen>
+
+<screen>
+&rootprompt;<userinput>rpcclient <replaceable>SAMBA-CUPS</replaceable> -U root%<replaceable>secret</replaceable> -c 'enumprinters'</userinput>
+ cmd = enumprinters
+   flags:[0x800000]
+   name:[\\SAMBA-CUPS\dm9110]
+   description:[\\SAMBA-CUPS\dm9110,,110ppm HiVolume DANKA Stuttgart]
+   comment:[110 ppm HiVolume DANKA Stuttgart]
+ [....]
+</screen>
+
+<screen>
+&rootprompt;<userinput>rpcclient <replaceable>SAMBA-CUPS</replaceable> -U root%<replaceable>secret</replaceable> -c \
+  'setdriver <replaceable>dm9110</replaceable> "<replaceable>Heidelberg Digimaster 9110 (PS)</replaceable>"'</userinput>
+ cmd = setdriver dm9110 Heidelberg Digimaster 9110 (PPD)
+ Successfully set dm9110 to driver Heidelberg Digimaster 9110 (PS).
+</screen>
+
+<screen>
+&rootprompt;<userinput>rpcclient <replaceable>SAMBA-CUPS</replaceable> -U root%<replaceable>secret</replaceable> -c 'enumprinters'</userinput>
+ cmd = enumprinters
+   flags:[0x800000]
+   name:[\\SAMBA-CUPS\dm9110]
+   description:[\\SAMBA-CUPS\dm9110,Heidelberg Digimaster 9110 (PS),\
+     110ppm HiVolume DANKA Stuttgart]
+   comment:[110ppm HiVolume DANKA Stuttgart]
+ [....]
+</screen>
+
+<screen>
+&rootprompt;<userinput>rpcclient <replaceable>SAMBA-CUPS</replaceable> -U root%<replaceable>secret</replaceable> -c 'setdriver <replaceable>dm9110</replaceable> <replaceable>mydrivername</replaceable>'</userinput>
+ cmd = setdriver dm9110 mydrivername
+ Successfully set dm9110 to mydrivername.
+</screen>
+
+<screen>
+&rootprompt;<userinput>rpcclient <replaceable>SAMBA-CUPS</replaceable> -U root%<replaceable>secret</replaceable> -c 'enumprinters'</userinput>
+ cmd = enumprinters
+   flags:[0x800000]
+   name:[\\SAMBA-CUPS\dm9110]
+   description:[\\SAMBA-CUPS\dm9110,mydrivername,\
+     110ppm HiVolume DANKA Stuttgart]
+   comment:[110ppm HiVolume DANKA Stuttgart]
+ [....]
+</screen></para>
+
+<para>
+(説明フィールドの2つのカンマの間に)ドライバが一覧表示される、空の文字列がある
+<quote>dm9110</quote>プリンタが表示される最初の<command>enumprinters</command>
+呼び出しを認識するのは簡単ではないかもしれない。<command>setdriver</command>
+コマンドの成功後、すべてはうまくいく。
+</para>
+</sect2>
+
+<sect2>
+<title>Windows NT APWによる新しいプリンタの追加</title>
+
+<para>
+既定値では、Sambaは&smb.conf;中で定義されているすべてのプリンタ共有を、
+<guiicon>プリンタ</guiicon>フォルダに表示する。また、このフォルダ中にWindows NTの
+プリンタ追加ウィザードアイコンも配置される。APWは下記の条件の時にのみ表示される:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	接続したユーザは管理者権限つきで<command>OpenPrinterEx(\\server)</command>を
+	正常に実行できる(すなわち、root又は<smbconfoption name="printer admin"/>)。
+	</para>
+
+	<tip><para> Windows 200x/XP DOSプロント内で下記を試してみる:
+	</para>
+
+	<para><userinput>
+	runas /netonly /user:root rundll32 printui.dll,PrintUIEntry /p /t0 /n \\<replaceable>SAMBA-SERVER</replaceable>\<replaceable>printersharename</replaceable>
+	</userinput></para>
+
+	<para>
+	<guibutton>印刷のプリファレンス</guibutton>をクリックする。
+	</para></tip></listitem>
+
+	<listitem><para>... は下記の設定を含む
+	<smbconfoption name="show add printer wizard">yes</smbconfoption> (既定値)
+	default)。</para></listitem>
+</itemizedlist>
+
+<para>
+APWではいろいろなことが出来る:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	新しいドライバをSambaの<smbconfsection name="[print$]"/>共有にアップロードする。
+	</para></listitem>
+
+	<listitem><para>
+	存在している印刷キューに(ただしまだドライバがない)アップロードされたドライバを関連づける。
+	</para></listitem>
+
+	<listitem><para>
+	存在する印刷キューに対して、以前にアップロードされたものと、現在使っているドライバを、交換する。
+	</para></listitem>
+
+	<listitem><para>
+	Sambaホストに、完全な形で新しいプリンタを追加する(動作する
+	<smbconfoption name="add printer command"/>と組み合わせる場合のみ。
+	<guiicon>プリンタ</guiicon>フォルダからエントリを削除するための
+	<smbconfoption name="delete printer command"/>も提供してもよい)。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+最後のもの(プリンタの追加)はその前のものよりもより多くの努力を必要とする。Sambaサーバに
+正しくプリンタを追加するのにAPWを使うためには、<smbconfoption name="add printer command"/>
+に値が定義されている必要がある。プログラムホックは、正しくUNIX印刷システム(すなわち
+<filename>/etc/printcap</filename>、<filename>/etc/cups/printers.conf</filename>か
+他の適切なファイル)と、必要であれば&smb.conf;にプリンタを追加しなければならない。
+</para>
+
+<para>
+クライアントからAPWを使うとき、名前が付いたプリンタ共有が存在しない場合、smbdは
+<smbconfoption name="add printer command"/>を実行し、新しいプリンタ共有を配置する
+ために、再度検索する。もしも共有がやはり定義されていないのであれば、クライアントに
+<errorname>"アクセスが拒否されました"</errorname>が返る。ユーザが接続している
+状態においての<smbconfoption name="add printer command"/>の実行は、rootアカウント
+の必要はない。<smbconfoption name="map to guest">bad user</smbconfoption>は
+間違った権限で書き込みが出来なくなる接続をしてしまうだろう。
+<command>smbstatus</command>コマンドを使ってこのことを検査すべきである。
+</para>
+
+</sect2>
+
+<sect2>
+<title>エラーメッセージ: <quote>異なった名前で接続できない</quote></title>
+
+<para>
+間違った認証情報で接続してしまった場合、すべてのエクスプローラ画面を閉じ、リブート
+する以外に、この状況を解決する方法はない。
+</para>
+
+<itemizedlist>
+	<listitem><para>
+<indexterm><primary>net use</primary></indexterm>
+	<command>net use \\SAMBA-SERVER\sharename /user:root</command>を使うと以下の
+	エラーメッセージが表示される:
+	<quote>サーバか共有リソースへの、複数の接続か、同じユーザによっていくつかの
+	ユーザ名を使う事は許可されない。特にサーバ、共有リソースへのすべての接続を
+	切断し再度試してみる。</quote>
+	</para></listitem>
+
+	<listitem><para>
+	<quote>ネットワークドライブへの割り当て</quote>->
+	<filename>\\SAMBASERVER\\print$</filename>-><constant>z:</constant>へのすべての
+	試みは、以下のようなメッセージがしつこく表示される:
+	<quote>このネットワークフォルダは現在異なった認証情報(ユーザ名とパスワード)の元で
+	接続されている。異なったユーザ名とパスワードで再度接続するために、この
+	ネットワーク共有への接続まず初めに切断する。</quote>
+	</para></listitem>
+</itemizedlist>
+
+<para>
+そのためすべての接続をクローズする。そして再実行する。そうすると同じメッセージが出る。
+<command>smbstatus</command>を使ってSamba側でチェックを行う。するといくつか接続
+されているのが分かる。それらをkillする。そうしてもクライアントは同じメッセージを出す。
+デバッグレベルを上げて、再接続してsmbd.logをチェックする。ログ中に1行ではない、
+いくつかのエラーメッセージがある事が分かる。何らかの接続があったかどうかを考えて見始める。
+接続するときの状況を見るため、wiresharkかtcpdumpを走らせてみる。結果はこうなる:
+たくさんのデータがネットワーク上に出ている。Windowsは引き続きエラーメッセージを表示して
+いる。エクスプローラのウィンドウをクローズして、再度起動する。再度接続すると今回は
+うまくいった!Windowsは接続情報をどこかにキャッシュしているように見え、それは最新状態に
+していない(不幸な場合、エラーメッセージを除去するためにリブートの必要があるかもしれない)。
+</para>
+
+<para>
+クライアントからサーバへのすべての接続を強制的に終了する最も簡単な方法は以下を実行する:
+<screen>
+&dosprompt; net use * /delete
+</screen>
+これは、マップされたドライバすべても切断し、要求に応じて新しい接続が出来るようにする。
+</para>
+</sect2>
+
+<sect2>
+<title>ドライバファイルを集めるときに気をつけること</title>
+
+<para>
+特定のドライバに帰属するファイルについて注意するときにはきわめて注意深くする必要がある。
+ドライババージョン<quote>0</quote>(Windows 9x/Me用で<filename>[print$]/WIN/0/</filename>
+に入るもの)とドライババージョン<filename>2</filename>(Windows NTのカーネルモード
+ドライバで、<filename>[print$]/W32X86/2/</filename>に入るもので、Windows 200x/XPでも
+使われる)と、ドライババージョン<quote>3</quote>(非カーネルモードドライバで、
+<filename>[print$]/W32X86/3/</filename>に入るもので、Windows NTでは使われない)のための
+ファイルを混同してはならない。これら異なったドライバのバージョンは同じ名前のファイルを
+含んでいるが実際には全く異なることがとても多い。Sambaから<command>enumdrivers</command>
+コマンドで、大小文字が混じったか、小文字のみで表示されている間、もしもそれらをWindows
+エクスプローラ(<filename>%WINDOWS%\system32\spool\drivers\W32X86\</filename>内にある)で
+見る時、大文字で名前を見ることになるので、とてもこれらを混同しやすくなる。もしも、
+<command>rpcclient</command>とサブコマンドを使い、手動でそれらをインストールした場合、
+何のエラーメッセージもなしに成功する。その後、クライアント上にインストールしようと
+したとき、<computeroutput>このサーバはプリンタに対する適切なドライバを持っていない</computeroutput>
+というエラーメッセージを受け取ることになる。
+</para>
+
+<para>
+以下は例である。しっかりと数多くのファイルに対して、その名前と綴りを確認し、バージョン2と
+3の構成において、その違いを見いだすことが求められる。注意:バージョン0には40の
+<parameter>依存するファイル</parameter>があるので、紙面節約のためにそれらは削除してある:
+</para>
+
+<para><screen>
+&rootprompt;<userinput>rpcclient -U 'Administrator%<replaceable>secret</replaceable>' -c 'enumdrivers 3' 10.160.50.8 </userinput>
+
+ Printer Driver Info 3:
+         Version: [3]
+         Driver Name: [Canon iR8500 PS3]
+         Architecture: [Windows NT x86]
+         Driver Path: [\\10.160.50.8\print$\W32X86\3\cns3g.dll]
+         Datafile: [\\10.160.50.8\print$\W32X86\3\iR8500sg.xpd]
+         Configfile: [\\10.160.50.8\print$\W32X86\3\cns3gui.dll]
+         Helpfile: [\\10.160.50.8\print$\W32X86\3\cns3g.hlp]
+ 
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\aucplmNT.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\ucs32p.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\tnl32.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\aussdrv.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cnspdc.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\aussapi.dat]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cns3407.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\CnS3G.cnt]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\NBAPI.DLL]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\NBIPC.DLL]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cpcview.exe]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cpcdspl.exe]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cpcedit.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cpcqm.exe]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cpcspl.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cfine32.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cpcr407.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\Cpcqm407.hlp]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cpcqm407.cnt]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\3\cns3ggr.dll]
+ 
+         Monitorname: []
+         Defaultdatatype: []
+
+ Printer Driver Info 3:
+         Version: [2]
+         Driver Name: [Canon iR5000-6000 PS3]
+         Architecture: [Windows NT x86]
+         Driver Path: [\\10.160.50.8\print$\W32X86\2\cns3g.dll]
+         Datafile: [\\10.160.50.8\print$\W32X86\2\IR5000sg.xpd]
+         Configfile: [\\10.160.50.8\print$\W32X86\2\cns3gui.dll]
+         Helpfile: [\\10.160.50.8\print$\W32X86\2\cns3g.hlp]
+ 
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\AUCPLMNT.DLL]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\aussdrv.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\cnspdc.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\aussapi.dat]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\cns3407.dll]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\CnS3G.cnt]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\NBAPI.DLL]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\NBIPC.DLL]
+         Dependentfiles: [\\10.160.50.8\print$\W32X86\2\cns3gum.dll]
+ 
+         Monitorname: [CPCA Language Monitor2]
+         Defaultdatatype: []
+
+</screen></para>
+
+<para>
+もしも<quote>バージョン 2</quote>ファイルと<quote>バージョン 3</quote>ファイルを異なった
+テキストファイルに書き込み、その結果を比較すると以下のようになる:
+</para>
+
+<para><screen>
+&rootprompt;<userinput>sdiff 2-files 3-files</userinput>
+
+<![CDATA[
+ cns3g.dll                     cns3g.dll
+ iR8500sg.xpd                  iR8500sg.xpd
+ cns3gui.dll                   cns3gui.dll
+ cns3g.hlp                     cns3g.hlp
+ AUCPLMNT.DLL                | aucplmNT.dll
+                             > ucs32p.dll
+                             > tnl32.dll
+ aussdrv.dll                   aussdrv.dll
+ cnspdc.dll                    cnspdc.dll
+ aussapi.dat                   aussapi.dat
+ cns3407.dll                   cns3407.dll
+ CnS3G.cnt                     CnS3G.cnt
+ NBAPI.DLL                     NBAPI.DLL
+ NBIPC.DLL                     NBIPC.DLL
+ cns3gum.dll                 | cpcview.exe
+                             > cpcdspl.exe 
+                             > cpcqm.exe
+                             > cpcspl.dll
+                             > cfine32.dll
+                             > cpcr407.dll
+                             > Cpcqm407.hlp
+                             > cpcqm407.cnt
+                             > cns3ggr.dll
+]]>
+</screen>
+
+だまされてはいけない!各バージョン用の、同一の名前のドライバファイルは、サイズを
+比較して分かるように、その内容が異なっているかもしれない:
+</para>
+
+<para><screen>
+&rootprompt;<userinput>for i in cns3g.hlp cns3gui.dll cns3g.dll; do                  \
+           smbclient //10.160.50.8/print\$ -U 'Administrator%xxxx' \
+           -c "cd W32X86/3; dir $i; cd .. ; cd 2; dir $i";      \
+		   done</userinput>
+
+  CNS3G.HLP               A   122981  Thu May 30 02:31:00 2002
+  CNS3G.HLP               A    99948  Thu May 30 02:31:00 2002
+
+  CNS3GUI.DLL             A  1805824  Thu May 30 02:31:00 2002
+  CNS3GUI.DLL             A  1785344  Thu May 30 02:31:00 2002
+
+  CNS3G.DLL               A  1145088  Thu May 30 02:31:00 2002
+  CNS3G.DLL               A    15872  Thu May 30 02:31:00 2002
+</screen></para>
+
+<para>
+多くの例では、上記の例よりももっと違っている。結論:各ドライババージョン用の正しいドライバ
+ファイルを注意深く選択しなければならない。名前だけに頼っても、異なったドライバ
+バージョンに属するファイルを交換してもいけない。
+</para>
+</sect2>
+
+<sect2>
+<title>Sambaとプリンタポート</title>
+
+<para>
+<indexterm><primary>LPT1:</primary></indexterm>
+<indexterm><primary>COM1:</primary></indexterm>
+<indexterm><primary>FILE:</primary></indexterm>
+<indexterm><primary>有効なポート</primary></indexterm>
+Windows NT/2000印刷サーバは各プリンタに対してポートを結びつける。これらは通常、
+<filename>LPT1:</filename>、<filename>COM1:</filename>、<filename>FILE:</filename>
+のような形式である。Sambaもプリンタに結びついたポートという概念をサポートせねば
+ならない。既定値では、システム上<quote>Sambaプリンタポート</quote>という名前の1つの
+プリンタポートのみが存在する。Sambaは印刷するために、<quote>ポート</quote>のようなものは
+実際に必要はしていない。むしろ、これはWindowsクライアントの要求である。この情報を要求する
+時、有効なポートについて告知されることを強く要求する。それ以外だとエラーメッセージを表示
+する。そのため、SambaはWindowsクライアントに支障がないよう、ポート情報を偽装する。
+</para>
+
+<para>
+<indexterm><primary>プリンタプーリング</primary></indexterm>
+Sambaは内部的に同等の<constant>プリンタプーリング</constant>という概念をサポートして
+いない。プリンタプーリングは論理プリンタを複数のポートに、ロードバランシングか
+フェイルオーバのように割り当てるものである。
+</para>
+
+<para>
+もしも何らかの理由か、他の理由で(Sambaでそういうことが出来るか、ユーザと管理者は知る
+べきではないが)複数のポートを定義する要望がある場合、システム上のポートの一覧を生成する
+外部プログラムを定義するために使える<smbconfoption name="enumports command"/>を設定する。
+</para>
+</sect2>
+
+<sect2>
+<title>共通クライアントドライバの間違った設定の防止</title>
+
+<para>
+印刷はうまくいっているが、まだ問題がある。ほとんどのジョブの印刷はうまくいくが、
+いくつかは全く印刷できない。いくつかのジョブはうまくいっていないように見えるフォントの
+問題を抱えている。いくつかのジョブは速やかに印刷するが、いくつかはとても遅い。それら
+全部について触れることは出来ないが、
+<link linkend="CUPS-printing">CUPSによる印刷</link>の章の
+<quote>間違ったPostscriptドライバ設定の防止</quote>、
+<link linkend="cups-avoidps1">クライアント上の危険なPostscriptドライバ設定の防止</link>
+の短い節を読むことを推奨する。
+</para>
+</sect2>
+</sect1>
+
+<sect1>
+<title>Imprintsツールセット</title>
+
+<para>
+<indexterm><primary>Imprints</primary></indexterm>
+ImprintsツールセットはWindows NT APWの同等品をUNIXで提供する。完全な情報は、Imprints
+のソースディストリビューションを含むドキュメントがある、
+<ulink url="http://imprints.sourceforge.net/">Imprints</ulink>のWebサイトを参照して
+ほしい。この節は、Imprintsの機能について簡単な紹介を提供するのみ行う。
+</para>
+
+<para>
+不幸にも、Imprintsツールセットはもはやメンテナンスされていない。2000年12月から
+プロジェクトは新しいメンテナを必要としている。持つべきスキルのうち最も重要なものは
+PerlのコーディングとSambaで使うMS-RPCベースの印刷についての興味である。もしも
+ボランティアを希望するならば、Sambaテクニカルメーリングリストで希望を調整してほしい。
+ツールセットはいまだに便利であるが、使うために準備されているパッケージは古いプリンタ
+モジュールに対してのもののみである。Imprintsが持つべきであるならば、より更新された
+プリンタドライバのパッケージが必要である。Imprintsにツールセットに関する情報は
+<ulink url="http://imprints.sourceforge.net/">Imprints</ulink>ホームページから
+得ることが出来る。
+</para>
+
+<sect2>
+<title>Imprintsとは何か?</title>
+
+<para>
+Imprintsは以下をサポートするためのツールの集合体である:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	Windows NTと 95/98プリンタドライバパッケージに関連する集中した情報のリポジトリを提供する。
+	</para></listitem>
+
+	<listitem><para>
+	Imprintsプリンタドライバパッケージを作成するためのツールを提供する。
+	</para></listitem>
+
+	<listitem><para>
+	中央のインターネット(又はイントラネット)Imprintsサーバリポジトリからプリンタドライバを
+	得、リモートのSambaとWindows NT印刷サーバ上にそれをインストールする事を提供する。
+	</para></listitem>
+</itemizedlist>
+</sect2>
+
+<sect2>
+<title>プリンタドライバパッケージの作成</title>
+
+<para>
+プリンタドライバパッケージの作成手順はこのドキュメントの範囲外である(より詳細は、Sambaの
+ディストリビューションに含まれているImprints.txtを参照)。簡単に言うと、Imprintsドライバ
+パッケージは、ドライバファイル、関連するINFファイルとクライアントがインストールするのに
+必要な制御ファイルを含む、gzipされたtar形式ファイルである。
+</para>
+</sect2>
+
+<sect2>
+<title>Imprintsサーバ</title>
+
+<para>
+Imprintsサーバは、実際には、標準HTTPメカニズム経由で問い合わせを受けることが出来る
+データベースサーバである。データベース中の各プリンタエントリは、実際にダウンロード
+するパッケージを示すURLに関連づけられている。各パッケージは、実際にダウンロードした
+ものが、Imprintsデータベース中で参照されるものかどうかを検査できるよう、GnuPGを使って
+デジタル署名されている。このセキュリティ検査を無効にしないことを強く推奨する。
+</para>
+</sect2>
+
+<sect2>
+<title>クライアントのインストール</title>
+
+<para>
+Imprintsクライアントに関連するさらなる情報は、Imprintsソースパッケージ中にある、
+<filename>Imprints-Client-HOWTO.ps</filename>という文書ファイルに書いてある。
+Imprintsクライアントインストールは以下の2つの形式がある:
+</para>
+
+<itemizedlist>
+	<listitem><para>コマンドラインPerlスクリプト一式。</para></listitem>
+	<listitem><para>コマンドラインPerlスクリプトへのGTK+ベースのグラフィカルインタフェース</para></listitem>
+</itemizedlist>
+
+<para>
+(両方の形式による)クライアントのインストールは、リモートSambaとWindows NTプリントサーバ
+上へのダウンロードとドライバのインストールという意味と同じような、既存のプリンタモデル名
+の一致リストのための、Imprintsデータベースサーバに問い合わせる手段を提供する。
+</para>
+
+<para>
+基本的なインストール手順は4つのステップがあり、Perlコードはsmbclientとrpcclientを包み
+こんでいる。
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	与えられたドライバがサポートする各アーキテクチャに対して:
+	<orderedlist>
+		<listitem><para>rpcclient: リモートサーバ上の適切なアップロードディレクトリを取得する。</para></listitem>
+		<listitem><para>smbclient: ドライバファイルをアップロードする。</para></listitem>
+		<listitem><para>rpcclient: AddPrinterDriver() MS-RPCを発行する。</para></listitem>
+	</orderedlist>
+	</para></listitem>
+
+	<listitem><para>rpcclient: 実際にプリンタの作成を行うためにAddPrinterEx() MS-RPCを発行する。</para></listitem>
+</itemizedlist>
+
+<para>
+Imprintsツールセットを実装するときに発生した問題の1つは、数多くサポートされている
+クライアントアーキテクチャ間での名前空間の問題であった。例えば、Windows NTには
+<quote>Apple LaserWriter II NTX v51.8</quote>という名前のドライバを含んでいるが、
+Windows 95はこのドライバの対応するバージョン<quote>Apple LaserWriter II NTX</quote>
+を呼び出す。
+</para>
+
+<para>
+問題は、プリンタに対してどんなクライアントドライバをアップロードするかということを
+どのようにして知るかと言うことである。抜け目がない読者は、Windows NTのプリンタ
+プロパティのダイアログのみが、そのプリンタドライバ名に空白を含んでいることを覚えて
+いるだろう。下記のWindows NT 4.0システムレジストリを簡単に見てみると、
+</para>
+
+<para><filename>
+ HKLM\System\CurrentControlSet\Control\Print\Environment
+</filename></para>
+
+<para>
+これは、Windows NTが常時 NTドライバ名を使うことを明白にしている。これは、Windows NTが
+少なくともWindows NTバージョンのプリンタドライバが存在することを常時要求しているので
+問題はない。Sambaは内部的にはそれを要求しない。そのため、
+<quote>すでにインストールされていないのに、なぜNTドライバ名を使うことが出来るのか?</quote>
+という疑問が生じるだろう。
+</para>
+
+<para>
+この限界を回避する方法は、すべてのImprintsドライバパッケージがIntel Windows NTと95/98
+プリンタドライバを含み、そのNTドライバが最初にインストールされることを要求することである。
+</para>
+</sect2>
+</sect1>
+
+<sect1>
+<title>ユーザによるインストールなしにネットワークプリンタを追加する</title>
+
+<para>
+以下のMS Knowledgeベースの記事は、Windows 2000クライアントを扱う必要がある場合に何らかの
+手助けになるかもしれない。
+<emphasis>ユーザーによる操作なしで Windows にプリンタを追加する方法</emphasis>
+(<ulink url="http://support.microsoft.com/kb/189105/ja">Microsoft KB 189105(日本語)</ulink>)。
+これは又Windows XP Professionalクライアントにも適用できる。この節で示すアイデアの概要は、
+ネットワークとローカルプリンタとそのドライバをインストールするために適用できるコマンド
+ライン手法を説明するこの記事によって触発されたものである。これは、ログオンスクリプトと
+統合すると最も便利である。コマンドプロンプト(<command>DOSプロンプト</command>)で
+以下のようにタイプすることにより、どのようなオプションが有効かを見ることができる:
+</para>
+
+<para><userinput>rundll32 printui.dll,PrintUIEntry /?</userinput></para>
+
+<para>
+すべての有効なコマンドラインスイッチを表示するウィンドウがポップアップする。 大規模な
+例題リストも提供される。これは、Windows 200x/XPのみである。Windows NT上では動作
+しない。Windows NTはそれぞれねリソースキット内である種の他のツールをおそらく
+持っている。各行が実際に何をするかについての簡単な説明がある、クライアントログオン
+スクリプトが含んでも良いかもしれないものについての助言は以下の通り(これはSamba
+経由で200x/XP Windowsクライアントがプリンタにアクセスする場合に動作し、さらに、
+Windowsベースのプリンタでも同様である)。
+</para>
+
+<para><screen>
+<userinput>rundll32 printui.dll,PrintUIEntry /dn /n "\\cupsserver\infotec2105-IPDS" /q</userinput>
+<userinput>rundll32 printui.dll,PrintUIEntry /in /n "\\cupsserver\infotec2105-PS"</userinput>
+<userinput>rundll32 printui.dll,PrintUIEntry /y /n "\\cupsserver\infotec2105-PS"</userinput>
+</screen></para>
+
+<para>
+コマンドラインパラメータで使われるパラメータの一覧である:
+</para>
+
+<variablelist>
+	<varlistentry><term>/dn</term>
+		<listitem><para>ネットワークプリンタを削除する。</para></listitem>
+	</varlistentry>
+	<varlistentry><term>/q</term>
+		<listitem><para>表示を抑制する。</para></listitem>
+	</varlistentry>
+	<varlistentry><term>/n</term>
+		<listitem><para>プリンタに名前を付ける。</para></listitem>
+	</varlistentry>
+	<varlistentry><term>/in</term>
+		<listitem><para>ネットワークプリンタ接続を追加する。</para></listitem>
+	</varlistentry>
+	<varlistentry><term>/y</term>
+		<listitem><para>プリンタを既定値のプリンタにする。</para></listitem>
+	</varlistentry>
+</variablelist>
+
+<itemizedlist>
+	<listitem><para>
+	1行目では<emphasis>infotec2105-IPDS</emphasis>という以前に存在していた可能性の
+	あるネットワークプリンタを削除する(CUPSに変換された、サーバから削除されたLPRngの
+	ネイティブなWindowsドライバで使われていた)。終わりにある<command>/q</command>
+	は、ポップアップする確認あるいはエラーダイアログボックスを抑制する。これらは
+	ユーザログオンについては提供されない。
+	</para></listitem>
+
+	<listitem><para>	
+	2行目では、新しいプリンタ<emphasis>infotec2105-PS</emphasis>(実際には同じ物理
+	デバイスであるが、新しいCUPS印刷システムによって動作し、CUPS/Adobe PSドライバ
+	と関連づけられる)を追加する。プリンタとそのドライバはユーザのログインに先立って
+	追加されねばならない(すなわち、この章の前の方で説明した手順か、
+	<command>cupsaddsmb</command>を動かすことによって)。ドライバはユーザがログイン
+	しようとしているときに、クライアントPCに自動的にダウンロードされる。
+	</para></listitem>
+
+	<listitem><para>
+	3行目では、この新しいネットワークプリンタを既定値のプリンタに設定する(この方法を
+	使っていくつかのプリンタが存在するかもしれなく、また、そのうちのいくつかは同じ
+	ようにローカルであってもよいので、既定値のプリンタを決める事が必要となる)。
+	既定値のプリンタの選択は、もちろん、異なったユーザでは異なっても良い。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+2番目の行は、もしもプリンタ<emphasis>infotec2105-PS</emphasis>がすでに
+<constant>cupsserver</constant>上のプリントキューで動作していて、もしも
+プリンタドライバがSambaのドライバリポジトリである<smbconfsection name="[print$]"/>
+中に、すでにきちんとアップロード(<command>APW</command>, 
+<command>smbclient/rpcclient</command>か<command>cupsaddsmb</command>経由で)
+されている場合にのみ動作する。バージョン3.0より前のある種のSambaのバージョンでは、
+プリンタインストール後とドライバアップロード後にsmbdの再起動を要求する。そうでないと、
+スクリプト(かその他のルライアンとドライバダウンロード)は失敗する。
+</para>
+
+<para>
+ログオンスクリプトからの、インストールされたネットワークプリンタの存在をテストする簡単な
+方法は無いので、わざわざ調べる必要はない。ユーザログイン時に毎回インストールの削除/
+再インストールが出来るようにしておくこと。それはとても短時間である(1から2秒くらい)。
+</para>
+
+<para>
+ほかにこの件に関する有用な情報は以下の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	全部のユーザログイン時に自動的に、任意のプリンタ既定値の設定変更を適切に設定する。
+	</para></listitem>
+
+	<listitem><para>
+	異なったワークステーションからドメインにユーザが<quote>ローミング</quote>でログイン出来るようにする。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+各ユーザ毎にネットワークプリンタがインストールされるので、これにより、インストールの
+最新性を保持する作業をより単純化する。ログイン時に数秒余計にかけることはほとんど
+目立たないだろう。プリンタは、クライアントからユーザが介入する必要性なしにサーバ上で
+集中して追加、変更と削除ができる(ログインスクリプトは最新性を保持する必要はある)。
+</para>
+</sect1>
+
+<sect1>
+<title><command>addprinter</command>コマンド</title>
+
+<para>
+<command>addprinter</command>コマンドはSambaによって実行されるシェルスクリプトか
+プログラムとして設定できる。これはSambaプリントサーバに対してクライアントからAPWを
+走らせることによって起動される。APWはユーザにいくつかのフィールドを埋めることを
+要求する(それはたとえばプリンタ名、使用するドライバ、コメント、ポートモニタなど)。
+これらのパラメータはAPWによってSamba上に渡される。もしも、addprinterコマンドが
+新しいプリンタを作成できるように(旧式のシステム上で、適切なprintcapエントリを書くか、
+より新しいシステム上で<command>lpadmin</command>コマンドを実行することによって)と、
+それに関連する共有を作成するように設計されていた場合、APWはSamba上とUNIX印刷
+システム上に、結果として新しいプリンタを作る!
+</para>
+</sect1>
+
+<sect1>
+<title>旧式の印刷システムの、Sambaへの移行</title>
+
+<para>
+基本的なNT形式のプリンタドライバ管理は2.2.xリリースから3.0ではほとんど変更はなかった
+(小さな改善はたくさん適用されたが)。特に、設定中で廃止されるパラメータを使うのをやめる、
+前述の助言に従うならば、移行はとても簡単である。既存の2.0.x設定か、Samba 2.2で
+Windows 9x/Me形式の印刷形式を継続したいのであれば、それはもっと努力が必要となる。
+適切なリリースノートとSamba-2.2.xのHOWTO文書を読んでほしい。以下のいくつかの方法に
+沿うことが出来る。移行のための可能なシナリオは以下の通り:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	新しい Windows NTプリンタとドライバサポートについて学習し、使う必要がある。以前
+	使っていたパラメータ<parameter>printer driver file</parameter>,
+	<parameter>printer driver</parameter>と<parameter>printer driver location</parameter>
+	はもはやサポートされない。
+	</para></listitem>
+
+	<listitem><para>
+	もしもWindows NTプリンタドライバサポートを利用したいのであれば、新しい設定の
+	ために、Windows 9x/Meドライバを新しいものへ移行する必要がある。
+	</para></listitem>
+
+	<listitem><para>
+	存在する<filename>printers.def</filename>ファイル(削除されたパラメータ
+	<parameter>printer driver file</parameter>中で指定されているもの)はもはやSamba-3
+	では動作しないので、smbdは<smbconfsection name="[print$]"/>中とTDBファイル中の
+	追加の設定だけで、プリンタのためのWindows 9x/Meドライバファイルを捜そうとする。
+	もしもそれが失敗すると、(2.2.xが使うように)<filename>printers.def</filename>
+	(とすべての関連するパラメータ)を使うようには<emphasis>ならない</emphasis>。
+	make_printerdefツールは削除され、これに関する下位互換性はない。
+	</para></listitem>
+
+	<listitem><para>使用しているSambaホスト上のプリンタ用の
+	<smbconfsection name="[print$]"/>共有中にWindows 9x/Meドライバをインストールする
+	必要がある。ドライバファイルは<smbconfsection name="[print$]"/>の
+	<quote>WIN40/0</quote>サブディレクトリ中に格納され、その他の設定と情報は印刷
+	関連のTDBファイル中に格納される。</para></listitem>
+
+	<listitem><para>
+	もしも、存在する<filename>printers.def</filename>ファイルを新しい設定中に移行
+	したいならば、現在唯一の解は、NTドライバと9x/Meドライバをインストールするために、
+	Windows NT APWを使うことである。これはsmbclientとrpcclientを使うスクリプトで
+	行える。その例は、
+	<ulink noescape="1" url="http://imprints.sourceforge.net/">Imprints</ulink>
+	のWebサイト上にあるImprintsクライアントインストールを参照。また、
+	<link linkend="CUPS-printing">CUPS 印刷環境</link>中のrpcclientの使用法についての
+	議論も参照のこと。
+	</para></listitem>
+</itemizedlist>
+</sect1>
+
+<sect1>
+<title>Active DirectoryかLDAPへのプリンタ情報の公開</title>
+
+<para>
+この件に関しては、
+<link linkend="NetCommand">リモートとローカル管理&smbmdash;Netコマンド</link>でも
+触れられている。もしもこの機能に関しての文書の更新をボランティアとして手助けしてくれる
+のであれば、<ulink url="mail://jht@samba.org">John H. Terpstra</ulink>に連絡を
+してほしい。
+</para>
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<sect2>
+<title>rootパスワードを指定したが、アクセスできない</title>
+
+<para>
+UNIXシステムで有効な(とほとんどの場合、<filename>/etc/shadow</filename>というファイルに
+1方向ハッシュ形式として格納される)rootパスワードと、Samba認証時に使うパスワードと混同
+しないこと。SambaはUNIXパスワードを知らない。Sambaリソースへのrootアクセスは最初に作成
+されなければならないSamba用のrootアカウントを必要とする。これは以下のように、
+<command>smbpasswd</command>を使って行える:
+<screen>
+&rootprompt; smbpasswd -a root
+New SMB password: secret
+Retype new SMB password: secret
+</screen>
+</para>
+
+</sect2>
+
+<sect2>
+<title>印刷ジョブはスプールディレクトリに入ったが、その後なくなった</title>
+
+<para>
+存在するUNIX印刷システムスプールディレクトリをSambaスプールディレクトリに使っては
+ならない。それは、簡単で場所を節約できるように見えるが、これは問題を引き起こす。
+2つは分離せねばならない。UNIX/Linuxシステムプリントスプールディレクトリ(すなわち
+<filename>/var/spool/cups</filename>)は通常<literal>cups</literal>や
+<literal>lp</literal>のような非特権ユーザによって所有される。さらに追加で、
+スプールディレクトリのパーミッションは、通常所有者とグループに対して制約されて
+いる。別の言い方をすると、Sambaスプールディレクトリは全員に対して書き込み可能で、
+一時スプールファイルの所有者のみがファイルを変更したり削除できるようにする、
+'t'ビットを設定すべきである。
+</para>
+
+<para>
+UNIX/Linuxホスト上で使う印刷スプールシステムのタイプに依存するので、スプール管理
+アプリが見つける、管理されているジョブキューの一部でないファイルは削除される。
+これは、ジョブが(Sambaによって)このディレクトリ中にスプールされて消えてしまう現象の
+説明になるだろう。
+</para>
+
+</sect2>
+</sect1>
+
+</chapter>

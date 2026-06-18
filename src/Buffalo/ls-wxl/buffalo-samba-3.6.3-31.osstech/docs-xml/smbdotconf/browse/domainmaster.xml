@@ -1,0 +1,44 @@
+<samba:parameter name="domain master"
+				 type="boolean"
+                 context="G"
+                 basic="1" advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションにより、 <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が
+    WAN 環境におけるブラウズリストの統合を行なうことが可能になる。
+    このオプションを設定すると、<command moreinfo="none">nmbd</command> は、指定された <smbconfoption name="workgroup"/>
+    のドメインマスタブラウザであることを表す、ドメイン固有の特別な
+    NetBIOS 名(訳注:NetBIOS 名で末尾が 0x1b のユニーク名を指す) を登録する。
+    各サブネット上にある、同じ名前の <smbconfoption name="workgroup"/>
+    に属するローカルマスタブラウザは、この <command moreinfo="none">nmbd</command>に対して、
+    ローカルに収集したブラウズリストを提供するとともに、
+    <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry>
+    に対してネットワーク全体のブラウズリストの完全な複製の提供を要求するようになる。
+    ブラウザのクライアントは、ローカルマスタブラウザと通信することで、
+    個々のサブネットのブラウズリストではなく、
+    そのドメイン全体のブラウズリストを取得できるようになる。</para>
+
+    <para> Windows NT のプライマリドメインコントローラは、
+    <smbconfoption name="workgroup"/> のドメインマスタブラウザとして機能するために、
+    <smbconfoption name="workgroup"/> 固有の特別な NetBIOS
+    名を登録することが前提とされていることに注意
+    (Windows NT PDC のこの動作を抑止することはできない)。
+    つまり、このパラメータが Yes に設定され、<command moreinfo="none">nmbd</command> が
+    Windows NT PDC より前に、<smbconfoption name="workgroup"/> のための特別な NetBIOS 名を登録してしまうと、
+    サブネット越しのブラウズは正常に動作せず、失敗する。</para>
+		
+    <para><smbconfoption name="domain logons">yes</smbconfoption> 
+    の場合、<smbconfoption name="domain master"/> パラメータはデフォルトで有効となる。
+    <smbconfoption name="domain logons"/> が有効でない場合(デフォルト)、
+    <smbconfoption name="domain master"/> パラメータもデフォルトでは有効にならない。
+    </para>
+
+    <para>
+    <smbconfoption name="domain logons">Yes</smbconfoption> の場合、このパラメータもデフォルトで Yes となり、Samba は PDC として動作するようになる。
+    <smbconfoption name="domain master">No</smbconfoption> の場合、Samba は BDC として動作するようになる。通常、このパラメータを「No」に設定する必要があるのは、BDC として機能させる場合のみである。
+    </para>
+</description>
+<value type="default">auto</value>
+</samba:parameter>

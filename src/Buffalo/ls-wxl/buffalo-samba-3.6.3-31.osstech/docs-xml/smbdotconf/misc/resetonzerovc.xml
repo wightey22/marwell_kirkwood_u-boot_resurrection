@@ -1,0 +1,22 @@
+<samba:parameter name="reset on zero vc"
+		 context="G"
+		 type="boolean"
+		 advanced="1" developer="0"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	この真偽値オプションは、到着したセッションセットアップが、
+	同一の IP アドレスからの別のセッションを切断するかを制御する。
+	これは Windows Server 2003 のデフォルトの挙動である。
+
+	ネットワークが不安定で、 Windows が、古い接続がファイルを共有モードでオープンしているにも関わらず、再接続を試行してしまうような環境では、このパラメータを yes にする必要があるだろう。
+	これらのファイルは、新しい接続経由ではアクセスできなくなるが、
+	クライアントが新しい接続中で 0 VC を送信すると、Windows Server 2003 は同一の IP が送信元のすべての他の接続を切断する。
+	これにより、ロックされたファイルが再度アクセスできるようになる。
+
+	このオプションを有効にすると、ルータで同一 IP アドレスに隠蔽されている接続も切断されてしまうことに注意。
+	</para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

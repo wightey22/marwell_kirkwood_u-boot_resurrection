@@ -1,0 +1,19 @@
+<samba:parameter name="postexec"
+	         context="S"
+			 type="string"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このオプションは、
+	サービスから切断した際に常に起動されるコマンドを指定する。
+	このパラメータでは通常の Samba の変数も利用できる。
+	システムによってはコマンドが root で実行される場合もあるかも知れない。</para>
+
+	<para> 面白い例としては、サーバのリソースを umount するような用途が考えられる:</para>
+
+<para><command moreinfo="none">postexec = /etc/umount /cdrom</command></para>
+</description>
+<related>preexec</related> 
+<value type="default"></value>
+<value type="example">echo \&quot;%u disconnected from %S from %m (%I)\&quot; &gt;&gt; /tmp/log</value>
+</samba:parameter>

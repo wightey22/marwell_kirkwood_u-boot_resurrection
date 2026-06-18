@@ -1,0 +1,22 @@
+<samba:parameter name="min protocol"
+                 context="G"
+				 type="string"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータの値(文字列)は、
+    Sambaがサポートする最低限のSMBプロトコルの dialect(レベル) を指定する。
+    有効なプロトコル名の一覧と、その簡単な説明については、
+    <smbconfoption name="max protocol"/>
+    パラメータを参照のこと。クライアントがサポートするプロトコルの dialect 一覧については、
+    <filename moreinfo="none">source/smbd/negprot.c</filename> 
+    の Cソースを参照するとよいであろう。</para>
+		
+    <para> セキュリティ的な観点では、
+    <smbconfoption name="lanman auth"/>
+    パラメータも参照のこと。
+    それ以外の観点からこのパラメータを変更する必要はないであろう。</para>
+</description>
+<value type="default">CORE</value>
+<value type="example">NT1</value>
+</samba:parameter>

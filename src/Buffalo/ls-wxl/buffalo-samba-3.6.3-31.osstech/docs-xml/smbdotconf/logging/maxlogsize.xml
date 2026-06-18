@@ -1,0 +1,16 @@
+<samba:parameter name="max log size"
+				 type="integer"
+                 context="G"
+                 developer="1" advanced="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプション(キロバイト単位の数値)は、
+	ログファイルの最大サイズを指定する。 Samba は定期的にログファイルのサイズを調べ、
+	最大値を超過した場合は、ファイルの拡張子に <filename moreinfo="none">.old</filename> 
+	を付加した名前にファイル名を変更する。</para>
+
+	<para> サイズ 0 は無制限を意味する。</para>
+</description>
+<value type="default">5000</value>
+<value type="example">1000</value>
+</samba:parameter>

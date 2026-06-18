@@ -1,0 +1,37 @@
+<samba:parameter name="lanman auth"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、<citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が LANMAN パスワードハッシュを使用した
+      認証を行なうか否かを制御する。無効にした場合、 NT パスワードハッシュを利用する
+      クライアント(Windows NT/2000クライアント、smbclientなど。しかし Windows 95/98や
+      MS-DOS クライアントは含まない)のみがSambaホストに接続できる。</para>
+
+    <para>LANMAN 暗号化レスポンスは簡単に解読することが可能である。これは大文字と小文字を
+      区別しないことや、使用しているアルゴリズムなどに起因する。Windows 95/98 や MS-DOS
+      クライアントが存在しない場合は、このオプションを無効にした方ががよいだろう。
+    </para>
+
+    <para>このパラメータが<value>no</value>に設定された場合、これは、次のパスワードの
+      変更時にSambaのpassdb中のsambaLMPasswordを空白にする動作も行う。この結果、
+      lanmanクライアントは、あとでlanman auth を再度有効に下としても認証出来なくなる。
+    </para>
+		
+    <para><command moreinfo="none">encypt
+    passwords</command> オプションとは異なり、このパラメータはクライアントの挙動を制御するものではなく、
+    LANMAN レスポンスは以前としてネットワーク上を送信される。
+    Samba のクライアント (smbclient など) で LANMAN レスポンスを無効にするには
+    <command moreinfo="none">client lanman auth</command> を参照のこと。</para>
+
+    <para>このパラメータと <command moreinfo="none">ntlm
+    auth</command> の両方を無効にした場合、 NTLMv2 によるログインのみが可能となる。
+    クライアントのすべてが NTLMv2 をサポートしているわけではなく、ほとんどのクライアント
+      では NTLMv2 を使用するために明示的な設定を行なう必要がある。
+    </para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

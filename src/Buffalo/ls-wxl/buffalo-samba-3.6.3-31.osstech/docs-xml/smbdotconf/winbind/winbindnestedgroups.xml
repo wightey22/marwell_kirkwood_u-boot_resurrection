@@ -1,0 +1,20 @@
+<samba:parameter name="winbind nested groups"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  このパラメータを yes にすると、グループの入れ子が可能になる。 
+	  入れ子になるグループは、ローカルグループやエイリアスと呼ばれる。 
+	  これは、Windows のローカルグループに対応するものである。 
+	  入れ子になるグループは、各マシンローカルで定義され 
+	  (ただしドメインコントローラ間では SAM を共有するため共有され)、 
+	  信頼される任意の SAM で定義されたユーザやグローバルグループを
+	  含めることができる。 
+	  入れ子になるグループを用いるには、nss_winbind を有効にしておく
+	  必要がある。 </para>
+</description>
+
+<value type="default">yes</value>
+</samba:parameter>

@@ -1,0 +1,492 @@
+.\"     Title: useradd
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes de gestion du système
+.\"    Source: Commandes de gestion du système
+.\"
+.TH "USERADD" "8" "23/11/2008" "Commandes de gestion du systèm" "Commandes de gestion du systèm"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+useradd \- créer un nouvel utilisateur ou modifier les informations par défaut appliquées aux nouveaux utilisateurs
+.SH "SYNOPSIS"
+.HP 8
+\fBuseradd\fR [\fIoptions\fR] \fILOGIN\fR
+.HP 8
+\fBuseradd\fR \-D
+.HP 8
+\fBuseradd\fR \-D [\fIoptions\fR]
+.SH "DESCRIPTION"
+.PP
+When invoked without the
+\fB\-D\fR
+option, the
+\fBuseradd\fR
+command creates a new user account using the values specified on the command line plus the default values from the system\&. Depending on command line options, the
+\fBuseradd\fR
+command will update system files and may also create the new user\'s home directory and copy initial files\&.
+.SH "OPTIONS"
+.PP
+Les options disponibles pour la commande
+\fBuseradd\fR
+sont\ \&:
+.PP
+\fB\-b\fR, \fB\-\-base\-dir\fR \fIRÉP_BASE\fR
+.RS 4
+The default base directory for the system if
+\fB\-d\fR
+\fIHOME_DIR\fR
+is not specified\&.
+\fIBASE_DIR\fR
+is concatenated with the account name to define the home directory\&. If the
+\fB\-m\fR
+option is not used,
+\fIBASE_DIR\fR
+must exist\&.
+.RE
+.PP
+\fB\-c\fR, \fB\-\-comment\fR \fICOMMENTAIRE\fR
+.RS 4
+Toute chaîne de texte\&. C\'est généralement une description courte du compte, elle est actuellement utilisée comme champ pour le nom complet de l\'utilisateur\&.
+.RE
+.PP
+\fB\-d\fR, \fB\-\-home\fR \fIRÉP_PERSO\fR
+.RS 4
+Le nouvel utilisateur sera créé en utilisant
+\fIRÉP_PERSO\fR
+comme valeur de répertoire de connexion de l\'utilisateur\&. Le comportement par défaut est de concaténer
+\fIUTILISATEUR\fR
+au répertoire
+\fIRÉP_BASE\fR, et de l\'utiliser en tant que nom de répertoire de connexion\&. Il n\'est pas nécessaire que le répertoire
+\fIRÉP_PERSO\fR
+existe mais il ne sera pas créé s\'il n\'existe pas\&.
+.RE
+.PP
+\fB\-D\fR, \fB\-\-defaults\fR
+.RS 4
+See below, the subsection "Changing the default values"\&.
+.RE
+.PP
+\fB\-e\fR, \fB\-\-expiredate\fR \fIDATE_FIN_VALIDITÉ\fR
+.RS 4
+Date à laquelle le compte utilisateur sera désactivé\&. La date est indiquée dans le format
+\fIAAAA\-MM\-JJ\fR\&.
+.RE
+.PP
+\fB\-f\fR, \fB\-\-inactive\fR \fIDURÉE_INACTIVITÉ\fR
+.RS 4
+Nombre de jours suivant la fin de validité d\'un mot de passe après lequel le compte est définitivement désactivé\&. Une valeur de 0 désactive le compte dès que le mot de passe a dépassé sa fin de validité, et une valeur de \-1 désactive cette fonctionnalité\&. La valeur par défaut est de \-1\&.
+.RE
+.PP
+\fB\-g\fR, \fB\-\-gid\fR \fIGROUPE\fR
+.RS 4
+Nom ou ou numéro du groupe de connexion initial de l\'utilisateur\&. Le nom du groupe doit exister\&. Un numéro de groupe doit se référer à un groupe existant\&. Le numéro de groupe par défaut est de 1, ou la valeur indiquée dans
+\fI/etc/default/useradd\fR\&.
+.RE
+.PP
+\fB\-G\fR, \fB\-\-groups\fR \fIGROUPE1\fR[\fI,GROUPE2,\&.\&.\&.\fR[\fI,GROUPEN\fR]]]
+.RS 4
+Liste de groupes supplémentaires auxquels appartient également l\'utilisateur\&. Chaque groupe est séparé du suivant par une virgule, sans espace entre eux\&. Les groupes sont soumis aux mêmes restrictions que celles de l\'option
+\fB\-g\fR\&. Le comportement par défaut pour l\'utilisateur est de n\'appartenir qu\'au groupe initial\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Afficher un message d\'aide et quitter\&.
+.RE
+.PP
+\fB\-k\fR, \fB\-\-skel\fR \fISKEL_DIR\fR
+.RS 4
+The skeleton directory, which contains files and directories to be copied in the user\'s home directory, when the home directory is created by
+\fBuseradd\fR\&.
+.sp
+This option is only valid if the
+\fB\-m\fR
+(or
+\fB\-\-create\-home\fR) option is specified\&.
+.sp
+If this option is not set, the skeleton directory is defined in
+\fI/etc/default/useradd\fR
+or, by default,
+\fI/etc/skel\fR\&.
+.RE
+.PP
+\fB\-K\fR, \fB\-\-key\fR \fICLÉ\fR=\fIVALEUR\fR
+.RS 4
+Surcharge les valeurs par défaut du fichier
+\fI/etc/login\&.defs\fR
+(UID_MIN, UID_MAX, UMASK, PASS_MAX_DAYS et autres)\&.
+
+Par exemple\ \&:
+\fB\-K\fR
+\fIPASS_MAX_DAYS\fR=\fI\-1\fR
+peut être utilisé pour la création de comptes système pour désactiver la gestion de la durée de validité des mots de passe, même si les comptes système n\'ont pas de mot de passe\&. Plusieurs options
+\fB\-K\fR
+peuvent être spécifiées, comme par exemple\ \&:
+\fB\-K\fR
+\fIUID_MIN\fR=\fI100\fR
+\fB\-K\fR
+\fIUID_MAX\fR=\fI499\fR
+.sp
+Note\ \&:
+\fB\-K\fR
+\fIUID_MIN\fR=\fI10\fR,\fIUID_MAX\fR=\fI499\fR
+ne fonctionne pas pour l\'instant\&.
+.RE
+.PP
+\fB\-l\fR
+.RS 4
+Do not add the user to the lastlog and faillog databases\&.
+.sp
+By default, the user\'s entries in the lastlog and faillog databases are resetted to avoid reusing the entry from a previously deleted user\&.
+.RE
+.PP
+\fB\-m\fR, \fB\-\-create\-home\fR
+.RS 4
+Create the user\'s home directory if it does not exist\&. The files and directories contained in the skeleton directory (which can be defined with the
+\fB\-k\fR
+option) will be copied to the home directory\&.
+.sp
+By default, no home directories are created\&.
+.RE
+.PP
+\fB\-N\fR, \fB\-\-no\-user\-group\fR
+.RS 4
+Do not create a group with the same name as the user, but add the user to the group specified by the
+\fB\-g\fR
+option or by the GROUP variable in
+\fI/etc/default/useradd\fR\&.
+.sp
+The default behavior (if the
+\fB\-g\fR,
+\fB\-N\fR, and
+\fB\-U\fR
+options are not specified) is defined by the
+\fBUSERGROUPS_ENAB\fR
+variable in
+\fIlogin\&.defs\fR\&.
+.RE
+.PP
+\fB\-o\fR, \fB\-\-non\-unique\fR
+.RS 4
+Permet de créer un compte d\'utilisateur avec un identifiant (\(Fo\ \&UID\ \&\(Fc) dupliqué (non unique)\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-password\fR \fIMOT_DE_PASSE\fR
+.RS 4
+Le mot de passe chiffré, comme renvoyé par
+\fBcrypt\fR(3)\&. Le comportement par défaut est de désactiver le compte\&.
+.RE
+.PP
+\fB\-r\fR, \fB\-\-system\fR
+.RS 4
+Create a system account\&.
+.sp
+System users will be created with no aging information in
+\fI/etc/shadow\fR, and their numeric identifiers are choosen in the
+\fBSYS_UID_MIN\fR\-\fBSYS_UID_MAX\fR
+range, defined in
+\fIlogin\&.defs\fR, instead of
+\fBUID_MIN\fR\-\fBUID_MAX\fR
+(and their
+\fBGID\fR
+counterparts for the creation of groups)\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shell\fR \fIINTERPRÉTEUR\fR
+.RS 4
+Le nom de l\'interpréteur de commandes initial de l\'utilisateur (\(Fo\ \&login shell\ \&\(Fc)\&. Le comportement par défaut est de laisser ce champ vide\&. Le système sélectionnera alors l\'interpréteur par défaut\&.
+.RE
+.PP
+\fB\-u\fR, \fB\-\-uid\fR \fIUID\fR
+.RS 4
+La valeur numérique de l\'identifiant de l\'utilisateur\&. Cette valeur doit être unique, à moins que l\'option
+\fB\-o\fR
+ne soit utilisée\&. La valeur ne doit pas être négative\&. Le comportement par défaut est d\'utiliser la plus petite valeur d\'identifiant plus grande que 999, et plus grande que celle des identifiants de tous les autres utilisateurs\&. Les valeurs comprises entre 0 et 999 sont généralement réservées pour les comptes systèmes\&.
+.RE
+.PP
+\fB\-U\fR, \fB\-\-user\-group\fR
+.RS 4
+Create a group with the same name as the user, and add the user to this group\&.
+.sp
+The default behavior (if the
+\fB\-g\fR,
+\fB\-N\fR, and
+\fB\-U\fR
+options are not specified) is defined by the
+\fBUSERGROUPS_ENAB\fR
+variable in
+\fIlogin\&.defs\fR\&.
+.RE
+.SS "Modifier les valeurs par défaut"
+.PP
+When invoked with only the
+\fB\-D\fR
+option,
+\fBuseradd\fR
+will display the current default values\&. When invoked with
+\fB\-D\fR
+plus other options,
+\fBuseradd\fR
+will update the default values for the specified options\&. Valid default\-changing options are:
+.PP
+\fB\-b\fR, \fB\-\-base\-dir\fR \fIRÉP_BASE\fR
+.RS 4
+The path prefix for a new user\'s home directory\&. The user\'s name will be affixed to the end of
+\fIBASE_DIR\fR
+to form the new user\'s home directory name, if the
+\fB\-d\fR
+option is not used when creating a new account\&.
+.RE
+.PP
+\fB\-e\fR, \fB\-\-expiredate\fR \fIDATE_FIN_VALIDITÉ\fR
+.RS 4
+Date à laquelle le compte utilisateur sera désactivé\&.
+.RE
+.PP
+\fB\-f\fR, \fB\-\-inactive\fR \fIDURÉE_INACTIVITÉ\fR
+.RS 4
+Nombre de jours après la fin de validité d\'un mot de passe avant que le compte ne soit désactivé\&.
+.RE
+.PP
+\fB\-g\fR, \fB\-\-gid\fR \fIGROUPE\fR
+.RS 4
+Nom de groupe ou identifiant numérique du groupe initial d\'un nouvel utilisateur\&. Le groupe spécifié doit exister, et un identifiant de groupe numérique doit déjà exister\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shell\fR \fIINTERPRÉTEUR\fR
+.RS 4
+The name of a new user\'s login shell\&.
+.RE
+.SH "NOTES"
+.PP
+L\'administrateur système doit se charger de placer les fichiers par défaut dans le répertoire
+\fI/etc/skel\fR\&.
+.SH "AVERTISSEMENTS"
+.PP
+You may not add a user to a NIS or LDAP group\&. This must be performed on the corresponding server\&.
+.PP
+Similarly, if the username already exists in an external user database such as NIS or LDAP,
+\fBuseradd\fR
+will deny the user account creation request\&.
+.PP
+Les noms d\'utilisateur doivent commencer par une lettre minuscule ou un tiret bas (\(Fo\ \&underscore\ \&\(Fc), et seuls des lettres minuscules, des chiffres, des \(Fo\ \&underscore\ \&\(Fc, des tirets ou un dollar peuvent suivre\&. Soit, sous la forme d\'une expression rationnelle\ \&: [a\-z_][a\-z0\-9_\-]*[$]
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBGID_MAX\fR (number), \fBGID_MIN\fR (number)
+.RS 4
+Range of group IDs used for the creation of regular groups by
+\fBuseradd\fR,
+\fBuseradd\fR, or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBMAIL_DIR\fR (string)
+.RS 4
+Répertoire d\'attente des courriels (\(Fo\ \&mail spool directory\ \&\(Fc)\&. Ce paramètre est nécessaire pour manipuler les boîtes à lettres lorsque le compte d\'un utilisateur est modifié ou supprimé\&. S\'il n\'est pas spécifié, une valeur par défaut définie à la compilation est utilisée\&.
+.RE
+.PP
+\fBMAIL_FILE\fR (string)
+.RS 4
+Defines the location of the users mail spool files relatively to their home directory\&.
+.RE
+.PP
+The
+\fBMAIL_DIR\fR
+and
+\fBMAIL_FILE\fR
+variables are used by
+\fBuseradd\fR,
+\fBusermod\fR, and
+\fBuserdel\fR
+to create, move, or delete the user\'s mail spool\&.
+.PP
+If
+\fBMAIL_CHECK_ENAB\fR
+is set to
+\fIyes\fR, they are also used to define the
+\fBMAIL\fR
+environment variable\&.
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.PP
+\fBPASS_MAX_DAYS\fR (number)
+.RS 4
+Nombre maximum de jours de validité d\'un mot de passe\&. Après cette durée, une modification du mot de passe est obligatoire\&. S\'il n\'est pas précisé, la valeur de \-1 est utilisée (ce qui enlève toute restriction)\&.
+.RE
+.PP
+\fBPASS_MIN_DAYS\fR (number)
+.RS 4
+Nombre minimum de jours autorisé avant la modification d\'un mot de passe\&. Toute tentative de modification du mot de passe avant cette durée est rejetée\&. S\'il n\'est pas précisé, la valeur de \-1 est utilisée (ce qui enlève toute restriction)\&.
+.RE
+.PP
+\fBPASS_WARN_AGE\fR (number)
+.RS 4
+Nombre de jours durant lesquels l\'utilisateur recevra un avertissement avant que son mot de passe n\'arrive en fin de validité\&. Une valeur négative signifie qu\'aucun avertissement n\'est donné\&. S\'il n\'est pas précisé, aucun avertissement n\'est donné\&.
+.RE
+.PP
+\fBSYS_GID_MAX\fR (number), \fBSYS_GID_MIN\fR (number)
+.RS 4
+Range of group IDs used for the creation of system groups by
+\fBuseradd\fR,
+\fBgroupadd\fR, or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBSYS_UID_MAX\fR (number), \fBSYS_UID_MIN\fR (number)
+.RS 4
+Range of user IDs used for the creation of system users by
+\fBuseradd\fR
+or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBUID_MAX\fR (number), \fBUID_MIN\fR (number)
+.RS 4
+Range of user IDs used for the creation of regular users by
+\fBuseradd\fR
+or
+\fBnewusers\fR\&.
+.RE
+.PP
+\fBUMASK\fR (number)
+.RS 4
+Valeur d\'initialisation du masque de permissions\&. S\'il n\'est pas précisé, le masque des permissions sera initialisé à 022\&.
+.RE
+.PP
+\fBUSERGROUPS_ENAB\fR (boolean)
+.RS 4
+Enable setting of the umask group bits to be the same as owner bits (examples: 022 \-> 002, 077 \-> 007) for non\-root users, if the uid is the same as gid, and username is the same as the primary group name\&.
+
+If set to
+\fIyes\fR,
+\fBuserdel\fR
+will remove the user\'s group if it contains no more members, and
+\fBuseradd\fR
+will create by default a group with the name of the user\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informations sécurisées sur les comptes utilisateurs\&.
+.RE
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.PP
+\fI/etc/default/useradd\fR
+.RS 4
+Valeurs par défaut pour la création de comptes\&.
+.RE
+.PP
+\fI/etc/skel/\fR
+.RS 4
+Répertoire contenant les fichiers par défaut\&.
+.RE
+.PP
+\fI/etc/login\&.defs\fR
+.RS 4
+Configuration de la suite des mots de passe cachés \(Fo\ \&shadow password\ \&\(Fc\&.
+.RE
+.SH "VALEURS DE RETOUR"
+.PP
+La commande
+\fBuseradd\fR
+retourne les valeurs suivantes en quittant\ \&:
+.PP
+\fI0\fR
+.RS 4
+succès
+.RE
+.PP
+\fI1\fR
+.RS 4
+impossible de mettre à jour le fichier des mots de passe
+.RE
+.PP
+\fI2\fR
+.RS 4
+erreur de syntaxe
+.RE
+.PP
+\fI3\fR
+.RS 4
+paramètre non valable pour l\'option
+.RE
+.PP
+\fI4\fR
+.RS 4
+UID déjà utilisé (et pas d\'option
+\fB\-o\fR)
+.RE
+.PP
+\fI6\fR
+.RS 4
+le groupe spécifié n\'existe pas
+.RE
+.PP
+\fI9\fR
+.RS 4
+nom d\'utilisateur déjà utilisé
+.RE
+.PP
+\fI10\fR
+.RS 4
+impossible de mettre à jour le fichier des groupes
+.RE
+.PP
+\fI12\fR
+.RS 4
+impossible de créer le répertoire personnel
+.RE
+.PP
+\fI13\fR
+.RS 4
+impossible de créer le répertoire d\'attente des courriels
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBchfn\fR(1),
+\fBchsh\fR(1),
+\fBpasswd\fR(1),
+\fBcrypt\fR(3),
+\fBgroupadd\fR(8),
+\fBgroupdel\fR(8),
+\fBgroupmod\fR(8),
+\fBlogin.defs\fR(5),
+\fBnewusers\fR(8),
+\fBuserdel\fR(8),
+\fBusermod\fR(8)\&.

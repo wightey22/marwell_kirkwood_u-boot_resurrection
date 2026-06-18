@@ -1,0 +1,12 @@
+<samba:parameter name="lock spin count"
+                 context="G"
+				 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>Samba 3.0.24 において、このパラメータは無効となった。
+	このパラメータで実現されていた機能は、現在
+	<smbconfoption name="lock spin time"/> パラメータで制御されている。
+	</para>
+</description>
+<value type="default">0</value>
+</samba:parameter>

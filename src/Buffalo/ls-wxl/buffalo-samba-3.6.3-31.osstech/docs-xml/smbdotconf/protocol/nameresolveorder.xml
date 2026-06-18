@@ -1,0 +1,72 @@
+<samba:parameter name="name resolve order"
+                 context="G"
+				 type="list"
+                 advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc"> 
+<description>
+    <para> このオプションは、どの名前サービスを用いて、またどのような順番で、
+    ホスト名から IP アドレスを解決するかを決定するため、
+    Samba の各プログラムで利用される。
+    このオプションの主な目的は、NetBIOS 名前解決をどのように行なうかを指定することである。
+    オプションは、名前解決オプションをスペースで区切った文字列で指定する。</para>
+
+    <para>
+    オプションは、「lmhosts」、「host」、「wins」、「bcast」である。
+    これらは以下に示すように名前解決を実行する:</para>
+
+    <itemizedlist>
+	<listitem>
+	    <para><constant>lmhosts</constant> : 
+            Samba の lmhosts ファイルから IP アドレスを検索する。
+            NetBIOS 名サフィックスの指定されていない行が lmhosts ファイル中にあった場合、
+            (詳細は、lmhosts ファイルのマニュアルページを参照のこと)、
+            その行はすべてのサフィックスの検索にマッチする。</para>
+	</listitem>
+
+	<listitem>
+            <para><constant>host</constant> : 
+            システム標準の方法で、<filename moreinfo="none">/etc/hosts
+            </filename>、 NIS 、 DNS への問い合わせを行ない、
+            ホスト名から IP アドレスへの名前解決を行なう。
+            名前解決の方法は、OSに依存する。 IRIX や Solaris の場合、
+            <filename moreinfo="none">/etc/nsswitch.conf</filename> 
+            ファイルにより制御される。この方法は、問い合わせされた NetBIOS
+            のサフィックスが 0x20(サーバ) か 0x1c(ドメインコントローラ) 
+            の時のみ利用され、それ以外は無効であることに注意。
+            後者は、アクティブディレクトリドメインでのみ有効である。
+            この場合、_ldap._tcp.domain に対応する　SRV RR エントリを検索するための DNS クエリが行われる。
+	</para>
+	</listitem>
+
+	<listitem>
+	    <para><constant>wins</constant> :
+	    <smbconfoption name="WINSSERVER"><parameter moreinfo="none">
+	    wins server</parameter></smbconfoption> パラメータで指定された IP
+            アドレスに対して名前の問い合わせが行なわれる。
+            WINS サーバが指定されていない場合、この方法は無視される。</para>
+	</listitem>
+
+	<listitem>
+            <para><constant>bcast</constant> : 
+	    <smbconfoption name="interfaces"/> 
+            パラメータで設定された各インタフェースに対してブロードキャストが実行される。
+            これは解決したいホストがローカルサブネットに接続されていることを前提とするため、
+            もっとも信頼性の低い名前解決の方法である。</para>
+	</listitem>
+</itemizedlist>
+
+    <para>以下の例では、最初にローカルの lmhosts ファイルを調査し、
+    次にブロードキャストを行ない、
+    最後にシステム標準のホスト名検索を試行する。</para>
+
+    <para>Samba が ADS セキュリティモード (<command moreinfo="none">security = ads</command>) で動作する場合、
+    <parameter moreinfo="none">name resolve order</parameter> の設定は次のようにすべきである:</para>
+
+    <para><command moreinfo="none">name resolve order = wins bcast</command></para>
+
+    <para>この 場合でも、DC は DNS への問い合わせを行なう。
+    失敗した場合に NetBIOS 名の問い合わせを行なうが、その際無意味な DNS への「DOMAIN&lt;0x1c&gt;」の問い合わせが抑止される。</para>
+</description>
+<value type="default">lmhosts host wins bcast</value>
+<value type="example">lmhosts bcast host</value>
+</samba:parameter>

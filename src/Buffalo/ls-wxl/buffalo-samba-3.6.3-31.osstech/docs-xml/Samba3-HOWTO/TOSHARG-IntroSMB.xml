@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE preface PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<preface id="IntroSMB">
+<prefaceinfo>
+	&author.jht;
+	<pubdate>June 29, 2003</pubdate>
+</prefaceinfo>
+
+<title>はじめに</title>
+
+<para><quote>
+人の贈り物はその人のために道を 開き、高貴な人の前にも彼を導く(訳注:聖書 18:16節?)。
+Gifts are like hooks that can catch
+hold of the mind taking it beyond the reach of forces that otherwise might constrain it.
+</quote> --- Anon.
+</para>
+
+
+<para>
+この本はSambaについての本である。多くの人の善意と、努力と、たくさんの作業から出
+来上がったツールである。この本には、我々の後に続く人と同じように、価値をお互い
+に分け与える絶え間ない信条で寄贈されてきたものを含む。
+</para>
+
+<para>
+この本は、Microsoftネットワーク管理者の必要に適合するために企画された。必要として
+いると考えている情報を見つけにくいと不満があるかもしれないが、UNIX管理者もこの本
+から得るところがある。そのため、もしもあなたがMicrosoft認定のスペシャリストならば、
+この本はあなたの要求をかなり満たすはずである。もしもUNIXかLinux管理者ならば、
+現在の関心事に対する回答を探すのに苦労がないということにひどいと&smbmdash;
+感じる必要性もない。
+</para>
+
+<sect1>
+<title>Sambaとは何か?</title>
+
+	<para>
+        Sambaは巨大で複雑なプロジェクトである。Sambaプロジェクトは野心的でわくわく
+        するものである。Sambaを支えているチームは世界中に分散した30余人からなり、
+        興味深い範囲のバックグラウンドから来ている。このチームには科学者、エンジ
+        ニア、プログラマ、ビジネスマンと学生がいる。
+	</para>
+
+	<para>
+        チームのメンバは、Microsoft Windowsと非Microsoft IT技術領域の間での、
+	ワクワクする相互運用性に到達するのを助けるという願望ことを通じて、
+        積極的に参加していた。
+	</para>
+
+	<para>
+        Sambaプロジェクトの背景にある、努力を結集するためのスローガンは:
+	<emphasis>Samba, Opening Windows to a Wider World!</emphasis>である。
+        プロジェクトの背景にあるゴールは、相互運用性の障害をなくすことである。
+	</para>
+
+	<para>
+        SambaはMicrosoft Windows クライアントのための、ファイルと印刷サービスを
+        提供する。それらのサービスは、任意のTCP/IPベースのプラットフォーム上で
+        提供されてよい。オリジナルの開発プラットフォームはUNIXとLinuxだが、現在
+        は、多くのシステム上で広く使われている。
+	</para>
+
+	<para>
+        Sambaプロジェクトは特徴的なファイルと印刷サービスの機能を含むだけではなく、
+        クライアントの機能や、Sambaへの簡単なマイグレーション用ユーティリティ、
+        Microsoft Windowsとの相互運用性支援ツールと管理ツールを含むように拡張され
+        ている。
+	</para>
+
+	<para>
+        Sambaを運用する人はあなたのような人である。
+	You have inspired the
+	developers (the Samba Team) to do more than any of them imagined could or should
+	be done. ユーザのフィードバックはSambaの開発を推進する。Samba-3は、
+        ユーザの要求、助言、とコードの寄贈の結果としての大量の仕事の結果
+        を特に含んでいる。
+	</para>
+
+</sect1>
+
+<sect1>
+<title>なぜこの本?</title>
+
+	<para>
+        現在Sambaに関するたくさんの本が市場に出回っていて、それぞれ独自の
+        価値がある。一見過剰な量の本が出回っているが、十分な文書を提供しそこねる
+        ことについてSambaプロジェクトはたくさんの苦情を受けている。Sambaはまた
+        設定することについてとても複雑で難しいことについても苦情を受けている。
+        もしもSambaが成功していなかったならば、苦情がないはずなので、これは
+        たくさんの方法によるSambaの成功の証拠である。
+	</para>
+
+	<para>
+        Sambaチームのメンバは主にUNIXとLinuxで仕事をしているので、Sambaの
+        文書がその位置づけを反映していることは驚くべきには値しない。オリジナルの
+        HOWTOテキスト文書は、いくつかのTIPS、とても貴重な情報を提供するように
+        意図されていて、それが誰かの手助けになるならば、それはとてもすばらしい
+        ことである。しかしHOWTO文書はきちんと構造化されて、文脈も不統一だった。
+        それは、渡すことで利便性を得られるかもしれない、だれかに渡すために書かれた
+        情報の独立した情報のスナップショットであった。それらは、便利にマニュアル
+        ページ中に書かれるべき多くの情報を転送することの必要性を反映した。
+	</para>
+
+	<para>
+        オリジナルのHOWTO文書は異なった著者により書かれている。ほとんどのHOWTO
+        文書は多数の著者からの投稿とフィードバックの結果である。この本を読むと、
+        各章が複数の著者により、それぞれの著者はそれぞれのスタイルで書かれてい
+        るのに気がつくだろう。このことはオープンソースソフトウェア開発プロセス
+        の自然なスタイルを表している。
+	</para>
+
+	<para>
+        インターネット上に広まっている非公式なHOWTO文書の集まりは、オリジナルの
+        HOWTO文書由来のものである。この作業はずっと継続して作られている価値ある
+        非公式のHOWTO文書を<emphasis>置き換えない</emphasis>ようにしようとして
+        いる。もしも、非公式のHOWTOを改良しているならば、その仕事を継続してほし
+        い!
+	</para>
+
+	<para>
+        非公式のHOWTOの作成、Sambaに関する情報ページ、メーリングリストやその他
+        で問い合わせに答えることをボランティアでやっていた人はこれが愛の労働で
+        あることを知っているかもしれない。あなたが集めた貴重な知恵を喜んで受け
+        取ることについて、あなたの貢献について知りたいので、
+	<ulink noescape="1" url="mailto:jht@samba.org">
+        John H. Terpstra(jht@samba.org)</ulink>.
+        まで投稿をメールで送ってほしい。他のユーザに対するサービスとして、技術
+        的に正確なものを採用したい。
+	</para>
+
+	<para>
+        既存のSamba本はUNIX管理者向けである。既存の本が適切な目的に役に立つ、
+         Samba-3が今出ているという1つの例外を除くこのターゲットグループの
+        見通しから、&smbmdash;アップデートの必要がある!
+	</para>
+
+	<para>
+	<emphasis>公式のSamba-3 HOWTOとリファレンスガイド</emphasis>というこの
+        本は、Sambaととともに提供されているSamba-HOWTO-Collection.pdfを含む。
+        これらの文書は新しいデザインと意図で書かれている。
+	</para>
+
+	<para>
+        過去2年にわたって、多くのMicrosoftネットワーク管理者たちはSambaを採用し
+        てその展開に興味を持つようになった。彼らの情報に対する要求は、UNIX管理
+        者のものとはとても異なった。以前のMicrosoftネットワーク管理トレーニング
+        と経験から、この本は調整されて、情報が表現されるようになった。
+	</para>
+
+</sect1>
+
+<sect1>
+<title>本の構造とレイアウト</title>
+
+	<para>
+        この本は6つの部分から出来ている:
+	</para>
+
+	<variablelist>
+		<varlistentry><term>概要</term>
+			<listitem><para>
+                        Samba-3をすぐに走らせるための手助けとして用意されている。
+                        Fast Startの章は、Microsoftネットワーク管理者からの、
+                        <emphasis>すぐに動く</emphasis>いくつかのサンプル設定
+                        を要求されたことへの直接的回答である。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>サーバ設定の基礎</term>
+			<listitem><para>
+                        この部分の目的は、既存のMicrosoft Windowsネットワークの知
+                        識をSambaの技術や標準に変換するための方法である。この部
+                        分の各章はそれぞれSambaサーバの1つのインストールタイプ
+                        をカバーしている。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>詳細な設定</term>
+			<listitem><para>
+                        ネットワークブラウジングの仕組みはすべてのMicrosoft Windows
+                        ユーザにとって鬼門であった。Samba-3では、新しいユーザとマシン
+                        アカウント管理機能、新しい、UNIXグループとWindowsグループの
+                        マッピング方法、ドメイン間の信頼関係、新しい動的ロードファイル
+                        システムドライバ(VFS)やその他を導入している。この文書では、
+                        デスクトップとユーザポリシーのハンドリングについての情報と同様
+                        の拡張された印刷に関する記述、拡張されたネットワーク統合のテク
+                        ニックが新しい。このセクションはこの本の中心となる所である。
+                        しっかり読んでほしい。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>マイグレーションとアップデート</term>
+			<listitem><para>
+                        Samba-2.xからSamba-3に移行するときの問題点の概観と同様、Windows
+                        NT4からSamba-3にどのようにMicrosoftグレーとするかについての情報が
+                        たくさんの要求によりこの本に追加された。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>トラブルシューティング</term>
+			<listitem><para>
+                        この短いセクションは試みがすべて失敗するときに手助けになる。
+			</para></listitem>
+		</varlistentry>
+
+		<varlistentry><term>参照セクション</term>
+			<listitem><para>
+                        ここには、ほとんどのユーザにとって末梢的なものとか、主要部分の
+                        情報に含まれている残りのフィールドについての集積がある。
+			</para></listitem>
+		</varlistentry>
+	</variablelist>
+		
+<para>
+Microsoft Windowsと残りの世界との間での、相互運用性の新しい世界全体を楽しむあなたのユーザ
+を助けるための公開された最初の文書とSamba-3にようこそ。
+</para>
+
+</sect1>
+
+</preface>

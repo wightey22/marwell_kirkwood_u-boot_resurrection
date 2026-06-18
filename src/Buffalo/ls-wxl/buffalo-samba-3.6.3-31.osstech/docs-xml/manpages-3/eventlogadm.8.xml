@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="eventlogadm.8">
+
+<refmeta>
+	<refentrytitle>eventlogadm</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>eventlogadm</refname>
+	<refpurpose>Samba のイベントログ格納領域にレコードを書き込む</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+
+		<command>eventlogadm</command>
+		<arg><option>-d</option></arg>
+		<arg><option>-h</option></arg>
+		<arg choice="plain"><option>-o</option>
+		<literal>addsource</literal>
+		<replaceable>EVENTLOG</replaceable>
+		<replaceable>SOURCENAME</replaceable>
+		<replaceable>MSGFILE</replaceable>
+		</arg>
+
+	</cmdsynopsis>
+	<cmdsynopsis>
+		<command>eventlogadm</command>
+		<arg><option>-d</option></arg>
+		<arg><option>-h</option></arg>
+		<arg choice="plain"><option>-o</option>
+		<literal>write</literal>
+		<replaceable>EVENTLOG</replaceable>
+		</arg>
+
+	</cmdsynopsis>
+        <cmdsynopsis>
+                <command>eventlogadm</command>
+                <arg><option>-d</option></arg>
+                <arg><option>-h</option></arg>
+                <arg choice="plain"><option>-o</option>
+                <literal>dump</literal>
+                <replaceable>EVENTLOG</replaceable>
+                <replaceable>RECORD_NUMBER</replaceable>
+                </arg>
+
+        </cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry> の一部として提供されている。</para>
+
+	<para><command>eventlogadm</command>
+は特定の形式に従ったイベントログのレコードを標準入力から読み込み、
+それらを Samba のイベントログ格納領域に書き込む。こうすることで、
+Windows クライアントから通常の管理ツールを使ってこれらのレコードを
+操作できるようになる。</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+
+		<varlistentry>
+		<term><option>-d</option></term>
+		<listitem><para>
+		<command>-d</command> オプションを指定すると、
+		<command>eventlogadm</command>はデバッグ情報を出力する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>
+		<option>-o</option>
+		<literal>addsource</literal>
+		<replaceable>EVENTLOG</replaceable>
+		<replaceable>SOURCENAME</replaceable>
+		<replaceable>MSGFILE</replaceable>
+		</term>
+		<listitem><para>
+		<command>-o addsource</command> オプションは、新しいイベントログの
+ソースを生成する。
+		</para> </listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>
+		<option>-o</option>
+		<literal>write</literal>
+		<replaceable>EVENTLOG</replaceable>
+		</term>
+		<listitem><para>
+		<command>-o write</command> はイベントログのレコードを標準入力から
+		読み込み、それらを EVENTLOG で指定された名前の Samba のイベントログ
+		格納領域に書き込む。
+		</para> </listitem>
+		</varlistentry>
+
+                <varlistentry>
+                <term>
+                <option>-o</option>
+                <literal>dump</literal>
+                <replaceable>EVENTLOG</replaceable>
+                <replaceable>RECORD_NUMBER</replaceable>
+                </term>
+                <listitem><para>
+                <command>-o dump</command>は、EVENTLOG tdbからのイベントログレコードを
+		読み、画面上の標準出力にそれをダンプする。
+                </para> </listitem>
+                </varlistentry>
+
+		<varlistentry>
+		<term><option>-h</option></term>
+		<listitem><para>
+		使用法を表示する
+		</para></listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>EVENTLOG レコードフォーマット</title>
+
+	<para>書き込みの際、<command>eventlogadm</command>
+は標準入力から書式に従ったレコードが読み込めることを期待している。
+これらのレコードは、レコードキーとデータがコロン(:)で区切られた
+行の並びである。各レコードは、少なくとも１個以上の空行で区切られている
+必要がある。</para>
+
+	<para>イベントログのフィールドは以下の通り:</para>
+	<itemizedlist>
+
+		<listitem><para>
+		<command>LEN</command> - <command>eventlogadm</command> はこの
+フィールドの値を自動計算するので、このフィールドには 0 をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>RS1</command> - 1699505740 という値をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>RCN</command> - 0 をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>TMG</command> -
+イベントログが生成された時刻。
+00:00:00 January 1, 1970, UTC からの 累積秒数をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>TMW</command> -
+イベントログが書き込まれた時刻。
+00:00:00 January 1, 1970, UTC からの 累積秒数をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>EID</command> - イベントログ ID
+		</para></listitem>
+
+		<listitem><para>
+		<command>ETP</command> - イベントログのタイプで、以下のいずれか：
+		&quot;INFO&quot;,
+		&quot;ERROR&quot;, &quot;WARNING&quot;, &quot;AUDIT
+		SUCCESS&quot; or &quot;AUDIT FAILURE&quot;.
+		</para></listitem>
+
+		<listitem><para>
+		<command>ECT</command> -
+イベントカテゴリ：これはマシンファイルに依存する。
+主にイベントビューワ－におけるフィルタ条件として使われる。
+		</para></listitem>
+
+		<listitem><para>
+		<command>RS2</command> - 0 をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>CRN</command> - 0 をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>USL</command> - 0 をセットする。
+		</para></listitem>
+
+		<listitem><para>
+		<command>SRC</command> -
+このフィールドはイベントログに関連付けられるソースを指定する。
+イベントログとしてメッセージファイルが指定された場合、
+メッセージファイルの DLL に対してこのソース名が関連付けられた
+レジストリーエントリーがあるはずである。
+		</para></listitem>
+
+		<listitem><para>
+		<command>SRN</command> -
+イベントログが生成されたマシンの名前。これは通常ホスト名となる。
+		</para></listitem>
+
+		<listitem><para>
+		<command>STR</command> - イベントログに関連付けられたテキスト。
+１つのレコードに複数の文字列を持つこともできる。
+		</para></listitem>
+
+		<listitem><para>
+		<command>DAT</command> - このフィールドはセットしないようにする。
+		</para></listitem>
+
+	</itemizedlist>
+
+</refsect1>
+
+<refsect1>
+	<title>記述例</title>
+	<para>
+<command>eventlogadm</command> で認識できるレコードフォーマットの例：
+	</para>
+
+	<programlisting>
+	LEN: 0
+	RS1: 1699505740
+	RCN: 0
+	TMG: 112863.3.6
+	TMW: 112863.3.6
+	EID: 1000
+	ETP: INFO
+	ECT: 0
+	RS2: 0
+	CRN: 0
+	USL: 0
+	SRC: cron
+	SRN: dmlinux
+	STR: (root) CMD ( rm -f /var/spool/cron/lastrun/cron.hourly)
+	DAT:
+	</programlisting>
+
+	<para>
+メッセージファイルの DLL を指定して、イベントログのソースをセットする：
+	</para>
+	<programlisting>
+	eventlogadm -o addsource Application MyApplication | \\
+	    	%SystemRoot%/system32/MyApplication.dll
+	</programlisting>
+
+	<para>
+システムログからのフィルターメッセージをイベントログとして指定する：
+	</para>
+	<programlisting>
+	tail -f /var/log/messages | \\
+		入力をパースしてイベントログのレコードにするプログラム | \\
+	      	eventlogadm SystemLogEvents
+	</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+	<para>このマニュアルは Samba スイートのバージョン 3.0.25 に適合する。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+		オリジナルの Samba ソフトウェアおよび関連するユーティリティーは、
+		Andrew Tridgell によって書かれた。現在は Samba は Samba Team によって 
+		Linux カーネルの開発と同様に、オープンソースプロジェクトとして
+		開発されている。
+	</para>
+
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.5.0 - 3.5.3 対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+		<listitem><para>太田俊哉(ribbon@samba.gr.jp)</para></listitem>
+	</itemizedlist>	
+		によって行なわれた。</para>
+</refsect1>
+
+
+</refentry>

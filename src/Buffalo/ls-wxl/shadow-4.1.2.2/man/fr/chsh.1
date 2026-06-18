@@ -1,0 +1,93 @@
+.\"     Title: chsh
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes utilisateur
+.\"    Source: Commandes utilisateur
+.\"
+.TH "CHSH" "1" "23/11/2008" "Commandes utilisateur" "Commandes utilisateur"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+chsh \- Changer l'interpréteur de commandes initial
+.SH "SYNOPSIS"
+.HP 5
+\fBchsh\fR [\fIoptions\fR] [\fILOGIN\fR]
+.SH "DESCRIPTION"
+.PP
+The
+\fBchsh\fR
+command changes the user login shell\&. This determines the name of the user\'s initial login command\&. A normal user may only change the login shell for her own account, the superuser may change the login shell for any account\&.
+.SH "OPTIONS"
+.PP
+Les options applicables à la commande
+\fBchsh\fR
+sont\ \&:
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Afficher un message d\'aide et quitter\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shell\fR \fIINTERPRÉTEUR\fR
+.RS 4
+Nom du nouvel interpréteur de commandes initial (\(Fo\ \&login shell\ \&\(Fc) de l\'utilisateur\&. Si ce champ est vide, le système sélectionnera l\'interpréteur de commandes initial par défaut\&.
+.RE
+.PP
+Quand l\'option
+\fB\-s\fR
+n\'est pas sélectionnée,
+\fBchsh\fR
+opère de façon interactive, demandant à l\'utilisateur quel doit être le nouvel interpréteur de commandes initial (\(Fo\ \&login shell\ \&\(Fc)\&. L\'utilisateur pourra entrer une nouvelle valeur pour modifier l\'interpréteur, ou laisser la ligne blanche pour conserver l\'interpréteur actuel\&. L\'interpréteur actuel est indiqué entre crochets (\fI[\ \&]\fR)\&.
+.SH "NOTE"
+.PP
+The only restriction placed on the login shell is that the command name must be listed in
+\fI/etc/shells\fR, unless the invoker is the superuser, and then any value may be added\&. An account with a restricted login shell may not change her login shell\&. For this reason, placing
+\fI/bin/rsh\fR
+in
+\fI/etc/shells\fR
+is discouraged since accidentally changing to a restricted shell would prevent the user from ever changing her login shell back to its original value\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBCHSH_AUTH\fR (boolean)
+.RS 4
+If
+\fIyes\fR, the
+\fBchsh\fR
+program will require authentication before making any changes, unless run by the superuser\&.
+.RE
+.PP
+\fBLOGIN_STRING\fR (string)
+.RS 4
+The string used for prompting a password\&. The default is to use "Password: ", or a translation of that string\&. If you set this variable, the prompt will no be translated\&.
+.sp
+If the string contains
+\fI%s\fR, this will be replaced by the user\'s name\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shells\fR
+.RS 4
+Liste des interpréteurs de commandes initiaux valables\&.
+.RE
+.PP
+\fI/etc/login\&.defs\fR
+.RS 4
+Configuration de la suite des mots de passe cachés \(Fo\ \&shadow password\ \&\(Fc\&.
+.RE
+.SH "VOIR AUSSI"
+.PP
+\fBchfn\fR(1),
+\fBlogin.defs\fR(5),
+\fBpasswd\fR(5)\&.

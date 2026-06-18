@@ -1,0 +1,13 @@
+<samba:parameter name="max mux"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このオプションは、
+    Samba がクライアントに通知する同時に実行可能な SMB オペレーションの最大数を制御する。
+    このパラメータを設定する必要はないであろう。</para>
+</description>
+
+<value type="default">50</value>
+</samba:parameter>

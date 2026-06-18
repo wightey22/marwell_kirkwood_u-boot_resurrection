@@ -1,0 +1,14 @@
+<samba:parameter name="map acl inherit"
+                 context="S"
+				 type="boolean"
+                 advanced="1" wizard="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>この真偽値パラメータにより、 <citerefentry><refentrytitle>smbd</refentrytitle>                                       
+    <manvolnum>8</manvolnum></citerefentry> は
+    Windows の ACL に格納される「inherit」および「protected」の ACE フラグを user.SAMBA_PAI (訳注: Samba_Posix_Acl_Inheritance) と呼ばれる拡張属性にマッピングすることが可能となる。
+    このパラメータは Samba が拡張属性をサポートしているプラットフォーム(Linux および IRIX など)で実行されており、Windows 2000 の ACL エディタから Samba 側の POSIX ACL とのマッピングを実現するコードで継承を適切に設定できる場合のみ、有効となる。
+    </para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

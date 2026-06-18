@@ -1,0 +1,5 @@
+[configuration]
+browser:/usr/bin/firefox
+image.size:
+sets.sync.int:300
+stream.sync.int:300

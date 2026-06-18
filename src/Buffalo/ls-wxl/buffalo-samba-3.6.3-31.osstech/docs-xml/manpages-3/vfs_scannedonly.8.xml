@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_scannedonly.8">
+
+<refmeta>
+	<refentrytitle>vfs_scannedonly</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_scannedonly</refname>
+	<refpurpose>エンドユーザに対して、ウィルスをスキャンするファイルをのみを
+	  見えるように、かつアクセスできるようにさせる。</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = scannedonly</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>vfs_scannedonly</command> VFS モジュールはエンドユーザに対して
+	  ウィルスチェックを行うファイルのみを、表示、アクセス可能にさせる。もしも
+	  ウィルスチェックをしないファイルが見つかった場合、ウィルススキャンデーモンは
+	  その旨通知する。ウィルススキャンデーモンはSambaの一部ではない。
+	</para>
+
+	<para>Scanreadonlyは2つの部分からなっている。それはSamba vfsモジュールと
+	  (1つまたはそれ以上の)デーモンである。デーモンはファイルをスキャンする。もしも
+	  特定のファイルが正常であれば、プレフィックス<filename>.scanned:</filename>
+	  というプレフィックスを持つファイルが生成される。Sambaモジュールは、単に
+	  <filename>.scanned:</filename>というファイルが存在するかと、関連する
+	  ファイルよりも新しいかを調べる。もしもその場合は、ファイルはユーザに見える
+	  ようになる。もしもそうでない場合、ファイルはディレクトリ一覧表示(設定可能)
+	  では見えない。Samba vfsモジュールはそのファイルをスキャンするようにデーモンに
+	  通知する。
+	</para>
+
+	<para>これが、既定値の設定でユーザに対して行われることである。最初にディレクトリ
+	  一覧が表示された時、ファイルはウィルススキャン中のように表示されるが、
+	  そのあとは、すべてのファイルが表示される。すべてのディレクトリをあらかじめ
+	  スキャンするために役立つscannedonly_prescanユーティリティが用意されている。
+	  新しいファイルが作成された時、デーモンへは、ファイルへの書き込みが完了後に
+	  引き続いて通知される。
+	</para>
+
+	<para>もしもデーモンによって、ウィルスが発見された場合、警告メッセージを含む
+	  ファイルがユーザのディレクトリ中に作成され、警告がログに書き込まれ、ファイルは
+	  <filename>.virus:</filename>というプレフィックスを持つ名前に改名される。
+	  <filename>.virus:</filename>プレフィックスを持つファイルはユーザには決して
+	  見えず、アクセスは拒否される。
+	</para>
+
+	<para>このモジュールはスタック可能である。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>設定</title>
+
+	<para><command>vfs_scannedonly</command>はscannedonlyソケット(UNIXドメイン
+	  ソケットかUDPソケット)上でリッスンするウィルススキャンデーモンに依存する。
+	</para>
+</refsect1>
+
+<refsect1>
+        <title>オプション</title>
+
+        <variablelist>
+		<varlistentry>
+		<term>scannedonly:domain_socket = True </term>
+		<listitem>
+		<para>UNIXドメインソケットを使うか否かの指定(Falseはudpを使う)
+		</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>scannedonly:socketname = /var/lib/scannedonly/scan</term>
+		<listitem>
+		<para>接続するUNIXドメインソケットの位置</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>scannedonly:portnum = 2020</term>
+		<listitem>
+		<para>接続するUDPポート番号
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:scanhost = localhost</term>
+		<listitem>
+		<para>
+		  UDP使用時、スキャンデーモンが動作するホスト
+		  (このホストはファイルへのアクセスを必要とする!)
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:show_special_files = True</term>
+		<listitem>
+		<para>
+		  ユーザに対して見えるべきソケット、デバイスとfifo
+		  (すべてウィルスチェックを行わない)かどうかの指定
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:rm_hidden_files_on_rmdir = True</term>
+		<listitem>
+		<para>
+		  見せないファイル(<filename>.scanned:</filename>ファイル、
+                <filename>.failed:</filename>ファイルと<filename>.virus:
+                </filename> ファイル)は、もしもユーザがディスクから削除しようと
+		した時に、見えないファイルを削除すべきかどうかの指定。もしも
+		偽ならば、ユーザは"ディレクトリが空ではありません"というエラーが
+		生じる。
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:hide_nonscanned_files = True</term>
+		<listitem>
+		<para>
+		  もしも偽ならば、すべてのスキャンされないファイルはディレクトリ
+		  一覧表示で見えるようになる。もしも、そのようなファイルが
+		  ディレクトリ一覧中に見つかった場合、スキャンデーモンに
+		  スキャンが要求されたと通知する。スキャンされないファイルへの
+		  アクセスは引き続き拒否される(scannedonly:allow_nonscanned_files
+		  を参照のこと)。
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:scanning_message = is being scanned for
+	viruses</term>
+		<listitem>
+		<para>
+		  もしも、スキャンされないファイルが隠し状態
+		  (scannedonly:hide_nonscanned_files = Trueの場合)、見かけ上
+		  0バイトのファイルが表示される。ファイル名はサフィックスとして
+		  メッセージとオリジナルのファイル名を結合したものである。
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:recheck_time_open = 50</term>
+		<listitem>
+		<para>
+		  スキャンされないファイルがオープンしていた場合、vfs
+		  モジュールは、<filename>.scanned:</filename>ファイルを作成するために、
+		  スキャンデーモンに対して、recheck_tries_open回、recheck_time_open
+		  ミリ秒待つ。時間内(*回再試行)にデーモンによってスキャンされる
+		  小さなファイルは、その動作がアクセス後とのスキャニングのように
+		  振る舞う。
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:recheck_tries_open = 100</term>
+		<listitem>
+		<para>
+		recheck_time_openを参照。
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:recheck_time_readdir = 50</term>
+		<listitem>
+		<para>
+		  もしも、スキャンされないファイルがディレクトリ一覧表示中にあるならば、
+		  vfsモジュールはデーモンに通知し(そのディレクトリ中のものは、
+		  すべてスキャンが必要と一回は通知する)、recheck_tries_readdir回
+		  recheck_time_readdirミリ秒待つ。hide_nonscanned_filesが偽の
+		  時にのみ使われる。
+		</para>
+		</listitem>
+		
+	</varlistentry>
+	<varlistentry><term>scannedonly:recheck_tries_readdir = 20</term>
+		<listitem>
+		<para>
+		recheck_time_readdirを参照。
+		</para>
+		</listitem>
+	</varlistentry>
+	<varlistentry><term>scannedonly:allow_nonscanned_files = False</term>
+		<listitem>
+		<para>
+		  スキャンされないファイルへのアクセスを認める。しかし、デーモンには
+		  通知されるが、それは<filename>.scanned:</filename>のような特別な
+		  ファイルである。<filename>.virus:</filename>ファイルと
+		  <filename>.failed:</filename>ファイルは一覧表示されない。
+		</para>
+		</listitem>
+	</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>例</title>
+
+	<para>ウィルススキャンを有効にする:</para>
+<programlisting>
+        <smbconfsection name="[homes]"/>
+	<smbconfoption name="vfs objects">scannedonly</smbconfoption>
+	<smbconfoption name="scannedonly:hide_nonscanned_files">False</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>警告</title>
+
+	<para>これは、オンアクセススキャンと同値でないことに注意。しかしながら、
+	  すでにスキャンされたファイルに対してはとても高速である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは、バージョン 3.5.0 のSamba用である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+        <para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+        Tridgell によって作成された。現在 Samba は Samba Team に
+        よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+        として開発が行なわれている。</para>
+</refsect1>
+
+<refsect1>
+        <title>日本語訳</title>
+        <para>このドキュメントは、Samba 3.5.0 - 3.5.3 対応のものである。</para>
+    <para>このドキュメントの翻訳は
+        <itemizedlist>
+        <listitem><para>太田俊哉 (ribbon@samba.grjp)</para></listitem>
+        </itemizedlist>
+        によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>

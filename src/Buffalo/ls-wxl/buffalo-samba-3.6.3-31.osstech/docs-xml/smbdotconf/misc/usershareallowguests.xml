@@ -1,0 +1,15 @@
+<samba:parameter name="usershare allow guests"
+	         context="G"
+		 basic="1" advanced="1"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、ユーザ定義共有に認証されていないユーザのアクセスを許可するかどうかを制御する。
+	これは、ユーザが共有の定義において
+	<parameter moreinfo="none">guest ok = yes</parameter>
+	オプションを付与した共有を作成することの許可と同義である。
+	セキュリティ上注意を要するため、既定値は無効となっている。
+	</para>
+</description>
+<value type="default">no</value>
+</samba:parameter>

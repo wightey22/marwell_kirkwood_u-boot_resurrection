@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+<refentry id="ldbedit.1">
+
+    <refmeta>
+	<refentrytitle>ldbedit</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.5</refmiscinfo>
+    </refmeta>
+
+
+    <refnamediv>
+	<refname>ldbedit</refname>
+	<refpurpose>好みのエディタで LDB データベースを編集する</refpurpose>
+    </refnamediv>
+
+    <refsynopsisdiv>
+	<cmdsynopsis>
+	    <command>ldbedit</command>
+	    <arg choice="opt">-?</arg>
+	    <arg choice="opt">--usage</arg>
+	    <arg choice="opt">-s base|one|sub</arg>
+	    <arg choice="opt">-b basedn</arg>
+	    <arg choice="opt">-a</arg>
+	    <arg choice="opt">-e editor</arg>
+	    <arg choice="opt">-H LDB-URL</arg>
+	    <arg choice="opt">expression</arg>
+	    <arg rep="repeat" choice="opt">attributes</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>
+ldbedit は、（tdb ファイル、sqlite ファイルもしくは LDAP サーバ上にある）
+LDB エントリを編集できるユーティリティである。ldbedit はクエリーに従って
+LDIF ファイルを生成するので、これを手作業で編集する。最後に LDIF を 
+LDB バックエンドにマージする。
+	</para>
+
+</refsect1>
+
+
+    <refsect1>
+	<title>オプション</title>
+	
+	<variablelist>
+	    <varlistentry>
+		<term>-?</term>
+		<term>--help</term>
+		<listitem>
+		    <para>
+			使用可能なオプションの一覧と、それらについての説明を表示する。
+		    </para>
+		</listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>--usage</term>
+		<listitem>
+		    <para>
+使用可能なオプションの一覧を表示する。help オプションと似ているが、
+説明部分は表示せず、使用方法を簡潔に表示する。
+		    </para>
+		</listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>-H &lt;ldb-url&gt;</term>
+		<listitem>
+		    <para>
+tdb データベースに接続するための LDB URL。書式：
+			tdb://<replaceable>filename</replaceable>。
+unix ドメインソケット経由の LDAP 接続用。書式：
+			ldapi://<replaceable>socket</replaceable>。
+（一般的にはリモート側への）TCP 経由の LDAP 接続用。書式：
+			ldap://<replaceable>hostname</replaceable>。
+SQLite データベースの場合の書式：
+			sqlite://<replaceable>filename</replaceable>。
+		    </para>
+		</listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>-s one|sub|base</term>
+		<listitem><para>使用する検索スコープ。順に１レベル、サブツリーおよび base。
+		</para></listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>-a</term>
+		<term>-all</term>
+		<listitem>
+		    <para>
+すべてのレコードを編集する。たくさんのレコードに対して同じ変更をする
+場合に便利。"objectclass=*" の式と組み合わせて指定しても構わない。
+		    </para>
+		</listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>-e editor</term>
+		<term>--editor editor</term>
+		<listitem>
+		    <para>
+編集の再に使用するエディタ（ VISUAL / EDITOR 環境変数より優先される）。
+このオプションが指定されず、VISUAL / EDITOR いずれの環境変数も設定されない
+場合は vi エディタが使われる。
+		    </para>
+		</listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>-b basedn</term>
+		<listitem><para>使用する base DN を指定する。</para></listitem>
+	    </varlistentry>
+
+	    <varlistentry>
+		<term>-v</term>
+		<term>--verbose</term>
+		<listitem>
+		    <para>
+実行しようとする操作に対してより詳しい表示を行う。このオプションが指定
+されない場合、変更行に関する概要のみが表示される。
+		    </para>
+		</listitem>
+	    </varlistentry>
+		
+	</variablelist>
+	
+    </refsect1>
+
+    <refsect1>
+	<title>環境変数</title>
+
+	<variablelist>
+	    <varlistentry>
+		<term>LDB_URL</term>
+		<listitem>
+		    <para>接続する LDB URL。これより -H コマンドラインオプションの方が
+優先される。
+		    </para>
+		</listitem>
+	    </varlistentry>
+	    <varlistentry>
+		<term>VISUAL と EDITOR</term>
+		<listitem>
+		    <para>
+使用するエディタを指定する。EDITOR より VISUAL の方が優先され、
+さらに -e コマンドラインオプションが優先される。
+		    </para>
+		</listitem>
+	    </varlistentry>
+	</variablelist>
+	
+    </refsect1>
+
+    <refsect1>
+	<title>バージョン</title>
+	
+	<para>このマニュアルは Samba スイートのバージョン 4.0 に適合する。</para>
+    </refsect1>
+
+    <refsect1>
+	<title>関連項目</title>
+	
+	<para>ldb(7), ldbmodify(1), ldbdel(1), ldif(5), vi(1)</para>
+
+    </refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+		ldb は
+		 <ulink url="http://samba.org/~tridge/">Andrew Tridgell</ulink>
+		によって書かれた。
+	</para>
+
+	<para>
+問題を報告したり何らかの提案をしたい場合は、
+<ulink url="http://ldb.samba.org/"/> Web サイトで現在の連絡先と
+メンテナー情報を確認してほしい。
+	</para>
+
+	<para>このマニュアルページは Jelmer Vernooij により書かれ、
+Brad Hards により更新された。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+		によって行なわれた。</para>
+</refsect1>
+
+</refentry>

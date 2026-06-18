@@ -1,0 +1,21 @@
+<samba:parameter name="winbind separator"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+  <para>
+    このパラメータは、 <replaceable>DOMAIN</replaceable>\<replaceable>user</replaceable>
+    の形式でユーザ名を表示する際に使用される区切り文字を指定する。 
+    このパラメータは UNIX のサービスが <filename moreinfo="none">pam_winbind.so</filename>
+    および <filename moreinfo="none">nss_winbind.so</filename>モジュールを
+    使用する時のみ適用される。
+  </para>
+  <para>
+    + 文字は NIS において /etc/group 中で特別な意味を持っているため、このパラメータを + に設定した場合、少なくとも glibc システムにおいては問題が発生する。
+  </para>
+</description>
+
+<value type="default">'\'</value>
+<value type="example">+</value>
+</samba:parameter>

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook V4.5//EN"
+  "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY ENCRYPT_METHOD        SYSTEM "login.defs.d/ENCRYPT_METHOD.xml">
+<!ENTITY GID_MAX               SYSTEM "login.defs.d/GID_MAX.xml">
+<!ENTITY MAX_MEMBERS_PER_GROUP SYSTEM "login.defs.d/MAX_MEMBERS_PER_GROUP.xml">
+<!ENTITY MD5_CRYPT_ENAB        SYSTEM "login.defs.d/MD5_CRYPT_ENAB.xml">
+<!ENTITY PASS_MAX_DAYS         SYSTEM "login.defs.d/PASS_MAX_DAYS.xml">
+<!ENTITY PASS_MIN_DAYS         SYSTEM "login.defs.d/PASS_MIN_DAYS.xml">
+<!ENTITY PASS_WARN_AGE         SYSTEM "login.defs.d/PASS_WARN_AGE.xml">
+<!ENTITY SHA_CRYPT_MIN_ROUNDS  SYSTEM "login.defs.d/SHA_CRYPT_MIN_ROUNDS.xml">
+<!ENTITY SYS_GID_MAX           SYSTEM "login.defs.d/SYS_GID_MAX.xml">
+<!ENTITY SYS_UID_MAX           SYSTEM "login.defs.d/SYS_UID_MAX.xml">
+<!ENTITY UID_MAX               SYSTEM "login.defs.d/UID_MAX.xml">
+<!ENTITY UMASK                 SYSTEM "login.defs.d/UMASK.xml">
+]>
+
+<refentry id='newusers.8'>
+  <!-- $Id: newusers.8.xml 1994 2008-05-19 22:18:14Z nekral-guest $ -->
+  <refmeta>
+    <refentrytitle>newusers</refentrytitle>
+    <manvolnum>8</manvolnum>
+    <refmiscinfo class="sectdesc">System Management Commands</refmiscinfo>
+  </refmeta>
+  <refnamediv id='name'>
+    <refname>newusers</refname>
+    <refpurpose>update and create new users in batch</refpurpose>
+  </refnamediv>
+  <!-- body begins here -->
+  <refsynopsisdiv id='synopsis'>
+    <cmdsynopsis>
+      <command>newusers</command>
+      <arg choice='opt'>
+	<replaceable>new_users</replaceable>
+      </arg>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+
+  <refsect1 id='description'>
+    <title>DESCRIPTION</title>
+    <para>
+      The <command>newusers</command> command reads a file of user name and
+      clear-text password pairs and uses this information to update a group
+      of existing users or to create new users. Each line is in the same format
+      as the standard password file (see
+      <citerefentry><refentrytitle>passwd</refentrytitle><manvolnum>5</manvolnum>
+      </citerefentry>) with the following exceptions:
+    </para>
+
+    <variablelist remap='IP'>
+      <varlistentry>
+	<term>
+	  <emphasis remap='I'>pw_passwd</emphasis>
+	</term>
+	<listitem>
+	  <para>
+	    This field will be encrypted and used as the new value of the
+	    encrypted password.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <emphasis remap='I'>pw_gid</emphasis>
+	</term>
+	<listitem>
+	  <para>
+	    This field must contain the name (or number) of a group. The user
+	    will be added as a member to this group. When a non-existent
+	    group name or number is specified, a new group will be created.
+	    In the case of a non-existent group number, both the name and the
+	    number of the new group will be this number.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <emphasis remap='I'>pw_dir</emphasis>
+	</term>
+	<listitem>
+	  <para>
+	    This field will be checked for existence as a directory, and a
+	    new directory with this name will be created if it does not
+	    already exist. The ownership of the directory will be set to be
+	    that of the user being created or updated.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+
+    <para> 
+      This command is intended to be used in a large system environment
+      where many accounts are updated at a single time.
+    </para>
+  </refsect1>
+
+  <refsect1 id='options'>
+    <title>OPTIONS</title>
+    <para>The options which apply to the <command>newusers</command> command are:
+    </para>
+    <variablelist remap='IP'>
+      <varlistentry>
+	<term><option>-c</option>, <option>--crypt-method</option></term>
+	<listitem>
+	  <para>Use the specified method to encrypt the passwords.</para>
+	  <para>
+	    The available methods are DES, MD5, NONE, and SHA256 or SHA512
+	    if your libc support these methods.
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term>
+	  <option>-r</option>, <option>--system</option>
+	</term>
+	<listitem>
+	  <para>
+	    Create a system account.
+	  </para>
+	  <para>
+	    System users will be created with no aging information in
+	    <filename>/etc/shadow</filename>, and their numeric
+	    identifiers are choosen in the
+	    <option>SYS_UID_MIN</option>-<option>SYS_UID_MAX</option>
+	    range, defined in <filename>login.defs</filename>, instead of
+	    <option>UID_MIN</option>-<option>UID_MAX</option> (and their
+	    <option>GID</option> counterparts for the creation of groups).
+	  </para>
+	</listitem>
+      </varlistentry>
+      <varlistentry condition="sha_crypt">
+	<term><option>-s</option>, <option>--sha-rounds</option></term>
+	<listitem>
+	  <para>
+	    Use the specified number of rounds to encrypt the passwords.
+	  </para>
+	  <para>
+	    The value 0 means that the system will choose the default
+	    number of rounds for the crypt method (5000).
+	  </para>
+	  <para>
+	    A minimal value of 1000 and a maximal value of 999,999,999
+	    will be enforced.
+	  </para>
+	  <para>
+	    You can only use this option with the SHA256 or SHA512
+	    crypt method.
+	  </para>
+	  <para>
+	    By default, the number of rounds is defined by the
+	    SHA_CRYPT_MIN_ROUNDS and SHA_CRYPT_MAX_ROUNDS variables in
+	    <filename>/etc/login.defs</filename>.
+	  </para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1 id='caveats'>
+    <title>CAVEATS</title>
+    <para>
+      The input file must be protected since it contains unencrypted
+      passwords.
+    </para>
+    <para>
+      PAM is not used to update the passwords.
+      Only <filename>/etc/passwd</filename> and
+      <filename>/etc/shadow</filename> are updated, and the various checks
+      or options provided by PAM modules are not used.
+    </para>
+  </refsect1>
+
+  <refsect1 id='configuration'>
+    <title>CONFIGURATION</title>
+    <para>
+      The following configuration variables in
+      <filename>/etc/login.defs</filename> change the behavior of this
+      tool:
+    </para>
+    <variablelist>
+      &ENCRYPT_METHOD;
+      &GID_MAX; <!-- documents also GID_MIN -->
+      &MAX_MEMBERS_PER_GROUP;
+      &MD5_CRYPT_ENAB;
+      &PASS_MAX_DAYS;
+      &PASS_MIN_DAYS;
+      &PASS_WARN_AGE;
+      &SHA_CRYPT_MIN_ROUNDS; <!-- documents also SHA_CRYPT_MAX_ROUNDS-->
+      &SYS_GID_MAX; <!-- documents also SYS_GID_MIN -->
+      &SYS_UID_MAX; <!-- documents also SYS_UID_MIN -->
+      &UID_MAX; <!-- documents also UID_MIN -->
+      &UMASK;
+    </variablelist>
+  </refsect1>
+
+  <refsect1 id='files'>
+    <title>FILES</title>
+    <variablelist>
+      <varlistentry>
+	<term><filename>/etc/passwd</filename></term>
+	<listitem>
+	  <para>User account information.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><filename>/etc/shadow</filename></term>
+	<listitem>
+	  <para>Secure user account information.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><filename>/etc/group</filename></term>
+	<listitem>
+	  <para>Group account information.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry condition="gshadow">
+	<term><filename>/etc/gshadow</filename></term>
+	<listitem>
+	  <para>Secure group account information.</para>
+	</listitem>
+      </varlistentry>
+      <varlistentry>
+	<term><filename>/etc/login.defs</filename></term>
+	<listitem>
+	  <para>Shadow password suite configuration.</para>
+	</listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+
+  <refsect1 id='see_also'>
+    <title>SEE ALSO</title>
+    <para>
+      <citerefentry>
+	<refentrytitle>login.defs</refentrytitle><manvolnum>5</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+	<refentrytitle>passwd</refentrytitle><manvolnum>1</manvolnum>
+      </citerefentry>,
+      <citerefentry>
+	<refentrytitle>useradd</refentrytitle><manvolnum>8</manvolnum>
+      </citerefentry>.
+    </para>
+  </refsect1>
+</refentry>

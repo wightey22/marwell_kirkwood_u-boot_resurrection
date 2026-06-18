@@ -1,0 +1,22 @@
+<samba:parameter name="add user to group script"
+                 context="G"
+				 type="string"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、 Windows NT のドメイン管理ツールによってユーザにグループが追加された際に実行されるスクリプトのフルパス名である。
+	これは <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>	によって <emphasis>ROOT 権限で</emphasis> 呼び出される。
+	<parameter moreinfo="none">%g</parameter> はグループ名に置換され、
+	<parameter moreinfo="none">%u</parameter> はユーザ名に置換される。
+	</para>
+
+	<para>
+	<command>adduser</command> コマンドは、すべてのシステムにおいて、
+	以下の例で用いた構文をサポートしているわけではないことに注意。
+	</para>
+
+</description>
+<value type="default"></value>
+<value type="example">/usr/sbin/adduser %u %g</value>
+</samba:parameter>

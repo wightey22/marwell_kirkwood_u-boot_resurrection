@@ -1,0 +1,32 @@
+<samba:parameter name="restrict anonymous"
+	type="integer"
+                 context="G"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、ユーザやグループの一覧情報を匿名接続に対して返却するかどうかを制御するものである。
+    このパラメータは Windows NT や Windows 2000 の
+<programlisting>
+HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\LSA\RestrictAnonymous
+</programlisting>
+レジストリキーに相当するものである。
+    0 に設定された場合、ユーザやグループの一覧情報は誰に対しても返却される。
+    1 に設定された場合、認証済のユーザのみがユーザやグループの一覧情報を取得できる。
+    2 に設定された場合、匿名接続は一切拒否される。なおこの値は Windows 2000/XP や Samba でのみサポートされる。
+    これは匿名接続での操作が実行される前提のサードパーティおよび Microsoft のアプリケーションで問題を引き起こすことがある。
+    </para>
+
+    <para>
+    restrict anonymous = 1 を用いることによるセキュリティ上の利点があるかどうかは疑わしい。これはユーザやグループの一覧情報を別の方法を用いて取得することが可能であるためである。
+    </para>
+
+	<note>
+	<para>
+    restrict anonymous = 2 を用いることによるセキュリティ上の利点は、いずれかの共有において 
+    <smbconfoption name="guest ok">yes</smbconfoption>
+    の設定を行なうことで損なわれてしまうことに注意。
+	</para>
+	</note>
+</description>
+<value type="default">0</value>
+</samba:parameter>

@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_shadow_copy2.8">
+
+<refmeta>
+	<refentrytitle>vfs_shadow_copy2</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_shadow_copy2</refname>
+	<refpurpose>Windows クライアントに対して、スナップショットを
+    シャドウコピーとして見せる。 </refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = shadow_copy2</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>この VFS モジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> システムの一部である。</para>
+
+    <para><command>vfs_shadow_copy2</command> VFS モジュールは
+    Microsoft のシャドウコピーサービスと似た機能を提供する。
+    適切に設定されると、このモジュールにより Microsoft
+    シャドウコピークライアントから Samba の共有上にある "シャドウコピー"
+    を参照できるようになる。
+    </para>
+
+	<para>これはシャドウコピーの第２版となるモジュールである。
+    このバージョンでは以下の機能を持つ：</para>
+	<orderedlist continuation="restarts" inheritnum="ignore" numeration="arabic">
+        <listitem><para>あなたの共有をシンボリックリンクを使って
+        スナップショットに向ける必要がない。これは数千個の共有があったり 
+        [homes] を使ったりする場合にとても重要なことである。
+	    </para></listitem>
+	    <listitem><para>それぞれのファイルの inode 番号は変更され、
+        オリジナルのものとは異なる。これにより「リストア」ボタンを
+        押した際に共有が壊れたりすることがなくなる。
+	   </para></listitem>
+	</orderedlist>
+
+	<para>このモジュールはスタック可能である。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>設定</title>
+
+	<para><command>vfs_shadow_copy2</command>は、ファイルシステムが
+    スナップショットを実装していることを前提にしている。
+    一般的なファイルシステムの多くが標準でこれをサポートしている。
+	</para>
+
+	<para><command>vfs_shadow_copy2</command>が認識できるように、
+    ファイルシステムのスナップショットが特定の名称のディレクトリにマウント
+    されている必要がある。スナップショットのマウントポイントは
+    共有ディレクトリの直下でなければならない。</para>
+
+	<para>スナップショットの名前形式は @GMT-YYYY.MM.DD-hh.mm.ss となる。
+    それぞれ
+	<itemizedlist>
+		<listitem><para><command>YYYY</command>は4桁の年</para></listitem>
+		<listitem><para><command>MM</command>は2桁の月</para></listitem>
+		<listitem><para><command>DD</command>は2桁の日</para></listitem>
+		<listitem><para><command>hh</command>は2桁の時</para></listitem>
+		<listitem><para><command>mm</command>>は2桁の分</para></listitem>
+		<listitem><para><command>ss</command>>は2桁の秒</para></listitem>
+		</itemizedlist>
+    で指定する。
+	</para>
+
+	<para><command>vfs_shadow_copy2</command>のスナップショットの名前形式は、
+    以下の<citerefentry><refentrytitle>date</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>コマンドで生成できる：
+	<programlisting>
+	TZ=GMT date +@GMT-%Y.%m.%d-%H.%M.%S
+	</programlisting></para>
+
+</refsect1>
+
+<refsect1>
+    <title>オプション</title>
+
+    <variablelist>
+	<varlistentry>
+        <term>shadow:snapdir = SNAPDIR
+        </term>
+        <listitem>
+        <para>スナップショットがあるディレクトリへのパス。
+        </para>
+        </listitem>
+        </varlistentry>
+
+        <varlistentry>
+        <term>shadow:basedir = BASEDIR
+		</term>
+        <listitem>
+        <para>スナップショットが参照するベースディレクトリへのパス。
+        </para>
+        </listitem>
+        </varlistentry>
+
+		<varlistentry>
+        <term>shadow:fixinodes = yes/no
+        </term>
+        <listitem>
+        <para><command moreinfo="none">shadow:fixinodes</command>
+        が有効の場合、このモジュールはスナップショット中のそれぞれの
+        ファイルの見かけの inode 番号を、そのファイルのパスのハッシュ値で
+        修正する。これは（たとえば GPFS のスナップショットのように）
+        スナップショットがオリジナルのファイルと同じデバイス名＋ inode
+        番号を持つ場合に必要となる。（訳注：そのようなシステムにおいて）
+        このオプションを設定しないでシャドウコピー UI の「リストア」
+        ボタンを押すと、共有違反で失敗してしまう。
+        </para>
+        </listitem>
+        </varlistentry>
+
+		</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>設定例</title>
+
+	<para>ユーザーのホームディレクトリでシャドウコピーをサポートするには
+    以下の設定を行なう：</para>
+<programlisting>
+    <smbconfsection name="[homes]"/>
+	<smbconfoption name="vfs objects">shadow_copy2</smbconfoption>
+	<smbconfoption name="shadow:snapdir">/data/snaphots</smbconfoption>
+	<smbconfoption name="shadow:basedir">/data/home</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>警告</title>
+
+	<para>これはバックアップでも、アーカイブでも、バージョン管理のための
+    機能でもないことに注意。</para>
+
+	<para>Samba と Windows の双方において、<command>vfs_shadow_copy2</command>
+    はエンドユーザのための機能として設計されている。これはバックアップや
+    アーカイ機能を代替、もしくは拡張するものではないので、そのような認識
+    は禁物である。バージョン管理機能が必要であれば、バージョン管理機能を
+    実装する必要がある。</para>
+
+</refsect1>
+
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba システムのバージョン3.2.7(訳注:3.x?) に適合する。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+    Tridgell によって作成された。現在 Samba は Samba Team に
+    よって、Linuxカーネルの開発と同様にオープンソースプロジェクト
+    として開発が行なわれている。</para>
+
+</refsect1>
+
+<refsect1>
+    <title>日本語訳</title>
+    <para>このマニュアルページは Samba 3.2.7 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+    <itemizedlist>
+        <listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+    </itemizedlist>
+        によって行なわれた。</para>
+</refsect1>
+
+
+</refentry>

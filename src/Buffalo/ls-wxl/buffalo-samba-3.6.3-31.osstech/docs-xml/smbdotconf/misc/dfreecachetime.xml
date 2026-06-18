@@ -1,0 +1,27 @@
+<samba:parameter name="dfree cache time"
+	         context="S"
+			 type="integer"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para><parameter moreinfo="none">dfree cache time</parameter> パラメータは、
+	Samba のディスク空き容量の計算で問題が発生するシステムでのみ利用すること。
+	Ultrix では問題の発生することが知られているが、
+	他のオペレーティングシステムで発生するかも知れない。
+	この問題は、各々のディレクトリの一覧表示の終了時に
+	「終了 再試行 無視 (Abort Retry Ignore)」のエラーが発生する形で顕在化する。</para>
+
+	<para>
+	このパラメータは Samba 3.0.21 で新設されたものである。
+	これは、smbd がディスク空き容量の結果をキャッシュする時間を秒単位で指定する。0 (既定値) の場合、キャッシュは行なわれない。
+	これにより、高負荷のサーバで <smbconfoption name="dfree command"/> のスクリプトが頻繁に呼ばれて負荷が増大することが避けられる。
+	</para>
+
+	<para>
+	このパラメータのデフォルト値は 0 であり、キャッシュは行なわれない。
+	</para>
+
+</description>
+<value type="example">dfree cache time = 60</value>
+</samba:parameter>

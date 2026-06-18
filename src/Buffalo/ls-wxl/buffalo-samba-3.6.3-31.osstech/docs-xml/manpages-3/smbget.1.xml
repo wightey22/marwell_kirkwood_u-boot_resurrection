@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbget.1">
+
+<refmeta>
+	<refentrytitle>smbget</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbget</refname>
+	<refpurpose>SMB 経由でファイルをダウンロードするための wget ライクな
+ユーティリティー</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbget</command>
+		<arg choice="opt">-a, --guest</arg>
+		<arg choice="opt">-r, --resume</arg>
+		<arg choice="opt">-R, --recursive</arg>
+		<arg choice="opt">-u, --username=STRING</arg>
+		<arg choice="opt">-p, --password=STRING</arg>
+		<arg choice="opt">-w, --workgroup=STRING</arg>
+		<arg choice="opt">-n, --nonprompt</arg>
+		<arg choice="opt">-d, --debuglevel=INT</arg>
+		<arg choice="opt">-D, --dots</arg>
+		<arg choice="opt">-P, --keep-permissions</arg>
+		<arg choice="opt">-o, --outputfile</arg>
+		<arg choice="opt">-f, --rcfile</arg>
+		<arg choice="opt">-q, --quiet</arg>
+		<arg choice="opt">-v, --verbose</arg>
+		<arg choice="opt">-b, --blocksize</arg>
+		<arg choice="opt">-?, --help</arg>
+		<arg choice="opt">--usage</arg>
+		<arg choice="req">smb://host/share/path/to/file</arg>
+		<arg choice="opt">smb://url2/</arg>
+		<arg choice="opt">...</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> スイートの一部である。</para>
+
+	<para>
+smbget は SMB サーバからファイルをダウンロードできる、wget ライクな
+使い勝手を持つシンプルなユーティリティーである。ダウンロードしたい
+ファイルをコマンドラインで指定することができる。
+	</para>
+
+	<para>
+ファイルは smb-URL の書式で指定する。たとえば UNC パスで
+		<emphasis>\\\\HOST\\SHARE\\file</emphasis> というファイルであれば、
+		smb://host/share/file のように指定する。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<varlistentry>
+		<term>-a, --guest</term>
+		<listitem><para>guest ユーザとして接続する</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-r, --resume</term>
+		<listitem><para>前回中断したファイルから自動的に処理を継続する</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-R, --recursive</term>
+		<listitem><para>ファイルを再帰的にダウンロードする</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-u, --username=STRING</term>
+		<listitem><para>使用するユーザ名</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-p, --password=STRING</term>
+		<listitem><para>使用するパスワード</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-w, --workgroup=STRING</term>
+		<listitem><para>使用するワークグループ（オプション）</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-n, --nonprompt</term>
+		<listitem><para>ユーザに対して問い合わせを行わない（非会話型）</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-d, --debuglevel=INT</term>
+		<listitem><para>使用するデバッグレベル</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-D, --dots</term>
+		<listitem><para>プログラムの進行状況をドットで表示する</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-P, --keep-permissions</term>
+		<listitem><para>リモートファイルと同じパーミッションを
+ローカルファイルに適用する。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-o, --outputfile</term>
+		<listitem><para>
+出力ファイル名として別のファイル名を指定する。-R と同時には指定できない。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-f, --rcfile</term>
+		<listitem><para>
+指定された rcfile を使う。これはオプションで指定された順に読み込まれる。
+つまりこの前に何かのオプションを指定した場合、そのオプションは rcfile 
+の内容で上書きされる。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-q, --quiet</term>
+		<listitem><para>処理中にメッセージを出力しない</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-v, --verbose</term>
+		<listitem><para>冗長表示を行う</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-b, --blocksize</term>
+		<listitem><para>ダウンロードする際の読み込み単位（バイト）。
+デフォルトは 64000。</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>-?, --help</term>
+		<listitem><para>ヘルプメッセージを表示する</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term>--usage</term>
+		<listitem><para>使用法の概要を表示する</para></listitem>
+	</varlistentry>
+</refsect1>
+
+<refsect1>
+	<title>SMB URL</title>
+
+	<para> SMB の URL は以下の書式で指定する：</para>
+
+	<para><programlisting>
+smb://[[[ドメイン名;]ユーザ名[:パスワード@]]サーバー名[/共有名[/パス名[/ファイル名]]]]
+</programlisting></para>
+
+<para><programlisting>
+smb:// はすべてのワークグループを意味する
+</programlisting></para>
+
+<para><programlisting>
+smb://名前/ - <replaceable>名前</replaceable> がワークグループ名の場合は
+そのワークグループ内のすべてのサーバー、<replaceable>名前</replaceable> が
+サーバー名の場合はそのサーバー上のすべての共有名を意味する。
+</programlisting></para>
+
+</refsect1>
+
+<refsect1>
+	<title>実行例</title>
+	
+<programlisting>
+# 'src' ディレクトリー配下を再帰的にダウンロード
+smbget -R smb://rhonwyn/jelmer/src
+# FreeBSD の ISO ファイルをダウンロード。中断後のリジュームも有効に。
+smbget -r smb://rhonwyn/isos/FreeBSD5.1.iso
+# すべての ISO ファイルをダウンロード
+smbget -Rr smb://rhonwyn/isos
+# データを rhonwyn にバックアップ
+smbget -Rr smb://rhonwyn/
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>バグ</title>
+
+	<para>
+ある種の原因不明なエラー（ URL の書式が誤っていたり、-R オプションなしで
+ディレクトリを取得しようとしたなど）の場合、Permission denied が
+返されることがある。
+</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>
+このマニュアルは Sambaバージョン 3用である。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>
+		オリジナルの Samba ソフトウェアおよび関連するユーティリティーは、
+		Andrew Tridgell によって書かれた。現在は Samba は Samba Team によって 
+		Linux カーネルの開発と同様に、オープンソースプロジェクトとして
+		開発されている。
+	</para>
+
+	<para>smbget のマニュアルは Jelmer Vernooij によって書かれた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+		<para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>によって行なわれた。</para>
+</refsect1>
+
+</refentry>

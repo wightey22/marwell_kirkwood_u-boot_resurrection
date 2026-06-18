@@ -1,0 +1,228 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="parsing">
+<chapterinfo>
+	<author>
+		<firstname>Chris</firstname><surname>Hertel</surname>
+	</author>
+	<pubdate>November 1997</pubdate>
+</chapterinfo>
+
+<title>smb.confファイル</title>
+
+<sect1>
+<title>Lexical Analysis</title>
+
+<para>
+基本的に、ファイルは行単位で処理される。構文解析ルーチン(param.c)によって認識される
+4つのタイプの行がある。
+</para>
+
+<orderedlist>
+<listitem><para>
+空白行 - 空白のみを含む行。
+</para></listitem>
+<listitem><para>
+コメント行 - セミコロンかシャープ記号で始まる行(';' か '#')。
+</para></listitem>
+<listitem><para>
+セクションヘッダ行 - 左大括弧で始まる行('[')。
+</para></listitem>
+<listitem><para>
+パラメータ行 - その他の文字で始まる行。
+(既定値の行タイプ)
+</para></listitem>
+</orderedlist>
+
+<para>
+最初の2つはもっぱら構文解釈ルーチンによって無視される。残りの2つのタイプは、
+以下を解釈する。
+</para>
+
+<orderedlist>
+<listitem><para>
+  - セクション名
+</para></listitem>
+<listitem><para>
+  - パラメータ名
+</para></listitem>
+<listitem><para>
+  - パラメータ値
+</para></listitem>
+</orderedlist>
+
+<para>
+パラメータローダ(loadparm.c)にトークンのみが渡される。パラメータ名と値はそれぞれを
+等号('=')で分離される。
+</para>
+
+<sect2>
+<title>空白の取り扱い</title>
+
+<para>
+空白は改行文字('\n')以外、isspace()関数(ctype(3C)参照)によって、認識されるすべての
+文字として定義される。行末を識別するという理由で、改行は除外される。
+</para>
+
+<orderedlist>
+<listitem><para>
+構文解析ルーチンは行の先頭からの空白を読み飛ばす。
+</para></listitem>
+
+<listitem><para>
+セクションとパラメータ名は内部に空白を含むことが出来る。名前の中にあるすべての空白は、
+単一の空白文字に圧縮される。
+</para></listitem>
+
+<listitem><para>
+パラメータ値内部の空白は、それらすべてが削除されるキャリッジリターン文字('\r')を除き、
+そのまま保持される。
+</para></listitem>
+
+<listitem><para>
+名前と値の先頭およびそのあとの空白は削除される。
+</para></listitem>
+
+</orderedlist>
+
+</sect2>
+
+<sect2>
+<title>継続行の取り扱い</title>
+
+<para>
+流しセクションヘッダとパラメータ行は、バックスラッシュ文字('\\')を使って、
+複数の行に継続しても良い。継続行は、空白とコメント行に対しては無視される。
+</para>
+
+<para>
+もしも、セクションヘッダ内か、パラメータ行上にある最後の(非空白)文字は、バックスラッシュ
+文字であり、次に、次の行が、構文解析ルーチンによって、(論理的に)現在の行に対して
+結合される。例は以下の通り:
+</para>
+
+<para><programlisting>
+	param name = parameter value string \
+	with line continuation.
+</programlisting></para>
+
+<para>は以下と同値である</para>
+
+<para><programlisting>
+    param name = parameter value string     with line continuation.
+</programlisting></para>
+
+<para>
+単語'string'の後に5つの空白があり、最初の行中の'stging'と'\\'の間に1つの空白があり、
+さらに、2番目の行の'with'の前に4つの空白があることに注意(もちろん、
+インデントをカウントしている)。
+</para>
+
+<para>
+継続行文字は空白行とコメントの最後では無視される。セクションとパラメータ行*のみで*
+解釈される。
+</para>
+
+</sect2>
+
+<sect2>
+<title>偶然による行の結合</title>
+
+<para>以下の例に注意:</para>
+
+<para><programlisting>
+	param name = parameter value string \
+    \
+    with line continuation.
+</programlisting></para>
+
+<para>
+真ん中の行は、最初の行の行に結合されるため、空白行としては*処理されない*。
+結果は以下のようになる。
+</para>
+
+<para><programlisting>
+param name = parameter value string         with line continuation.
+</programlisting></para>
+
+<para>コメントラインに対してもこのことは成立する。</para>
+
+<para><programlisting>
+	param name = parameter value string \
+	; comment \
+    with a comment.
+</programlisting></para>
+
+<para>これは以下のようになる:</para>
+
+<para><programlisting>
+param name = parameter value string     ; comment     with a comment.
+</programlisting></para>
+
+<para>
+セクションヘッダ行状に置いて、閉じ大括弧(']')は終端文字として考慮され、行の残りの
+部分は無視される。以下のような例
+</para>
+
+<para><programlisting>
+	[ section   name ] garbage \
+    param  name  = value
+</programlisting></para>
+
+<para>は下記のように解釈される。</para>
+
+<para><programlisting>
+	[section name]
+    param name = value
+</programlisting></para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>文法</title>
+
+<para>smb.confファイルの文法は以下のようになる:</para>
+
+<para><programlisting>
+  &lt;file&gt;            :==  { &lt;section&gt; } EOF
+  &lt;section&gt;         :==  &lt;section header&gt; { &lt;parameter line&gt; }
+  &lt;section header&gt;  :==  '[' NAME ']'
+  &lt;parameter line&gt;  :==  NAME '=' VALUE NL
+</programlisting></para>
+
+<para>基本的に、これの意味は以下のようになる</para>
+
+<orderedlist>
+<listitem><para>
+    ファイルは0個以上のセクションからなり、EOF(それを知っているので)によって
+    終端する。
+</para></listitem>
+
+<listitem><para>
+    セクションは0行以上のパラメータが続くセクションヘッダからなる。
+</para></listitem>
+
+<listitem><para>
+    セクションヘッダは左大括弧により定義され、右大括弧により閉じる。囲まれた
+    名前がセクションを識別する。
+</para></listitem>
+
+<listitem><para>
+    パラメータ行は名前と値に分割される。行中の*最初の*等号は、名前と値を分割する。
+    値は改行文字(NL = '\n')によって終端する。
+</para></listitem>
+
+</orderedlist>
+
+<sect2>
+<title>params.cについて</title>
+
+<para>
+configファイルの解析は、もしもlex,yacc,bisonなどを使っていた場合、独特なものと
+感じるだろう。構文解析(スキャン)はparams.cによって行われる。loadparm.cにコールバック
+することでロードされる。
+</para>
+</sect2>
+</sect1>
+</chapter>

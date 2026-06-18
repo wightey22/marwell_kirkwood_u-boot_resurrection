@@ -1,0 +1,77 @@
+.\"     Title: porttime
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: File Formats and Conversions
+.\"    Source: File Formats and Conversions
+.\"
+.TH "PORTTIME" "5" "23/11/2008" "File Formats and Conversions" "File Formats and Conversions"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOME"
+porttime \- file delle porte e degli orari d'accesso
+.SH "DESCRIZIONE"
+.PP
+\fIporttime\fR
+contiene un elenco di device tty, nomi utente e orari di accesso permessi\&.
+.PP
+Ciascuna voce è composta da tre campi separati da due punti\&. Il primo è un elenco di device tty, separati da virgole, oppure un asterisco per indicare che la voce corrisponde a qualsiasi device\&. Il secondo campo è un elenco di nomi utente, separati da virgole, oppure un asterisco per indicare che la voce corrisponde ad ogni utente\&. Il terzo campo è un elenco degli orari, separati da virgole, in cui è consentito l\'accesso\&.
+.PP
+Un orario di accesso consiste in zero o più giorni della settimana abbreviati in
+\fIMo\fR
+(lunedì),
+\fITu\fR,
+\fIWe\fR,
+\fITh\fR,
+\fIFr\fR,
+\fISa\fR
+e
+\fISu\fR
+(domenica), seguiti da una coppia di orari, separate da un trattino\&. L\'abbreviazione
+\fIWk\fR
+rappresenta tutti i giorni da lunedì a venerdì, mentre
+\fIAl\fR
+indica tutti i giorni della settimana\&. Se non si specifica alcun giorno, viene usato implicitamente
+\fIAl\fR\&.
+.SH "ESEMPI"
+.PP
+La voce seguente permette l\'accesso all\'utente
+\fBjfh\fR
+da qualsiasi porta durante i giorni lavorativi dalle 9 alle 17\&.
+.PP
+*:jfh:Wk0900\-1700
+.PP
+The following entries allow access only to the users
+\fIroot\fR
+and
+\fIoper\fR
+on
+\fI/dev/console\fR
+at any time\&. This illustrates how the
+\fI/etc/porttime\fR
+file is an ordered list of access times\&. Any other user would match the second entry which does not permit access at any time\&.
+.sp
+.RS 4
+.nf
+      console:root,oper:Al0000\-2400
+      console:*:
+    
+.fi
+.RE
+.PP
+The following entry allows access for the user
+\fIgames\fR
+on any port during non\-working hours\&.
+.PP
+*:games:Wk1700\-0900,SaSu0000\-2400
+.SH "FILE"
+.PP
+\fI/etc/porttime\fR
+.RS 4
+File containing port access\&.
+.RE
+.SH "VEDERE ANCHE"
+.PP
+\fBlogin\fR(1)\&.

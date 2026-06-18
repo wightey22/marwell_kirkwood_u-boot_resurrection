@@ -1,0 +1,18 @@
+<samba:parameter name="ldap page size"
+	context="G"
+	type="integer"
+	advanced="1" developer="1"
+        xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  このパラメータは1ページあたりのエントリ数を指定する。
+	</para>
+
+	<para>もしも、LDAPサーバがpaged resultsをサポートする場合、クライアントは
+	  すべての一覧の代わりに、検索結果(ページ)のサブセットを要求できる。
+	  このパラメータはそのページの大きさを指定する。
+	</para>
+</description>
+<value type="default">1024</value>
+<value type="example">512</value>
+</samba:parameter>

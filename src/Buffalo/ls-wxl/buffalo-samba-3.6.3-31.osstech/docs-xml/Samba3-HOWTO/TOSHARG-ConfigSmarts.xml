@@ -1,0 +1,407 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="cfgsmarts">
+<chapterinfo>
+	&author.jht;
+	<pubdate>June 30, 2005</pubdate>
+</chapterinfo>
+<title>詳細設定のテクニック</title>
+
+<para>
+<indexterm><primary>設定のテクニック</primary></indexterm>
+<indexterm><primary>include</primary></indexterm>
+この本の最初の版のリリース以来、Samba以外の事についてネットワーク管理者の手助けとなる
+かもしれない設定テクニックのよりよい資料について、繰り返し要求があった。一部の
+ユーザは、<smbconfoption name="include">file-name</smbconfoption>パラメータの使い方に
+関連する文書を提供した。
+</para>
+
+<para>
+<indexterm><primary>複数のサーバ</primary></indexterm>
+<indexterm><primary>multiple server personalities</primary></indexterm>
+2004年の中頃に始まったが、1つのマシン上で複数のSambaサーバをホスティングする
+機能について、関心が高まってきた。1つのサーバ上複数のSambaサーバの振る舞いを
+ホスティングする事への興味も増えてきた。
+</para>
+
+<para>
+<indexterm><primary>技術レビュー</primary></indexterm>
+<indexterm><primary>レビューワ</primary></indexterm>
+テクニカルレビューワからのフィードバックによりこの章を含める必要が出た。
+そのため、今まで十分に言及してこなかった質問への答えををここに記す。さらに、
+この章を充実させる、利用者からの追加は歓迎する。ここで提供されているものは、
+まったくもって、小さなとっかかりである。
+</para>
+
+<para>
+<indexterm><primary>複数のサーバ</primary></indexterm>
+<indexterm><primary>複数のホスティング</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+単一のSambaサーバ上で複数のサーバをホスト出来る方法はいくつもある。複数のサーバ
+ホスティングは1つのマシン上で複数のドメインをホストする事を可能にする。そのような
+各マシンは独立していて、他に影響を与えずに、起動/停止ができる。
+</para>
+
+<para>
+<indexterm><primary>複数のサーバ</primary></indexterm>
+<indexterm><primary>DMS</primary></indexterm>
+<indexterm><primary>匿名サーバ</primary></indexterm>
+時には、各サーバが固有のセキュリティモードを持つ、複数のサーバをホスティングする
+ことが好ましいことがある。例えば、一般的な匿名印刷サーバのように、単一のUNIX/Linux
+ホストはドメインメンバサーバ(DMS)になれる。この場合、ドメインメンバマシンとドメイン
+ユーザはDMSにアクセスでき、さらにゲストユーザでさえも、一般的な印刷サーバにアクセス
+できる。他の、汎用(匿名)サーバをホスティングするのに便利かもしれないシチュエーションの
+例としては、CDROMサーバのホスティングがある。
+</para>
+
+<para>
+<indexterm><primary>分離されたサーバ</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+いくつかの環境では、固有のリソースを持つ、特定のユーザかグループのみからアクセス可能な、
+分離されたサーバを持つ必要が規定されている。これは、Sambaが多数の物理的なサーバを、
+1つのSambaサーバに置き換えられる、単純で、とても効果的な方法の1つである。
+</para>
+
+<sect1>
+<title>実装</title>
+
+<para>
+</para>
+
+<sect2>
+<title>複数のサーバのホスティング</title>
+
+<para>
+<indexterm><primary>複数のサーバのホスティング</primary></indexterm>
+<indexterm><primary>分離されたインスタンス</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>再コンパイル</primary></indexterm>
+<indexterm><primary>TDB</primary></indexterm>
+複数のサーバホスティングの使用は、それぞれ個別の設定ファイルを持っている、複数の分離
+されたSambaインスタンスを動かす必要がある。この方法は、各&nmbd;, &smbd; と &winbindd;
+のインスタンスは、完全に分離されたTDBファイルへの書き込みアクセスが出来なければならない
+という理由で、とても複雑である。&nmbd;, &smbd; と &winbindd;が使うTDBファイルを分離
+させる事は、ホスティングを行う各Sambaを再コンパイルすることで、各Sambaが、固有のTDB
+ファイルに対する既定値のディレクトリを持つか、&nmbd;, &smbd; と &winbindd;の
+各インスタンスが、それらの固有の&smb.conf;設定ファイルで起動するようにしなければ
+ならない、&smb.conf;ファイルを設定することで可能となる。
+</para>
+
+<para>
+<indexterm><primary>独立</primary></indexterm>
+<indexterm><primary>固有のソケットのリッスン</primary></indexterm>
+<indexterm><primary>ソケット</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+各インスタンスは固有のIPアドレス(独立したIPアドレスはIPエイリアスで行える)で操作される
+べきである。&nmbd;, &smbd; と&winbindd;の各インスタンスは、その固有IPソケットのみを
+リッスンすべきである。これは<smbconfoption name="socket address"/>パラメータを使うことに
+よって、安全に出来る。Sambaサーバの各インスタンスは固有のSIDも持つべきであり、これは、
+サーバは互いに独立で、分離されていることを意味する。
+</para>
+
+<para>
+<indexterm><primary>複数サーバのホスティング</primary></indexterm>
+<indexterm><primary>private dir</primary></indexterm>
+<indexterm><primary>pid directory</primary></indexterm>
+<indexterm><primary>lock directory</primary></indexterm>
+<indexterm><primary>interfaces</primary></indexterm>
+<indexterm><primary>bind interfaces only</primary></indexterm>
+<indexterm><primary>netbios name</primary></indexterm>
+<indexterm><primary>workgroup</primary></indexterm>
+<indexterm><primary>socket address</primary></indexterm>
+複数サーバホスティングのユーザはそれほど特異ではなく、プロセス管理と起動時それぞれの
+場面において、注意深い設定を要求する。注意深く設定しなければならない、&smb.conf;
+パラメータは以下を含む:
+<smbconfoption name="private dir"/>, <smbconfoption name="pid directory"/>,<smbconfoption name="lock
+directory"/>, <smbconfoption name="interfaces"/>, <smbconfoption name="bind interfaces only"/>, <smbconfoption
+name="netbios name"/>, <smbconfoption name="workgroup"/>, <smbconfoption name="socket address"/>。
+</para>
+
+<para>
+<indexterm><primary>複数のサーバ</primary></indexterm>
+<indexterm><primary>寄贈</primary></indexterm>
+<indexterm><primary>包括的な文書</primary></indexterm>
+複数のSambaサーバを作成する事を選択した人は、Sambaソースコードを読解でき、必要に応じて
+それを変更出来る能力を持つべきである。このモードの配置は、この文書の範囲を超えていると
+考えられる。しかし、もしも誰かがより包括的な文書を寄贈してくれるのであれば、喜んでそれを
+レビューし、もしもそれが適切であれば、この章のこの節を拡張するだろう。そのような文書が
+有効になるまで、単一ホスト上での複数Sambaサーバのホスティングは、Sambaチームによって、
+Samba-3ではサポートされないとみなされる。
+</para>
+
+</sect2>
+
+<sect2>
+<title>複数仮想サーバの性質(Personalities)</title>
+
+<para>
+<indexterm><primary>複数の仮想サーバ</primary></indexterm>
+<indexterm><primary>netbios alias</primary></indexterm>
+<indexterm><primary>メタサービズ</primary></indexterm>
+Sambaは、固有の設定を持つ、複数の仮想サーバをホスティングできる能力がある。
+これは、すべてのホスティングされる、個別設定に共通な&smb.conf;ファイルの設定で達成
+される。各(仮想)サーバの個別設定は、固有の<smbconfoption name="netbios alias"/>で
+ホスティングされ、おのおのは、固有の異なった<smbconfoption name="[global]"/>セクションを
+持つ。各サーバはサービスとメタサービスのために固有のセクションを持っても良い。
+</para>
+
+<para>
+<indexterm><primary>workgroup</primary></indexterm>
+<indexterm><primary>security</primary></indexterm>
+<indexterm><primary>netbios aliases</primary></indexterm>
+複数の仮想サーバをホスティングするとき、おのおのには個別設定が出来、おのおのは
+異なったワークグループにいる。プライマリサーバのみ、ドメインメンバかドメインコントローラに
+なれる。個別設定は、動作している<smbconfoption name="security"/>モードと、使っている
+<smbconfoption name="netbios aliases"/>とそれに対して定義された
+<smbconfoption name="workgroup"/>の組み合わせによって定義される。
+</para>
+
+<para>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+<indexterm><primary>NetBIOSなしのSMB</primary></indexterm>
+<indexterm><primary>smbポート</primary></indexterm>
+<indexterm><primary>TCPポート 139</primary></indexterm>
+<indexterm><primary>TCPポート 445</primary></indexterm>
+<indexterm><primary>%L</primary></indexterm>
+この設定スタイルは、NetBIOS名を使うか、NetBIOS名なしのTCPサービスのSMBを使う事が出来る。
+もしもNetBIOSモード(最も一般的な方法)で動かす場合、パラメータ
+<smbconfoption name="smb ports">139</smbconfoption>はプライマリの&smb.conf;ファイル中に
+指定すべきである。それを間違うと、SambaはTCPポート445で動作することになり、
+最も良い場合で問題のある動作、最悪の場合は、プライマリの&smb.conf;ファイルで指定された
+機能を得ることができるのみである。TCPポート139のみを使うNetBIOS over TCP/IPの使用は、
+<literal>%L</literal>マクロの使用が完全に有効になる事を意味する。もしも
+<smbconfoption name="smb ports">139</smbconfoption>が指定されていない場合(既定値では
+<parameter>445 139</parameter>)か、もしもこのパラメータの値が
+<parameter>139 445</parameter>の時は、<literal>%L</literal>は無効である。
+</para>
+
+<para>
+<indexterm><primary>複数サーバのホスティング</primary></indexterm>
+<indexterm><primary>複数のpersonality</primary></indexterm>
+<indexterm><primary>NetBIOSなし</primary></indexterm>
+<indexterm><primary>%iマクロ</primary></indexterm>
+各サーバの個別設定で、ポート445を使う(NetBIOSなしのSMBポート)複数のサーバを
+ホスティングするのは可能で、この場合、(IPアドレスによって)分離されたサーバを識別する
+ために、<literal>%i</literal>が使える。おのおのは固有の<smbconfoption name="security"/>
+モードを持つ。仮想サーバを作成するために、<smbconfoption name="interfaces"/>と
+<smbconfoption name="bind interfaces only"/>を<smbconfoption name="netbios name"/>に
+追加する必要があるかもしれない。この方法は、TCPポート139のみを使うNetBIOS名を使うよりも
+より複雑であると考えられる。
+</para>
+
+<para>
+<indexterm><primary>匿名ファイルサーバ</primary></indexterm>
+スタンドアロンでユーザモードのセキュリティで動くSambaと置き換え対象の、
+読み取り専用Windows 95ファイルサーバからなる例題環境を考えてみよう。新しいPCでWindows 95
+マシンを置き換える代わりに、Sambaサーバ上でホスティングされる読み取り専用匿名ファイル
+サーバとしてこのサーバを追加することが可能である。以下はそれに必要ないくつかのパラメータ
+である:
+</para>
+
+<para>
+Sambaサーバの名前は<literal>ELASTIC</literal>で、そのワークグループ名は<literal>ROBINSNEST</literal>である。
+CDROMサーバの名前は<literal>CDSERVER</literal>で、そのワークグループ名は<literal>ARTSDEPT</literal>
+である。出来うる実装は以下の通り:
+</para>
+
+<para>
+<indexterm><primary>/etc/samba</primary></indexterm>
+<indexterm><primary>nmbd</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+<indexterm><primary>smb.conf</primary></indexterm>
+マスタサーバに対する&smb.conf;ファイルは<link linkend="elastic">Elasticのsmb.confファイル</link>である。
+このファイルは<filename>/etc/samba</filename>中に置かれる。&nmbd; と &smbd; デーモンのみが
+必要である。サーバを起動すると、Windowsのネットワークコンピュータ中の、ワークグループ
+<literal>ROBINSNEST</literal>配下に<literal>ELASTIC</literal>が現れる。もしも、このサーバに
+アクセスするWindowsクライアントがまたワークグループ<literal>ROBINSNEST</literal>中にいて、
+より信頼性の高いブラウジングを行わさせるのに、これは便利である。
+</para>
+
+<example id="elastic">
+<title>Elasticのsmb.confファイル</title>
+<smbconfblock>
+<smbconfcomment>Globalパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">ROBINSNEST</smbconfoption>
+<smbconfoption name="netbios name">ELASTIC</smbconfoption>
+<smbconfoption name="netbios aliases">CDSERVER</smbconfoption>
+<smbconfoption name="smb ports">139</smbconfoption>
+<smbconfoption name="printcap name">cups</smbconfoption>
+<smbconfoption name="disable spoolss">Yes</smbconfoption>
+<smbconfoption name="show add printer wizard">No</smbconfoption>
+<smbconfoption name="printing">cups</smbconfoption>
+<smbconfoption name="include">/etc/samba/smb-%L.conf</smbconfoption>
+
+<smbconfsection name="[homes]"/>
+<smbconfoption name="comment">Home Directories</smbconfoption>
+<smbconfoption name="valid users">%S</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfsection name="[office]"/>
+<smbconfoption name="comment">Data</smbconfoption>
+<smbconfoption name="path">/data</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="create mask">0600</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+<smbconfoption name="printable">Yes</smbconfoption>
+<smbconfoption name="use client driver">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>smb-cdserver.conf</primary></indexterm>
+CDROMサーバの設定ファイルは<link linkend="cdserver">CDROMサーバのsmb-cdserver.confファイル</link>
+である。このファイルは<filename>smb-cdserver.conf</filename>という名前で、
+<filename>/etc/samba</filename>ディレクトリに置かれる。ワークグループ
+<literal>ARTSDEPT</literal>中にいるマシンはサーバを自由にブラウズできる。
+</para>
+
+<example id="cdserver">
+<title>CDROMサーバのsmb-cdserver.confファイル</title>
+<smbconfblock>
+<smbconfcomment>Globalパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">ARTSDEPT</smbconfoption>
+<smbconfoption name="netbios name">CDSERVER</smbconfoption>
+<smbconfoption name="map to guest">Bad User</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+
+<smbconfsection name="[carousel]"/>
+<smbconfoption name="comment">CDROM Share</smbconfoption>
+<smbconfoption name="path">/export/cddata</smbconfoption>
+<smbconfoption name="read only">Yes</smbconfoption>
+<smbconfoption name="guest ok">Yes</smbconfoption>
+</smbconfblock>
+</example>
+
+<para>
+<indexterm><primary>異なったリソース</primary></indexterm>
+<indexterm><primary>分離されたワークグループ</primary></indexterm>
+<indexterm><primary>読み取り専用アクセス</primary></indexterm>
+<indexterm><primary>nobody account</primary></indexterm>
+2つのサーバは異なったりソースを持ち、分離されたワークグループ内にいる。サーバ
+<literal>ELASTIC</literal>は、そのホストサーバ上に適切なアカウントを持つユーザから
+のみアクセスできる。すべてのユーザは、<filename>/export/cddata</filename>
+ディレクトリ中に格納されるCDROMデータにアクセスできる。ファイルシステムのアクセス許可は、
+<literal>その他</literal>ユーザがディレクトリとその内容に対して読み取り専用アクセスを
+設定すべきである。ファイルはrootが所有できる(nobodyアカウント以外の任意のユーザでも)。
+</para>
+
+</sect2>
+
+<sect2>
+<title>複数の仮想サーバホスティング</title>
+
+<para>
+<indexterm><primary>プライマリドメインコントローラ</primary></indexterm>
+<indexterm><primary>extra machine</primary></indexterm>
+<indexterm><primary>同じドメイン/ワークグループ</primary></indexterm>
+この例では、要求されていることは、<literal>MIDEARTH</literal>というドメインに対する
+プライマリドメインコントローラに対するものである。PDCは<literal>MERLIN</literal>
+である。その他のマシンとして<literal>SAURON</literal>が必要とされている。各マシンは
+それぞれ固有の共有のみ持つ。両マシンは同じドメイン/ワークグループに属している。
+</para>
+
+<para>
+<indexterm><primary>master smb.conf</primary></indexterm>
+<indexterm><primary>/etc/samba</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+マスタの&smb.conf;ファイルは<link linkend="mastersmbc">マスタのsmb.conf ファイルのグローバルセクション</link>
+である。各サーバの共有情報を指定する2つのファイルは、
+<link linkend="merlinsmbc">smb-merlin.confファイルの共有セクション</link>と
+<link linkend="sauronsmbc">smb-sauron.confファイルの共有セクション</link>である。3つの
+ファイルはすべて<filename>/etc/samba</filename>ディレクトリに置かれる。
+</para>
+
+<example id="mastersmbc">
+<title>マスタのsmb.conf ファイルのグローバルセクション</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">MERLIN</smbconfoption>
+<smbconfoption name="netbios aliases">SAURON</smbconfoption>
+<smbconfoption name="passdb backend">tdbsam</smbconfoption>
+<smbconfoption name="smb ports">139</smbconfoption>
+<smbconfoption name="syslog">0</smbconfoption>
+<smbconfoption name="printcap name">CUPS</smbconfoption>
+<smbconfoption name="show add printer wizard">No</smbconfoption>
+<smbconfoption name="add user script">/usr/sbin/useradd -m '%u'</smbconfoption>
+<smbconfoption name="delete user script">/usr/sbin/userdel -r '%u'</smbconfoption>
+<smbconfoption name="add group script">/usr/sbin/groupadd '%g'</smbconfoption>
+<smbconfoption name="delete group script">/usr/sbin/groupdel '%g'</smbconfoption>
+<smbconfoption name="add user to group script">/usr/sbin/usermod -G '%g' '%u'</smbconfoption>
+<smbconfoption name="add machine script">/usr/sbin/useradd -s /bin/false -d /var/lib/nobody '%u'</smbconfoption>
+<smbconfoption name="logon script">scripts\login.bat</smbconfoption>
+<smbconfoption name="logon path"> </smbconfoption>
+<smbconfoption name="logon drive">X:</smbconfoption>
+<smbconfoption name="domain logons">Yes</smbconfoption>
+<smbconfoption name="preferred master">Yes</smbconfoption>
+<smbconfoption name="wins support">Yes</smbconfoption>
+<smbconfoption name="printing">CUPS</smbconfoption>
+<smbconfoption name="include">/etc/samba/smb-%L.conf</smbconfoption>
+</smbconfblock>
+</example>
+
+<example id="merlinsmbc">
+<title>smb-merlin.confファイルの共有セクション</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">MERLIN</smbconfoption>
+
+<smbconfsection name="[homes]"/>
+<smbconfoption name="comment">Home Directories</smbconfoption>
+<smbconfoption name="valid users">%S</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfsection name="[office]"/>
+<smbconfoption name="comment">Data</smbconfoption>
+<smbconfoption name="path">/data</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+
+<smbconfsection name="[netlogon]"/>
+<smbconfoption name="comment">NETLOGON</smbconfoption>
+<smbconfoption name="path">/var/lib/samba/netlogon</smbconfoption>
+<smbconfoption name="read only">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+
+<smbconfsection name="[printers]"/>
+<smbconfoption name="comment">All Printers</smbconfoption>
+<smbconfoption name="path">/var/spool/samba</smbconfoption>
+<smbconfoption name="printable">Yes</smbconfoption>
+<smbconfoption name="use client driver">Yes</smbconfoption>
+<smbconfoption name="browseable">No</smbconfoption>
+</smbconfblock>
+</example>
+
+<example id="sauronsmbc">
+<title>smb-sauron.confファイルの共有セクション</title>
+<smbconfblock>
+<smbconfcomment>グローバルパラメータ</smbconfcomment>
+<smbconfsection name="[global]"/>
+<smbconfoption name="workgroup">MIDEARTH</smbconfoption>
+<smbconfoption name="netbios name">SAURON</smbconfoption>
+
+<smbconfsection name="[www]"/>
+<smbconfoption name="comment">Web Pages</smbconfoption>
+<smbconfoption name="path">/srv/www/htdocs</smbconfoption>
+<smbconfoption name="read only">No</smbconfoption>
+</smbconfblock>
+</example>
+
+</sect2>
+
+</sect1>
+
+</chapter>

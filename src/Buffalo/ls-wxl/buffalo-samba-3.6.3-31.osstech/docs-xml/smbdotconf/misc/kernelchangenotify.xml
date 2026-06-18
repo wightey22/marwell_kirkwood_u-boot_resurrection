@@ -1,0 +1,19 @@
+<samba:parameter name="kernel change notify"
+                 context="S"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、Samba がカーネルに対してディレクトリの変更
+	通知を要求するか指定でき、この機能を使用すれば、サーバ上にある
+	データに変更があった場合に SMB クライアントがその結果を
+	反映できるようになる。
+	</para>
+
+	<para>このパラメータは使用しているカーネルが inotify インターフェース
+	を使用してユーザプログラムに対しての変更の通知をサポートしている
+	場合にのみ使用される。
+	</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

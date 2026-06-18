@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="vfs_audit.8">
+
+<refmeta>
+	<refentrytitle>vfs_audit</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>vfs_audit</refname>
+	<refpurpose>選択したSamba VFSモジュールの動作状況をsystem logに保存する</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>vfs objects = audit</command>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このVFSモジュールは
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である.</para>
+
+	<para><command>vfs_audit</command> VFSモジュールは指定したクライアントの動作を
+	<citerefentry><refentrytitle>syslog</refentrytitle>
+	<manvolnum>3</manvolnum></citerefentry>を使用して、システムログに記録する。
+	</para>
+
+	<para>以下のようなSamba VFSの動作が記録される</para>
+	<simplelist>
+	<member>connect</member>
+	<member>disconnect</member>
+	<member>opendir</member>
+	<member>mkdir</member>
+	<member>rmdir</member>
+	<member>open</member>
+	<member>close</member>
+	<member>rename</member>
+	<member>unlink</member>
+	<member>chmod</member>
+	<member>fchmod</member>
+	<member>chmod_acl</member>
+	<member>fchmod_acl</member>
+	</simplelist>
+
+	<para>このモジュールはスタッカブルである</para>
+
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+
+		<varlistentry>
+		<term>audit:facility = FACILITY</term>
+		<listitem>
+		<para>
+		<citerefentry><refentrytitle>syslog</refentrytitle>
+		<manvolnum>3</manvolnum></citerefentry> にFACILITYでメッセージを記録する。
+
+		</para>
+
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>audit:priority = PRIORITY</term>
+		<listitem>
+		<para>
+		<citerefentry><refentrytitle>syslog</refentrytitle>
+		<manvolnum>3</manvolnum></citerefentry>にPRIORITYでメッセージを記録する。
+		</para>
+
+		</listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>EXAMPLES</title>
+
+	<para>すべての共有のログをLOCAL1ファシリティー、NOTICEプライオリティーで記録する。
+	</para>
+
+<programlisting>
+        <smbconfsection name="[global]"/>
+	<smbconfoption name="vfs objects">audit</smbconfoption>
+	<smbconfoption name="audit:facility">LOCAL1</smbconfoption>
+	<smbconfoption name="audit:priority">NOTICE</smbconfoption>
+</programlisting>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルはSambaシステムバージョン3.0.25(訳注:3.3?)に対応している
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作成された。現在 Samba は Samba Team に
+	よって、Linuxカーネルの開発と同様のオープンソースプロジェクト
+	として開発が行なわれている。</para>
+
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このドキュメントは、Samba 3.0.25 -3.5.3 対応のものである。</para>	
+    <para>このドキュメントの翻訳は
+		<itemizedlist>
+			<listitem><para>平田祥司 (shouji@microft.co.jp)</para></listitem>
+		</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>

@@ -1,0 +1,15 @@
+<samba:parameter name="passdb expand explicit"
+                 context="G"
+                 advanced="1" developer="0"
+				 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>
+    このパラメータは、passdb の指定に % マクロが明示的に指定された際に、
+    それを展開するかどうかを制御する。
+    ここではマクロを用いることが可能となっているが、 Windows クライアントがユーザのプライマリグループに置換されるべき %G が含まれている %G_osver% といった変数を展開してしまうというバグを引き起こしてしまうことがある。
+    </para>
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

@@ -1,0 +1,17 @@
+<samba:parameter name="wide links"
+		 context="S"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、
+	UNIXファイルシステム上のリンクをサーバが追跡するかどうかを制御する。
+	サーバが公開するディレクトリツリー内部へのリンクは、
+	常に許可されている。このパラメータは、
+	公開されているディレクトリツリー外部へのアクセスを制御する。</para>
+
+	<para>このパラメータを no に設定すると、
+	リンク先のチェックを行なうための余分なシステムコールを実行する必要があるため、
+	サーバのパフォーマンスに悪影響を及ぼすことに注意。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

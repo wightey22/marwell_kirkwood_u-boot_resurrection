@@ -1,0 +1,113 @@
+.\"     Title: vipw
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 11/23/2008
+.\"    Manual: Команды управления системой
+.\"    Source: Команды управления системой
+.\"
+.TH "vipw" "8" "11/23/2008" "Команды управления системой" "Команды управления системой"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "НАЗВАНИЕ"
+vipw, vigr \- служат для редактирования файлов паролей, групп, теневых паролей пользователей или групп.
+.SH "СИНТАКСИС"
+.HP 5
+\fBvipw\fR [\fIпараметры\fR]
+.HP 5
+\fBvigr\fR [\fIпараметры\fR]
+.SH "ОПИСАНИЕ"
+.PP
+\fBvipw\fR
+и
+\fBvigr\fR
+редактируют файлы
+\fI/etc/passwd\fR
+и
+\fI/etc/group\fR, соответственно\&. Если указан параметр
+\fB\-s\fR, то будут редактироваться теневые версии этих файлов,
+\fI/etc/shadow\fR
+и
+\fI/etc/gshadow\fR, соответственно\&. На время работы программы устанавливают блокировку для предотвращения повреждения файла\&. При выборе редактора программы сначала проверяют переменную среды
+\fB$VISUAL\fR, затем
+\fB$EDITOR\fR, и если ничего не найдено, запускают стандартный редактор
+\fBvi\fR(1)\&.
+.SH "ПАРАМЕТРЫ"
+.PP
+Параметры команд
+\fBvipw\fR
+и
+\fBvigr\fR:
+.PP
+\fB\-g\fR, \fB\-\-group\fR
+.RS 4
+Редактирует базу данных групп\&.
+.RE
+.PP
+\fB\-h\fR, \fB\-\-help\fR
+.RS 4
+Показать краткую справку и закончить работу\&.
+.RE
+.PP
+\fB\-p\fR, \fB\-\-passwd\fR
+.RS 4
+Редактировать базу данных passwd\&.
+.RE
+.PP
+\fB\-q\fR, \fB\-\-quiet\fR
+.RS 4
+Не выводить сообщений при работе\&.
+.RE
+.PP
+\fB\-s\fR, \fB\-\-shadow\fR
+.RS 4
+Редактировать базу данных shadow или gshadow\&.
+.RE
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBMAX_MEMBERS_PER_GROUP\fR (number)
+.RS 4
+Maximum members per group entry\&. When the maximum is reached, a new group entry (line) is started in
+\fI/etc/group\fR
+(with the same name, same password, and same GID)\&.
+.sp
+The default value is 0, meaning that there are no limits in the number of members in a group\&.
+.sp
+This feature (split group) permits to limit the length of lines in the group file\&. This is useful to make sure that lines for NIS groups are not larger than 1024 characters\&.
+.sp
+If you need to enforce such limit, you can use 25\&.
+.sp
+Note: split groups may not be supported by all tools (even in the Shadow toolsuite\&. You should not use this variable unless you really need it\&.
+.RE
+.SH "ФАЙЛЫ"
+.PP
+\fI/etc/group\fR
+.RS 4
+содержит информацию о группах
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+содержит защищаемую информацию о группах
+.RE
+.PP
+\fI/etc/passwd\fR
+.RS 4
+содержит информацию о пользователях
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+содержит защищаемую информацию о пользователях
+.RE
+.SH "СМОТРИТЕ ТАКЖЕ"
+.PP
+\fBvi\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)\fBpasswd\fR(5),
+\fBshadow\fR(5)\&.

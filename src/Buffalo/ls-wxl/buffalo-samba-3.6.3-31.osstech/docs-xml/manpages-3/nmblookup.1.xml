@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="nmblookup">
+
+<refmeta>
+	<refentrytitle>nmblookup</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>nmblookup</refname>
+	<refpurpose>NetBIOS 名を検索する NetBIOS over TCP/IP クライアント</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>nmblookup</command>
+		<arg choice="opt">-M</arg>
+		<arg choice="opt">-R</arg>
+		<arg choice="opt">-S</arg>
+		<arg choice="opt">-r</arg>
+		<arg choice="opt">-A</arg>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-B &lt;broadcast address&gt;</arg>
+		<arg choice="opt">-U &lt;unicast address&gt;</arg>
+		<arg choice="opt">-d &lt;debug level&gt;</arg>
+		<arg choice="opt">-s &lt;smb config file&gt;</arg>
+		<arg choice="opt">-i &lt;NetBIOS scope&gt;</arg>
+		<arg choice="opt">-T</arg>
+		<arg choice="opt">-f</arg>
+		<arg choice="req">name</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>解説</title>
+
+	<para>このツールは <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> の一部である。</para>
+
+	<para><command>nmblookup</command> は、NetBIOS over TCP/IP
+	が使われているネットワークにおいて、NetBIOS 名の問い合わせや、IP
+	アドレスへの変換に使われる。オプションを設定することで、
+	特定のブロードキャストアドレスや特定のマシンに対して名前の問い合わせを
+	行なう事ができる。全ての問い合わせは、UDP を使って行なわれる。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		<varlistentry>
+		<term>-M</term>
+		<listitem><para>タイプ <constant>0x1d</constant> の NetBIOS
+		名、<replaceable>name</replaceable> に問い合わせることで、
+		マスタブラウザの検索をおこなう。<replaceable>name</replaceable>
+		が "-" の場合、特殊な名前である
+		<constant>__MSBROWSE__</constant> の検索を行う。
+		もし name に "-" を使用したいのなら、"-" が引数として扱われない
+		ように注意しなければならない。使用例: 
+		<userinput>nmblookup -M -- -</userinput></para></listitem> 
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-R</term>
+		<listitem><para>再帰検索を行なう為に、パケット中の
+		再帰要求ビットを設定する。これは、WINS サーバが動作している
+		マシンに対して問い合わせを行ない、WINS サーバに名前を
+		問い合わせたいときに使用する。このビットが設定されていない場合、
+		通常の(ブロードキャスト応答による) NetBIOS 名の応答処理が
+		行われる。詳細は RFC1001 および RFC1002 を参照の事。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-S</term>
+		<listitem><para>名前問い合わせで IP アドレスが返却された場合、
+		ノードステータスの問い合わせも行なう。
+		ノードステータスの問い合わせは、そのホストが登録している
+		NetBIOS 名の一覧を返却する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-r</term> 
+		<listitem><para>UDP のポート 137 を使って、UDP
+		データグラムを送受信する。このオプションは、 Windows 95
+		がパケットの送信元のポートを無視して UDPのポート 137
+		にしか応答を返却しないというバグに対応する為のものである。
+		しかし、ほとんどの UNIX システムで、このポートを使用するには
+		root 権限が必要であり、更に、<citerefentry>
+		<refentrytitle>nmbd</refentrytitle><manvolnum>8</manvolnum>
+		</citerefentry> デーモンが動作している場合、
+		このポートを使用している。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-A</term>
+		<listitem><para><replaceable>name</replaceable> を IP
+		アドレスとして解釈して、ノードステータスの問い合わせを
+		このアドレスに行なう。</para>
+		</listitem>
+		</varlistentry>
+
+
+
+		&popt.common.connection;
+		&stdarg.help;
+
+		<varlistentry>
+		<term>-B &lt;broadcast address&gt;</term> 
+		<listitem><para>指定されたブロードキャストアドレスに対し
+		問い合わせを送信する。このオプションを指定しない場合の
+		nmblookup のデフォルト動作は、問い合わせを
+		ネットワークインタフェースのブロードキャストアドレスに送信する。
+		ネットワークインタフェースのブロードキャストアドレスは、
+		自動検出に任せるか <citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		の </citerefentry><ulink url="smb.conf.5.html#INTERFACES">
+		<parameter>interfaces</parameter></ulink> パラメータで指定する。		
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-U &lt;unicast address&gt;</term>
+		<listitem><para>指定されたアドレスもしくは 
+		<replaceable>unicast address</replaceable> で指定したホストに
+		対して、ユニキャストの問い合わせを行なう。このオプションは、
+		(<parameter>-R</parameter> オプションと共に) WINS
+		サーバに問い合わせを行なう時には必須である。</para></listitem>
+		</varlistentry>
+		
+		&stdarg.server.debug;	
+		&popt.common.samba;
+
+		<varlistentry>
+		<term>-T</term> 
+		<listitem><para>このパラメータは、問い合わせ中に発見した
+		あらゆる IP アドレスについて DNS の逆引きを行うことで、
+		DNS 名を取得し、標準的な表示である</para>
+
+		<para><emphasis>IPアドレス .... NetBIOS名</emphasis></para>
+		
+		<para>の組の前に表示する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-f</term>
+		<listitem><para>
+		検索した名前に適用されているフラグを表示させる。
+		フラグには Response(レスポンス)、
+		Authoritative(権威がある)、Recursion_Desired、
+		Recursive_available、Broadcast(ブロードキャスト)などがある。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>name</term>
+		<listitem><para>これは問合せ対象の NetBIOS 名である。
+		オプションの指定によっては、NetBIOS 名の場合もあれば、IP
+		アドレスの場合もある。NetBIOS 名の場合は、名前の最後に
+		'#&lt;type&gt;' を追加する事で名前のタイプを指定する事ができる。
+		名前として「*」を指定することもでき、その場合はブロードキャストの範囲内に登録されている全ての名前が返却される。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>使用例</title>
+
+		<para><command>nmblookup</command> は、
+		(<command>nslookup</command>  が DNS サーバに対して
+		問い合わせるのと同様に) WINSサーバに対して問い合わせを
+		行うことができる。WINS サーバに問い合わせを行なう際は、
+		<command>nmblookup</command> を以下のようにして実行する
+		必要がある:</para>
+
+		<para><command>nmblookup -U server -R 'name'</command></para>
+
+		<para>たとえば、以下のように実行する:</para>
+
+		<para><command>nmblookup -U samba.org -R 'IRIX#1B'</command></para>
+
+		<para>これは、samba.org の WINSサーバに対して、IRIX
+		ワークグループのドメインマスタブラウザ (タイプ1B)
+		を問い合わせる。</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba 3 対応のものである。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> 、 <citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry> 、 <citerefentry><refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum></citerefentry></para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連ユーティリティは、
+	Andrew Tridgellによって作成された。 現在 Samba は、Samba Team によって
+	Linux カーネルの 開発と同様に、オープンソースプロジェクトとして
+	開発されている。</para>
+	
+	<para>オリジナルのSambaマニュアルは、Karl Auer によって執筆された。
+	マニュアルのソースは Jeremy Allison によって YODL 形式に変換され、
+	Samba 2.0 リリース用に更新された。
+	(YODL はオープンソース・ソフトウエアの優れた作品である 
+	<ulink noescape="1" url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink> より入手可能。)
+	Samba 2.2 における DocBook形式への変換は Gerald Carter
+	によって行なわれた。Samba 3.0 における DocBook XML 4.2 形式への変換は
+	Alexander Bokovoy によって行われた。</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+
+	<para>このマニュアルページは Samba 3.0.3 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>たかはしもとのぶ (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+	<para>Samba 3.0.3 - Samba 3.0.24 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+	<para>Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉 (ribbon@samba.gr.jp) によって行なわれた。</para>
+</para>
+</refsect1>
+
+</refentry>

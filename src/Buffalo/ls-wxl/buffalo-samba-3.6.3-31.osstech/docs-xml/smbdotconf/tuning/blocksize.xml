@@ -1,0 +1,17 @@
+<samba:parameter name="block size"
+				type="integer"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、ディスクの空き領域を報告する際の
+    <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> の動作が制御される。
+    デフォルトでは、ディスクのブロックサイズを 1024 バイトとして報告が行なわれる。</para>
+
+    <para>このパラメータを変更した場合、クライアントからの書き込みに影響がでることが予想されるが、確認されていない。このパラメータは、熟練した管理者が(通常より大きい値に)変更を行なうことで、再コンパイルを行なうことなく、クライアントからの書き込みパフォーマンスへの影響をテストすることを可能とするために追加された。これは実験的なオプションのため、将来のリリースでは削除されるかも知れない。</para>
+
+    <para>このオプションを変更しても、報告されるディスクの空き容量自体は変わらない。クライアントに報告されるディスクのブロックサイズが変更されるだけである。</para>
+</description>
+<value type="default">1024</value>
+<value type="example">4096</value>
+</samba:parameter>

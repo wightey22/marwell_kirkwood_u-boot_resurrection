@@ -1,0 +1,17 @@
+<samba:parameter name="use spnego"
+                 context="G"
+				 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータの値により、 Samba が Windows 2000 や Windows XP クライアントの間で行なわれる認証の際に
+    Simple and Protected NEGOciation (RFC2478 で規定) の使用を試みるかどうかが制御される。
+    </para>
+
+    <para>
+    SPNEGO の実装に問題点が発見されない限り、
+    これを無効にする必要性はない。
+    </para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

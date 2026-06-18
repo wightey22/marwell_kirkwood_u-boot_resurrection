@@ -1,0 +1,78 @@
+.\"     Title: sg
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: Commandes utilisateur
+.\"    Source: Commandes utilisateur
+.\"
+.TH "SG" "1" "23/11/2008" "Commandes utilisateur" "Commandes utilisateur"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOM"
+sg \- exécuter une commande avec un autre identifiant de groupe
+.SH "SYNOPSIS"
+.HP 3
+\fBsg\fR [\-] [groupe\ [\-c]\ commande]
+.SH "DESCRIPTION"
+.PP
+La commande
+\fBsg\fR
+fonctionne de la même manière que
+\fBnewgrp\fR, mais prend une commande comme paramètre\&. Cette commande sera exécutée avec un interpréteur de commandes
+\fI/bin/sh\fR\&. Avec la plupart des interpréteurs de commandes permettant d\'exécuter
+\fBsg\fR, si la commande comporte plusieurs mots, il faut la placer entre des guillemets (\(Fo\ \&"\ \&\(Fc)\&. Une autre différence entre
+\fBnewgrp\fR
+et
+\fBsg\fR
+est que certains interpréteurs de commandes traitent
+\fBnewgrp\fR
+de façon particulière, en se remplaçant eux\-mêmes par une nouvelle instance d\'un interpréteur que
+\fBnewgrp\fR
+crée\&. Ceci n\'est pas le cas de
+\fBsg\fR, ce qui permet de retrouver le groupe précédent à la sortie de
+\fBsg\fR\&.
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBSYSLOG_SG_ENAB\fR (boolean)
+.RS 4
+Enable "syslog" logging of
+\fBsg\fR
+activity\&.
+.RE
+.SH "FICHIERS"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informations sur les comptes des utilisateurs\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informations sécurisées sur les comptes utilisateurs\&.
+.RE
+.PP
+\fI/etc/group\fR
+.RS 4
+Informations sur les groupes\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informations sécurisées sur les groupes\&.
+.RE
+.SH "VOIR AUSSI"
+.PP
+
+\fBid\fR(1),
+\fBlogin\fR(1),
+\fBnewgrp\fR(1),
+\fBsu\fR(1),
+\fBgpasswd\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)

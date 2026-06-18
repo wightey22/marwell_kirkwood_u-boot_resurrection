@@ -1,0 +1,66 @@
+.\"     Title: sg
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: User Commands
+.\"    Source: User Commands
+.\"
+.TH "SG" "1" "23/11/2008" "User Commands" "User Commands"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOME"
+sg \- execute command as different group ID
+.SH "SINOSSI"
+.HP 3
+\fBsg\fR [\-] [group\ [\-c]\ command]
+.SH "DESCRIZIONE"
+.PP
+Il comando
+\fBsg\fR
+funziona in maniera analoga a
+\fBnewgrp\fR, ma accetta un comando che viene eseguito con la shell B
+.SH "CONFIGURATION"
+.PP
+The following configuration variables in
+\fI/etc/login\&.defs\fR
+change the behavior of this tool:
+.PP
+\fBSYSLOG_SG_ENAB\fR (boolean)
+.RS 4
+Enable "syslog" logging of
+\fBsg\fR
+activity\&.
+.RE
+.SH "FILE"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+informazioni sugli account utente\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informazioni sicure sugli account di utenti\&.
+.RE
+.PP
+\fI/etc/group\fR
+.RS 4
+Informazioni sugli account di gruppo\&.
+.RE
+.PP
+\fI/etc/gshadow\fR
+.RS 4
+Informazioni sicure sugli account di gruppo\&.
+.RE
+.SH "VEDERE ANCHE"
+.PP
+
+\fBid\fR(1),
+\fBlogin\fR(1),
+\fBnewgrp\fR(1),
+\fBsu\fR(1),
+\fBgpasswd\fR(1),
+\fBgroup\fR(5),
+\fBgshadow\fR(5)

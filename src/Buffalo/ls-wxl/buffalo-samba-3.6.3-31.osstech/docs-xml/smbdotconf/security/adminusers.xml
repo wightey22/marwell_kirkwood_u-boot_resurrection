@@ -1,0 +1,19 @@
+<samba:parameter name="admin users"
+                 context="S"
+				 type="list"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このパラメータは、共有上で管理者権限が与えられるユーザのリストである。
+    指定されたユーザは、すべてのファイル操作をスーパーユーザ (root) として実行できる。</para>
+
+    <para> このリストに登録されているユーザは、
+    ファイルのパーミッションに関係なくあらゆる操作を行うことができてしまうため、
+    このオプションは十分に注意して使用すべきである。</para>
+
+    <para>このパラメータは、 Samba 3.0 における <smbconfoption
+    name="security">share</smbconfoption> 環境では動作しない。
+    これは仕様である。</para>
+</description>
+<value type="default"/>
+<value type="example">jason</value>
+</samba:parameter>

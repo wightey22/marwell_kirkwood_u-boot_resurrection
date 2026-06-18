@@ -1,0 +1,1181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbclient.1">
+
+<refmeta>
+	<refentrytitle>smbclient</refentrytitle>
+	<manvolnum>1</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ユーザコマンド</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+<refnamediv>
+	<refname>smbclient</refname>
+	<refpurpose>サーバ上の SMB/CIFS リソースにアクセスする ftp
+	のようなクライアント</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>smbclient</command>
+		<arg choice="opt">-b &lt;buffer size&gt;</arg>
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">-e</arg>
+		<arg choice="opt">-L &lt;netbios name&gt;</arg>
+		<arg choice="opt">-U username</arg>
+		<arg choice="opt">-I destinationIP</arg>
+		<arg choice="opt">-M &lt;netbios name&gt;</arg>
+		<arg choice="opt">-m maxprotocol</arg>
+		<arg choice="opt">-A authfile</arg>
+		<arg choice="opt">-N</arg>
+        <arg choice="opt">-g</arg>
+		<arg choice="opt">-i scope</arg>
+		<arg choice="opt">-O &lt;socket options&gt;</arg>
+		<arg choice="opt">-p port</arg>
+		<arg choice="opt">-R &lt;name resolve order&gt;</arg>
+		<arg choice="opt">-s &lt;smb config file&gt;</arg>
+		<arg choice="opt">-k</arg>
+		<arg choice="opt">-P</arg>
+		<arg choice="opt">-c &lt;command&gt;</arg>
+	</cmdsynopsis>
+
+	<cmdsynopsis>
+		<command>smbclient</command>
+		<arg choice="req">servicename</arg>
+		<arg choice="opt">password</arg>
+		<arg choice="opt">-b &lt;buffer size&gt;</arg>
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">-e</arg>
+		<arg choice="opt">-D Directory</arg>
+		<arg choice="opt">-U username</arg>
+		<arg choice="opt">-W workgroup</arg>
+		<arg choice="opt">-M &lt;netbios name&gt;</arg>
+		<arg choice="opt">-m maxprotocol</arg>
+		<arg choice="opt">-A authfile</arg>
+		<arg choice="opt">-N</arg>
+        <arg choice="opt">-g</arg>
+		<arg choice="opt">-l log-basename</arg>
+		<arg choice="opt">-I destinationIP</arg>
+		<arg choice="opt">-E</arg>
+		<arg choice="opt">-c &lt;command string&gt;</arg>
+		<arg choice="opt">-i scope</arg>
+		<arg choice="opt">-O &lt;socket options&gt;</arg>
+		<arg choice="opt">-p port</arg>
+		<arg choice="opt">-R &lt;name resolve order&gt;</arg>
+		<arg choice="opt">-s &lt;smb config file&gt;</arg>
+		<arg choice="opt">-T&lt;c|x&gt;IXFqgbNan</arg>
+		<arg choice="opt">-k</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para><command>smbclient</command> は SMB/CIFS サーバと「会話」をする
+	ことができるクライアントである。ftp プログラム (<citerefentry>
+	<refentrytitle>ftp</refentrytitle><manvolnum>1</manvolnum>
+	</citerefentry>を参照) とよく似たインターフェースを提供し、
+	サーバからローカルマシンへファイルをダウンロードしたり、
+	ローカルマシンからサーバへとファイルをアップロードしたり、
+	サーバからディレクトリ情報を取得するなどの動作を行う。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>オプション</title>
+	
+	<variablelist>
+		<varlistentry>
+		<term>servicename</term>
+		<listitem><para>servicename は利用したいサービスのサーバ上での
+		名前である。サービス名は <filename>//server/service</filename>
+		のような形をとり、<parameter>server</parameter> は利用したい
+		サービスを提供している SMB/CIFS サーバの NetBIOS 名であり、
+		<parameter>service</parameter> は提供されているサービスの名前である。
+		したがって、SMB/CIFS サーバ "smbserver" の "printer"
+		というサービスに接続するには、<filename>//smbserver/printer
+		</filename> というサービス名を使用する。</para>
+
+		<para>必要とされるサーバ名が、一概にサーバの IP (DNS)
+		ホスト名であるとは限らないことに注意! 必要とされる名前は NetBIOS
+		名であり、その名前はサーバの動作しているマシンの IP
+		ホスト名と同じかも知れないし、 異なっているかも知れない。</para>
+
+		<para>サーバ名を解決する方法は、<command>smbclient</command>
+		の <parameter>-R</parameter> オプションか、<citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry> ファイル中の name resolve order パラメータに
+		よって決定される。
+		このパラメータにより、管理者が、名前解決の順番や方式を変更する
+		ことが可能になっている。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>password</term>
+		<listitem><para>指定したサーバのサービスへアクセスするために
+		必要なパスワードである。このパラメータが指定された場合、
+		<parameter>-N</parameter> オプション (パスワードプロンプトの抑止)
+		が自動的に設定される。</para>
+
+		<para>デフォルトのパスワードはない。 (このパラメータを用いるか、
+		<parameter>-U</parameter> オプション (以下を参照) でパスワードが
+		指定されなかった事により) パスワードがコマンドラインから指定されず、
+		<parameter>-N</parameter> オプションも指定されていない場合、
+		サーバがパスワードを要求しているかどうかに関わらず、
+		クライアントはパスワード入力を求める。
+		(パスワードが必要でない場合は、 単に ENTER キーを入力する事で、
+		空のパスワードを渡せばよい。)</para>
+
+		<para>注意: ある種のサーバ (OS/2、Windows for Workgroup など) は、
+		大文字のパスワードを要求する。小文字や、大文字小文字の混じった
+		パスワードは拒否されるであろう。</para>
+
+		<para>パスワードをスクリプト中に記述するときは、十分注意すること。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-R &lt;name resolve order&gt;</term> 
+		<listitem><para>このオプションは、Samba スイートのプログラムによって、ホスト名と IP アドレスの名前解決のためにどのようなネーミングサービスをどのような順序で使用するかを決めるのに使用される。このオプションには、名前解決オプションを文字列のかたちで指定する。複数を指定する場合はスペースで区切る。</para>
+
+	　　 <para>指定できるのは、"lmhosts"、"host"、"wins"、"bcast"である。それぞれにおいて、
+名前解決は次のように行われる。</para>
+
+		<itemizedlist>
+			<listitem><para><constant>lmhosts</constant>: Samba lmhosts ファイルで IP アドレスが検索される。lmhosts の行に NetBIOS 名にアタッチされるネームタイプがない場合(詳細については <citerefentry><refentrytitle>lmhosts</refentrytitle>
+	    <manvolnum>5</manvolnum></citerefentry> を参照)、ネームタイプがどれであるかは検索結果に影響しなくなる。</para>
+			</listitem>
+			
+			<listitem><para><constant>host</constant>: システムの <filename>/etc/hosts
+            </filename>、NIS、DNS ルックアップを使用した、ホスト名 - IP アドレス間の標準の名前解決が行われる。名前解決の方法の詳細な部分は、IRIX、Solaris といった OS によって変わる。<filename>/etc/nsswitch.conf</filename> で制御できる場合もある。この方法は、検索される NetBIOS 名のタイプが 0x20 (サーバ) である時にのみ使用できる点に注意。さもなければ指定しても無視される。</para>
+			</listitem>
+			
+			<listitem><para><constant>wins</constant>: <parameter>wins server</parameter> パラメータに指定された IP アドレスを持つ名前が検索される。WINS サーバが指定されていなければ、無視される。</para>
+			</listitem>
+			
+			<listitem><para><constant>bcast</constant>: <parameter>interfaces</parameter> パラメータに指定された既知のローカル･インターフェースそれぞれについてブロードキャストを行う。ターゲット・ホストがローカル接続サブネット上にある場合にしか使えないので、最も信頼性の低い名前解決法。</para>
+			</listitem>
+		</itemizedlist>
+
+		<para>このパラメータが設定されなかった場合、名前解決方法の使用順序は、<citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> ファイルのパラメータ (name resolve order) に指定されたとおりになる。</para>
+
+		<para>デフォルトの優先順位は、lmhosts、host、wins、bcast となる。このパラメータがない場合、あるいは<citerefentry><refentrytitle>smb.conf</refentrytitle>
+		<manvolnum>5</manvolnum></citerefentry> ファイルの <parameter>name resolve order
+		</parameter> パラメータにエントリがない場合、この順序で名前解決方法が試行される。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-M NetBIOS name</term>
+		<listitem><para>このオプションを指定すると、"WinPopup"
+		プロトコルを使って、別のコンピュータへメッセージを送信する事が
+		できる。接続が確立してから任意のメッセージを入力する。
+		終了するには、^D (control-D) を入力する。</para>
+
+		<para>受信したコンピュータで WinPopup が起動していれば、
+		ユーザはおそらくビープ音とともに、メッセージを受信する事になる。
+		WinPopup が起動していないとメッセージは失われ、
+		なんのエラーメッセージも表示されない。</para>
+
+		<para>1600 byte を越えるメッセージは、プロトコルの仕様による
+		制限のため、自動的に切り捨てられる。</para>
+
+		<para>便利な使用例として、<command>smbclient</command>
+		を通してメッセージを cat する方法を紹介しよう。例えば: <command>
+		smbclient -M FRED &lt; mymessage.txt</command> とすると、
+		<filename>mymessage.txt</filename> ファイルの内容をメッセージ
+		としてマシン FRED に送ることができる。</para>
+
+		<para>また <parameter>-U</parameter> や <parameter>-I</parameter>
+		オプションも、メッセージの FROM や TO に相当する設定を指定したい場合は、
+		便利なこともある。</para>
+
+		<para>Samba で WinPopup メッセージを受け取る方法は、<citerefentry>
+		<refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum>
+		</citerefentry> の <parameter>message command</parameter>
+		パラメータを参照のこと。</para>
+
+		<para><emphasis>注意</emphasis>: WfWg PC で常にメッセージを
+		受信できるようにしたいなら、startup グループに WinPopup
+		をコピーすること。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>-p port</term>
+		<listitem><para>この値は、サーバへ接続するときに利用する TCP
+		のポート番号である。SMB/CIFS サーバ用の標準の (well-known) TCP
+		ポート番号は 139 であり、これがデフォルト値となる。</para></listitem>
+		</varlistentry>
+
+        <varlistentry>
+        <term>-g</term>
+        <listitem><para>
+        <parameter>-L</parameter> と組み合わせることで、パースしやすい出力を
+        得られる。これにより grep や cut といったユーティリティで処理
+        しやすくなる。
+        </para></listitem>
+        </varlistentry>
+
+		<varlistentry>
+		<term>-P</term>
+		<listitem><para>
+		ローカルサーバのマシンアカウントを使い、外部サーバに対して問い合わせを行う。
+		</para></listitem>
+		</varlistentry>
+
+		&stdarg.help;
+		
+		<varlistentry>
+		<term>-I IP-address</term>
+		<listitem><para><replaceable>IP address</replaceable> は接続する
+		サーバの IP アドレスを表す。これは、標準的な "a.b.c.d"
+		形式で指定する。</para>
+
+		<para>通常クライアントは前述した <parameter>name resolve order
+		</parameter> パラメータ中で記述した NetBIOS 名の解決メカニズムを
+		用いて検索する事により、その SMB/CIFS サーバのアドレスを
+		解決しようとする。このパラメータを使うことで、クライアントは、
+		強制的に指定された IP アドレスをサーバの IP アドレスとみなし、
+		接続しようとしているリソースの NetBIOS 名を上書きする。</para>
+
+		<para>このパラメータのデフォルト値はない。
+		このパラメータが指定されなければ、アドレスは前述したようにして
+		クライアントが自動的に決定する。</para></listitem>
+		</varlistentry>
+		
+		
+		
+		<varlistentry>
+		<term>-E</term>
+		<listitem><para>このパラメータは、クライアントがメッセージを
+		標準出力ではなく、標準エラー出力 (stderr) に出力するようにする。</para>
+		
+		<para>既定値では、クライアントはメッセージを標準出力 -
+		一般的にはユーザの tty - に出力する。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-L</term>
+		<listitem><para>このオプションを指定すると、サーバ上で利用可能な
+		サービスを一覧することができる。<command>smbclient -L host</command>
+		のようにして使うと、サービスの一覧が表示される。
+		NetBIOS 名が TCP/IP の DNS のホスト名に一致しない場合や、
+		別のネットワーク上のホストの情報を表示しようとしている場合は、
+		<parameter>-I</parameter> オプションが役にたつ。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-t terminal code</term>
+		<listitem><para>このオプションは、<command>smbclient</command> 
+		に対してリモートサーバが表示するファイル名をどのように変換すべきかを
+		指定する。通常、アジア言語のマルチバイト文字の UNIX 上での実装は、
+		SMB/CIFS サーバと異なる文字セットを使用している (例えば <emphasis>
+		SJIS</emphasis> ではなく <emphasis>EUC</emphasis>、というように)。
+		このパラメータを設定することで、<command>smbclient</command> は
+		UNIX 上のファイル名と SMB サーバ上のファイル名との変換を正しく
+		行うようになる。このオプションは厳格にテストされたものではなく、
+		多少問題があるかも知れない。</para>
+
+		<para>terminal code には CWsjis, CWeuc, CWjis7, CWjis8, CWjunet,
+		CWhex, CWcap がある。これらは全てではなく、完全なリストは、
+		Samba のソースコードをチェックして欲しい。</para></listitem>
+		</varlistentry>
+		
+			
+		<varlistentry>	
+		<term>-b buffersize</term>
+		<listitem><para>このオプションはサーバとファイルの送受信を
+		行なうときの送受信バッファのサイズを変更する。 デフォルト値は
+		65520 バイトである。この値を (最小 1200 バイトまで) 小さくすることで、
+		Windows 9x サーバとのファイルの転送がスピードアップすることが
+		確認されている。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-e</term>
+		<listitem><para>このコマンド行パラメータは、UNIX格調をサポートするリモート
+		サーバを要求する。
+		コネクション要求は暗号化される。これは、Samba3.2のための新しい機能であり、
+		Samba3.2以降のサーバでのみ動作する。GSSAPIを使用してSMB暗号化をネゴシエートする。
+		もしも、ドメイン/ユーザ名/パスワード の3つ組が与えられた場合、暗号化
+		ネゴシエーション(kerberosまたはNTLMv1/v2)のため、与えられた証明書を使う。
+		もしも暗号化がネゴシエートできなかった場合、接続は失敗する。
+		</para></listitem>
+		</varlistentry>
+
+		&stdarg.client.debug;
+		&popt.common.samba;
+		&popt.common.credentials;
+		&popt.common.connection;
+		
+		<varlistentry>
+		<term>-T tar options</term>
+		<listitem><para>smbclient は SMB/CIFS 共有上の全てのファイルに
+		おいて、<command>tar(1)</command> 互換のバックアップを行う事が
+		できる。このオプションに設定可能な副次的な tar
+		フラグは以下のとおり。</para>
+		
+		<itemizedlist>
+			<listitem><para><parameter>c</parameter> - UNIX 上で tar
+			ファイルを作成する。このオプションの後には tar
+			ファイルの名前、テープデバイス、もしくは標準出力を意味する
+			"-" のいずれかを指定しなければならない。
+			標準出力を指定した場合、ログレベルを最低の -d0 にして、
+			tar ファイルの出力が破壊されないようにすること。
+			このフラグは <parameter>x</parameter> フラグと互いに
+			排他的な関係にある。</para></listitem>
+			
+			<listitem><para><parameter>x</parameter> - ローカルの tar
+			ファイルを共有に展開 (リストア) する。-D オプションが
+			指定されていないと、tar ファイルは共有の最上位
+			ディレクトリからリストアされる。
+			このオプションの後には tar ファイルの名前、デバイスの名前、
+			あるいは 標準入力を意味する "-" を指定しなければならない。
+			このフラグは <parameter>c</parameter> フラグと互いに
+			排他的な関係にある。リストアされたファイルは、作成日時
+			(mtime) が tar ファイルに保存された時点の日付になる。
+			また、現在ディレクトリについては、作成日時が正しく
+			リストアされない。</para></listitem>
+			
+			<listitem><para><parameter>I</parameter> - 指定したファイルと
+			ディレクトリを処理の対象にする。このオプションは、ファイル名が
+			指定されている場合のデフォルトの動作であり、tar ファイルを
+			展開または作成する時に、指定されたものだけを処理の対象にする
+			(従って、それ以外のものは全て除外される)。
+			下記の例を参照のこと。ファイル名のワイルドカード指定機能は、
+			二つある方式のどちらかを使う。下記の <parameter>r</parameter>
+			オプションを参照のこと。</para></listitem>
+			
+			<listitem><para><parameter>X</parameter> - 指定したファイルと
+			ディレクトリを 処理の対象から除外する。このオプションは tar
+			ファイルを展開または作成する時に、指定されたものを処理の対象から
+			除外する。下記の例を参照のこと。 ファイル名のワイルドカード
+			指定機能は、二つある方式のどちらかを使う。下記の <parameter>r
+			</parameter> オプションを参照のこと。</para></listitem>
+			
+			<listitem><para><parameter>F</parameter> - ファイルとディレクトリの一覧を含むファイルである。
+			<parameter>F</parameter>オプションは、展開または作成時に含まれる
+ファイルとディレクトリのリストを含むファイル名として作成するためのtarファイルの名前となる。
+			(and therefore everything else to be excluded).
+			以下の例を参照のこと。ファイル名の globbingは２つの方法のどちらかで動作する。
+			下記の<parameter>r</parameter>オプションを参照のこと。
+			</para></listitem>
+			
+			<listitem><para><parameter>b</parameter> - ブロックサイズ。
+			このオプションの後には有効な (1 以上の) ブロックサイズを
+			指定しなければならない。このオプションにより、tar ファイルは、
+			ブロックサイズ*TBLOCK (通常 512 バイト) ブロックの単位で
+			書き出されるようになる。</para></listitem>
+			
+			<listitem><para><parameter>g</parameter> - インクリメンタル
+			(増分)。 アーカイブビットが立っているファイルだけをバックアップ
+			する。 <parameter>c</parameter> フラグが指定されている時のみ
+			意味をもつ。</para></listitem>
+
+			<listitem><para><parameter>q</parameter> - 表示の抑止(quiet)。
+			動作中の状態メッセージの表示を抑止する。これは、tar モードでも
+			同様である。</para></listitem>
+			
+			<listitem><para><parameter>r</parameter> - 正規表現。
+			HAVE_REGEX_H フラグを設定してコンパイルした場合は、処理対象に
+			含めるか除外するファイルを指定する為に正規表現を使うことができる。
+			(訳注: 原文では "excluding or excluding files" となっているが、
+			"including or excluding files" の誤りだと思われる)
+			しかし、このモードは非常に遅い。HAVE_REGEX_H フラグなしで
+			コンパイルされた場合は、 * と ? を用いる 限定的なワイルドカードが
+			使用できる。</para></listitem>
+			
+			<listitem><para><parameter>N</parameter> - 更新(newer)。
+			このオプションの後には、ファイル名を指定する必要がある。
+			そのファイルの日付と作成中に共有上で見付かったファイルの日付とが
+			比較される。指定されたファイルより新しいファイルだけが tar
+			ファイルにバックアップされる。 <parameter>c</parameter>
+			フラグが指定されている時のみ意味をもつ。</para></listitem>
+			
+			<listitem><para><parameter>a</parameter> - アーカイブビットを
+			セットする。ファイルがバックアップされた時点でアーカイブビットが
+			クリアされる。 <parameter>g</parameter> および <parameter>c
+			</parameter> フラグが設定されている時のみ意味をもつ。
+			</para></listitem>
+		</itemizedlist>
+			
+		<para><emphasis>Tar における長いファイル名</emphasis></para>
+			
+		<para><command>smbclient</command> の tar オプションは、 現在
+		バックアップとリストアの両方で長いファイル名をサポートしている。しかし、
+		ファイルのフルパス名は 1024 バイト以下である必要がある。また tar
+		アーカイブが作成された時、 <command>smbclient</command> の tar
+		オプションはそのアーカイブ内の全てのファイルを絶対ファイル名ではなく、
+		相対ファイル名で記録する。</para>
+			
+		<para><emphasis>Tar ファイル名</emphasis></para>
+			
+		<para>全てのファイルには、DOS のパス名('\\'をパス名の区切りとする)
+		を付与するか、UNIX のパス名 ('/'をパス名の区切りとする) を付与する
+		ことができる。</para>
+			
+		<para><emphasis>例</emphasis></para>
+		
+		<para>tar ファイルの <filename>backup.tar</filename> を mypc 上の
+		myshare (パスワードなし) にリストアする。</para>
+		
+		<para><command>smbclient //mypc/yshare "" -N -Tx backup.tar
+		</command></para>
+		
+		<para><filename>users/docs</filename> 以外の全てをリストアする。
+		</para>
+		
+		<para><command>smbclient //mypc/myshare "" -N -TXx backup.tar 
+		users/docs</command></para>
+		
+		<para><filename>users/docs</filename> 配下のファイルを含む tar
+		ファイルを作成する。</para>
+		
+		<para><command>smbclient //mypc/myshare "" -N -Tc
+		backup.tar users/docs </command></para>
+		
+		<para>上記と同じ tar ファイルを作成するが、DOS のパス名を使用する。
+		</para>
+		
+		<para><command>smbclient //mypc/myshare "" -N -Tc backup.tar 
+		users\\edocs </command></para>
+		
+		<para>(訳注: 原文は -tc となっているが、-Tc が正しいと思われる。また、
+		\ はコマンドライン上では \\ とする必要がある。)</para>
+		
+		<para>共有上にある全てのファイルとディレクトリを含む tar
+		ファイルを作成する。</para>
+		
+		<para><command>smbclient //mypc/myshare "" -N -Tc backup.tar *
+		</command></para>
+		</listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>-D initial directory</term>
+		<listitem><para>動作を開始する前に、ディレクトリ initial directory
+		に移動する。おそらく、利用されるのは tar オプション -T が指定された
+		ときだけだろう。
+		</para></listitem>
+		</varlistentry>
+		
+		
+		
+		<varlistentry>
+		<term>-c command string</term>
+		<listitem><para>command string はセミコロンで区切ったコマンドの
+		リストである。このコマンドは、標準入力から受け取るコマンドの代わりに
+		実行される。<parameter>-N</parameter> オプションが <parameter>-c
+		</parameter> オプションによって、暗黙の内に設定される。</para>
+
+		<para>このオプションが特に役立つのは、スクリプトで利用したり、
+		標準入力を例えば <command>-c 'print -'</command> のようにして
+		サーバに出力したりする場合である。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+
+
+<refsect1>
+	<title>オペレーション(操作)</title>
+
+	<para>クライアントが起動すると、ユーザには以下のようなプロンプトが表示される。
+	</para>
+
+	<para><prompt>smb:\&gt; </prompt></para>
+
+	<para>バックスラッシュ ("\\") はサーバ上の現在の作業ディレクトリを示しており、
+	作業ディレクトリを変えるとこの表示も変わる。</para>
+
+	<para>このプロンプトは、クライアントの準備ができ、ユーザのコマンド実行を
+	待機している事を示している。各コマンドは、一つの単語であるが、コマンドによっては、
+	コマンド固有のパラメータを指定する事もできる。コマンドとパラメータは、
+	特に注釈がない限り、スペースで区切られる。
+	全てのコマンドは大文字小文字を識別しない。
+	コマンドのパラメータは、コマンドによって大文字と小文字が区別されたり
+	されなかったりする。</para>
+
+	<para>スペースが含まれているファイル名は、名前をダブルクオート文字で、例えば、
+	"a long file name" のように括る事で指定できる。</para>
+
+	<para>大括弧 ("[" と "]") で括られて示されているパラメータ (例えば "[parameter]")
+	は、オプションである。指定されなかった場合、コマンドは適切なデフォルト値を用いる。
+	不等号記号 ("&lt;" と "&gt;") で括られて示されているパラメータ (例えば
+	"&lt;parameter&gt;") は、必須である。</para>
+
+
+	<para>サーバ上でのコマンドの実行は、実際にサーバに対して要求を発行する事で
+	実行される事に注意してほしい。従って、その動作はサーバ間で異なる場合があり、
+	サーバの実装方法に依存している。</para>
+
+	<para>利用できるコマンドを以下にアルファベット順で紹介する。</para>
+
+	<variablelist>
+		<varlistentry>
+		<term>? [command]</term>
+		<listitem><para><replaceable>command</replaceable> を指定すると、?
+		コマンドは指定されたコマンドについての簡潔で有益な説明を表示する。
+		command を指定しないと、利用できるコマンドの一覧が表示される。
+		</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>! [shell command]</term>
+		<listitem><para><replaceable>shell command</replaceable> を指定すると、
+		! コマンドはローカルでシェルを起動し、指定されたシェルコマンドを起動する。
+		コマンドを指定しないと、ローカルなシェルが起動する。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>allinfo file</term>
+		<listitem><para>クライアントは、ファイルまたはディレクトリについてのすべての
+		存在する情報(streamを含む)をサーバが返す要求を出す。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>altname file</term>
+		<listitem><para>クライアントは、ファイルまたはディレクトリの "代わり"
+		の名前 (8.3形式の名前) を返すようにサーバに要求する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>archive &lt;number&gt;</term>
+		<listitem><para>ファイル上で操作を行うときにアーカイブレベルを設定する。
+		0はアーカイブビットを無視、1はこのビットを設定するようにのみファイルを操作し、
+		2は操作時にこのビットを設定し、操作終了後にビットを解除するのみ行い、
+		3はすべてのファイルに対して操作時に設定を行い、操作終了後にビットを解除する。
+		既定値は0である。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>blocksize &lt;number&gt;</term>
+		<listitem><para>操作時のブロックサイズパラメータを設定する。既定値は20である。
+		tarファイルの出力をblocksize*TBLOCK(通常512バイト)ユニットごとに行うようにする。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>cancel jobid0 [jobid1] ... [jobidN]</term>
+		<listitem><para>クライアントは、与えられたジョブ ID の印刷ジョブを
+		キャンセルするようにサーバに要求する。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>case_sensitive</term>
+		<listitem><para>サーバに対して、ファイル名の大文字小文字の区別を行うことを
+		告げるSMBパケット中のフラグのOn/Offを行う。既定値では、OFFに設定される
+(ファイルサーバに対してファイル名の大文字小文字の区別を行わない事を告げる)。
+		smb.conf中で case sensitive parameter が設定されているSamba 3.0.5以降
+		のサーバにのみ、現在影響する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>cd &lt;directory name&gt;</term>
+		<listitem><para>もしも、"ディレクトリ名"が指定されたならば、サーバ上の
+		現在の作業ディレクトリは指定されたディレクトリに変更される。この操作は、
+		そのディレクトリがアクセス不能の場合失敗する。</para>
+
+		<para>もしも、ディレクトリ名が指定されない場合は、サーバ上の現在の作業
+ディレクトリが表示される。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>chmod file mode in octal</term>
+		<listitem><para>このコマンドはサーバの CIFS UNIX 拡張のサポートに依存し、
+		サーバがサポートしていない場合は失敗する。クライアントは、UNIX
+		での標準形式である 8 進数での UNIX パーミッションに変更するように
+		サーバに要求する。 
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>chown file uid gid</term>
+		<listitem><para>このコマンドはサーバのCIFS UNIX拡張のサポートに依存し、
+		サーバがサポートしていない場合は失敗する。クライアントは、与えられた
+		10進数のユーザID、グループIDに所有者を変更するようにサーバに要求する。
+		現在は、与えられた名前からリモートの uid と gid を検索する方法は
+		ないことに注意。これは、将来のバージョンの CIFS UNIX 拡張によって
+		対応されるかもしれない。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>close &lt;fileid&gt;</term>
+		<listitem><para>openコマンドで開いたファイルを明示的にクローズする。
+		Samba内部のテストプロセスでのみ使用する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>del &lt;mask&gt;</term>
+		<listitem><para>クライアントがサーバに対し、サーバ上の現在の
+		作業ディレクトリで <replaceable>mask</replaceable> に一致するすべての
+		ファイルを削除するように要求する。
+		</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>dir &lt;mask&gt;</term>
+		<listitem><para>サーバ上の現在の作業ディレクトリで、<replaceable>mask
+		</replaceable> に一致するファイルの一覧をサーバから入手し、表示する。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>du &lt;filename&gt;</term>
+		<listitem><para>ディレクトリの表示を行い、次に、現在のディスクの使用量と共有上の空きスペースを表示する。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>echo &lt;number&gt; &lt;data&gt;</term>
+		<listitem><para>pingを行うため、SMBecho要求をサーバに対して送る。Samba内部のテストのためにのみ使われる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>exit</term>
+		<listitem><para>サーバとの接続を終了し、プログラムを終了する。
+		</para></listitem> 
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>get &lt;remote file name&gt; [local file name]</term>
+		<listitem><para><filename>remote file name</filename> という名前の
+		ファイルをサーバからクライアントを実行しているマシンへコピーする。
+		<filename>local file name</filename> が指定されていると、
+		それがローカルにコピーされるファイルの名前となる。
+		<command>smbclient</command> によるファイルの転送は、すべて binary
+		モードで行われることに注意してほしい。lowercase コマンドも参照のこと。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>getfacl &lt;filename&gt;</term>
+		<listitem><para>サーバがUNIX拡張をサポートしている事を要求する。ファイル上のPOSIX ACLを要求し、表示する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>hardlink &lt;src&gt; &lt;dest&gt;</term>
+		<listitem><para>WindowsのCIFS文法をつかって、サーバ上にハードリンクを作成する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>help [command]</term>
+		<listitem><para>前述の ? コマンドを参照のこと。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>history</term> <listitem><para>コマンド履歴を表示する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>iosize &lt;bytes&gt;</term>
+		<listitem><para>ファイル送受信の際、smbclientは既定値で64512バイトの
+		内部メモリバッファを使用する。このコマンドは、163.4.3x4000)バイトから
+		16776960(0xFFFF00)バイトの範囲で、このサイズを変更することが出来る。
+		接続されたサーバに対してより効率的な読み書き要求を使うことをsmbclientが
+		行うように試みるので、より大きなサイズはより効率的なデータ転送を意味する。
+		</para></listitem>
+		</varlistentry>
+	
+		<varlistentry>
+		<term>lcd [directory name]</term>
+		<listitem><para><replaceable>directory name</replaceable> を指定すると、
+		ローカルマシン上の現在の作業ディレクトリが指定されたディレクトリになる。
+		何らかの理由で指定されたディレクトリにアクセスできないと、
+		操作は失敗する。</para>
+		
+		<para>ディレクトリ名を指定しないと、ローカルマシン上の現在の
+		作業ディレクトリが表示される。 
+		</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>link target linkname</term>
+		<listitem><para>このコマンドはサーバの CIFS UNIX 拡張のサポートに依存し、
+		サーバがサポートしていない場合は失敗する。クライアントは、targetと
+		linknameファイルの間にハードリンクを作成するようにサーバに要求する。
+		linknameファイルが存在してはいけない。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>listconnect</term>
+		<listitem><para>DFSのために、現在保持している接続状況を表示する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>lock &lt;filenum&gt; &lt;r|w&gt; &lt;hex-start&gt; &lt;hex-len&gt;</term>
+		<listitem><para>このコマンドはサーバがCIFS UNIX拡張をサポートしているかに
+		依存し、もしもそうでなければ失敗する。与えられたレンジ上で与えられたタイプの
+		POSIX fcntlロックを設定する事を試みる。Samba内部のテスト用のみに使われる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>logon &lt;username&gt; &lt;password&gt;</term>
+		<listitem><para>再度ログオンすることにより、このセッションのための新しい
+		vuidを確立する。新しいvuidを表示する。Samba内部のテスト用のみに使われる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>lowercase</term>
+		<listitem><para>get および mget コマンドにおいて、ファイル名を
+		小文字化するかどうかの設定を切り換える。</para>
+				
+		<para>小文字化を ON にすると、 get および mget コマンドを使ったときに、
+		ローカルのファイル名が小文字に変換される。これは、サーバから (いわゆる)
+		MS-DOS 形式の名前を持つファイルをコピーするときに役立つ。
+		UNIX システムでは、ファイル名を小文字にするのが一般的であるためである。
+		</para></listitem>
+		</varlistentry>
+		
+		
+		
+		<varlistentry>
+		<term>ls &lt;mask&gt;</term>
+		<listitem><para>前述の dir コマンドを参照のこと。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>mask &lt;mask&gt;</term>
+		<listitem><para>このコマンドは、mget と mput コマンドが再帰的な操作を
+		行うときに用いるマスクを設定する。</para>
+
+		<para>再帰モードが ON のとき、 mget と mput コマンドに指定するマスクは
+		ファイルに対するフィルタとしてではなく、ディレクトリに対するフィルタ
+		として働く。</para>
+		
+		<para>mask コマンドで指定するマスクは、それらのディレクトリ配下の
+		ファイルをフィルタするために必要となる。たとえば、mget コマンドが
+		"source*" のときに mask が指定されており、mask コマンドで指定されたマスクが
+		"*.c" で、再帰モードが ON であったとする。すると mget コマンドは、
+		現在の作業ディレクトリ中の "source*" に一致するすべてのディレクトリ配下で、
+		"*.c" に一致するすべてのファイルを取得する。</para>
+
+		<para>既定値では mask の値は空 ('*' と同等) になっており、 mask
+		コマンドを使って変更されるまで変わらない。mask の値は、最後に
+		指定された値を保ち続ける。
+		予想外の結果を招かないように、mget か mput コマンドを使った後には、
+		mask の値を '*' に戻しておくことが賢明である。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>md &lt;directory name&gt;</term>
+		<listitem><para>mkdir コマンドを参照のこと。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>mget &lt;mask&gt;</term>
+		<listitem><para><replaceable>mask</replaceable> に一致するすべての
+		ファイルを、サーバからクライアントを実行しているマシンにコピーする。
+		</para>
+
+		<para>再帰モードになっているかどうかによって、<replaceable>mask
+		</replaceable> の解釈が異なることに注意。詳細は recurse と mask
+		コマンドを参照のこと。<command>smbclient</command> によるファイルの転送は、
+		すべて binary モードで行われることに注意してほしい。
+		lowercase も参照のこと。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>mkdir &lt;directory name&gt;</term>
+		<listitem><para>指定された名前の新しいディレクトリを (ユーザのアクセスが
+		許可されている) サーバ上に作成する。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>mput &lt;mask&gt;</term>
+		<listitem><para>ローカルマシン上の現在の作業ディレクトリ内で <replaceable>
+		mask</replaceable> に一致するすべてのファイルを、サーバ上の現在の
+		作業ディレクトリにコピーする。</para>
+
+		<para>再帰モードになっているかどうかによって、<replaceable>mask
+		</replaceable> の解釈が異なることに注意。詳細は、recurse と mask
+		コマンドを参照のこと。<command>smbclient</command> によるファイルの転送は、
+		すべて binary モードで行われることに注意してほしい。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>posix</term>
+		<listitem><para>CIFS UNIX拡張をサポートするかをリモートサーバに問い合わせし、
+		提供されている機能一覧を表示する。もしもそうであれば、(もしも可能であれば)
+		大きなファイルの読み書きとPOSIXパス名の処理をONにする。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>posix_encrypt &lt;domain&gt; &lt;username&gt; &lt;password&gt;</term>
+		<listitem><para>このコマンドはサーバがCIFS UNIX拡張をサポートしているかに
+		依存し、そうでなければ失敗する。このコネクション上でSMB暗号化の
+		ネゴシエーションを試みる。もしもsmbclientがkerberos証明書 (-k)で接続され
+		ていたならば、このコマンドの引数は無視され、kerberos証明書はGSSAPIの書名と
+		sealingの代わりに使われる。最初の接続時にsmbclentに対して暗号化を
+		強制する -e オプションも参照のこと。
+		このコマンドはSamba 3.2から新規に導入された。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>posix_open &lt;filename&gt; &lt;octal mode&gt;</term>
+		<listitem><para>このコマンドはサーバがCIFS UNIX拡張をサポートしているかに
+		依存し、もしもそうでなければ失敗する。CIFS UNIX拡張を使ってリモートファイルを
+		オープンし、ファイルIDを表示する。
+		Samba内部のテスト用のみに使用される。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>posix_mkdir &lt;directoryname&gt; &lt;octal mode&gt;</term>
+		<listitem><para>このコマンドはサーバがCIFS UNIX拡張をサポートしているかに
+		依存し、もしもそうでなければ失敗する。CIFS UNIX拡張を使って与えられたモードで、
+		リモートディレクトリを作成する。
+		Samba内部のテスト用のみに使用される。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>posix_rmdir &lt;directoryname&gt;</term>
+		<listitem><para>このコマンドはサーバがCIFS UNIX拡張をサポートしているかに
+		依存し、もしもそうでなければ失敗する。CIFS UNIX拡張を使って
+リモートディレクトリを削除する。
+		Samba内部のテスト用のみに使用される。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>posix_unlink &lt;filename&gt;</term>
+		<listitem><para>このコマンドはサーバがCIFS UNIX拡張をサポートしているかに
+		依存し、もしもそうでなければ失敗する。CIFS UNIX拡張を使って
+リモートファイルを削除する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>print &lt;file name&gt;</term>
+		<listitem><para>指定したローカルマシン上のファイルを、サーバ上の
+		印刷サービスを使って印刷する。</para></listitem>
+		</varlistentry>
+	
+		<varlistentry>
+		<term>prompt</term>
+		<listitem><para>mget と mput コマンドの操作において、ファイル名の確認を
+		行うかどうかの設定を切り換える。</para>
+
+		<para>この設定が ON であると、これらのコマンドの実行中、各ファイルごとに
+		転送するかどうかをユーザに確認する。設定が OFF であると、指定された
+		すべてのファイルが確認なしに転送される。
+		</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>put &lt;local file name&gt; [remote file name]</term>
+		<listitem><para><filename>local file name</filename> という名前の
+		ファイルをクライアントを実行しているマシンからサーバにコピーする。
+		<filename>remote file name</filename> が指定されていると、それがサーバに
+		コピーされるファイルの名前となる。
+		<command>smbclient</command> によるファイルの転送は、すべて binary
+		モードで行われることに注意してほしい。lowercase コマンドも参照のこと。
+		</para></listitem>
+		</varlistentry>	
+
+		<varlistentry>
+		<term>queue</term>
+		<listitem><para>印刷のキューを表示し、印刷ジョブの ID、名前、サイズ、
+		現在の状態が見られる。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>quit</term>
+		<listitem><para>exit コマンドを参照のこと。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>rd &lt;directory name&gt;</term>
+		<listitem><para>rmdir コマンドを参照のこと。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>recurse</term>
+		<listitem><para>mget と mput コマンドにおいて、ディレクトリを再帰的に
+		辿るかどうかの設定を切り換える。</para>
+		
+		<para>この設定が ON であると、それらのコマンドは、対象となるディレクトリ
+		(すなわち、コピー元となるディレクトリ) 内のすべてのディレクトリを処理し、
+		コマンドに指定した mask に一致するディレクトリを再帰的に辿る。
+		ファイルは、mask コマンドを使って指定したマスクに一致するものだけが、
+		処理の対象となる。 mask コマンドも参照のこと。
+		</para>
+
+		<para>この設定が OFF である場合、コピー元となるマシンの作業ディレクトリから、
+		mget または mput コマンドに指定されたマスクに一致するファイルだけが
+		コピーされる。mask コマンドを使って指定されたマスクは無視される。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>rename &lt;old filename&gt; &lt;new filename&gt;</term>
+		<listitem><para>サーバ上の現在の作業ディレクトリ上の
+		<replaceable>old filename</replaceable>を
+		<replaceable>new filename</replaceable>に改名する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>rm &lt;mask&gt;</term>
+		<listitem><para><replaceable>mask</replaceable> に一致するすべての
+		ファイルをサーバ上の現在の作業ディレクトリから削除する。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>rmdir &lt;directory name&gt;</term>
+ 		<listitem><para>指定された名前の (ユーザのアクセスが許可されている)
+		ディレクトリをサーバから削除する。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>setmode &lt;filename&gt; &lt;perm=[+|\-]rsha&gt;</term>
+		<listitem><para>DOS 版の attrib コマンドと同等に、ファイルの
+		パーミッションを設定する。 例えば</para>
+
+		<para><command>setmode myfile +r </command></para>
+		
+		<para>は myfile を読み込み専用にする。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>showconnect</term>
+		<listitem><para>DFSのために現在有効な接続情報を表示する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>stat file</term>
+		<listitem><para>このコマンドはサーバがCIFS UNIX拡張をサポートしているかに
+		依存し、もしもそうでなければ失敗する。クライアントはUNIXベースの情報レベルを
+		要求し、ファイルについてのLinux statコマンドと同じ情報を出力する。これには
+		サイズ、ディスクで使用されているブロック数、ファイルのタイプ、パーミッション、
+		inode番号、リンクの数と最後に3つの時刻情報(アクセス、変更と更新)が含まれる。
+		もしもファイルがスペシャルファイル(シンボリックリンク、文字またはブロックデバイス、
+		fifoあるいはソケット)の場合は、拡張情報も出力される。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>symlink target linkname</term>
+		<listitem><para>このコマンドはサーバの CIFS UNIX 拡張のサポートに依存し、
+		サーバがサポートしていない場合は失敗する。クライアントは、target と
+		linkname ファイルの間にシンボリックリンクを作成するようにサーバに
+		要求する。linkname ファイルは存在してはいけない。
+		サーバは現在接続している共有の外を指すリンクは作成しないことに注意。
+		これは Samba server によって強制される。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>tar &lt;c|x&gt;[IXbgNa]</term>
+		<listitem><para>tar 作業を行う。 前述の <parameter>-T</parameter>
+		コマンドラインオプションを参照のこと。このコマンドの動作は tarmode
+		コマンド (下記を参照) に影響される。
+		パラメータ g (増分) と N (更新) を使うと、tarmode の設定に影響を及ぼす。
+		tar x (展開) 時のオプションに "-" (標準入力) を使っても動作しないだろう。
+		かわりにコマンドラインオプションで使うようにすること。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>blocksize &lt;blocksize&gt;</term>
+		<listitem><para>ブロックサイズ。このオプションの後には有効な
+		(1 以上の) ブロックサイズを指定しなければならない。
+		このオプションにより、tar ファイルは、
+		<replaceable>blocksize</replaceable>*TBLOCK (通常 512 バイト)
+		ブロックの単位で書き出されるようになる。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>tarmode &lt;full|inc|reset|noreset&gt;</term>
+		<listitem><para>アーカイブビットに関する tar の動作を設定する。
+		full (完全) モードでは、tar はアーカイブビットの状態に関わらず、
+		すべてをバックアップする (これがデフォルトのモード)。
+		incremental(増分) モードでは、tar はアーカイブビットが設定された
+		ファイルだけをバックアップする。
+		reset モードでは、tar はバックアップしたファイルのアーカイブビットを
+		クリアする (読み書きできる共有において)。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>unlock &lt;filenum&gt; &lt;hex-start&gt; &lt;hex-len&gt;</term>
+		<listitem><para>このコマンドはサーバの CIFS UNIX 拡張のサポートに依存し、
+		サーバがサポートしていない場合は失敗する。与えられたレンジでPOSIX fcntl
+		ロックの解除を試みる。
+		Samba内部のテストのみに用いられる。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>volume</term>
+		<listitem><para>共有のボリューム名を表示する。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>vuid &lt;number&gt;</term>
+		<listitem><para>与えられた任意の番号に対するプロトコル中の現在使われている
+		vuidを変更する。引数が与えられないと、現在使われているvuidを表示する。
+		Samba内部のテストのみに用いられる。
+		</para></listitem>
+		</varlistentry>
+
+	</variablelist>
+</refsect1>
+
+<refsect1>
+	<title>注意</title>
+
+	<para>サーバによっては、与えられたユーザ名、パスワード、共有名
+	(サービス名とも言う)、マシン名などの大文字小文字を厳格に識別する。
+	サーバへの接続が失敗したときは、すべてのパラメータを大文字にして
+	試してみよう。
+	</para>
+	
+	<para>ある種のサーバに接続するときには、-n オプションを使わなければ
+	ならないような場合がよくある。たとえば OS/2 の LanManager では、有効な
+	NetBIOS 名が使われていなければならない。
+	よって、サーバが知っている有効な名前を与える必要がある。</para>
+
+	<para>サーバが LANMAN2 かそれ以降のプロトコルをサポートしている場合、
+	smbclient は長いファイル名をサポートする。</para>
+</refsect1>
+
+<refsect1>
+	<title>環境変数</title>
+
+	<para>変数 <envar>USER</envar> の値は、クライアントが使用するユーザの名前となる。
+	この情報は、プロトコルのレベルが充分高く、セッションレベルのパスワードを
+	サポートしている場合にだけ利用される。</para>
+
+	<para>変数 <envar>PASSWD</envar> の値は、クライアントが使用するユーザの
+	パスワードとなる。この情報は、プロトコルのレベルが充分高く、セッションレベルの
+	パスワードをサポートしている場合にだけ利用される。</para>
+
+	<para>変数 <envar>LIBSMB_PROG</envar> にはサーバへの接続に代わりクライアントが
+	接続する、system() で起動されるパスを設定する。この機能は aid の開発を主用途とし、
+	LMHOSTS ファイルの利用時に効果を発揮する。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>インストール</title>
+
+	<para>クライアントプログラムをどこに置くべきかは、各システム管理者が
+	判断すべき問題である。よって、以下はただの提案である。</para>
+
+	<para>クライアントソフトウェアは <filename>/usr/local/samba/bin</filename>
+	か <filename>/usr/samba/bin</filename> にインストールし、ディレクトリは
+	全ユーザから読み出し可能で root のみ書き込み可能にすることが推奨される。
+	クライアントプログラム自身はすべてのユーザから実行可能にするべきである。
+	クライアントを setuid や setgid しないように!
+	</para>
+
+	<para>クライアントのログファイルは、そのユーザだけが読み書き可能な
+	ディレクトリに置くこと。</para>
+
+	<para>クライアントをテストするには、動作している SMB/CIFS サーバの名前を
+	知らなくてはならない。<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> は一般ユーザでも起動することが
+	できるので、ユーザが利用できるポート (たいていは 1024 より大きいポート番号
+	ならどこでもよい) でデーモンとしてサーバを起動することで、
+	適切なテスト環境となるだろう。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>診断</title>
+
+	<para>クライアントによって出されたほとんどの診断メッセージは、
+	指定されたログファイルに記録される。ログファイルの名前はコンパイル時に
+	指定されるが、コマンドラインで変更することもできる。</para>
+
+	<para>利用できる診断メッセージの量と内容は、クライアントで設定された
+	デバッグレベルに依存する。問題を抱えているなら、デバッグレベルを 3
+	に設定してログファイルに目を通してほしい。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba スィートのバージョン 3.2 用である。</para>
+</refsect1>
+
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、Andrew
+	Tridgell によって作られた。Samba は現在、Linux カーネルが開発されているような
+	方法でのオープンソースプロジェクトである Samba Team によって開発されている。
+	</para>
+	
+	<para>オリジナルの Samba のマニュアルページは Karl Auer によって書かれた。
+	マニュアルページのソースは YODL 形式(別の、優秀なオープンソースソフトウェアで、
+	<ulink url="ftp://ftp.icce.rug.nl/pub/unix/">ftp://ftp.icce.rug.nl/pub/unix/</ulink>
+	にある)で変換され、Jeremy Allison によって Samba 2.0 リリースのために更新された。
+	Samba 2.2 のための DocBook 形式への変換は Gerald Carter が行った。 
+	Samba 3.0 のための DocBook XML 4.2 形式の変換は Alexander Bokovoy によって行われた。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3  対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 - 3.0.24 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>高橋 基信 (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>佐藤 文優</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は、
+	<itemizedlist>
+		<listitem><para>太田俊哉(ribbon@samba.gr.jp)</para></listitem>
+		<listitem><para>堀田 倫英(hotta@net-newbie.com)</para></listitem>
+	</itemizedlist>	
+        によって行なわれた。</para>
+</refsect1>
+
+</refentry>
+

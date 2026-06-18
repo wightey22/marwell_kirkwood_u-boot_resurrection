@@ -1,0 +1,20 @@
+<samba:parameter name="cups connection timeout"
+                 context="G"
+		 type="integer"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは<smbconfoption name="printing"/>で<constant>cups</constant>
+    が指定されたときだけ有効になる。
+    </para>
+
+   <para>
+   これが有効な場合、smbdがCUPSサーバに接続時にタイムアウトするまでの時間を
+   指定する。もし、指定時間以上の秒数が経過しても接続が確立しない場合には
+   接続エラーとなる。
+   </para>
+</description>
+
+<value type="default">30</value>
+<value type="example">60</value>
+</samba:parameter>

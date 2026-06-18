@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="tracing">
+<chapterinfo>
+	<author>
+		<firstname>Andrew</firstname><surname>Tridgell</surname>
+		<affiliation>
+			<orgname>Samba Team</orgname>
+		</affiliation>
+	</author>
+</chapterinfo>
+
+<title>Sambaシステムコールのトレース</title>
+
+<para>
+このファイルは、どのようにSamba上でのシステムコールトレースを行い、何が問題かを
+調べる事について説明している。これは気弱な人のためのものではなく、もしもこれを
+読んでいるならば、あなたはおそらくせっぱ詰まっているはずだ。
+</para>
+
+<para>
+実際、上記で言っているようには、物事はそれほどひどくはなく、ただ出力が汚いだけである :-)
+</para>
+
+<para>
+ビジネスの話に戻ろう。UNIXシステムのとても大きな利点の1つは、プログラムが行っている
+すべてのシステムコールをモニタする事が出来るシステムトレースユーティリティを、ほとんど
+すべてのシステムがもっていると言うことである。これは特にデバッグのために使われ、また、
+なぜ期待していたよりも遅くしか動かないかという問題を調べる手助けにもなる。特に、
+何らかの特別なコンパイルオプションなしに、システムトレースを使うことが出来る。
+</para>
+
+<para>
+システムトレースユーティリティは異なったシステムでは異なった名前で呼ばれる。Linux
+システム上では、straceと呼ばれる。SunOS 4では、traceと呼ばれる。SVR4ベースのシステム
+では(solarisを含む)、trussと呼ばれる。多くのBSDシステムではktraceと呼ばれる。
+</para>
+
+<para>
+最初に行うべき事は、使用しているシステム上でのシステムコールトレースユーティリティの
+マニュアルページを読むことである。以下の議論の中で、straceのみがポータブルなシステム
+トレースユーティリティ(多くのUNIXマシンで自由に使えるものがある)で、かつ、最も良い
+ある種の機能をもっているので、これをstraceと呼ぶ。
+</para>
+
+<para>
+次に、いくつかの簡単なコマンド上でstraceを使ってみる。例えば、
+<command>strace ls</command> か <command>strace echo hello</command>などである。
+</para>
+
+<para> 
+これが大量の出力を出すことに注意。これは、プログラムが出すすべてのシステムコールに対する
+引数とその結果を表示する。システムコールを出さないプログラムは非常に例外的で、そのため
+大量の出力が出る。共有ライブラリなどをロードする事を表示することなどの、大量の"前処理"
+を生成することにも注意。これは無視すること(それが問題にならない限り!)
+</para>
+
+<para>
+例えば、<command>strace echo hello</command>中の、真に重要な行に対する出力は以下の
+通りである:
+</para>
+
+<para><programlisting>
+write(1, "hello\n", 6)                  = 6
+</programlisting></para>
+
+<para>残りすべてはプログラムを動かすための準備である。</para>
+
+<para>
+OK,これでstraceになれたはずである。これをSambaに使うためには、動作しているsmbd
+デーモンに対してstraceする必要がある。それを使うための方法は、まず最初にWindows PC
+からSambaサーバにログオンし、次に、そのクライアントが接続しているプロセスIDを、
+smbstatusを使って調べ、rootで<command>strace -p PID</command>として、そのプロセスに
+接続する。通常後で見るために、このコマンドからのstderr出力をファイルにリダイレクトする。
+例えば、もしもcsh風のシェルを使っているならば、
+</para>
+
+<para><command>strace -f -p 3872 &gt;&amp; strace.out</command></para>
+
+<para>かあるいはsh風のシェルを使っているならば:</para>
+
+<para><command>strace -f -p 3872 > strace.out 2&gt;&amp;1</command></para>
+
+<para>とする。</para>
+
+<para>
+"-f"オプションに注意。これは、いくつかのシステムのみで有効であり、現在のプロセス
+だけではなく、フォークした任意のチャイルドプロセスのトレースも取れるようにする。
+これは、"print command"がうまくいかない時に引き起こされる印刷時の問題を見つけるのに
+とても役に立つ。
+</para>
+
+<para>
+一度アタッチすると、問題を引き起こしているクライアント上でのすべての動作を見ることが
+でき、smbdが発行しているすべてのシステムコールをとらえられる。
+Once you are attached you then can do whatever it is on the client
+that is causing problems and you will capture all the system calls
+that smbd makes. 
+</para>
+
+<para>
+次に、どのように結果を解釈したらよいだろうか?。一般的に、問題が発生した時に現れる
+だろうと思われる、分かっている文字列を、出力全体を通して検索する。例えば、もしも、
+ファイルに対するアクセス許可の問題があった場合、straceの出力からそのファイル名を
+検索し、その周りの行を眺めてみる。もう一つのテクニックとしては、ファイルディスクリプタの
+番号の一致を捜し、それがオープンしてクローズするまでに何があったかを"順に追っていく"。
+</para>
+
+<para>
+これを元にして、自分で考えていく必要がある。ここで何を捜すかと言うことのヒントを与える
+ために、<filename>/dev/null</filename>がすべてのユーザに対して書き込み可能でない場合、
+Sambaで印刷が失敗する場合の、strace の結果の一部を提示しよう:
+</para>
+
+<para><programlisting>
+[pid 28268] open("/dev/null", O_RDWR)   = -1 EACCES (Permission denied)
+[pid 28268] open("/dev/null", O_WRONLY) = -1 EACCES (Permission denied)
+</programlisting></para>
+
+<para>
+プロセスは最初に<filename>/dev/null</filename>を読み書き可能で開こうとし、次に、
+リードオンリで開こうとする。両方とも失敗する。これは、<filename>/dev/null</filename>が
+適切なアクセス許可をもっていないことを意味する。
+</para>
+
+</chapter>

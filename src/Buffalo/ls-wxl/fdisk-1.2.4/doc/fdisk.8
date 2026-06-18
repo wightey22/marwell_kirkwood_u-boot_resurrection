@@ -1,0 +1,74 @@
+.TH CFDISK 8 "18 August, 2006" fdisk "GNU fdisk Manual"
+.SH NAME
+GNU fdisk, lfdisk, gfdisk - manipulate partition tables on a hard drive
+.SH SYNOPSIS
+.B fdisk
+[options] [device]
+.SH DESCRIPTION
+.B fdisk
+is a disk partition manipulation program, which allows you to create, destroy, resize, move and copy partitions on a hard drive using a menu-driven interface. It is useful for organising the disk space on a new drive, reorganising an old drive, creating space for new operating systems, and copying data to new hard disks. For a list of the supported partition types, see the
+.B --list-partition-types
+option below.
+.PP
+It comes in two variants, gfdisk and lfdisk. Lfdisk aims to resemble Linux fdisk 2.12, while gfdisk supports more advanced disk operations, like resizing the filesystem, moving and copying partitions. When starting fdisk, the default is to run gfdisk.
+.SH OPTIONS
+.TP
+.B -h, --help
+displays a help message.
+.TP
+.B -v, --version
+displays the program's version.
+.TP
+.B -L, --linux-fdisk
+turns on Linux fdisk compatibility mode. This is the same as running lfdisk.
+.TP
+.B -G, --gnu-fdisk
+turns off Linux fdisk compatibility mode.
+.TP
+.B -i, --interactive
+where necessary, prompts for user intervention.
+.TP
+.B -p, --script
+never prompts for user intervention.
+.TP
+.B -l, --list
+lists the partition table on the specified device and exits. If there is no device specified, lists the partition tables on all detected devices.
+.TP
+.B -r, --raw-list
+displays a hex dump of the partition table of the disk, similar to the way Linux fdisk displays the raw data in the partition table.
+.TP
+.B -u, --sector-units
+use sectors, instead of cylinders for a default unit.
+.TP
+.B -s, --size=\fIDEVICE\fP
+prints the size of the partition on \fIDEVICE\fP is printed on the standard output.
+.TP
+.B -t, --list-partition-types
+displays a list of supported partition types and features.
+.PP
+The following options are available only to lfdisk.
+.TP
+.B -b, --sector-size=\fISIZE\fP
+Specify the sector size of the disk. Valid values are 512, 1024 and 2048. Should be used only on older kernels, which don't guess the correct sector size.
+.TP
+.B -C, --cylinders=\fICYLINDERS\fP
+Specify the number of cylinders of the disk. Currently does nothing, it is left for Linux fdisk compatibility.
+.TP
+.B -H, --heads=\fIHEADS\fP
+Specify the number of heads of the disk. Reasonable values are 255 or 16.
+.TP
+.B -S, --sectors=\fISECTORS\fP
+Specify the number of sectors per track. A reasonable value is 63.
+.SH BUGS
+Before editing a BSD disklabel, the partition with the disklabel should already exist on the disk and be detected by the OS. If you have created a BSD-type partition, you need to write the changes to the disk. If fdisk fails to notify the OS about the changes in partition table, you need to restart your computer. As fdisk tries to guess the device holding the BSD disklabel, it might fail to edit it at all, even if the OS has detected it. In this case you are adviced to simply open the device with fdisk directly. It is possible that it doesn't work on some operating systems.
+.PP
+Getting the size of a partition with -s might fail, if fdisk fails to guess the disk device, for the same reasons as with the previous bug.
+.SH SEE ALSO
+.BR mkfs (8),
+.BR cfdisk (8),
+.BR parted (8)
+The \fIfdisk\fP program is fully documented in the
+.BR info(1)
+format
+.IR "GNU fdisk User Manual"
+manual.

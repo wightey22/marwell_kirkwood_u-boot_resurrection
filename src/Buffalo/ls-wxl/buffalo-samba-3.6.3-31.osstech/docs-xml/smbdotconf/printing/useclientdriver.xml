@@ -1,0 +1,39 @@
+<samba:parameter name="use client driver"
+                 context="S"
+				 type="boolean"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、Windows NT/2000 クライアントに対してのみ影響し、
+	Windows 95/98/Me クライアントに対しては影響しない。
+	Windows NT/2000 クライアントに対して、
+	Samba ホスト上に適切なプリンタドライバをインストールせずに、プリンタ共有を提供する場合、		
+	クライアント側ローカルにプリンタドライバをインストールする必要がある。
+	このため、クライアントは、そのプリンタをローカルプリンタとして扱い、
+	ネットワークプリンタとしては扱わなくなる。
+	これは、<command moreinfo="none">disable spoolss = yes</command>にしたときとほぼ同様の動作になる。
+	</para>
+
+	<para> 違いが発生するのは、通常の環境下において、
+	NT/2000 クライアントは MS-RPC を用いてネットワークプリンタをオープンしようとする点にある。
+	クライアントはプリンタがローカルにあると判断しているため、
+	ログオンしているユーザに割り当てられたアクセス権を要求して
+	OpenPrinterEx() 呼出を発行してしまう点が問題となる。
+	ユーザがローカルで管理者権限を持っているが、Samba ホスト上では root 権限を持っていない場合(これはよくあるケースになる)、
+	OpenPrinterEx() 呼出は失敗する。
+	その結果、(印刷ジョブが正常に印刷されているにも関わらず、)
+	クライアント側のプリンタキューのウインドウには、
+	「Access Denied; Unable to connect」というメッセージが表示される。</para>
+
+	<para> このパラメータが有効になっているプリンタに対しては、
+	PRINTER_ACCESS_ADMINISTER 権限によるプリンタのオープンの試みはすべて、
+	PRINTER_ACCESS_USE の権限で行なわれ、
+	これにより、OpenPrinterEx() が成功することになる。
+	<emphasis>適切なプリンタドライバがインストールされている 
+	Samba サーバ上のプリンタ共有に対して、このパラメータを有効にしてはならない。</emphasis></para>
+</description>
+
+<related>disable spoolss</related>
+
+<value type="default">no</value>
+</samba:parameter>

@@ -1,0 +1,22 @@
+<samba:parameter name="algorithmic rid base"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="integer"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、 Samba が UID や GID を NT セキュリティ識別子(訳注:SID)の構築に必要な RID に機械的に対応づける際の RID の値が設定される。
+    </para>
+
+    <para>Windows NT/2000 から移行を行なうサイトでは、存在しているユーザやグループの RID がシステムのユーザと競合してしまうことを防ぐため、この値を大きい値にすることが有用な場合もあるだろう。
+    </para>
+
+    <para>サーバ上の ACL が正しく機能する上では、すべての UID および GID が SID に変換できることが必須である。
+    このため、機械的な対応づけを無効にせずに、一定の範囲を対象領域から除外することが、
+    問題を避ける上で必要である。
+    RID の競合に対応したパスワード機構において、ユーザおよびグループには、
+    「小さな」 RID が割り当てられる。
+    </para>
+</description>
+<value type="default">1000</value>
+<value type="example">100000</value>
+</samba:parameter>

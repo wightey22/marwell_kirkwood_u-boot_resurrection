@@ -1,0 +1,16 @@
+<samba:parameter name="disable netbios"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータを有効にすると、 Samba の NetBIOS サポート機能が無効になる。
+    Windows 2000 および Windows XP を除くすべてのバージョンの Windows 
+    では、NetBIOS のみを使用できる。</para>
+
+    <note><para>NetBIOS サポートを無効にすると、 
+    NetBIOS のみをサポートするクライアントからは Samba サーバにアクセスできなくなることに注意。
+    </para></note>
+</description>
+<value type="default">no</value>
+</samba:parameter>

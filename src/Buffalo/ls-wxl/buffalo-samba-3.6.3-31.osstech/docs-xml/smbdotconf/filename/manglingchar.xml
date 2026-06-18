@@ -1,0 +1,14 @@
+<samba:parameter name="mangling char"
+                 context="S"
+				 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <description>
+	<para> このパラメータは <smbconfoption name="name mangling"/> において、
+	<emphasis>magic</emphasis> キャラクタとして利用される文字を指定する。デフォルトは「~」であるが、
+	ソフトウェアによっては問題が発生してしまうかも知れない。
+	このオプションにより、任意の文字を指定することが可能になる。
+    このパラメータは mangling method が hash の時のみ有効である。</para>
+</description>
+<value type="default">~</value>
+<value type="example">^</value>
+</samba:parameter>

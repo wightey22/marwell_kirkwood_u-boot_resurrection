@@ -1,0 +1,34 @@
+<samba:parameter name="auth methods"
+                 context="G"
+				 type="list"
+                 basic="1" advanced="1" wizard="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+    <para>このパラメータにより、管理者は <command moreinfo="none">smbd</command> がユーザ認証を行なう際に使用する認証機構を選択することが可能となる。
+    このパラメータのデフォルトは、<smbconfoption name="security"/>
+    パラメータに基づいて適切な値が設定される。
+    このオプションは開発者向けであり、
+    特殊な状況でのみ使用するものと考えるべきである。
+    実際の運用では多くの場合 (必ずというわけではない)、デフォルト設定のままにしておくべきである。
+    </para>
+
+    <para>
+    ユーザが認証されるまで、
+    リスト中の各エントリによって順番にユーザ認証が行なわれる。
+    従って、実際に認証が成功となる認証機構は1つだけである。
+    </para>
+
+    <para>
+    設定可能な値としては、<constant>guest</constant> (匿名アクセス)、
+    <constant>sam</constant> (NetBIOS名あるいはドメイン名に基づくローカルのアカウントリストの検索)、
+    <constant>winbind</constant> (winbinddによるリモートユーザーの認証要求の中継)、
+    <constant>ntdomain</constant> (winbindd 導入以前のリモートドメインユーザーの認証方法。
+    現在は winbindd を使用する方が望ましいので使用すべきではない)、
+    <constant>trustdomain</constant> (信頼できるユーザーの、smbd からリモート DC への直接アクセスによる認証。
+    現在は winbindd を使用する方が望ましいので使用すべきではない) がある。
+    </para>
+</description>
+<value type="default"/>
+<value type="example">guest sam winbind</value>
+</samba:parameter>

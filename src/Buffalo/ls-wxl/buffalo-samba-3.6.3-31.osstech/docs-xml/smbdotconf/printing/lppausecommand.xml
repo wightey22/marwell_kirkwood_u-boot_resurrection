@@ -1,0 +1,37 @@
+<samba:parameter name="lppause command"
+                 context="S"
+				 type="string"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータには、
+	指定した印刷ジョブの印刷やスプーリングを停止させるためにサーバホスト上で実行されるコマンドを指定する。
+    </para>
+
+	<para> このコマンドは、プリンタ名と停止させる印刷ジョブの番号を引数にとり、印刷ジョブを一時停止させるプログラムやスクリプトでなければならない。
+	これを実装する方法の一つは、非常に低い優先権を持つジョブはプリンタに送られないというジョブの優先権の仕様を利用するものである。</para>
+
+	<para><parameter moreinfo="none">%p</parameter> 変数は、
+	プリンタ名に置換される。
+	<parameter moreinfo="none">%j</parameter> はジョブ番号(整数)に置換される。
+	HPUX の場合(<parameter moreinfo="none">printing=hpux</parameter>を参照のこと)、
+	<parameter moreinfo="none">-p%p</parameter> オプションを lpq コマンドに付加することで、正しいステータスが表示される。
+	たとえば、ジョブの優先権が設定されたフェンス優先権より低いならジョブは停止状態であるが、
+	優先権が等しいかより高いならスプール状態または印刷中の状態となる。</para>
+
+	<para> サーバの PATH 環境変数が利用できないかもしれないことを考慮して、
+	lppause command を絶対パスで記述する癖をつけておくと良い。</para>
+</description>
+
+<related>printing</related>
+
+<value type="default"><comment>現在のところ既定値は設定されていない。
+ただし、<parameter moreinfo="none">printing</parameter> パラメータの値が
+ただし、<smbconfoption name="printing"/> パラメータの値が
+<constant>SYSV</constant> の場合は
+<command moreinfo="none">lp -i %p-%j -H hold</command>、
+<constant>SOFTQ</constant> の場合は
+<command moreinfo="none">qstat -s -j%j -h</command>
+が既定値となる。</comment></value>
+<value type="example">/usr/bin/lpalt %p-%j -p0</value>
+</samba:parameter>

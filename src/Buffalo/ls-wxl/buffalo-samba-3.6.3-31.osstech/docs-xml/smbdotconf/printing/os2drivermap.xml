@@ -1,0 +1,23 @@
+<samba:parameter name="os2 driver map"
+                 context="G"
+		 advanced="1" developer="1"
+		 type="string"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータでは、
+	OS/2 のプリンタドライバ名と Windows NT のプリンタドライバ名とのマッピングが記述されたファイルへの絶対パスを指定する。
+	ファイル形式は以下のようになっている:</para>
+		
+    <para>&lt;nt driver name&gt; = &lt;os2 driver name&gt;.&lt;device name&gt;</para>
+		
+	<para>HP LaserJet 5 のプリンタドライバを例にとった場合、
+	正しいエントリは<command moreinfo="none">HP LaserJet 5L = LASERJET.HP 
+	LaserJet 5L</command>のようになる。</para>
+		
+	<para> このファイルは、 Samba3-HOWTO 本の Classical Printing
+    章で記述されているプリンタドライバの名前空間の問題に対応するために用いられる。
+	OS/2 クライアントに関する詳細については、Samba3-HOWTO 本の
+    other clients 章を参照のこと。</para>
+</description>
+<value type="default"/>
+</samba:parameter>

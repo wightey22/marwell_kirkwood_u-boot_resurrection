@@ -1,0 +1,15 @@
+<samba:parameter name="idmap alloc config"
+                 context="G"
+		 type="string"
+                 advanced="1" developer="1" hide="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+        idmap alloc config のプレフィックスは、
+	<smbconfoption name="idmap alloc backend"/> パラメーターで設定された
+	バックエンドに対するパラメーターの設定方法を提供する。
+	それぞれの idmap プラグインに対する個別の設定方法の詳細については
+        man ページを参照すること。
+	</para>
+</description>
+</samba:parameter>

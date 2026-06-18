@@ -1,0 +1,16 @@
+<samba:parameter name="dns proxy"
+                 context="G"
+		 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>WINS サーバとして機能している <citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> が WINS サーバとして機能している場合、ある NetBIOS 名が登録されていなかった時に、その NetBIOS 名を DNS 名として扱い、名前の問い合わせを行ったクライアントに代わってその名前を DNS サーバに対して問い合わせるように設定する。</para>
+
+	<para>NetBIOS 名の最大長は 15 文字であるため、 問い合わせる DNS 名(もしくはDNSの別名)も、最大15文字に制限される。</para>
+
+	<para><command moreinfo="none">nmbd</command> が DNS への名前解決を行う際には、問い合わせにより他の処理が停止させないために、自分自身を複製したプロセスを生成する。</para>
+</description>
+<related>wins support</related>
+<value type="default">yes</value>
+</samba:parameter>

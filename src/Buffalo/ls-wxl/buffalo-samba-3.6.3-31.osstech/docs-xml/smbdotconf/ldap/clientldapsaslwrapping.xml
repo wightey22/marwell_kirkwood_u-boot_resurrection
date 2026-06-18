@@ -1,0 +1,44 @@
+<samba:parameter name="client ldap sasl wrapping"
+                 context="G"
+               	 type="string"
+		 advanced="1" 
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	<smbconfoption name="client ldap sasl wrapping"/> は、ldapとの通信が
+	署名付きか、署名+暗号化(シールされている)かを定義する。設定可能な値は、
+	<emphasis>plain</emphasis>, <emphasis>sign</emphasis> 
+	と<emphasis>seal</emphasis>である。 	
+	</para>
+
+	<para>
+	値<emphasis>sign</emphasis>と<emphasis>seal</emphasis>は、
+	もしもSambaが最新のOpenLDAPバージョン(2.3.xかそれ以降)とともに
+	コンパイルされた時に有効である。
+	</para>
+	
+	<para>
+	このオプションは、(たとえば Windows 2000 SP3 またはそれ以降の)署名された
+	LDAP接続を使うことを強制するドメインコントローラの場合に必要である。
+	LDAP署名と暗号化LDAP接続は、Windowsサーバ側のレジストリキー
+	"<literal>HKLM\System\CurrentControlSet\Services\</literal>
+	<literal>NTDS\Parameters\LDAPServerIntegrity</literal>"
+	によって制御する事が出来る。
+	</para>
+
+	<para>
+	使用するKRB5ライブラリ(MITと古いバージョンのHeimdal)に依存するが、
+	メッセージ "integrity only" はサポートされないことが可能である。この場合、
+	<emphasis>sign</emphasis>は
+	<emphasis>seal</emphasis>のための単なる別名である。
+	</para>
+
+	<para>
+	既定値は<emphasis>plain</emphasis>で、これは、KRB5のクロックスキュー
+	エラーに対して過敏ではない。これは、<emphasis>sign</emphasis>か
+	<emphasis>seal</emphasis>を使う場合においてはKDCとの時刻同期があること
+	を暗黙的に示している。
+	</para>
+</description>
+<value type="default">plain</value>
+</samba:parameter>

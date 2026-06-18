@@ -1,0 +1,39 @@
+<samba:parameter name="force printername"
+                 context="S"
+		 type="boolean"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>Windows NT （以降）の OS から印刷を行なう場合、
+    <filename>smb.conf</filename> 中の各プリンタには、
+    クライアントから使用可能な名前が 2 つある。
+    最初のものは smb.conf で定義された共有名(短い名前)である。
+    Windows 9x クライアントからは、このプリンタ名しか使用できない。
+    プリンタに割り当てられたもう一つの名前は、Samba サーバの「プリンタ」
+    (プリンタとFAX)フォルダ」を参照すると表示されるものである。
+    これは、(<parameter>printer name</parameter> オプションと混同しないように)
+    単にプリンタ名と記載する。
+    </para>
+
+    <para>
+    Samba を含む Windows 互換のリモートのプリンタサーバ上で、
+    プリンタに対して新しいドライバが割り当てられた際、
+    Windows クライアントは、そのドライバの名前に合致するように、プリンタ名を変更する。
+    これは、複数のプリンタに同じドライバを割り当てているユーザを混乱させる結果となる。
+    Samba において、プリンタのプリンタ名を smb.conf で定義された共有名と異なる名称にすることを禁止したい場合は、
+    <parameter>force printername = yes</parameter> と設定すること。
+    </para>
+
+    <para> Windows では、プリンタ名と共有名を強制的に一致させることができないため、
+    このパラメータを有効にすると、Windows サーバから Samba サーバへプリンタの移行を行なう際に問題が発生するので注意。
+    </para>
+
+    <para>
+    プリンタがクライアントにより使用を開始された後にこのパラメータの値を変更することは、
+    ユーザが自身の「プリンタ」フォルダからプリンタを削除することができなくなるため、推奨しない。
+    </para>
+
+</description>
+
+<value type="default">no</value>
+</samba:parameter>

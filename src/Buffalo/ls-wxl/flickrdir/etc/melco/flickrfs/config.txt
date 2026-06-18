@@ -1,0 +1,5 @@
+[configuration]
+browser: /usr/bin/x-www-browser
+image.size:
+sets.sync.int: 900
+stream.sync.int: 1800

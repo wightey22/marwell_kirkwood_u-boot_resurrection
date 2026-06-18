@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="smbpasswd.5">
+
+<refmeta>
+	<refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>5</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ファイルフォーマットと変換</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smbpasswd</refname>
+	<refpurpose>Samba の暗号化パスワードファイル</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<para><filename>smbpasswd</filename></para>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このファイルは<citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para>smbpasswd は Samba の暗号化パスワードファイルである。
+	このファイルには、ユーザ名、UNIX のユーザ ID、ユーザの SMB
+	ハッシュ化パスワード、さらにアカウントのフラグ情報とパスワードの
+	最終変更時間が含まれている。このファイルの形式は Samba とともに
+	拡張されており、以前のバージョンとは幾分異なった形式になっている。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>ファイル形式</title>
+
+	<para>Samba 2.2 における smbpasswd ファイルの形式は、一般的な UNIX の
+	<filename>passwd(5)</filename> ファイルに類似している。
+	これは、各ユーザの情報が行ごとに格納された ASCII ファイルである。
+	各行のそれぞれのフィールドは、コロン (:) で区切られている。
+	'#' で始まる行は無視される。
+	smbpasswd ファイルには、各ユーザごとに以下の情報が含まれている: </para>
+
+	<variablelist>
+		<varlistentry>
+		<term>name</term>
+		<listitem><para>ユーザの名前である。この名前は、標準の UNIX
+		passwd ファイルに存在している必要がある。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>uid</term>
+		<listitem><para>UNIX の uid である。この値は、標準の UNIX
+		passwd ファイル内の同名ユーザが持つ uid フィールドの値と
+		一致しなければならない。 一致していないと、Samba は smbpasswd
+		ファイルのエントリを有効なユーザのエントリとして認識しない。
+		</para></listitem>
+		</varlistentry>
+		 
+		 
+		<varlistentry>
+		<term>Lanman パスワードハッシュ</term>
+		<listitem><para> これは、ユーザのパスワードから生成された
+		LANMANハッシュであり、32 桁の 16 進数でエンコードされている。
+		LANMANハッシュは、ユーザのパスワードをキーとして用いて、
+		ある一定の文字列を DES で暗号化することで生成される。これは、
+		Windows 95/98 マシンで利用されるパスワードと同じである。
+		このパスワードハッシュは辞書攻撃に弱いとみなされていて、
+		もし二人のユーザが同じパスワードを持つ場合、このエントリも
+		同一のものになってしまう (UNIX パスワードのようにパスワードが
+		"加工 (salted)" されていない)。
+		ユーザが null パスワードを持つ場合、このフィールドの先頭の 16
+		進数文字列の部分に "NO PASSWORD" という文字が入る。
+		16 進数文字列が 32 個の 'X' 文字からなる場合、
+		このユーザアカウントは<constant>無効</constant>であると見なされ、ユーザは Samba
+		サーバにログオンすることができない。</para>
+		
+		<para><emphasis>警告!!</emphasis>
+		SMB/CIFS の認証プロトコルはチャレンジ/レスポンス方式で
+		あるため、パスワードハッシュさえ知っていれば、 
+		誰でもネットワーク上でそのユーザになりすますことができる。
+		このため、これらのハッシュは
+		<emphasis>暗号化されていないテキスト</emphasis>
+		と同等のものであり、root 以外には <emphasis>絶対に</emphasis>
+		漏らしてはならない。これらのパスワードを保護するため、
+		smbpasswd ファイルは、root だけが読みとりや実行アクセス可能な
+		ディレクトリに置き、ファイル自身は root だけに読み書き
+		アクセス権を与えるべきである。</para></listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>NT パスワードハッシュ</term>
+		<listitem><para> これは、ユーザのパスワードから生成された
+		Windows NT ハッシュであり、 32 桁の 16 進数でエンコードされて
+		いる。Windows NT ハッシュは、ユーザのパスワードを 16
+		ビット/リトルエディアンの UNICODE で表現したものに対し、MD4
+		ハッシュアルゴリズム (RFC1321を参照) を適用することで
+		生成される。</para>
+
+		<para>このパスワードハッシュは パスワードの大文字/小文字の
+		情報を保持しており、よりセキュアなハッシュアルゴリズムを
+		使用するため、LANMAN ハッシュより非常にセキュアであると
+		考えられる。しかし、やはり同じパスワードを持つユーザが
+		二人いる場合、このエントリも同一のものになってしまう (UNIX
+		パスワードのようにパスワードが "加工(salted)" されていない)。
+		</para>
+		
+		<para><emphasis>警告!!</emphasis>
+		SMB/CIFS の認証プロトコルはチャレンジ/レスポンス方式で
+		あるため、パスワードハッシュさえ知っていれば、 
+		誰でもネットワーク上でそのユーザになりすますことができる。
+		このため、これらのハッシュは
+		<emphasis>暗号化されていないテキスト</emphasis>
+		と同等のものであり、root 以外には <emphasis>絶対に</emphasis>
+		漏らしてはならない。これらのパスワードを保護するため、
+		smbpasswd ファイルは、root だけが読みとりや実行アクセス可能な
+		ディレクトリに置き、ファイル自身は root だけに読み書き
+		アクセス権を与えるべきである。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>Account Flags</term>
+		<listitem><para> これは、ユーザアカウントの属性を表すフラグで
+		ある。このフィールドはブラケット '[' と ']' で囲まれており、長さは常に 13 文字
+		になる ('[' と ']'も含む)。このフィールドの中には、以下のような文字が入る:
+		</para>
+		
+		<itemizedlist>
+			<listitem><para><emphasis>U</emphasis> - "User"
+			アカウント、つまり一般のユーザを意味する。</para></listitem>
+			
+			<listitem><para><emphasis>N</emphasis> -
+			アカウントがパスワードを持っていないことを意味する
+			（LANMAN ハッシュと NT ハッシュのフィールドにある
+			パスワード情報は無視される)。このフラグによって、
+			<citerefentry><refentrytitle>smb.conf</refentrytitle>
+			<manvolnum>5</manvolnum></citerefentry> ファイル中の
+			<parameter>null passwords</parameter> パラメータが
+			設定されていている場合にのみ、ユーザはパスワードなしで
+			ログインできるようになる。</para></listitem>
+				
+			<listitem><para><emphasis>D</emphasis> - 
+			アカウントが無効であることを意味し、このユーザは
+			SMB/CIFS ログオンが許可されない。</para></listitem>
+
+			<listitem><para><emphasis>X</emphasis> - これは、パスワードが
+			満了していないことを意味する。</para></listitem>
+
+			<listitem><para><emphasis>W</emphasis> - アカウントが
+			"Workstation Trust" アカウントであることを意味する。
+			このアカウントは、Samba の PDC 機能で、Windows NT
+			Workstation や Server を Samba PDC によるドメインに
+			参加させるために利用される。</para>
+			</listitem>
+		</itemizedlist>
+		
+		<para> 将来的にコードが拡張されれば、そのほかのフラグが
+		追加されるかもしれない。このフィールドの残った部分は空白文字で
+		埋められている。この場所でサポートされているフラグに関してさらなる情報は、
+		<command>pdbedit</command>マニュアルページを参照して欲しい。</para>
+		</listitem>
+		</varlistentry>
+		
+		
+		<varlistentry>
+		<term>Last Change Time</term>
+		<listitem><para>このフィールドには、アカウントが更新された
+		最終時間を保持する。このフィールドには文字列 'LCT-'
+		("Last Change Time" を意味する) に続けて、最後に更新が行われた
+		UNIX 時間 (西暦 1970 年からの経過秒数) を数字で表した文字列が
+		続く。</para></listitem>
+		</varlistentry>
+	</variablelist>
+	
+	<para>コロンで区切られた他のフィールドは、 現在すべて無視される。</para> 
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba 3 対応のものである。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para><citerefentry><refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>Samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>, および RFC1321
+	(MD4アルゴリズムの詳細)
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作成された。現在 Samba は Samba Team
+	によって、Linux カーネルの開発と同様の オープンソースプロジェクトと
+	して開発が行なわれている。</para>
+	
+	<para>オリジナルの Samba マニュアルページは Karl Auer によって
+	作成された。マニュアルページは YODL 形式
+	(<ulink noescape="1" url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink> で入手可能な優れた
+	オープンソースソフトウェア) に変換され、Samba 2.0 リリースに伴い、
+	Jeremy Allison によって更新された。Samba 2.2 における DocBook
+	形式への変換は、Gerald Carter によって行なわれた。Samba 3.0 における
+	DocBook XML 4.2 形式への変換は Alexander Bokovoy によって行われた。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.2.4 - 3.5.3 対応のものである。</para>
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は、
+	<itemizedlist>
+		<listitem><para>高橋 基信 (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>はせがわ ようすけ</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>
+によって行なわれた。</para>
+        <para>このドキュメントの Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉(ribbon@samba.gr.jp)によって行なわれた。</para>
+
+</refsect1>
+
+</refentry>
+

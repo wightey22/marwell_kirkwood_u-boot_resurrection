@@ -1,0 +1,37 @@
+<samba:parameter name="default devmode"
+                 context="S"
+				 type="boolean"
+		 print="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、<smbconfoption name="printable"/> サービスにのみ適用される。
+	smbd が、Windows NT/2000/XP クライアントに対してプリンタドライバを提供する際に、
+	Samba サーバ上の各プリンタでは、用紙サイズ、用紙の方向、両面印刷指定、
+	settings といった情報が定義されたデバイスモード(device mode)という値を設定する必要がある。
+	デバイスモードの適切な値は、プリンタドライバ自身のみが生成することができる
+	(この処理は、Win32 プラットフォームでのみ実行することができる)。
+	smbd はデバイスモードを生成するドライバのコードを実行できないため、
+	このフィールドの既定値としては、NULL が設定される。
+    </para>
+
+	<para> Windows NT/2000/XP クライアントに対してプリンタドライバを提供する上での問題点の多くは、
+	デバイスモードの生成に関するものである。
+	ドライバによっては、デバイスモードとして NULL を設定すると、
+	クライアント側の Explorer.exe をクラッシュさせるものがある。
+	また、デバイスモードがドライバ自身によって生成されていないと（たとえば smbd がデフォルトのデバイスモードを生成するなど）、
+	クライアントのスプーラサービス(spoolsv.exe)を停止させてしまうものもある。
+	</para>
+
+	<para> このパラメータは、熟慮の上、プリンタドライバのテストを行なった上で用いること。
+	デバイスモードを NULL のままにしておき、Windows クライアントに適切な値を設定される方が好ましい。
+	ただし、ドライバが常にこの処理を行なうとは限らないため、
+	<command moreinfo="none">default devmode = yes</command>
+	の設定を行なうことで、smbd にデフォルトのデバイスモードを生成するような指示を行なうことができるようになっている。
+    </para>
+
+	<para>Windows NT/2000 の印刷システムやデバイスモードに関する詳細な情報については、
+    <ulink url="http://msdn.microsoft.com/">MSDN documentation</ulink> を参照のこと。
+</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

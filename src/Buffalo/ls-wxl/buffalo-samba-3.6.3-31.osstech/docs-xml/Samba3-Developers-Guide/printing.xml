@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="devprinting">
+<chapterinfo>
+	<author>
+		<firstname>Gerald</firstname><surname>Carter</surname>
+	</author>
+	<pubdate>October 2002</pubdate>
+</chapterinfo>
+
+
+<title>Samba印刷機能の詳細</title>
+
+
+<sect1>
+<title>概要</title>
+<para>
+この文書の目的は、いくつかのSambaの印刷機能についての概要を提供することと、
+Windowsクライアントの印刷の特定の機能についての説明を行うことである。
+</para>
+</sect1>
+
+
+
+<sect1>
+<title>
+種々のバックエンドに対する印刷インタフェース
+</title>
+
+<para>
+Sambaは7つの機能に対する関数ポインタテーブルを使う。関数のプロトタイプは
+<filename>printing.h</filename>中で記述される<varname>printif</varname>構造体中で
+定義されている。
+</para>
+
+<itemizedlist>
+	<listitem><para>retrieve the contents of a print queue</para></listitem>
+	<listitem><para>pause the print queue</para></listitem>
+	<listitem><para>resume a paused print queue</para></listitem>
+	<listitem><para>delete a job from the queue</para></listitem>
+	<listitem><para>pause a job in the print queue</para></listitem>
+	<listitem><para>result a paused print job in the queue</para></listitem>
+	<listitem><para>submit a job to the print queue</para></listitem>
+</itemizedlist>
+
+<para>
+現在、2つの印刷バックエンドの実装のみが定義されている。
+</para>
+
+<itemizedlist>
+	<listitem><para>標準UNIX印刷サブシステムと共に動作するための汎用的な機能セット
+	</para></listitem>
+
+	<listitem><para>CUPS固有の機能セット(これはCUPSライブラリがコンパイル時に存在
+	    する場合にのみ有効となる)。</para></listitem>
+</itemizedlist>
+
+</sect1>
+
+
+
+
+<sect1>
+<title>
+印刷キューTDB
+</title>
+
+
+<para>
+Sambaはパフォーマンス向上のために、"lpq command"からの出力を定期的にキャッシュする
+機能を提供する。このキャッシュ時間は秒単位で設定可能である。明らかに、キャッシュ時間が
+より長いと、それだけsmbdはlpqへのコピーを行う回数が減る。しかし、クライアントに見せる
+印刷キューの内容の正確さは、減少するだろう。
+</para>
+
+<para>
+現在オープンしている印刷キューTDBのリストは、tdb_print_db structuresのリストを
+調べることによって見つけることが出来る(printing.c中のprint_db_head参照)。1つのキュー
+TDBはラッパー関数printing.c:get_print_db_byname()を使うことによってオープンされる。
+関数は、すべての有効なファイルディスクリプタを使い果たしてしまうことから、大きな
+印刷サーバを防ぐための効果がある、MAX_PRINT_DBS_OPENよりも数多く開かない事をsmbdに
+行わせる。もしもキューTDBのオープン数がMAX_PRINT_DBS_OPENの制限を超過した場合、
+smbdはオープンTDBのリストを管理するためMRU(most recently used)アルゴリズムを使う。
+</para>
+
+<para>
+印刷ジョブを印刷キューTDB中に投入できるための2つの方法がある。最初のものはTDB中に
+ジョブ情報を直接挿入するWindowsクライアントからジョブを投入する方法である。2番目の
+方法は存在している"lpq command"を実行することで、印刷ジョブをピックアップする方法である。
+</para>
+
+<para><programlisting>
+/* included from printing.h */
+struct printjob {
+	pid_t pid; /* which process launched the job */
+	int sysjob; /* the system (lp) job number */
+	int fd; /* file descriptor of open file if open */
+	time_t starttime; /* when the job started spooling */
+	int status; /* the status of this job */
+	size_t size; /* the size of the job so far */
+	int page_count;	/* then number of pages so far */
+	BOOL spooled; /* has it been sent to the spooler yet? */
+	BOOL smbjob; /* set if the job is a SMB job */
+	fstring filename; /* the filename used to spool the file */
+	fstring jobname; /* the job name given to us by the client */
+	fstring user; /* the user who started the job */
+	fstring queuename; /* service number of printer for this job */
+	NT_DEVICEMODE *nt_devmode;
+};
+</programlisting></para>
+
+<para>
+printjob 構造体の現在の状態には、"lpq command"から戻されるUNIXジョブIDと、
+Windows ジョブID(PRINT_MAX_JOBIDによって32ビットごとに区切られる)
+のためのフィールドが含まれている。印刷ジョブが、キューTDB中に存在するジョブに
+一致しない"lpq command"によって戻された場合、上記の32ビットジョブID
+&lt;*vance doesn't know what word is missing here*&gt;がlpqによって報告される
+ID用にUNIX_JOB_STARTを追加して生成される。
+</para>
+
+<para>
+32ビットWindowsジョブIDを16ビットlanman印刷ジョブIDに一致させるために、smbdは
+古いlanmanクライアントのために、前半部分の適切な数値を一致させるためのメモリTDBを使う。
+</para>
+
+<para>
+印刷キューを更新する時、smbdは以下の手順を実行する
+(<filename>print.c:print_queue_update()</filename>を参照):
+</para>
+
+<orderedlist>
+	<listitem><para>もしも、他のsmbdが現在キューの内容を更新中かどうかを、
+	    <constant>LOCK/<replaceable>printer_name</replaceable></constant>に
+	    格納されているpidをチェックすることで調べる。もしもそうであれば、
+	    TDBの更新をしない。</para></listitem>
+	
+	<listitem><para>TDB中のmutexエントリをロックし、今のプロセス固有のpidを格納する。
+	    それがうまくいったかを調べ、そうでなければ失敗する。</para></listitem>
+
+	<listitem><para>新しいキャッシュ内容の表示のために、更新したタイムスタンプを
+	    格納する。</para></listitem>
+
+	<listitem><para>"lpq command"経由でキューの一覧を検索する。</para></listitem>
+
+	<listitem><para><programlisting>
+	foreach job in the queue
+     	{
+		ジョブがUNIXジョブならば、新しいエントリを作成する;
+		ジョブがWindowsベースのジョブIDを持つならば、
+		{
+			ジョブIDでレコードを検索する;
+			もしも検索が失敗したら
+				それをUNIXジョブとして扱う;
+			そうでなければ
+				ジョブステータスのみを更新する
+		}
+	}</programlisting></para></listitem>
+
+	<listitem><para>lpqの一覧中に無い、TDB中のジョブを削除する。</para></listitem>
+
+	<listitem><para>TDB中に印刷キューステータスを格納する。</para></listitem>
+	
+	<listitem><para>再度キャッシュされたタイムスタンプを更新する。</para></listitem>
+	
+</orderedlist>
+
+<para>
+これは、Windowsクライアントに返されるTDBの内容であり、"lpq command"からの実際の一覧とは
+違うことに注意。
+</para>
+
+<para>
+printjob構造体の一部として格納されるNT_DEVICEMODEは、印刷ジョブに関連づけられる
+非標準のDeviceModeへのポインタを格納するのに使われる。ポインタは、クライアントが
+OpenPrinterEx()呼び出し中でDevice Modeを含める時にnull以外になり、その同じハンドルで
+印刷のために引き続いてジョブを投入する。もしもクライアントがOpenPrinterEx()要求に
+対してDevice Modeを含めないのであれば、nt_devmodeフィールドはNULLであり、ジョブは
+既定値で、それに関連づけられるプリンタのデバイスモードを持つ。
+</para>
+
+<para>
+非標準のDevice Modeのみが印刷キューTDB中にプリントジョブと一緒に格納される。それ以外は、
+Device Modeは、クライアントがGetJob(level == 2)要求を発行した時、プリンタオブジェクト
+から得られたものである。
+</para>
+
+</sect1>
+
+
+
+
+<sect1>
+<title>
+ChangeIDとプリンタ情報のキャッシング
+</title>
+
+<para>
+[後日作成]
+</para>
+</sect1>
+
+
+
+<sect1>
+<title>
+Windows NT/2K におけるPrinter Change Notify
+</title>
+
+<para>
+Windows NT+クライアントで動作している場合、プリンタサーバに対してRPCを使って、
+クライアントに、特定のプリンタと印刷ジョブ属性の、非同期な変更通知イベント
+を送ることが出来る。これは、クライアントが指定したプリンタに対して新しいジョブが
+キューに追加されたことか、プリンタのドライバが変更されたかを知る必要がある時に
+便利である。これは、プリンタオブジェクトのなめの新しいChangeID上をベースとした
+キャッシュ更新とは完全に無関係に行われることに注意。
+</para>
+
+<para>
+変更通知を実装するために使われる基本的なRPCの使用範囲は以下の通り
+</para>
+
+<itemizedlist>
+	<listitem><para>RemoteFindFirstPrinterChangeNotifyEx ( RFFPCN )</para></listitem>
+	<listitem><para>RemoteFindNextPrinterChangeNotifyEx ( RFNPCN )</para></listitem>
+	<listitem><para>FindClosePrinterChangeNotify( FCPCN )</para></listitem>
+	<listitem><para>ReplyOpenPrinter</para></listitem>
+	<listitem><para>ReplyClosePrinter</para></listitem>
+	<listitem><para>RouteRefreshPrinterChangeNotify ( RRPCN )</para></listitem>
+</itemizedlist>
+
+<para>
+1つの追加RPCがサーバに対して有効であるが、それはWindows spoolerサービスでは決して
+使われない:
+</para>
+
+<itemizedlist>
+	<listitem><para>RouteReplyPrinter()</para></listitem>
+</itemizedlist>
+
+<para>
+それらすべてのRFC用のopnumはinclude/rpc_spoolss.hで定義されている。
+</para>
+
+<para>
+Windows NT印刷サーバはクライアントに印刷通知イベントを送る変わった方法を使っている。
+新しい変更通知ハンドルの登録プロセスは、以下のようになる。'C'はクライアントで、
+'S'はサーバである。すべてのエラー状態は省略されている。
+</para>
+
+<para><programlisting>
+C:	標準OpenPrinterEx()呼び出しを経由して、プリンタかプリンタサーバへの
+	ハンドルを得る。
+S:	オブジェクトへの有効なハンドルを返す。
+
+C:	(a)モニタへの変更イベントのための1まとまりのフラグか、(b)モニタへの
+	イベント情報を含むPRINTER_NOTIFY_OPTIONS構造体のどちらかと共に、
+	以前に入手したハンドルと共にRFFPCN要求を送る。Windows spoolerは
+	(b)の使用のみを観察している。
+S:	&lt;*他の間違った単語*&gt;はクライアントに対する新しいTCPセッションを開き
+	(そのため、すべての印刷クライアントはCIFSサーバであるように要求する)、
+	クライアントに対して、ReplyOpenPrinter()要求を送信する。
+C:	クライアントは、イベント通知メッセージを送るために使われる事が出来る、
+	プリンタハンドルを返す。
+S:	サーバはRFFPCN要求に対して成功を返す。
+
+C:	Windows spoolerは、すべての、モニタしている属性の現在値を取得するために、
+	RFNPCNを使うRFFPCNをフォローする。
+S:	サーバはSPOOL_NOTIFY_INFO_DATA構造体(SPOOL_NOTIFY_INFO構造体を含む)を
+	返す。
+
+C:	もしも、変更通知ハンドルがFCPCN要求経由でクライアントにより常に開放されるならば、
+	サーバは最初にクライアントに対してReplyClosePrinter()要求を返す。しかし、
+	クライアントからのこの性質の要求は、しばしば以前の通知イベントがサーバによって、
+	正しく整理されなかったか、データの一部分が間違っていたかを示すものである。
+S:	サーバは内部の変更通知ハンドル(POLICY_HND)をクローズし、そのプリンタかジョブに
+	対する変更通知イベントは、その後クライアントに送らないようになる。
+</programlisting></para>
+
+<para>
+Sambaによってサポートされている、現在の通知イベントのリストは、srv_spoolss_nt.c中の
+内部テーブルを捜すことで見つけることが出来る。
+</para>
+
+<itemizedlist>
+	<listitem><para>printer_notify_table[]</para></listitem>
+	<listitem><para>job_notify_table[]</para></listitem>
+</itemizedlist>
+
+<para>
+モニタされているイベントが発生した時、smbdは変更についてそれ自身にメッセージを送る。
+送信されるイベントのリストは、目セージの送信によって、TDBの利用状態が高負荷になる
+ことを防ぐためにsmbdプロセスによってキューされ、内部メッセージは、smbdがアイドル
+状態の時に(printing/notify.cとsend_spoolss_notify2_msg()関数と
+print_notify_send_messages()関数を参照)送信される。
+</para>
+
+<para>
+変更状態を、接続されているクライアントに送るかどうかの決定は、実際に通知を送る
+ルーチンによって行われる(srv_spoolss_nt.c:recieve_notify2_message()を参照)。
+</para>
+
+<para>
+複数のプリンタの複数の変更の一覧を受け取ることが可能という理由で、通知イベントは
+プリンタ名の区分けによって分離される必要がある。これにより、ReplyOpenPrinter()経由で
+得られるプリンタハンドルによる、単一のRPCで、複数の変更イベントを送れるようになる。
+</para>
+
+<para>
+実際の変更通知はRRPCN要求RPCを使って実行される。このパケットは以下を含む
+</para>
+
+
+<itemizedlist>
+	
+<listitem><para>変更が起こったところのクライアントのスプーラとして登録された
+プリンタハンドル</para></listitem>
+
+<listitem><para>クライアントからの最後のRFNPCN要求の一部として送られる
+変更の生の値(change_low value)</para></listitem>
+
+<listitem><para>イベント情報を持つSPOOL_NOTIFY_INFOコンテナ</para></listitem>
+
+</itemizedlist>
+
+<para>
+<varname>SPOOL_NOTIFY_INFO</varname>は以下を含む:
+</para>
+
+<itemizedlist>
+
+<listitem><para>バージョンとフラグ欄はあらかじめ定義され、変更すべきでない
+</para></listitem>
+
+<listitem><para>count欄はSPOOL_NOTIFY_INFO_DATA配列内のエントリ数である。</para></listitem>
+
+</itemizedlist>
+
+<para>
+<varname>SPOOL_NOTIFY_INFO_DATA</varname>は以下を含む:
+</para>
+
+<itemizedlist>
+
+<listitem><para>typeは、このイベントがプリンタからか、あるいは印刷ジョブからかを
+定義する</para></listitem>
+
+<listitem><para>fieldは、イベントを識別するフラグである</para></listitem>
+
+<listitem><para>notify_data unionには新しい属性値が含まれている。</para></listitem>
+
+<listitem><para>enc_typeは、整列しているかいないかの構造体の大きさを定義する。</para></listitem>
+
+<listitem><para>(a) プリンタハンドル上のプリンタイベントに対しては、idは0でなければならない。
+(b)idは、プリンタジョブ上のイベントのジョブidでなければならない。
+(c)idは、通知のためのプリントサーバハンドルを使う時にRFNPCNに対する応答パケット中で
+使われるプリンタインデックスの番号と一致しなければならない。Sambaは現在、
+もしも通知ハンドルが登録されてから、サービスのリストが、変更された場合、変わっているかも
+しれないプリンタのsnumを使う。</para></listitem>
+
+<listitem><para>サイズは(a)UNICODEでの文字列の長さか、(b)セキュリティディスクリプタの
+バイト値か(c)データ値の場合は0である。</para></listitem>
+
+</itemizedlist>
+
+</sect1>
+</chapter>

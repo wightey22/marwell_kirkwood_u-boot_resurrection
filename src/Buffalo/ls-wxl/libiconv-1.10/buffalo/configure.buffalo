@@ -1,0 +1,15 @@
+# ./configure \
+#  --prefix=/usr \
+#  --bindir=/usr/bin \
+#  --sbindir=/usr/sbin \
+#  --libexec=/usr/libexec \
+#  --sysconfdir=/etc \
+#  --libdir=/usr/lib \
+#  --includedir=/usr/include
+
+make distclean
+
+./configure \
+--sysconfdir=/etc
+
+exit $?

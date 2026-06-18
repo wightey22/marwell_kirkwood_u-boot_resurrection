@@ -1,0 +1,19 @@
+<samba:parameter name="max open files"
+                 context="G"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、ある <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> プロセスが1つのクライアントに対して同時に
+      開くことのできるファイル数の上限値が設定される。 Samba は、オープンされていない
+      ファイルごとにわずか 1 ビットしか消費しないので、この値はとても大きな値
+      (16404) に設定することができる。16404より小さな値に設定すると、Sambaはその旨を
+      警告し、Windows 7が、有効である、オープンしているファイルハンドルの数に依存
+      するので、最低値の16404に戻す。</para>
+		
+    <para>オープンするファイルの数の制限は、通常このパラメータではなく UNIX における
+      プロセス毎のファイルディスクリプタの上限値によって制限される。そのため、
+      この値を変更する必要はないであろう。</para>
+</description>
+<value type="default">16404</value>
+</samba:parameter>

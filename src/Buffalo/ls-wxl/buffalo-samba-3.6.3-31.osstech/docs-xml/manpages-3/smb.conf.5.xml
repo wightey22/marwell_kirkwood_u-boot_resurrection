@@ -1,0 +1,881 @@
+<refentry id="smb.conf.5" xmlns:xi="http://www.w3.org/2003/XInclude"
+	                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+	
+<refmeta>
+	<refentrytitle>smb.conf</refentrytitle>
+	<manvolnum>5</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">ファイルフォーマットと変換</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>smb.conf</refname>
+	<refpurpose>Samba の設定ファイル</refpurpose>
+</refnamediv>
+
+<refsect1>
+	<title>概要</title>
+
+	<para><filename moreinfo="none">smb.conf</filename> ファイルは Samba
+	システムの設定ファイルである。<filename moreinfo="none">smb.conf
+	</filename> には、Samba システムの各プログラムが実行時に参照する設定情報が記述される。
+	<filename moreinfo="none">smb.conf</filename> 
+	ファイルは、<citerefentry><refentrytitle>swat</refentrytitle> 
+	<manvolnum>8</manvolnum></citerefentry> プログラムによって設定、
+	管理されるように設計されている。
+	以下参照目的で、ファイルの形式と設定可能なパラメータに関して網羅的に記述する。
+	</para> </refsect1>
+
+<refsect1 id="FILEFORMATSECT">
+	<title> ファイルの形式 </title>
+
+	<para> ファイルはセクションとパラメータから構成される。セクションは、 大括弧(<quote>[</quote>
+	と <quote>]</quote>) で囲まれたセクション名で始まり、次のセクションが始まるまで
+	続く。セクション内には以下の形式でパラメータが記述される:
+<programlisting>
+<replaceable>パラメータ名（パラメータ）</replaceable> = <replaceable>パラメータ値（値）</replaceable>
+</programlisting>
+        </para>
+
+	<para>ファイルは行を基本単位とし、改行で終了する各行は、コメント、
+	セクション名、パラメータのいずれかを表す。</para>
+
+	<para>セクション名およびパラメータ名は大文字と小文字を区別しない。</para>
+
+	<para>パラメータを示す行では、最初の 「=」 文字に重要な意味がある。
+	最初の 「=」 文字の前後の空白文字は破棄される。
+	セクション名およびパラメータ名の先頭、 途中、末尾にある空白文字は
+	無視される。パラメータ値の先頭と末尾にある空白文字も無視される。
+	ただし、パラメータ値の途中にある空白文字はそのまま意味を持つ。
+	</para>
+
+	<para>セミコロン (<quote>:</quote>)、シャープ (<quote>#</quote>) で始まる行や、空白のみの行は
+	無視される。</para>
+
+	<para><quote>\</quote> 文字で終わる行は、UNIX の慣習通り次の行へ継続する。
+	</para>
+
+	<para> 「=」文字に続くパラメータ値には、文字列
+	(引用符で囲む必要はない)、または真偽値を表す、yes/no、0/1、true/false
+	のいずれかを記述する。真偽値の場合、大文字と小文字は同じ意味だが、
+	記述されたとおりの文字列が保存される。
+	create mask など、幾つかのパラメータ値は数値となる。
+	</para>
+</refsect1>
+
+<refsect1>
+	<title>セクションの説明</title>
+
+	<para>設定ファイル中の ([global] セクションを除く) 各セクションでは、
+	共有リソース (単に<quote>共有</quote>とも呼ぶ 
+	(訳注: 「サービス」とも呼ばれる)) の設定が行なわれる。
+	セクション名は共有リソース名となり、
+	セクション内のパラメータは共有の設定に利用される。</para>
+
+	<para>[global]、[homes]、[printers] という 3 つの特殊なセクションに
+	ついては、<emphasis>特殊なセクション</emphasis> で説明する。
+	以下の説明は、通常のセクションについてのものである。</para>
+
+	<para>共有の設定としては、大きくアクセスを許可するディレクトリの設定と
+	それを利用するユーザに対するアクセス許可の設定とがある。
+	その他いくつかの補助的なオプションの指定も可能である。</para>
+	
+	<para>セクションは、ファイル共有サービス 
+	(クライアントからファイルシステムの延長として利用される)
+	とプリントサービス (クライアントからサーバ上で動作している
+	印刷サービスにアクセスするために利用される) のいずれかに分類される。
+	</para>
+
+	<para>セクションは、パスワードなしでアクセスできる
+	<emphasis>ゲスト</emphasis> サービスとして構成することもできる。
+	この場合、UNIX 側で指定された<emphasis>ゲストアカウント</emphasis>の権限でアクセスが
+	行なわれる。</para>
+
+	<para>ゲストサービス以外のセクションにアクセスするにはパスワードが
+	必要である。通常クライアントからはユーザ名も提供されるが、
+	年代物のクライアントはパスワードのみでユーザ名を提供しないため、
+	<quote>user =</quote> パラメータで指定したユーザのリストを用いてパスワードの検証を
+	行なうことも可能である。Windows 95/98/Me/NT/2000 のような最近の
+	クライアントでは、このパラメータは不要である。</para>
+
+	<para>Samba より与えられたアクセス権は、システムより UNIX ユーザ
+	(またはゲストユーザ) に与えられたアクセス権によって制限されることに注意して欲しい。
+	Samba はシステムが許可する以上のアクセス権を許可することはできない。</para>
+
+	<para> 以下の簡単なセクションは、ファイル共有を定義するものである。
+	ユーザは <filename moreinfo="none">/home/bar</filename>
+	に対して書き込みができる。 共有は、<literal>foo</literal>
+	という共有名でアクセス可能である:
+<programlisting>
+	<smbconfsection name="[foo]"/>
+	<smbconfoption name="path">/home/bar</smbconfoption>
+	<smbconfoption name="read only">no</smbconfoption>
+</programlisting>
+	</para>
+
+	<para> 以下の簡単なセクションは印刷サービスを定義するものである。
+	共有は読み取りのみであるが、印刷可能である。これは、
+	スプールファイルのオープン、書き込み、クローズという作業についてのみ書き込みが許可されるということである。<emphasis>guest ok</emphasis>
+	パラメータは、(別途定義された) デフォルトのゲストユーザとしてアクセスが許可されていることを意味する:
+<programlisting>
+	<smbconfsection name="[aprinter]"/>
+	<smbconfoption name="path">/usr/spool/public</smbconfoption>
+	<smbconfoption name="read only">yes</smbconfoption>
+	<smbconfoption name="printable">yes</smbconfoption>
+	<smbconfoption name="guest ok">yes</smbconfoption>
+</programlisting>
+	</para>
+
+</refsect1>
+
+<refsect1>
+	<title>特殊なセクション</title>
+	
+	<refsect2>
+		<title>[global] セクション</title>
+		
+		<para>このセクション中のパラメータは、サーバ全体に対して、
+		もしくは各セクションで項目が定義していないときの既定値として
+		適用される。詳細な情報はパラメータ(PARAMETERS)の節を参照のこと。</para>
+	</refsect2>
+	
+	<refsect2 id="HOMESECT">
+		<title>[homes] セクション</title>
+		
+		<para> homes セクションが設定ファイル中にあると、
+		接続してきたユーザのホームディレクトリを共有するサービスが
+		必要時にサーバによって作成されるようになる。</para>
+
+		<para>接続の要求が行なわれると、存在するセクションが検索される。
+		要求に合致するセクションが見つかった場合はそのセクションが
+		利用される。見つからなかった場合は、
+		要求されたセクション名をユーザ名とみなしてローカルのパスワードファイルが検索される。
+		ファイル中に名前が存在して、パスワードが適切だった場合、
+		[homes] セクションの設定を引き継ぐ形で共有が作成される。
+		</para>
+		
+		<para>新しく作成される共有に対しては、
+		幾つかの変更が行なわれる:</para>
+		
+		<itemizedlist>
+		<listitem><para>共有名は、homes からユーザ名に変更される。
+		</para></listitem>
+
+		<listitem><para>path パラメータが設定されていなかった場合、
+		ディレクトリのパスはユーザのホームディレクトリに設定される。
+		</para></listitem>
+		</itemizedlist>
+
+		<para><emphasis>path = </emphasis> 行を [homes]
+		セクションに記述した場合、"%S" マクロを用いると便利になる
+		場合があるかも知れない。以下に一例を示す:</para>
+
+		<para><userinput moreinfo="none">path = /data/pchome/%S</userinput></para>
+
+		<para>これは、UNIX からのアクセスと PC
+		からのアクセスとでホームディレクトリが異なる場合に便利である。
+		</para>
+
+		<para> これは多数のクライアントに対するホームディレクトリの
+		提供を最小の手間で素早く簡単に実現する方法である。</para>
+
+		<para>要求されたセクション名が <quote>homes</quote>
+		の場合にも同様の処理が行われるが、共有名が要求したユーザの
+		名前に変更されることはない。 [homes] セクションを使用する
+		方法は、複数のユーザがクライアント PC を共有する場合に
+		便利である。</para>
+		
+		<para>[homes] セクションでは、通常のサービスで指定可能な
+		すべてのパラメータを指定できるが、幾つかのものは他の
+		セクションと少し違った意味になる。以下は典型的な [homes]
+		セクションの例である:
+<programlisting>
+<smbconfsection name="[homes]"/>
+<smbconfoption name="read only">no</smbconfoption>
+</programlisting>
+		</para>
+	
+		<para>重要な点として、[homes] セクションでゲストアクセスを許可した場合、
+		全てのホームディレクトリが全てのクライアントから
+		<emphasis>パスワードなしで</emphasis> アクセス可能になるという点が挙げられる。
+		ほとんどあり得ないと思うが、もしこの設定を実際に行なうのであれば、<emphasis>読み取り専用</emphasis>
+		アクセスの設定にしておくことが好ましいであろう。</para>
+
+		<para>自動的に作成されるホームディレクトリの 
+		<emphasis>browseable</emphasis> パラメータの値は、[homes]
+		セクションの browseable パラメータからではなく、[global]
+		セクションの browseable パラメータより継承される。これは、
+		[homes] セクションで <emphasis>browseable = no</emphasis>
+		を指定して [homes] 共有を不可視にしても、自動的に作成されるホームディレクトリを表示させるようにするための仕様である。
+		</para>
+	</refsect2>
+
+	<refsect2 id="PRINTERSSECT">
+		<title>[printers] セクション</title>
+		
+		<para>このセクションは、プリンタ用の [homes] セクションに
+		相当する。</para>
+
+		<para>[printers] セクションが設定されていると、ユーザは、
+		ローカルホストの printcap ファイルで設定されている各プリンタに接続することが可能となる。</para>
+
+		<para>接続の要求が行なわれると、存在するセクションが検索される。
+		要求に合致するセクションが見つかった場合はそのセクションが利用される。
+		見つからなかった場合、[homes] セクションがあれば前述した処理が行なわれる。
+		それでも要求が解決できない場合は、
+		要求されたセクション名をプリンタ名とみなし、
+		適切な pritcap ファイルが検索され、
+		要求されたセクション名をプリンタ共有名とみなすかどうかの
+		確認が行なわれる。ファイル中に名前が存在した場合は、
+		[printers] セクションの設定を引き継ぐ形でプリンタ共有が
+		作成される。</para>
+
+		<para>新しく作成される共有に対しては、
+		幾つかの変更が行なわれる:</para>
+
+		<itemizedlist>
+		<listitem><para>共有名には、実際のプリンタ名が設定される。
+		</para></listitem>
+
+		<listitem><para>プリンタ名が設定されていない場合、
+		プリンタ名として実際のプリンタ名が設定される。
+		</para></listitem>
+
+		<listitem><para> 共有がゲストアクセスを許可しておらず、
+		username パラメータも指定されていない場合、username
+		に実際のプリンタ名が設定される。</para></listitem>
+		</itemizedlist>
+
+		<para>[printers] サービスは、必ず printable にすること。
+		それ以外の設定を行なうと、サーバが設定ファイルの読み取りを
+		拒否してしまう。</para>
+		
+		<para>通常指定されるパスは、sticky ビットが設定され、
+		誰でも書き込み可能になっているスプールディレクトリである。
+		典型的な [printers] のエントリは次のようになる:
+<programlisting>
+<smbconfsection name="[printers]"/>
+<smbconfoption name="path">/usr/spool/public</smbconfoption>
+<smbconfoption name="guest ok">yes</smbconfoption>
+<smbconfoption name="printable">yes</smbconfoption>
+</programlisting>
+		</para>
+
+		<para> printcap ファイル中で定義されているすべてのプリンタの
+		エイリアス(別名)は、プリンタ名として認識される。
+		印刷システムが printcap ファイルのような機構を使用して
+		いないのであれば、仮の printcap ファイルを設定する必要がある。
+		このファイルは以下のような形式の行で構成される:
+<programlisting>
+alias|alias|alias|alias...    
+</programlisting>
+		</para>
+
+		<para>各エイリアスは、印刷システムが処理可能なプリンタ名で
+		ある必要がある。[global] セクションで、別のファイルを printcap
+		ファイルとして指定することで、仮想的な printcap
+		ファイル中にある名前のみがサーバに認識される。
+		もちろんこのファイル中には任意のエイリアスを記述することが
+		可能である。このテクニックは、ローカルプリンタの一部のみに
+		アクセスを制限する機能を簡単に実現するためにも利用できる。
+		</para>
+
+		<para>なお、エイリアスとは printcap ファイル中の各レコードの
+		最初のエントリに続く各要素をさす。
+		各レコードは改行コードで区切られ、各要素は (複数個存在する場合)
+		縦棒 (<literal>|</literal>) で区切られる。</para>
+		
+		<note><para>lpstat コマンドによりシステムで定義されている
+		プリンタの一覧を取得可能な SYSV 系のシステムでは、
+		<literal>printcap name = lpstat</literal> とすることで、
+		プリンタの一覧を取得することが可能である。
+		詳細は、<literal>printcap name</literal> オプションを参照のこと。
+		</para></note>
+	</refsect2>
+</refsect1>
+
+<refsect1>
+	<title>ユーザ定義共有</title>
+
+	<para>Samba 3.0.23 より、root 以外のユーザが共有の追加、修正、削除を行なうことを可能とする機能が追加された。
+	この機能を <emphasis>ユーザ定義共有(usershares)</emphasis> と呼び、
+	smb.conf の <smbconfsection>[global]</smbconfsection> セクションで定義される一連のパラメータによって制御される。
+	関連するパラメータを以下に示す :
+	</para>
+
+	<variablelist>
+		<varlistentry>
+		<term>usershare allow guests</term>
+		<listitem><para>ユーザ定義共有でゲストアクセスを許可するかどうかを制御する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>usershare max shares</term>
+		<listitem><para>作成を許可するユーザ定義共有の最大数を制御する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>usershare owner only</term>
+		<listitem><para>有効にすると、ユーザが所有しているディレクトリのみが共有可能となる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>usershare path</term>
+		<listitem><para>ユーザ定義共有を作成可能なディレクトリを指定する。
+		実際にユーザ定義共有を作成可能かどうかは、ファイルシステム上のディレクトリのパーミッションに依存する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>usershare prefix allow list</term>
+		<listitem><para>共有を許可するディレクトリの絶対パス名をコンマで区切って列挙する。
+		ここで指定されたパス名から始まるディレクトリのみが共有を許可される。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>usershare prefix deny list</term>
+		<listitem><para>共有を拒否するディレクトリの絶対パス名をコンマで区切って列挙する。
+		ここで指定されたパス名から始まるディレクトリは共有を拒否される。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>usershare template share</term>
+		<listitem><para>新しいユーザ定義共有を作成する際のテンプレートとなる既存の共有を指定する。
+		ユーザ定義共有の定義時に指定されなかったすべての共有に関するパラメータは、この共有のものが用いられる。</para></listitem>
+		</varlistentry>
+	</variablelist>
+
+	<para>UNIX グループ <literal>foo</literal> のメンバにユーザ定義共有の作成を許可したい場合は、
+	共有の定義ファイルを格納するディレクトリを以下のように作成する:
+	</para>
+	<para>root 権限で以下を実施:
+<programlisting>
+mkdir /usr/local/samba/lib/usershares
+chgrp foo /usr/local/samba/lib/usershares
+chmod 1770 /usr/local/samba/lib/usershares
+</programlisting>
+</para>
+
+<para>ついで、以下のパラメータ
+<programlisting>
+	<smbconfoption name="usershare path">/usr/local/samba/lib/usershares</smbconfoption>
+	<smbconfoption name="usershare max shares">10</smbconfoption> # (もしくは必要な共有数)
+</programlisting> 
+	</para>
+	<para>
+	を <filename>smb.conf</filename>の global セクションに追加。
+	これにより foo グループのメンバは、以下のコマンドでユーザ定義共有を作成することが可能となる。</para>
+
+	<variablelist>
+		<varlistentry>
+		<term>net usershare add sharename path [comment] [acl] [guest_ok=[y|n]]</term>
+		<listitem><para>これにより、ユーザ定義共有を作成もしくは修正(上書き)する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>net usershare delete sharename</term>
+		<listitem><para>ユーザ定義共有を削除する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>net usershare list wildcard-sharename</term>
+		<listitem><para>ユーザ定義共有を一覧する。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>net usershare info wildcard-sharename</term>
+		<listitem><para>ユーザ定義共有の情報を表示する。</para></listitem>
+		</varlistentry>
+	</variablelist>
+</refsect1>
+	
+<refsect1>
+	<title>パラメータ</title>
+
+	<para>パラメータはセクションの属性を定義するものである。</para>
+
+	<para>幾つかのパラメータ (<emphasis>security</emphasis> など) は、
+	[global] セクションで指定する。また幾つかのパラメータ
+	(<emphasis>create mask</emphasis> など) は、すべてのセクションで
+	利用可能である。それ以外のパラメータは、通常のセクションでのみ
+	利用できる。以下の説明では、[homes] と [printers] セクションを "通常の"
+	セクションとして扱う。(<emphasis>G</emphasis>) がついたパラメータは、
+	[global] セクションでのみ指定できる。(<emphasis>S</emphasis>)
+	がついたパラメータは、個々のサービスを表すセクションで指定できる。
+	ただし、(<emphasis>S</emphasis>) がついたパラメータは、[global]
+	セクション中で指定することも可能である。この場合、それらはすべての
+	サービスに対するデフォルト値として機能する。</para>
+
+	<para> パラメータはアルファベット順に説明されている。
+	最良の順序とはいえないが、少なくとも目的のパラメータを見つけることは
+	できるだろう。同義語がある場合は、主として用いるべき表記の部分で
+	説明が行なわれ、他はその表記への参照になっている。</para>
+</refsect1>
+
+<refsect1>
+	<title>変数による置換</title>
+
+	<para>設定ファイルに記述可能な文字列の多くには、変数による置換を利用できる。
+	たとえば、<quote>path = /tmp/%u</quote> は、john というユーザ名でユーザが
+	接続すると、<quote>path = /tmp/john</quote> として解釈される。</para>
+
+	<para>これら置換の詳細については、各々のパラメータの説明にて
+	解説するが、どのパラメータに対しても適用される共通の変数置換もいくつか
+	存在する。それらを以下に記載する: </para>
+
+	<variablelist>
+		<varlistentry>
+		<term>%U</term>
+		<listitem><para>セッションのユーザ名 (クライアントが接続時に
+		送信したものであるが、実際に接続したユーザ名と同じであるとは
+		限らない)。</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%G</term>
+		<listitem><para>%U のプライマリグループ。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>%h</term>
+		<listitem><para>Samba が動作しているマシンの
+		インターネットホスト名。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>%m</term>
+		<listitem><para>クライアントマシンの NetBIOS 名 (とても便利)。</para>
+			<para>Samba がポート 445 で待機している場合、クライアントがこの情報を送信しないため、この変数は利用できない。
+			Samba がドメインコントローラであるドメインで include パラメータにおいてこの変数を用いている場合などは、
+			[global] セクションで <parameter>smb ports = 139</parameter> の設定を行なうこと。
+			これにより Samba はポート 445 で待機しなくなり、Samba 2.X で実現していた include 機能が利用できる。
+			</para></listitem>
+
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%L</term>
+		<listitem><para>サーバの NetBIOS 名。これを用いることで、
+		クライアントから呼ばれた名前に応じて設定を変更することが
+		可能となる。これによりサーバは <quote>二つの顔</quote>
+		を持つことができる。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%M</term>
+		<listitem><para>クライアントマシンのインターネットホスト名。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%R</term>
+		<listitem><para>プロトコルのネゴシエーションを経て選択された
+		プロトコルレベル。これは CORE、COREPLUS、LANMAN1、LANMAN2、NT1
+		のいずれかの値をとる。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>%d</term>
+		<listitem><para>サーバプロセスのプロセス ID。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%a</term>
+		<listitem><para>リモートマシンのアーキテクチャ。
+		現在認識できるのは
+		Samba (<constant>Samba</constant>)、 
+		Linux の CIFS ファイルシステム (<constant>CIFSFS</constant>)、
+		OS/2 (<constant>OS2</constant>)、
+		Windows for Workgroups (<constant>WfWg</constant>)、
+		Windows 9x/Me (<constant>Win95</constant>)、
+		Windows NT (<constant>WinNT</constant>)、
+		Windows 2000 (<constant>Win2K</constant>)、
+		Windows XP (<constant>WinXP</constant>)、
+		Windows XP 64-bit(<constant>WinXP64</constant>),
+		2003R2 (<constant>Win2K3</constant>)を含むWindows Server 2003 (<constant>Win2K3</constant>)と,
+		Windows Vista (<constant>Vista</constant>) である。
+		それ以外のものは <quote>UNKNOWN</quote> となる。</para>
+		</listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%I</term>
+		<listitem><para>クライアントマシンの IP アドレス。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>%i</term>
+		<listitem><para>クライアントが接続してきたサーバの IP アドレス。</para>
+		</listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>%T</term>
+		<listitem><para>現在の日付と時間。</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>%D</term>
+		<listitem><para>現ユーザが所属するドメインかワークグループ名。
+		</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%w</term>
+		<listitem><para>Winbind のセパレータ</para></listitem>
+		</varlistentry>
+		
+		<varlistentry>
+		<term>%$(<replaceable>envvar</replaceable>)</term>
+		<listitem><para>環境変数<replaceable>envvar</replaceable>の値。
+		</para></listitem>
+		</varlistentry>
+	</variablelist>
+
+	<para>以下の置換マクロは (すでに接続が確立されている場合に) いくつかの
+	設定オプションに対して有効なものである:</para>
+
+	<variablelist>
+		<varlistentry>
+		<term>%S</term>
+		<listitem><para>現在のサービス名 (存在する場合)。</para>
+		</listitem>
+		</varlistentry>
+	
+		<varlistentry>
+		<term>%P</term>
+		<listitem><para>現在のサービスのトップディレクトリ
+		(存在する場合)。</para></listitem>
+		</varlistentry>
+	
+		<varlistentry>
+		<term>%u</term>
+		<listitem><para>現在のサービスのユーザ名 (存在する場合)。
+		</para></listitem>
+		</varlistentry>
+	
+		<varlistentry>
+		<term>%g</term>
+		<listitem><para>%u のプライマリグループ。</para></listitem>
+		</varlistentry>
+	
+		<varlistentry>
+		<term>%H</term>
+		<listitem><para>%u で指定されたユーザのホームディレクトリ。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>%N</term>
+		<listitem><para>NIS のホームディレクトリサーバの名前。
+		これは NIS の auto.map エントリから取得される。Samba が
+		<emphasis>--with-automount</emphasis> オプションをつけて
+		コンパイルされていない場合、このオプションは %L と同じになる。
+		</para></listitem>
+		</varlistentry>
+	
+		<varlistentry>
+		<term>%p</term>
+		<listitem><para>NIS auto.map エントリから取得された サーバの
+		ホームディレクトリのパス。NIS auto.map エントリは
+		<literal>%N:%p</literal> のように分割されている。</para></listitem>
+		</varlistentry>
+	</variablelist>
+	
+	<para> これらの置換操作とその他の <filename moreinfo="none">smb.conf</filename> 
+	のパラメータを組み合わせると、非常に凝った動作を設定できる。</para>
+</refsect1>
+
+<refsect1 id="NAMEMANGLINGSECT">
+	<title>名前の短縮(NAME MANGLING)</title>
+	
+	<para>Samba は、DOS や Windows クライアントが 8.3 形式に準拠しない
+	名前のファイルを扱うことができるように <quote>名前の短縮</quote>
+	機能を提供している。この機能により、8.3 形式のファイル名についても
+	文字の case (大文字、小文字) を調整可能である。</para>
+
+	<para>短縮時の動作を制御するパラメータが幾つか存在しており、
+	それらは個々に解説を行なわず、ここでまとめて説明を行なう。
+	デフォルト値は testparm コマンドの出力を参照のこと。</para>
+
+	<para>以下のオプションは、すべて共有毎に設定できる
+	(もちろん全体に対しても設定できる)。</para>
+
+	<para>オプションは以下の通りである:</para>	
+	
+	<variablelist>
+	
+	<varlistentry>
+		<term>case sensitive = yes/no/auto</term>
+		<listitem><para>ファイル名の case を識別するかどうかを制御する。
+		識別を行なわない場合、Samba は指定された名前に合致する
+		ファイル名の有無を検索することが必要になる。デフォルトは
+		<emphasis>auto</emphasis> であり、ファイル名の case を識別するクライアント(現在のところ Linux CIFSVFS
+		や Samba 3.0.5 以降の smbclient) に対しては、case を識別する(UNIX の case を識別する挙動に準拠する) ファイルシステム上の Samba サーバにアクセスしているものとして通知する。
+		Windows および DOS システムでは case を識別するファイル名はサポートされておらず、このパラメータを auto に設定した場合、no の設定で動作する。
+		デフォルトは <emphasis>auto</emphasis> である。
+		</para></listitem>
+		</varlistentry> 
+
+		<varlistentry>
+		<term>default case = upper/lower</term>
+		<listitem><para>新しく作成されるファイル(現在ファイルシステム上に存在していないファイル)のファイル名のデフォルトの case を制御する。
+		デフォルトは <emphasis>lower</emphasis> である。
+		重要: 
+		<smbconfoption name="case sensitive">yes</smbconfoption>、 <smbconfoption name="preserve case">No</smbconfoption>、
+		<smbconfoption name="short preserve case">No</smbconfoption>
+		の場合、このオプションにより、新しく作られるファイル名だけではなく、クライアントから渡される <emphasis>すべての</emphasis> ファイル名の case が変更されることに注意。
+		非常に多くのファイルを格納するディレクトリの最適化作業の一貫として、この設定変更が必要となる。
+		</para></listitem>
+		</varlistentry> 
+	
+		<varlistentry>
+		<term>preserve case = yes/no</term>
+		<listitem><para>新しく作成されるファイル(現在ファイルシステム上に存在していないファイル)のファイル名について、クライアントから
+		渡された case で作成するか、<literal>デフォルト</literal>の case
+		で作成するかを制御する。
+		デフォルトは <emphasis>yes</emphasis>である。
+		</para></listitem>
+		</varlistentry> 
+
+		<varlistentry>
+		<term>short preserve case = yes/no</term>
+		<listitem><para> すべて大文字で適切な長さの 8.3 形式に
+		準拠した新しく作成されるファイル(現在ファイルシステム上に存在していないファイル)のファイル名について、大文字で作成するか、
+		<literal>デフォルト</literal> の case で作成するかを制御する。
+		このオプションにより、<literal>preserve case = yes</literal>
+		で長いファイル名が case を保持する設定の時であっても、
+		短いファイル名は小文字で作成するといったことが可能になる。
+		デフォルトは <emphasis>yes</emphasis> である。
+		</para></listitem>
+		</varlistentry> 
+	</variablelist>
+	
+	<para> Samba 3.0 のデフォルトは、Windows NT のサーバと同様に動作する。
+	すなわち、case を識別しないが case は保持する。
+	ただし、大量のファイルが存在するディレクトリにおいては、case 関連のパラメータを	
+	"case sensitive = yes"、"case preserve = no"、"short preserve case = no" に設定するとよいであろう。
+	これにより、"default case" パラメータが有効になり、クライアントから送信されるすべてのファイル名が変更される。
+	(訳注: 上記設定は、case sensitive = yes によりファイル名の検索を抑止することで、パフォーマンスを向上させようとする意図だと思われる)
+	</para>
+	
+</refsect1>
+
+<refsect1 id="VALIDATIONSECT">
+	<title>ユーザ名とパスワード認証についての注意</title>
+
+	<para>ユーザがサービスに接続するための方法は幾つかある。サーバは、
+	以下のステップを踏みサービスに対して接続を許可するかどうかを確認する。
+	すべてのステップが失敗した場合、接続要求は拒否される。
+	いずれかのステップで成功した場合、それ以降のステップは行なわれない。
+	</para>
+
+	<para>サービスが <quote>guest only = yes</quote> となっており、
+	サーバが共有レベルのセキュリティ (<quote>security = share</quote>)
+	で構成されている場合、ステップ 1 から 5 は省かれる。</para>
+
+
+	<orderedlist continuation="restarts" inheritnum="ignore" numeration="arabic">
+		<listitem><para>クライアントからユーザ名とパスワードが
+		提供されており、それが UNIX システムのパスワード機構によって
+		認証された場合、そのユーザ名を使った接続が行なわれる。この
+		ステップは <literal>\\server\service%<replaceable>username</replaceable></literal>
+		形式でユーザ名が提供された場合にも行なわれることに注意。
+		</para></listitem>
+
+		<listitem><para>クライアントからシステムに登録されている
+		ユーザ名が提供された場合、そのユーザ名に対する適切な
+		パスワードが提供されれば、接続が許可される。</para></listitem>
+		
+		<listitem><para> クライアントの NetBIOS 名および以前に使われた
+		ユーザ名について提供されたパスワードとの確認が行なわれ、
+		合致すれば、対応するユーザ名を使った接続が許可される。
+		</para></listitem>
+		
+		<listitem><para>クライアントが既にユーザ名とパスワードを
+		提供してサーバに認証されており、その際の認証トークンが
+		提示された場合、そのユーザ名が使われる。</para></listitem>
+
+		<listitem><para><literal>user = </literal> フィールドが
+		<filename moreinfo="none">smb.conf</filename> ファイルで
+		該当サービスに対して設定されており、クライアントから提供された
+		パスワードが (UNIX システムのパスワード認証により) 
+		<literal>user =</literal> 行に記述されたユーザ名のいずれかのものと
+		合致した場合、接続は、<literal>user = </literal> 行で設定された
+		ユーザ名で行なわれる。<literal>user = </literal> リスト中のユーザ名の
+		中に <literal>@</literal> ではじまるものがあった場合、それはその名前の
+		グループに所属するユーザ名のリストに展開される。
+		</para></listitem>
+
+		<listitem><para>サービスがゲストサービスの場合、
+		提供されたパスワードがなんであっても、そのサービスの
+		<literal>guest account =</literal> で指定されたユーザ名で接続が
+		行なわれる。</para></listitem>
+	</orderedlist>
+
+</refsect1>
+
+<refsect1>
+	<title>レジストリベースの設定方法</title>
+
+	<para>
+		Sambaのバージョン 3.2.0 から、レジストリ中にSambaの設定を
+		格納する機能が有効になった。Sambaの設定は、レジストリキー
+		 <emphasis><literal>HKLM\Software\Samba\smbconf</literal></emphasis>中に格納される。
+		レジストリベースの設定は2つのレベルがある。
+	</para>
+
+	<orderedlist continuation="restarts" inheritnum="ignore" numeration="arabic">
+		<listitem><para>レジストリに共有の定義を格納する。
+		これは、<emphasis>smb.conf</emphasis>中のグローバル
+		パラメータ<parameter>registry shares</parameter>
+		を<quote>yes</quote>に設定することで利用可能になる。
+		</para>
+
+		<para>レジストリ定義の共有はスタートアップ時にはロードされ
+		ないが、<emphasis>smbd</emphasis>によって、実行時に動的に
+		ロードされる。<emphasis>smb.conf</emphasis>中の共有定義
+		はレジストリ中での同じ名前の共有定義に優先する。</para></listitem>
+
+		<listitem>
+		<para>グローバルな<emphasis>smb.conf</emphasis>
+		オプションをレジストリに格納する。これは,以下の2つの異なった
+		方法で有効にできる:</para>
+
+		<para>1番めは、<emphasis>smb.conf</emphasis>中の
+		[global]セクション中の<smbconfoption name="config backend">registry</smbconfoption>を設定することで、レジストリのみの
+		設定を有効にできる。これは,この時点まで読み込んだ設定ファイ
+		ルの内容をすべてリセットし、レジストリからグローバルセク
+		ションの内容を読む。これは、レジストリベースの設定方法を使う
+		時の推奨方法である。</para>
+
+		<para>2番目は<emphasis>smb.conf</emphasis>の[global]
+		セクション中の、特別に新しい意味を持つ、<smbconfoption name="include">registry</smbconfoption>パラメータによって有効にできる
+		混成設定方法である。これは,テキストファイルをインクルード
+		するのと同じような優先度で、レジストリからグローバルオプ
+		ションを読む。これは,初期設定がレジストリにアクセスするのに
+		必要な場合に特に有益である。</para>
+
+		<para>グローバルレジストリオプションの有効化は、レジストリ
+		ベースの共有が有効になることで自動的に行われる。そのため、
+		レジストリのみの場合、共有は要求時にのみロードされる。</para>
+		</listitem>
+	</orderedlist>
+
+	<para>
+		レジストリベースの設定に伴うシステムの破壊を限定的にするために、
+		レジストリでの設定中では、<parameter>lock directory</parameter>と
+		<parameter>config backend</parameter>の使用は無効化
+		されることに注意。
+		特に、レジストリでの設定中に、<parameter>lock directory</parameter>を
+		変更してしまい、それがいったん有効化されてしまうと、
+		デーモンからはそれの設定自体が見えなくなる、壊れた設定を作成することになる。</para>
+
+
+	<para>
+		レジストリベースの設定は、キー<emphasis><literal>HKLM\Software\Samba\smbconf</literal></emphasis>を
+		 <emphasis>regedit</emphasis>や<emphasis>net (rpc)
+		registry</emphasis>を使ってアクセスすることもできる。
+		利便性のため、<citerefentry><refentrytitle>net</refentrytitle>
+		<manvolnum>8</manvolnum></citerefentry>ユーティリティ
+		の<emphasis>conf</emphasis>サブコマンドが、レジストリ
+		ベースの設定をローカルに読み書きするための特別なインタフェース
+		として提供されている。すなわち、データベースファイルに直接
+		アクセスし、サーバを迂回できる。
+	</para>
+
+</refsect1>
+
+<refsect1>
+	<title>各パラメータの説明</title>
+	
+	<samba:parameterlist>
+		<xi:include href="../smbdotconf/parameters.all.xml" parse="xml"/>
+	</samba:parameterlist>
+
+</refsect1>
+
+<refsect1>
+	<title>注意</title>
+	
+	<para>設定ファイルでは、スペースを含むサービス名も利用できるが、
+	クライアント側のソフトウェアで禁止されているかもしれない。
+	文字列比較を行なう際にスペースは常に無視されるため、
+	問題は発生しないはずであるが、可能性は考慮しておく必要がある。
+	</para>
+
+	<para>同様の注意事項として、多くのクライアント、特に DOS
+	クライアントでは、サービス名が最長8文字に制限されている。
+	<citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry> にはそのような制限はなく、
+	こうしたクライアントからの接続要求は、サービス名が切り捨てられてしまう
+	ために失敗することになる。このため、サービス名の長さは、最大 8
+	文字に制限すべきである。</para>
+
+	<para> <literal>[homes]</literal> および <literal>[printers]</literal> という特殊セクションにより、
+	管理者の負担を軽減することができるが、デフォルトの設定の組合せ方に
+	よっては、予期しない設定が行なわれる可能性もある。これらのセクションの
+	設定を行なう際には、特に注意深く行なうこと。特にスプールディレクトリの
+	パーミッションが適切であることを確認しておくこと。</para>
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+	<para>このマニュアルページは Samba 3.0 対応のものである。</para>
+</refsect1>
+
+<refsect1>
+	<title>関連項目</title>
+	<para>
+	<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>, <citerefentry><refentrytitle>smbpasswd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>swat</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>smbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>nmbd</refentrytitle>
+	<manvolnum>8</manvolnum></citerefentry>, <citerefentry><refentrytitle>smbclient</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>, <citerefentry><refentrytitle>nmblookup</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>, <citerefentry><refentrytitle>testparm</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry>, <citerefentry><refentrytitle>testprns</refentrytitle>
+	<manvolnum>1</manvolnum></citerefentry></para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作成された。現在 Samba は Samba Team によって、
+	Linux カーネルの開発と同様のオープンソースプロジェクトとして開発が
+	行なわれている。</para>
+	
+	<para>オリジナルの Samba マニュアルページは Karl Auer によって
+	作成された。マニュアルページは YODL 形式 
+	(<ulink noescape="1" url="ftp://ftp.icce.rug.nl/pub/unix/">
+	ftp://ftp.icce.rug.nl/pub/unix/</ulink>	で入手可能な優れた
+	オープンソースソフトウェア) に変換され、Samba 2.0 リリースに伴い、
+	Jeremy Allison によって更新された。Samba 2.2 における DocBook
+	形式への変換は、Gerald Carter によって行なわれた。Samba 3.0 における
+	DocBook XML 4.2 形式への変換は Alexander Bokovoy によって行われた。
+	</para>
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.5.3 対応のものである。</para>
+
+	<para>Samba 3.0.23d 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+	<para>Samba 3.2.4-3.5.3 対応の翻訳は、
+	  <itemizedlist>
+	    <para>たかはしもとのぶ</para>
+	    <para>堀田 倫英 </para>
+	    <para>太田俊哉 (ribbon@samba.gr.jp)</para>
+	    <para>山田 史朗</para>
+	    <para>武田保真</para>
+	    <para>海老澤</para>
+	  </itemizedlist>
+	によって行なわれた。</para>
+</refsect1>
+
+</refentry>

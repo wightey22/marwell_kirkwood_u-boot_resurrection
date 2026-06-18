@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="largefile">
+<chapterinfo>
+	&author.jeremy;
+	&author.jht;
+	<pubdate>March 5, 2005</pubdate>
+</chapterinfo>
+<title>大きなディレクトリの取扱い</title>
+
+<para>
+<indexterm><primary>パフォーマンス劣化</primary></indexterm>
+<indexterm><primary>多数のファイル</primary></indexterm>
+<indexterm><primary>大きなディレクトリ</primary></indexterm>
+1ディレクトリあたり10 万またはそれ以上のファイルを
+必要とするアプリケーションを、バージョン 3 系の Sambaで利用すること
+には問題があり、それによって発生するパフォーマンス劣化を経験しているサイトがあ
+る。 Samba 3.0.12以降ではその解決策を実装している。
+</para>
+
+<para>
+<indexterm><primary>ディレクトリをメモリに読み込む</primary></indexterm>
+<indexterm><primary>奇妙な削除動作</primary></indexterm>
+要求されている最新のリストだけを読むようにディレクトリの取扱いを修正した
+ことが鍵だった。
+これとは違い、古い (Samba 3.0.11 までの) 振る舞いでは、
+事前にディレクトリをすべてメモリへ読み込んでから名前を小出しにしていた。
+通常では、これは とても奇妙な削除動作を持つ OS/2 アプリケーションを誤動作させる
+だろう。しかし、 Samba 4 (ありがとう Tridge) から流用したロジックにより、
+3.0.12 の最新のコードでは、これを正しく取り扱う。
+</para>
+
+<para>
+<indexterm><primary>大きいディレクトリ</primary></indexterm>
+<indexterm><primary>パフォーマンス</primary></indexterm>
+ディレクトリあたりに多数のファイルを必要とするアプリケーションを、パフォーマン
+スへ著しい影響を与えないように、セットアップするために以下の手順を実施する。
+</para>
+
+<para>
+<indexterm><primary>ファイルの正規化</primary></indexterm>
+最初に、ディレクトリ中のファイルをすべて大文字または小文字 &smbmdash; 好きな方
+(すでにすべてのファイルが大文字になっていたため大文字を私は選んだ) のどちらか
+のみに正規化する。 そして、このアプリケーションのために新しくおあつらえ向きの
+共有を以下のように作成する。
+<smbconfblock>
+<smbconfsection name="[bigshare]"/>
+<smbconfoption name="path">/data/manyfilesdir</smbconfoption>
+<smbconfoption name="read only">no</smbconfoption>
+<smbconfoption name="case sensitive">True</smbconfoption>
+<smbconfoption name="default case">upper</smbconfoption>
+<smbconfoption name="preserve case">no</smbconfoption>
+<smbconfoption name="short preserve case">no</smbconfoption>
+</smbconfblock>
+</para>
+
+<para>
+<indexterm><primary>ケースオプション</primary></indexterm>
+<indexterm><primary>ケース照合</primary></indexterm>
+<indexterm><primary>大文字</primary></indexterm>
+もちろん、あなた自身固有のパスと設定を使うこと。そして、ケースオプションはディレク
+トリのすべてのファイルに適合するように設定すること。
+パスは、アプリケーションが必要とする大きなディレクトリを指さなければならない。
+&smbmdash; そのディレクトリとそれ以下のすべてのディレクトリの下に作られる新し
+いファイルはすべて smbd によって大文字に強制される。しかし smbd はもはや名前
+のために走査する必要がなくなる。大文字で存在しなければまったく存在しないこと
+がわかるため。
+</para>
+
+<para>
+<indexterm><primary>ケース無区別</primary></indexterm>
+<indexterm><primary>一貫したケース</primary></indexterm>
+<indexterm><primary>smbd</primary></indexterm>
+極意は実に <smbconfoption name="case sensitive">True</smbconfoption> 行にある。
+これは、 smbd にその名前の大小文字が混在したバージョンを走査する必要が絶対
+にないことを告げる。だから、アプリケーションが <filename>FOO</filename> と呼ば
+れるファイルを要求した場合、 stat コールにて見つからなかったら、 smbd は直ちに 
+file not found を返却する。違うケースのバージョンを走査することはない。
+その他の <filename>xxx case xxx</filename> 行は、 smbd によって作成される
+ファイルが一貫したケースに強制することでこれが機能するようにしている。
+</para>
+
+<para>
+<indexterm><primary>大文字</primary></indexterm>
+<indexterm><primary>セクション</primary></indexterm>
+<indexterm><primary>小文字のファイル名</primary></indexterm>
+&smb.conf; のこのセクションに付随して <parameter>path</parameter> 配下のすべ
+てのファイルとディレクトリは大文字でなければならないことを忘れないこと。
+何故ならこの設定では、 &smbd; は小文字のファイル名を見つけることができなくなる
+からである。
+このパラメータは、問題のある振る舞いの (多数のエントリをもつディレクトリを使用
+する) アプリケーションにへ提供する共有にのみ設定が許されているので、これらは
+共有ごとになされることに注意すること &smbmdash; 残りの &smbd; 共有は、影響を
+受ける必要はない。
+</para>
+
+<para>
+以上の設定は、大きなディレクトリを処理する際にsmbd をずっと速くさせる。私の
+テストケースでは 10 万を超えるファイルで smbd は今やとても効率的に処理する。
+</para>
+
+</chapter>

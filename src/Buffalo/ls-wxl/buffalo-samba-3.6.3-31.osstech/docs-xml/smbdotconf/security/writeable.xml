@@ -1,0 +1,9 @@
+<samba:parameter name="writeable"
+                 context="S"
+		 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>writable</synonym>
+<description>
+    <para><smbconfoption name="read only"/> の反意語である。</para>
+</description>
+</samba:parameter>

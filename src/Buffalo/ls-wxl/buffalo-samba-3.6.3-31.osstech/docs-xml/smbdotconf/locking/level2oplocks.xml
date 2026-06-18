@@ -1,0 +1,39 @@
+<samba:parameter name="level2 oplocks"
+                 context="S"
+				 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータにより、
+	Samba が共有上で level2(読みとり専用) oplock をサポートするかどうかが制御される。</para>
+		
+	<para> level2 の読みとり専用 oplock を利用することで、
+	Windows NT クライアントは、既に oplock が行われているファイルを別のクライアントがオープンしようとした際に
+	(今までの排他的な oplock の場合に行われていた関連するすべての oplock を廃棄する処理の代わりに)、
+	読み書き可能な oplock から読みとり専用の oplock へのダウングレードを行うような 
+	oplock をファイルに対して行うことが可能になる。
+	これにより、ファイルをオープンしているクライアントのうち、level2 oplock をサポートしているものは、
+	ファイルの先読みのみを行うキャッシュ(このキャッシュは書き込みキャッシュやロックを行わない)を引続き行うため、
+	書き込みが行われないようなファイル(例えばアプリケーションのexeファイルなど)に対して多くのアクセスが行われる際のパフォーマンスが改善される。
+	</para>
+
+	<para> read only の oplock を行っていたクライアントのいずれかがファイルに書き込みを行った時点で、
+	すべてのクライアントに対して、
+	oplock を「なし(none)」の状態に解除し、先読みキャッシュを破棄するように通知が行なわれる(応答待ちは行なわれない)。
+	</para>
+
+	<para>このパラメータを有効にして、
+	共有されている実行ファイルのアクセスを高速化することを推奨する。</para>
+
+	<para>level2 oplock に関する詳細な議論については、CIFS の仕様を参照のこと。</para>
+
+	<para>
+	現在、<smbconfoption name="kernel oplocks"/> がサポートされていると、
+	level2 oplock は(このパラメータが<constant>yes</constant>になっていても)、利用されない。
+	このパラメータを機能させるためには、
+	<smbconfoption name="oplocks"/>
+	パラメータが、共有上で <constant>yes</constant> である必要があることに注意。</para>
+</description>
+<related>oplocks</related>
+<related>kernel oplocks</related>
+<value type="default">yes</value>
+</samba:parameter>

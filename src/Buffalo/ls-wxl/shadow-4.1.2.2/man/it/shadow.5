@@ -1,0 +1,94 @@
+.\"     Title: shadow
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23/11/2008
+.\"    Manual: File Formats and Conversions
+.\"    Source: File Formats and Conversions
+.\"
+.TH "SHADOW" "5" "23/11/2008" "File Formats and Conversions" "File Formats and Conversions"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NOME"
+shadow \- encrypted password file
+.SH "DESCRIZIONE"
+.PP
+\fIshadow\fR
+contiene le informazioni sulle password cifrate per gli account degli utenti e, opzionalmente, le informazioni sulla durata delle password\&. Sono inclusi:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'nome di login
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'encrypted password
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Giorni a partire dal 1 gennaio 1970 in cui la password è stata cambiata l\'ultima volta
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'days before password may be changed
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'days after which password must be changed
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Giorni prima della scadenza della password in cui l\'utente viene avvertito
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Giorni dopo la scadenza della password in cui l\'account viene disabilitato
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Giorni a partire dal 1 gennaio 1970 dopo i quali l\'account viene disabilitato
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Campo riservato
+.RE
+.PP
+Il campo password non può essere vuoto\&. La password cifrata è composta da un numero compreso tra 13 a 24 di caratteri scelti da un alfabeto di 64 caratteri: da a fino a z, da A a Z, da 0 a 9, \&. e /\&. Facoltativamente, la password può iniziare con il carattere "$"; questo sta a indicare che la password cifrata è stata generata usando un algoritmo diverso da DES\&. Ad esempio, "$1$" significa che è stato usato un algoritmo basato su MD5\&.
+.PP
+Fare riferimento a
+\fBcrypt\fR(3)
+per dettagli sul modo in cui questa stringa viene interpretata\&.
+.PP
+If the password field contains some string that is not valid result of
+\fBcrypt\fR(3), for instance ! or *, the user will not be able to use a unix password to log in, subject to
+\fBpam\fR(7)\&.
+.PP
+La data dell\'ultimo cambio della password è espressa come il numero di giorni trascorsi dal 1 gennaio 1970\&. La passowrd non può essere cambiata nuovamente prima che sia passato il numero di giorni previsti, ma deve obbligatoriamente essere cambiata dopo il massimo numero di giorni\&. Se il numero minimo di giorni richiesti è superiore al numero massimo di giorni concessi, all\'utente non è permesso cambiare la password\&.
+.PP
+An account is considered to be inactive and is disabled if the password is not changed within the specified number of days after the password expires\&. An account will also be disabled on the specified day regardless of other password expiration information\&.
+.PP
+This information supersedes any password or password age information present in
+\fI/etc/passwd\fR\&.
+.PP
+This file must not be readable by regular users if password security is to be maintained\&.
+.SH "FILE"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+informazioni sugli account utente\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+Informazioni sicure sugli account di utenti\&.
+.RE
+.SH "VEDERE ANCHE"
+.PP
+\fBchage\fR(1),
+\fBlogin\fR(1),
+\fBsu\fR(1),
+\fBpasswd\fR(1),
+\fBpasswd\fR(5),
+\fBpwconv\fR(8),
+\fBpwunconv\fR(8),
+\fBsulogin\fR(8)\&.

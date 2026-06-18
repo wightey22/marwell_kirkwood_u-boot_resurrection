@@ -1,0 +1,1459 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="domain-member">
+
+<chapterinfo>
+	&author.jht;
+	&author.jeremy;
+	&author.jerry;
+	&author.tridge;
+	&author.jelmer;
+	<author>&person.gd;<contrib>LDAP updates</contrib></author>
+</chapterinfo>
+
+<title>ドメインメンバシップ</title>
+
+<para>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+ドメインメンバシップはきわめて重要な事項である。Sambaは
+Microsoftドメインセキュリティコンテキスト中においてメンバサーバとして
+参加できねばならず、Sambaはドメインマシンメンバ信頼アカウントを
+付与できねばならない。これなしには多くのユーザに実行可能なオプション
+を提供できないだろう。
+</para>
+
+<para>
+<indexterm><primary>ドメインメンバシップ</primary></indexterm>
+<indexterm><primary>misinformation</primary></indexterm>
+この章では、ドメインメンバシップに関する背景情報、Sambaの設定と、
+Microsoft Windows クライアントのドメインに参加方法について説明する。
+なぜそれが必要なのであろうか?なぜならば、現在のMicrosoft Windows
+ネットワーキングと、特にUNIX/Linuxネットワーキングおよび管理の世界に関して
+かなりの間違った情報、誤解があり、また知識の欠如が顕著だからである。
+この章によってその欠如を埋めることを望みたい。
+</para>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+<indexterm><primary>シングルサインオン</primary></indexterm>
+<indexterm><primary>SSO</primary></indexterm>
+Microsoft Windows ワークステーションおよびサーバがドメイン
+セキュリティに参加するためには、ドメインメンバにならなければならない。
+ドメインセキュリティに参加することは、しばしば<emphasis>シングルサインオン</emphasis>
+か省略して<acronym>SSO</acronym>と呼ばれる。この章では、ワークステーション
+(かあるいは<application>Microsoft Windows NT4/200x</application>サーバであるもう一台のサーバ&smbmdash;)
+又はSambaサーバを、Microsoft Windowsドメインセキュリティの
+メンバにするための手順について説明する。
+</para>
+
+<para>
+<indexterm><primary>native member</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>ドメイン制御</primary></indexterm>
+<indexterm><primary>サーバタイプ</primary><secondary>ドメインメンバ</secondary></indexterm>
+Samba-3 はNT4形式のMicrosoft Windowsドメインにネイティブなメンバサーバ
+として、Microsoft Windows Active Directoryドメインにネイティブな
+メンバサーバとして、あるいは、Sambaドメイン管理ネットワークに参加
+できる。ドメインメンバシップはたくさんの利点を持つ:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	<indexterm><primary>SAM</primary></indexterm>
+	Microsoft WindowsワークステーションユーザはSSOの利点を享受できる。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>アクセス権</primary></indexterm>
+	<indexterm><primary>ファイルの所有者</primary></indexterm>
+	<indexterm><primary>アクセス制御</primary></indexterm>
+	<indexterm><primary>SAM</primary></indexterm>
+	ドメインユーザアカウントの(アクセス)権限とファイルの所有権およびアクセス制御は
+	単一のドメインセキュリティアカウントマネージャ(SAM)データベース
+	から設定できる(ドメインメンバであるMicrosoft Windowsワークステーション
+	と同様にドメインメンバサーバで動作する)。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>ドメインメンバ</primary></indexterm>
+	<indexterm><primary>ネットワークログオン</primary></indexterm>
+	ドメインメンバである<application>Microsoft Windows NT4/200x/XP Professional</application>
+	ワークステーションのみがネットワークログオン機能を使える。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>ドメインメンバ</primary></indexterm>
+	<indexterm><primary>ポリシーファイル</primary></indexterm>
+	<indexterm><primary>NTConfig.POL</primary></indexterm>
+	<indexterm><primary>デスクトッププロファイル</primary></indexterm>
+	ドメインメンバのワークステーションを、ポリシーファイル
+	(<filename>NTConfig.POL</filename>)およびデスクトッププロファイルを使用
+	してよりよく制御できる。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>ログオンスクリプト</primary></indexterm>
+	<indexterm><primary>transparent access</primary></indexterm>
+	<indexterm><primary>アプリケーションサーバ</primary></indexterm>
+	ログオンスクリプトを使用することで、ユーザはアプリケーションサーバ
+	上のネットワークアプリケーションへ自由にアクセスできる。
+	(訳注:意味はこれでよい?)。
+	Through the use of logon scripts, users can be given transparent access to network
+	applications that run off application servers.
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>ユーザアクセス管理</primary></indexterm>
+	<indexterm><primary>SAM</primary></indexterm>
+	<indexterm><primary>LDAP</primary></indexterm>
+	<indexterm><primary>ADS</primary></indexterm>
+	ネットワーク管理者にとっては、より優れたアプリケーション管理およびユーザアクセス
+	管理が可能になる。ユーザアカウントを、中央にあるドメインデータベース
+	(NT4/SambaでのSAM形式ドメインか、LDAPによるディレクトリがバックエンドになった
+	NT4ドメインか、Active Directory基盤経由で)以外の任意のネットワーク
+	クライアントかサーバ上でユーザアカウントを保守する必要がないからである。
+	</para></listitem>
+</itemizedlist>
+
+</sect1>
+
+<sect1 id="machine-trust-accounts">
+<title>MicrosoftWindowsワークステーション/サーバのマシン信頼アカウント</title>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+<indexterm><primary>rogue user</primary></indexterm>
+マシン信頼アカウントは(ユーザではなく)クライアントマシンを
+ドメインコントローラサーバに対して認証するために使われる。Windowsの用語では、
+これは<quote>コンピュータアカウント</quote>として知られている。
+マシン信頼アカウントの目的は、不正(訳注:rogue)ユーザとドメインコントローラ
+が、共謀してドメインメンバのワークステーションにアクセスすることを
+防ぐことである。
+</para>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>パスワード</secondary></indexterm>
+<indexterm><primary>shared secret</primary></indexterm>
+<indexterm><primary>unauthorized</primary></indexterm>
+<indexterm><primary>Windows NT/200x/XP Professional</primary></indexterm>
+<indexterm><primary>Windows 9x/Me/XP Home</primary></indexterm>
+マシン信頼アカウントのパスワードは、ドメインコントローラとの間で暗号化
+通信を行うために共通の秘密鍵(訳注:shared secret:共通鍵?)である。
+これは、同じNetBIOS名を持つ未認証マシンがドメインに参加し、ドメインセキュリティ
+操作をし、ドメインユーザ/グループアカウントへアクセスすることを得ることを防ぐ
+セキュリティ機能である。Windows NT/200x/XP Professionalクライアントは
+マシン信頼アカウントを使うが、Windows 9x/Me/XP Homeは使わない。従って、
+Windows 9x/Me/XP Homeクライアントは、マシン信頼アカウントを持たないため、
+ドメインコントローラとの間で、共通の秘密鍵を持つことはなく、決してドメイン
+の真のメンバにはなれない。
+</para>
+
+<para>
+<indexterm><primary>Windowsレジストリ</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+Windows NT4 PDCはマシン信頼アカウントをWindowsレジストリ中に格納する。
+Microsoft Windows 2000の登場と共に、Active Directoryという、
+マシン信頼アカウントのための新しいリポジトリが登場した。それに対し、
+Samba PDCはマシン信頼アカウントを以下のように2つの部分に分けて格納する:
+
+<itemizedlist>
+	<listitem><para>
+	<indexterm><primary>ドメインセキュリティアカウント</primary></indexterm>
+	<indexterm><primary>アカウント情報</primary></indexterm>
+	<indexterm><primary>バックエンドデータベース</primary></indexterm>
+	ドメインセキュリティアカウントは&smb.conf;ファイル中で設定される
+	<smbconfoption name="passdb backend"/>に格納される。格納される
+	アカウント情報の性質は、選択されたバックエンドデータベースの
+	タイプに依存する。
+	</para>
+
+	<para>
+	<indexterm><primary>smbpasswd</primary></indexterm>
+	<indexterm><primary>UNIX login ID</primary></indexterm>
+	<indexterm><primary>UID</primary></indexterm>
+	<indexterm><primary>LanMan</primary></indexterm>
+	<indexterm><primary>NT形式で暗号化されたパスワード</primary></indexterm>
+	<indexterm><primary>UNIXユーザ識別子</primary><see>UID</see></indexterm>
+	このデータのより古い形式は<filename>smbpasswd</filename>データベースで、
+	そこにはUNIXのログインID、UNIXのユーザ識別子(UID)、LanManおよびNT形式で
+	暗号化されたパスワードを格納している。また、ここでは触れないが、その他
+	にもいくつかの情報が含まれている。
+	</para>
+
+	<para>
+	<indexterm><primary>database</primary></indexterm>
+	<indexterm><primary>ldapsam</primary></indexterm>
+	<indexterm><primary>smbpasswd</primary></indexterm>
+	<indexterm><primary>アカウント制御</primary></indexterm>
+	より新しいデータベースは、ldapsamとtdbsamと呼ばれる。どちらも、以前の
+	<filename>smbpasswd</filename>ファイルよりもかなりより多くのデータを格納する。
+	その付加情報により、新しいユーザアカウント管理の新しい方法が可能になる。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>UNIXアカウント</primary></indexterm>
+	<indexterm><primary>/etc/passwd</primary></indexterm>
+	対応するUNIXアカウントは通常<filename>/etc/passwd</filename>に格納される。
+	UNIX ユーザアカウントを必要としないような、より簡便なオペレーションの実現
+	に向けて開発中だが、この機能は Samba-3 の初期リリースまでは実装されない予定
+	である(訳注:この部分は古い)。
+	</para></listitem>
+</itemizedlist>
+</para>
+
+<?latex \newpage ?>
+<para>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>作成</secondary></indexterm>
+マシン信頼アカウントの作成には3つの方法がある:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+	<indexterm><primary>手動でのUNIXアカウント作成</primary></indexterm>
+	UNIX/Linuxコマンド行からの手動作成。この方法では、Sambaとそれに対応する
+	UNIXアカウントが手動で作成される。
+	</para></listitem>
+
+	<listitem><para>
+	<indexterm><primary>サーバマネージャ</primary></indexterm>
+	<indexterm><primary>Nexusツールキット</primary></indexterm>
+	NT4ドメインコントローラからMicrosoft Windows NT4サーバマネージャを使うか、
+	MicrosoftのWebサイトから入手可能なNexusツールキットを使う。このツールは
+	ユーザが管理者アカウントでログオンしている限り、任意のMicrosoft Windows
+	マシンから実行することが出来る。
+	</para></listitem>
+	
+	<listitem><para>
+	<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+	<indexterm><primary>参加済みのクライアント</primary></indexterm>
+	
+	<quote>その場での(on the fly)</quote>作成。Sambaマシン信頼アカウントは、
+	クライアントがドメインに参加したときに、Sambaによって自動的に作成
+	される(セキュリティ上、この方法が推奨される)。対応するUNIX
+	アカウントは自動でも、手動ででも作成できる。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>enforcing</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>作成</secondary></indexterm>
+Microsoft Windows NT4/200x/XP ProfessionalもSambaもマシン信頼アカウントを
+強制する方法を提供しない。これは管理者の選択問題である。
+</para>
+
+<sect2>
+<title>マシン信頼アカウントの手動作成</title>
+
+<para>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+<indexterm><primary>useradd</primary></indexterm>
+<indexterm><primary>vipw</primary></indexterm>
+マシン信頼アカウントの手動作成の最初の手順は、<filename>/etc/passwd</filename>
+中に対応するUNIXアカウントを手動で作成することである。
+この作業は、<command>vipw</command>か、通常、新規のUNIXアカウント作成時に
+使われる<quote>adduser</quote>コマンドを使用する。以下は、Linux
+ベースのSambaサーバにおける例である:
+<screen>
+&rootprompt;<userinput>/usr/sbin/useradd -g machines -d /var/lib/nobody \
+   -c <replaceable>"machine nickname"</replaceable> \
+   -s /bin/false <replaceable>machine_name</replaceable>$ </userinput>
+
+&rootprompt;<userinput>passwd -l <replaceable>machine_name</replaceable>$</userinput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>プライマリグループ</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>マシンアカウント</primary></indexterm>
+上記の例では、全マシンアカウントのプライマリグループとして使われる
+<quote>machines</quote>という、既存のシステムグループがある。以下の例では、
+<quote>machines</quote>グループのGIDは100である。
+</para>
+
+<para>
+<indexterm><primary>chpass</primary></indexterm>
+<indexterm><primary>BSD</primary></indexterm>
+*BSDシステム上では、この作業は<command>chpass</command>ユーティリティを使うこと
+もできる:
+<screen>
+&rootprompt;<userinput>chpass -a \
+'<replaceable>machine_name</replaceable>$:*:101:100::0:0:Windows <replaceable>machine_name</replaceable>:/dev/null:/sbin/nologin'</userinput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>$</primary></indexterm>
+<indexterm><primary>null shell</primary></indexterm>
+<indexterm><primary>ホームディレクトリ</primary></indexterm>
+<filename>/etc/passwd</filename>のエントリは<quote>$</quote>を追加した
+マシン名を付けたもので、パスワードは持たず、シェル情報が空白で(訳注:
+/dev/nullを指定すること)、ホームディレクトリの定義がない。たとえば、
+マシン名が<quote>doppy</quote>の場合は<filename>/etc/passwd</filename>
+のエントリは以下のようになる:
+<programlisting>
+doppy$:x:505:100:<replaceable>machine_nickname</replaceable>:/dev/null:/bin/false
+</programlisting>
+</para>
+
+<para>
+<indexterm><primary>machine_nickname</primary></indexterm>
+<indexterm><primary>machine_name</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+上記の例では、<replaceable>machine_nickname</replaceable>はクライアントに対する
+任意の名前を記述する(たとえばBasementComputer)。
+<replaceable>machine_name</replaceable>はドメインに参加するときの
+クライアントのNetBIOS名でなければならない。<quote>$</quote>を
+クライアントのNetBIOS名に必ず付加しなければならず、これがないと、
+Sambaはこれをマシン信頼アカウントと認識できない。
+</para>
+
+<para>
+<indexterm><primary>UNIXアカウント</primary></indexterm>
+<indexterm><primary>Sambaアカウント</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>パスワード</secondary></indexterm>
+対応するUNIXアカウントが作成されると、次の手順は初期マシン信頼
+アカウントの、よく知られたパスワードを持つクライアント用のSamba
+アカウントを作成することである。
+これは以下に示すような<command>smbpasswd</command>を使用する:
+<screen>
+&rootprompt;<userinput>smbpasswd -a -m <replaceable>machine_name</replaceable></userinput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>マシン名</primary></indexterm>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+<indexterm><primary>RID</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+ここで<replaceable>machine_name</replaceable>はマシンのNetBIOS名である。
+新規のマシンアカウントのRIDは対応するUNIXアカウントのUIDから生成される。
+</para>
+
+<warning>
+<title>クライアントをドメインに即座に参加させる</title>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>サーバマネージャ</primary></indexterm>
+<indexterm><primary>パスワードの変更</primary></indexterm>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+この方法でマシン信頼アカウントを手動作成することは、 Windows NT PDC で
+<indexterm><primary>サーバマネージャ</primary></indexterm>により
+<application>サーバマネージャ</application>によりマシン信頼アカウントを
+作成するのと同等である。アカウントが作成されてからクライアントがドメイン
+に参加してパスワードを変更するまでの間、同じ NetBIOS 名を持つマシンで
+ドメインに参加しようとする侵入者の被害を受ける可能性がある。 PDC は、
+ドメインのメンバを信頼するようにできており、多くのユーザ情報をこのような
+クライアントに渡してしまう。注意すること!
+</para>
+</warning>
+</sect2>
+
+<sect2>
+<title>NT4サーバマネージャによるドメインマシンアカウントの管理</title>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>自動的なアカウントの生成</primary></indexterm>
+<indexterm><primary>サーバマネージャ</primary></indexterm>
+有効な<smbconfoption name="add machine script"/>はマシン信頼アカウントの
+自動作成に必須である。これは自動アカウント作成機能を使用する場合でも、
+NT4 ドメインサーバマネージャを使用する場合でも必要である。
+</para>
+
+<para>
+<indexterm><primary>SRVTOOLS.EXE</primary></indexterm>
+<indexterm><primary>SrvMgr.exe</primary></indexterm>
+<indexterm><primary>UsrMgr.exe</primary></indexterm>
+<indexterm><primary>ドメイン管理ツール</primary></indexterm>
+ドメインを管理しようとしているマシンが
+<application>Microsoft Windows NT4 ワークステーション又はMicrosoft Windows 200x/XP Professional</application>
+の場合、使用するツールは<command>SRVTOOLS.EXE</command>という
+パッケージである。これをターゲットディレクトリで実行すると、<command>SrvMgr.exe</command>
+及び<command>UsrMgr.exe</command>(どちらもMicrosoft Windows NT4 ワークステーション
+のドメイン管理ツール)が解凍される。
+</para>
+
+<para>
+<indexterm><primary>Nexus.exe</primary></indexterm>
+<indexterm><primary>Microsoft Windows 9x/Me</primary></indexterm>
+ワークステーションが<application>Microsoft Windows 9x/Me</application>
+ファミリー製品であれば、 Microsoft のWebサイトから<command>Nexus.exe</command>
+パッケージをダウンロードする。それをターゲットディレクトリから実行すると、
+上記と同じツールで、9x/Meプラットフォーム用のものが解凍される。
+</para>
+
+<para>
+これらのツールに関する詳細情報は次のKnowledge Baseの記事で得ることができる: 
+<ulink url="http://support.microsoft.com/default.aspx?scid=kb;en-us;173673">173673</ulink>と
+<ulink url="http://support.microsoft.com/default.aspx?scid=kb;en-us;172540">172540</ulink>
+</para>
+
+<para>
+<indexterm><primary>srvmgr.exe</primary></indexterm>
+<indexterm><primary>ドメインのサーバマネージャ</primary></indexterm>
+<command>srvmgr.exe</command>(ドメイン用のサーバマネージャ)を起動し、以下の手順を実行する:
+</para>
+
+<procedure>
+<title>サーバマネージャによるドメインマシンアカウント管理</title>
+	<step><para>
+	メニューから<guimenu>コンピュータ</guimenu>を選択する。
+	</para></step>
+
+	<step><para>
+	<guimenuitem>Select Domain</guimenuitem>をクリックする。
+	</para></step>
+
+	<step><para>
+	<guilabel>Select Domain</guilabel>パネルで管理対象の
+	ドメイン名をクリックし、 <guibutton>OK</guibutton>をクリックする。
+	</para></step>
+
+	<step><para>
+	再度メニュー画面から<guimenu>コンピュータ</guimenu>を選択する。
+	</para></step>
+
+	<step><para>
+	<guimenuitem>Add to Domain</guimenuitem>を選択する。
+	</para></step>
+
+	<step><para>
+	ダイアログボックス中で、<guilabel>Add NT Workstation of Server</guilabel>
+	ラジオボタンをクリックし、フィールドにマシン名を入力し、
+	<guibutton>Add</guibutton>ボタンをクリックする。
+	</para></step>
+</procedure>
+
+</sect2>
+
+<sect2>
+<title>マシン信頼アカウントの即時作成</title>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>作成</secondary></indexterm>
+マシン信頼アカウント作成の第3の(そして推奨する)方法は、クライアントが
+ドメインに参加する時、必要に応じて Samba サーバーアカウントを作成する方法である。
+</para>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>UNIXアカウント</secondary></indexterm>
+<indexterm><primary>UNIXアカウント</primary></indexterm>
+<indexterm><primary>add machine script</primary></indexterm>
+Samba の各マシン信頼アカウントは対応するUNIXアカウントを必要とするので、
+通常、 UNIXアカウントを自動作成する機能が提供されている。これには &smb.conf;
+ファイル内に add machine script オプションを設定する必要がある。
+しかし、この方法は必須ではなく、対応するUNIXアカウントを手動で作成しても構わない。
+</para>
+
+
+<para>
+<indexterm><primary>useradd</primary></indexterm>
+<indexterm><primary>Red Hat Linux</primary></indexterm>
+以下は、Red Hat linux での例である:
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="add machine script">/usr/sbin/useradd -d /var/lib/nobody -g 100 -s /bin/false -M %u</smbconfoption>
+</smbconfblock>
+</para>
+
+</sect2>
+
+<sect2><title>Microsoft Windows ワークステーション又はサーバをドメインメンバにする</title>
+
+<para>
+Microsoft Windows ワークステーションやサーバをドメインのメンバ
+にする手順は Windowsのバージョンによって異なる。
+</para>
+
+<sect3>
+	<title>Windows 200x/XP Professionalクライアント</title>
+
+	<para>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary><secondary>作成権限</secondary></indexterm>
+<indexterm><primary>権限</primary></indexterm>
+<indexterm><primary>root</primary></indexterm>
+        ユーザーがクライアントをドメインメンバにする時、 Windows 200x は、ドメイン内で
+        マシンアカウントを作成する権限を持つアカウント及びパスワードの入力を要求する。
+        Samba管理者アカウント(すなわち、Sambaサーバ上で<constant>root</constant>権限を
+        持つSambaアカウント)をここで入力せねばならない。通常のユーザアカウントが入力さ
+        れると、この作業は失敗する(訳注:net rpc rightsでSeMachineAccountPrivilege権限を
+        持ったユーザも出来るのでは?)
+	</para>
+
+	<para>
+<indexterm><primary>管理者アカウント</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+        セキュリティのため、この管理者アカウントのパスワードは<filename>/etc/passwd</filename>
+        でルートユーザ用に使用されているパスワード以外のものを設定するべきである。
+	</para>
+
+	<para>
+<indexterm><primary>アカウント</primary></indexterm>
+<indexterm><primary>ドメインメンバの作成</primary></indexterm>
+<indexterm><primary>root</primary></indexterm>
+<indexterm><primary>map</primary></indexterm>
+        ドメインメンバのマシンアカウントを作成するために使用するアカウント名は
+        ネットワーク管理者が任意に選択する。もしそれが<constant>root</constant>以外なら
+        &smb.conf;中のパラメータ
+        <smbconfoption name="username map">/etc/samba/smbusers</smbconfoption>
+        で指定するファイル名中で容易にマッピングできる。
+	</para>
+
+	<para>
+<indexterm><primary>管理者アカウント</primary></indexterm>
+<indexterm><primary>暗号化キー</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+        Samba管理者アカウントのセッションキーは、マシン信頼アカウントのパスワード
+        設定の際、暗号化キーの機能を果たす。マシン信頼アカウントはその場でで作成
+        されるか、または、既に存在していれば更新される。
+	</para>
+</sect3>
+
+<sect3>
+	<title>Windows NT4 クライアント</title>
+
+	<para>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>コンピュータアカウントの作成</primary></indexterm>
+<indexterm><primary>マシンの参加</primary></indexterm>
+        マシン信頼アカウントが手動作成された場合、Identification Changes
+        メニュー画面でドメイン名を入力するが、
+        <guilabel>Create a Computer Account in the Domain</guilabel>
+	チェックボックスにはチェックを入れない。こうすることでマシン
+	がドメインに参加する際に既存のマシン信頼アカウントが使用される。
+	</para>
+
+	<para>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>即時</primary></indexterm>
+<indexterm><primary>コンピュータアカウント</primary></indexterm>
+<indexterm><primary>管理者アカウント</primary></indexterm>
+	もしマシン信頼アカウントがその場で作成される場合は、Identification Changes
+	メニュー画面でドメイン名を入力し、
+	<guilabel>Create a Computer Account in the Domain</guilabel>
+	チェックボックスにチェックを入れる。この場合、上記 Windows2000用
+	の手順に従いドメインに参加する(プロンプトに対してSamba管理者
+	アカウント名を入力する)。
+	</para>
+</sect3>
+
+<sect3>
+	<title>Sambaクライアント</title>
+
+	<para>
+<indexterm><primary></primary></indexterm>
+	Joining a Sambaクライアントをドメインに参加させる方法は
+	<link linkend="domain-member-server">次の章</link>に記述されている。
+	</para>
+</sect3>
+
+</sect2>
+</sect1>
+
+<sect1 id="domain-member-server">
+<title>ドメインメンバサーバ</title>
+
+<para>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+<indexterm><primary>セキュリティコンテキスト</primary></indexterm>
+<indexterm><primary>認証機構</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+このモードのサーバ操作は、Sambaマシンをドメインセキュリティコンテキスト
+のメンバーにすることを含む。またこれは定義上、全てのユーザ認証は中央で
+定義された認証機構(訳注:authentication regime)で行われることを意味する。
+この認証機構は NT3/4形式(旧式のドメインテクノロジー)サーバ又は
+Microsoft Windows 2000以降で実装されているActive Directory server(ADS)
+が提供する。
+</para>
+
+<para>
+<emphasis>
+<indexterm><primary>認証</primary><secondary>バックエンド</secondary></indexterm>
+<indexterm><primary>分散ディレクトリ</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>iPlanet</primary></indexterm>
+<indexterm><primary>Sun</primary></indexterm>
+<indexterm><primary>Novell</primary></indexterm>
+<indexterm><primary>e-Directory</primary></indexterm>
+もちろん、認証バックエンド自体はSambaがサポートしている分散ディレクトリ
+構造のサーバなら、いずれでも構わない。LDAP(OpenLDAPベース) 、Sunの
+iPlanet、Novellの e-Directoryなどが使用可能である。
+</emphasis>
+</para>
+
+<note><para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>アイデンティティ管理</primary></indexterm>
+<indexterm><primary>マシン認証</primary></indexterm>
+SambaがLDAPやその他のアイデンティティ管理、あるいは、ディレクトリ
+サービスを使用するように設定される場合、ユーザ及びマシン認証を継続して
+実行するのはSambaである。Sambaが行う認証をLDAPサーバが代替するわけでは
+ないことに注意。
+</para></note>
+
+<para>
+<indexterm><primary>ドメインマシンアカウントの作成</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>ドメインに参加</primary></indexterm>
+ドメインメンバサーバーのドメインマシンアカウント作成に関する詳細情報や
+Sambaドメインメンバマシンがドメインに参加し完全に信頼されるようにする
+方法に関しては、<link linkend="samba-pdc">ドメイン管理</link>の章を参照のこと。
+</para>
+
+<sect2>
+<title>Samba-3でNT4形式でのドメインに参加する</title>
+
+<para><link linkend="assumptions">下記の表</link>に、この後この章で使用される名前を示す。</para>
+
+<table frame="all" id="assumptions"><title>前提</title>
+	<tgroup cols="2">
+		<colspec align="right"/>
+		<colspec align="left"/>
+	<tbody>
+			<row>
+				<entry>Samba DMSのNetBIOS名:</entry><entry>SERV1</entry>
+			</row>
+			<row>
+				<entry>Windows 200x/NTドメイン名:</entry><entry>&example.workgroup;</entry>
+			</row>
+			<row>
+				<entry>ドメインのPDCのNetBIOS名:</entry><entry>DOMPDC</entry>
+			</row>
+			<row>
+				<entry>ドメインのBDCのNetBIOS名:</entry><entry>DOMBDC1とDOMBDC2</entry>
+			</row>
+	</tbody>
+	</tgroup>
+</table>
+
+<para>
+<indexterm><primary></primary></indexterm>
+まず&smb.conf;ファイルを編集し、Sambaが以後ドメインセキュリティを
+使用するように設定しなければならない。
+</para>
+
+<para>
+<indexterm><primary>security = user</primary></indexterm>
+<indexterm><primary>standalone server</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+&smb.conf;中の[global]セクション中に<smbconfoption name="security"/>
+行を、下記のように変更(又は追加)する:
+<smbconfblock>
+<smbconfoption name="security">domain</smbconfoption>
+</smbconfblock>
+もしも、パラメータ<parameter>security = user</parameter>が使われている
+ならば、このマシンはスタンドアロンサーバで動作するのでドメインメンバ
+サーバではないことに注意。ドメインセキュリティモードはSambaにドメイン
+セキュリティコンテキスト内で動作するようにさせる。
+</para>
+
+<para>
+次に、<smbconfsection name="[global]"/>セクション中の
+<smbconfoption name="workgroup"/>行を下記のように修正する:
+<smbconfblock>
+<smbconfoption name="workgroup">&example.workgroup;</smbconfoption>
+</smbconfblock>
+これが参加するドメイン名である。
+</para>
+
+<para>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+ユーザーが NT PDC で認証されるように<smbconfoption name="encrypt passwords"/>
+パラメータを<constant>yes</constant>に設定しなければならない。もしこの
+パラメータが特に指定されていなければ、既定値で設定されている。
+このパラメータを設定する必要はないが、もしも&smb.conf;ファイル中で指定
+されたならば、必ず<constant>Yes</constant>に設定されねばならない。
+</para>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>authenticate users</primary></indexterm>
+<indexterm><primary>ドメインコントローラ</primary></indexterm>
+最後に、[global]セクションの<smbconfoption name="password server"/>行
+を下記のように追加(又は修正)する:
+<smbconfblock>
+<smbconfoption name="password server">DOMPDC DOMBDC1 DOMBDC2</smbconfoption>
+</smbconfblock>
+これらはSambaがユーザ認証のために通信を行うプライマリ及びバックアップの
+ドメインコントローラである。Sambaは各サーバに対し、リスト順に接続するので、
+複数のドメインコントローラの間で認証負荷を分散するためには、このリストの
+順番を適宜変更してもよい。
+</para>
+
+<para>
+<indexterm><primary>ドメインコントローラのリスト</primary></indexterm>
+<indexterm><primary>メカニズム</primary></indexterm>
+<indexterm><primary>ブロードキャストベースの名前解決</primary></indexterm>
+<indexterm><primary>DNSによる名前解決</primary></indexterm>
+代わりに、認証に使用するドメインコントローラのリストを smbdが自動的に決める
+ようにしたい場合、この行を次のように設定する:
+<smbconfblock>
+<smbconfoption name="password server">*</smbconfoption>
+</smbconfblock>
+<indexterm><primary>WINS</primary></indexterm>
+この方法で、NTと全く同じメカニズムをSambaが使用するようにできる。この方法は
+ブロードキャストベースの名前解決を使用するか、WINS データベースの検索により
+認証するドメインコントローラを決めるか、DNSによる名前解決によりドメイン
+コントローラを見つける。
+</para>
+
+<para>
+ドメインに参加するために次のコマンドを実行する:
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>join</tertiary></indexterm>
+<screen>
+&rootprompt;<userinput>net rpc join -S DOMPDC -U<replaceable>Administrator%password</replaceable></userinput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>NetBIOS名</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>WINS検索</primary></indexterm>
+<indexterm><primary>NetBIOSブロードキャスト</primary></indexterm>
+もしも、<option>-S DOMPDC</option>引数が与えられない場合、ドメイン名は&smb.conf;
+から入手し、PDCのNetBIOS名は、WINS検索を使うか、NetBIOSブロードキャストベースの名前
+検索のどちらかで入手する。
+</para>
+
+<para>
+<indexterm><primary>ドメインへの参加</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>Administrator%password</primary></indexterm>
+<indexterm><primary>ドメインに参加</primary></indexterm>
+マシンがDOMドメインに参加しようとしていて、そのドメインのPDC(ドメインのSAMデータ
+ベースへの書き込み権限のある唯一のマシン)がDOMPDCなので、
+<option>-S</option>オプションを使用する。
+<replaceable>Administrator%password</replaceable>は、はマシンをドメインに追加する
+のに必要な権限を持つアカウントのログイン名とパスワードである。これが成功すれば、
+使用しているターミナルの画面に下のようなメッセージが表示される。
+古いNT4式のドメイン環境使用の場合:
+<screen>
+<computeroutput>Joined domain DOM.</computeroutput>
+</screen>
+</para>
+
+<para>
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>join</tertiary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>ADSドメインへの参加</primary></indexterm>
+Active Directory使用の場合、ADSドメインへ参加するためのコマンドは以下の通り:
+<screen>
+&rootprompt; net ads join -U<replaceable>Administrator%password</replaceable>
+</screen>
+成功すると以下の結果が表示される:
+<screen>
+<computeroutput>Joined SERV1 to realm MYREALM.</computeroutput>
+</screen>
+</para>
+
+<para>
+詳細情報については、<command>net</command>のマニュアルページと
+<link linkend="NetCommand">リモート管理の章</link>を参照のこと。
+</para>
+
+<para>
+<indexterm><primary>ドメインに参加</primary></indexterm>
+<indexterm><primary>マシン信頼アカウントの作成</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+この手順により、事前にPDC上でマシン信頼アカウントを作成する必要はなく、
+サーバがドメインに接続できる。
+</para>
+
+<para>
+<indexterm><primary>マシンアカウントのパスワード</primary><secondary>変更プロトコル</secondary></indexterm>
+<indexterm><primary>ランダムなマシンアカウントのパスワード</primary></indexterm>
+<indexterm><primary>/usr/local/samba/private/secrets.tdb</primary></indexterm>
+<indexterm><primary>/etc/samba/secrets.tdb</primary></indexterm>
+このコマンドは、マシンアカウントパスワード変更プロトコルを通して、
+Sambaサーバの新規(任意の)マシンアカウントパスワードを、smbpasswdファイルが
+通常格納されているディレクトリと同じディレクトリにあるファイルに書き込む。
+DMSによって必要とされる信頼アカウント情報は
+<filename>/usr/local/samba/private/secrets.tdb</filename>か
+<filename>/etc/samba/secrets.tdb</filename>ファイル中に書かれる。
+</para>
+
+<para>
+<indexterm><primary>ドメインレベルのセキュリティ</primary></indexterm>
+<indexterm><primary>シャドウパスワードファイル</primary></indexterm>
+このファイルはrootにより作成・所有され、root 以外のユーザは読めない。これが、
+システムのドメインレベルのセキュリティの鍵を握る部分であり、シャドウ
+パスワードファイル同様に慎重に扱わなければならない。
+</para>
+
+<para>
+<indexterm><primary>Samba daemons</primary></indexterm>
+<indexterm><primary>ディストリビューション</primary></indexterm>
+<indexterm><primary>/etc/init.d/samba</primary></indexterm>
+最後に、Sambaのdaemonを再起動し、クライアントがドメインセキュリティを使用開始する
+準備をする。Samba デーモンの再起動方法はディストリビューションにもよるが、ほとんど
+の場合は次のとおりである:
+<screen>
+&rootprompt;/etc/init.d/samba restart
+</screen>
+</para>
+
+</sect2>
+
+<sect2>
+<title>これがなぜ<parameter>security = server</parameter>よりもすぐれているのか?</title>
+
+<para>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+<indexterm><primary>UNIXユーザ</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+現在、Samba のドメインセキュリティでは、サーバに紐づくユーザに対応するローカルUNIXユーザを
+作成しなければならない。このことは、もしも、ドメインユーザ<constant>DOM\fred</constant>
+がドメインセキュリティのSambaサーバーに紐づく場合、UNIXファイルシステム上にそれに対応する
+fred というローカル UNIXユーザーがいなければならないことを意味する。これは以前のSambaの
+セキュリティモードである<smbconfoption name="security">server</smbconfoption>と似ているが、
+このモードでは、Windows 95又はWindows 98サーバと同じように、 Sambaが認証リクエストを
+Windows NT サーバーに回送していた。
+</para>
+
+<para>
+<indexterm><primary>winbind</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+UNIX の UID 及び GID を自動的に Windows NT ドメインユーザ及びグループへ割り当てる
+システムについての情報は<link linkend="winbind">Winbind: ドメインアカウントの使用</link>
+を参照のこと。
+</para>
+
+<para>
+<indexterm><primary>ドメインレベル</primary></indexterm>
+<indexterm><primary>認証</primary></indexterm>
+<indexterm><primary>RPC</primary></indexterm>
+ドメインレベルのセキュリティの利点は、NT サーバと全く同じように、ドメインレベルセキュリティ
+における認証が、認証されたRPC チャンネルを通ることである。これは、Sambaサーバが NT サーバと
+全く同じやり方でドメインの信頼関係に参加できることを意味する(すなわち、Sambaサーバをリソース
+ドメインに追加し、リソースドメインPDC からアカウントドメイン PDC に認証を渡してもらうことができる)。
+</para>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>BDC</primary></indexterm>
+<indexterm><primary>connection resources</primary></indexterm>
+さらに、<smbconfoption name="security">server</smbconfoption>(訳注:サーバレベルのセキュリティ)
+を使う場合、サーバ上のすべてのSambaデーモンは、起動している限り認証サーバーと接続し続けなければ
+ならない。これはMicrosoft NTサーバの接続リソースを使い果たし、利用可能な接続がなくなることに
+なりかねない。それに対し<smbconfoption name="security">domain</smbconfoption>
+(訳注:ドメインレベルのセキュリティ)の場合は、Sambaデーモンはユーザー認証に必要な時のみPDC/BDCに
+接続し、その後接続を切断する。これにより PDC の接続リソースを節約することができる。
+</para>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>authentication reply</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>NTグループ</primary></indexterm>
+最後に、NT サーバと同じように PDC 認証を行うということは、認証の返答の一部として、ユーザ SIDや
+ユーザが属する NTグループなどのユーザ識別情報を、Samba サーバーが受け取ることを意味する。
+</para>
+
+<note>
+<para>
+この文書の内容の大半は、ウェブマガジン
+<ulink url="http://www.linuxworld.com"><emphasis>LinuxWorld</emphasis></ulink>の記事
+<ulink url="http://www.linuxworld.com/linuxworld/lw-1998-10/lw-10-samba.html"/>
+<emphasis>Doing the NIS/NT Samba</emphasis>として最初に発表された(訳注:リンク切れ)。
+</para>
+</note>
+
+</sect2>
+</sect1>
+
+<sect1 id="ads-member">
+<title>Samba ADS ドメインメンバシップ</title>
+
+<para>
+<indexterm significance="preferred"><primary>Active Directory</primary></indexterm>
+<indexterm significance="preferred"><primary>ADS</primary><see>Active Directory</see></indexterm>
+<indexterm><primary>KDC</primary></indexterm>
+<indexterm><primary>Kerberos</primary></indexterm>
+これは、Windows 200x KDC に対し Kerberos認証を行うSamba-3の設定方法の概略である。
+Kerberosの知識を有することを前提としている。
+</para> 
+
+<sect2>
+<title>&smb.conf;の設定</title>
+
+<para>
+最低以下の3つのオプションを&smb.conf;で使用しなければならない:
+</para>
+
+<smbconfblock>
+<smbconfoption name="realm">your.kerberos.REALM</smbconfoption>
+<smbconfoption name="security">ADS</smbconfoption>
+<smbconfcomment>もしも存在するときのみ、以下のパラメータを指定する必要がある。</smbconfcomment>
+<smbconfcomment>もしも存在しないときの既定値はYesである。</smbconfcomment>
+<smbconfoption name="encrypt passwords">yes</smbconfoption>
+</smbconfblock>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>realm</primary></indexterm>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>ADS DC</primary></indexterm>
+<indexterm><primary>パスワードサーバ</primary></indexterm>
+Samba がレルム名を使用して適切な ADS サーバーを正確に識別できない場合、
+&smb.conf;中の<smbconfoption name="password server"/>オプションを使用する:
+<smbconfblock>
+<smbconfoption name="password server">your.kerberos.server</smbconfoption>
+</smbconfblock>
+ADSドメインコントローラを識別できない最も共通的な理由は、ADS基盤のDNS要求条件
+に関係なくUNIXシステム上でいくつかのDNSサーバを保守しているサイトの問題である。
+<parameter>password server</parameter>を使って、優先するADSドメインコントローラ
+を指定することは問題ない。
+</para>
+
+<note><para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>authenticated</primary></indexterm>
+smbpasswdファイルは<emphasis>必要でなく</emphasis>、古いクライアントは
+あたかも<smbconfoption name="security">domain</smbconfoption>のように
+認証され、何の害もなく、ドメインに入らないローカルユーザーを持つことが
+できる。
+</para></note>
+
+</sect2>
+  
+<sect2>
+<title><filename>/etc/krb5.conf</filename>の設定</title>
+
+<para>
+<indexterm><primary>/etc/krb5.conf</primary></indexterm>
+<indexterm><primary>Kerberos</primary><secondary>/etc/krb5.conf</secondary></indexterm>
+<indexterm><primary>MIT</primary></indexterm>
+<indexterm><primary>Heimdal</primary></indexterm>
+MIT 及び Heimdal Kerberosでは、<filename>/etc/krb5.conf</filename>の
+設定は必要なく、時に害となることがある。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>SRV records</primary></indexterm>
+<indexterm><primary>DNS zon</primary></indexterm>
+<indexterm><primary>KDC</primary></indexterm>
+<indexterm><primary>_kerberos.REALM.NAME</primary></indexterm>
+Microsoft ADSは、DNSの<parameter>_kerberos._tcp.REALM.NAME</parameter>に、
+レルム内の各KDCのSRVレコードを、自動的に作成する。 これは、Active Directory
+ドメインを作成するために使われるインストールと設定プロセスの一部である。
+KDCはKerberosのキー配信センタであり、Microsoft Active Directory基盤の
+不可欠な部分として構成されている。
+</para>
+
+<para>
+<indexterm><primary>kinit</primary></indexterm>
+<indexterm><primary>DES-CBC-MD5</primary></indexterm>
+<indexterm><primary>DES-CBC-CRC</primary></indexterm>
+<indexterm><primary>暗号化タイプ</primary></indexterm>
+<indexterm><primary>kerberos</primary></indexterm>
+<indexterm><primary>Windows 2000</primary></indexterm>
+UNIXシステムは、Windows2000 KDCにで認証を行うために、kinitとDES-CBC-MD5
+又はDES-CBC-CRCという種類の暗号手法を使える。Windows 2000 ADSのkerberos
+相互運用性に関連する詳細情報は、
+<ulink
+url="http://www.microsoft.com/windows2000/techinfo/planning/security/kerbsteps.asp">Interoperability</ulink>
+というガイドを参照のこと。もう1つの、とても有用な、Kerberosの相互運用性に関する
+一般的な情報として参照できる文書は、
+<ulink url="http://www.ietf.org/rfc/rfc1510.txt?number=1510">RFC1510</ulink>
+である。このRFCはKerberosの操作についてのたくさんの不可思議な背景について説明している。
+</para>
+
+<para>
+<indexterm><primary>MIT</primary></indexterm>
+<indexterm><primary>KRB5</primary></indexterm>
+<indexterm><primary>SRVレコード</primary></indexterm>
+<indexterm><primary>krb5.conf</primary></indexterm>
+<indexterm><primary>DNS検索</primary></indexterm>
+<indexterm><primary>ライブラリ</primary></indexterm>
+MITとHeimdalでは、最新のKRB5ライブラリがSRVレコードをチェックするように
+既定値で設定されていて、従って、自動的にKDCを見つける。さらに、
+<filename>krb5.conf</filename>は、たとえ2つ以上あったとしても単一のKDCの
+指定のみ許可する。DNSルックアップを使用することによりKRB5ライブラリは使用
+可能な任意のKDCを使用できる。
+</para>
+
+<para>
+<indexterm><primary>krb5.conf</primary></indexterm>
+手動で<filename>krb5.conf</filename>を設定する場合の最小限の設定は次のとおり:
+<screen>
+[libdefaults]
+	default_realm = YOUR.KERBEROS.REALM
+
+[realms]
+	YOUR.KERBEROS.REALM = {
+	kdc = your.kerberos.server
+	}
+
+[domain_realms]
+	.kerberos.server = YOUR.KERBEROS.REALM
+</screen>
+</para>
+
+<para>
+<indexterm><primary>Heimdal</primary></indexterm>
+Heimdal のバージョン 0.6 以前を使用する場合は次のように設定する:
+<screen>
+[libdefaults]
+	default_realm      = YOUR.KERBEROS.REALM
+	default_etypes     = des-cbc-crc des-cbc-md5
+	default_etypes_des = des-cbc-crc des-cbc-md5
+
+[realms]
+        YOUR.KERBEROS.REALM = {
+        kdc = your.kerberos.server
+	}
+
+[domain_realms]
+        .kerberos.server = YOUR.KERBEROS.REALM
+</screen>
+</para>
+
+<para>
+<indexterm><primary>KDC</primary></indexterm>
+<indexterm><primary>kinit</primary></indexterm>
+<userinput>kinit<replaceable>USERNAME</replaceable>@<replaceable>REALM</replaceable></userinput>
+を実行して設定をテストし、パスワードが Windows 2000 KDC に認証されることを確認
+する。
+</para>
+
+<para>
+<indexterm><primary>Heimdal</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>KDC</primary></indexterm>
+<indexterm><primary>Windows 2003</primary></indexterm>
+Heimdal 0.6.x 以前のバージョンでは、ADSで新規に作成されたアカウントであるか、
+移行後にパスワードが変更されたアカウントであるか、インストール後に
+<constant>Administrator</constant>であれば使用できる。現行、Windows 2003 KDCは
+Heimdal のバージョン 0.6 以降のリリース(かつkrb5.conf内にetypesの既定値の設定が
+ないもの)とのみ使用できる。残念ながらこの領域はいまだに流動的な状態である。
+</para>
+
+<note><para>
+<indexterm><primary>realm</primary></indexterm>
+<indexterm><primary>大文字</primary></indexterm>
+<indexterm><primary>KDC</primary></indexterm>
+レルムは大文字でなければ、
+<quote><errorname>Cannot find KDC for requested realm while getting initial credentials</errorname>
+(最初の認証情報取得時にリクエストされたレルムの KDC を見つけられない)</quote>
+というエラーが表示される(Kerberos は大文字・小文字を区別する)。
+</para></note>
+
+<note><para>
+<indexterm><primary>同期</primary></indexterm>
+<indexterm><primary>credentials</primary></indexterm>
+<indexterm><primary>時間差</primary></indexterm>
+<indexterm><primary>クロックスキュー</primary></indexterm>
+2つのサーバは時間の同期を取らなければならない。もし時間差が5分以上になると
+メッセージ
+<quote><errorname>kinit(v5): Clock skew too
+great while getting initial credentials</errorname>
+(kinit(v5): 最初の認証情報取得時にクロックスキューが過大)</quote>
+が表示される。
+</para></note>
+
+<para>
+<indexterm><primary>クロックスキュー</primary></indexterm>
+<indexterm><primary>Kerberos</primary></indexterm>
+Kerberos プロトコルではクロックスキューの限界値を設定できる。既定値は5分である。
+</para>
+
+<para>
+<indexterm><primary>DNS</primary></indexterm>
+<indexterm><primary>KDC</primary></indexterm>
+<indexterm><primary>ホスト名</primary></indexterm>
+<indexterm><primary>realm</primary></indexterm>
+更に、使用するKDCのIP アドレスによる逆引きDNS検索をできるようにしなければならない。
+また、この逆引きDNS検索がマッピングする先の名前はKDCのNetBIOS名(すなわち、ドメイン
+に紐づかないホスト名)またはレルムが後に付くNetBIOS名のどちらでもよい。
+</para>
+
+<para>
+<indexterm><primary>/etc/hosts</primary></indexterm>
+<indexterm><primary>KDC</primary></indexterm>
+<indexterm><primary>realm</primary></indexterm>
+以上を確実に行うための最も簡単な方法は、使用するKDCのIPアドレスをマッピングする
+<filename>/etc/hosts</filename>のエントリを、KDCのNetBIOS名に追加することである。
+もし正しくなければ、レルムに参加しようとすると<errorname>local error</errorname>
+が発生する。
+</para>
+
+<para>
+<indexterm><primary>Kerberos</primary></indexterm>
+<indexterm><primary>コンピュータアカウントの作成</primary></indexterm>
+<indexterm><primary>サーバ設定のテスト</primary></indexterm>
+<indexterm><primary></primary></indexterm>
+&smbclient;中でのKerberos のサポートのみが必要な場合は、次の項は飛ばして直接
+<link linkend="ads-test-smbclient">&smbclient;でのテスト</link>に進むこと。
+<link linkend="ads-create-machine-account">コンピュータアカウントの作成</link>と
+<link linkend="ads-test-server">サーバ設定のテスト</link>は、
+&smbd;と&winbindd;でKerberosのサポートをしたい場合にのみ必要である。
+</para>
+
+</sect2>
+
+<sect2 id="ads-create-machine-account">
+<title>コンピュータアカウントの作成</title>
+
+<para>
+<indexterm><primary>書き込み権限</primary></indexterm>
+<indexterm><primary>Sambaプライベートディレクトリ</primary></indexterm>
+<indexterm><primary>管理者アカウント</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+Samba のプライベートディレクトリに書き込み権限があるユーザ(通常はroot)として以下を実行する:
+<screen>
+&rootprompt; <userinput>net ads join -U Administrator%password</userinput>
+</screen>
+管理者アカウントは、ADSドメインにマシンを追加することを許可されているADSドメインセキュリティ
+の設定中で指定された任意のアカウントでも良い。それはもちろん、Administrator以外のアカウント
+を使うことは良いアイデアである。UNIX/Linuxシステム上では、このコマンドはUID=0(root)である
+アカウントによって実行されねばならない。
+</para>
+
+<para>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>organizational unit</primary></indexterm>
+<indexterm><primary>ADSマネージャ</primary></indexterm>
+<indexterm><primary>kinit</primary></indexterm>
+<indexterm><primary>net</primary><secondary>ads</secondary><tertiary>join</tertiary></indexterm>
+複雑な組織内でWindowsクライアントをADSドメインのメンバにする場合、特定の組織単位内で
+マシンアカウントを作成しても良い。Samba-3では次の構文でこれを実現できる:
+<screen>
+&rootprompt; <userinput>kinit Administrator@your.kerberos.REALM</userinput>
+&rootprompt; <userinput>net ads join createcomputer="organizational_unit"</userinput>
+</screen>
+ADS管理者は"organizational_unit"パラメータに指定すべきものを助言することも可能である。
+</para>
+
+<para>
+<indexterm><primary>organizational directory</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>コンテナ</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+例をあげると、ある組織ディレクトリ<quote>Computers/BusinessUnit/Department,</quote>
+の配下の<quote>Servers</quote>というコンテナにマシン信頼アカウントを作成したい場合
+は以下のようになる:
+<screen>
+&rootprompt; <userinput>net ads join "Computers/BusinessUnit/Department/Servers"</userinput>
+</screen>
+このコマンドは、コンテナ<literal>Computers/BusinessUnit/Department/Servers</literal>
+中に、Sambaサーバのマシン信頼アカウントを置く。コンテナはこのコマンドを実行する前に
+ADS ディレクトリ中に存在しなければならない。バックスラッシュはOU名とその他の文字に
+対するエスケープ文字の両方として有効な文字のため、普通のスラッシュを使わなければ
+ならないことに注意。もしもOU名にバックスラッシュを使う必要があるならば、シェルによる
+解釈と、LDAPによる解釈を考慮して4重にする必要がある。
+</para>
+
+<sect3>
+<title>よくあるエラー</title>
+
+<para>
+<variablelist>
+	<varlistentry><term><errorname>ADS サポートがコンパイルされていない</errorname></term>
+	<listitem><para>
+	<indexterm><primary>config.cache</primary></indexterm>
+	<indexterm><primary>Kerberos</primary></indexterm>
+	<indexterm><primary>headers files</primary></indexterm>
+	Kerberosライブラリとヘッダファイルのインストール後に、Samba を再設定(config.cache を削除)
+	して、リコンパイルする(make clean all install)。
+	</para></listitem></varlistentry>
+
+	<varlistentry><term><errorname>net ads joinがユーザー名の入力を要求する</errorname></term>
+	<listitem><para>
+	<indexterm><primary>kinit</primary></indexterm>
+	<indexterm><primary>rights</primary></indexterm>
+	<userinput>kinit
+	<replaceable>USERNAME</replaceable>@<replaceable>REALM</replaceable></userinput>
+	を使ってドメインにログインする必要がある。
+	<replaceable>USERNAME</replaceable>はマシンをドメインへ追加する権限を持つユーザーでなければならない。
+	</para></listitem></varlistentry>
+
+	<varlistentry><term>サポートされない暗号/もしくはチェックサムタイプ</term>
+	<listitem><para>
+	<indexterm><primary>/etc/krb5.conf</primary></indexterm>
+	<indexterm><primary>unsupported encryption</primary></indexterm>
+	<indexterm><primary>Kerberos</primary></indexterm>
+	<filename>/etc/krb5.conf</filename>システムにインストールされているKerberosの
+	タイプとバージョンに対して適切に設定されているか確認する。
+	</para></listitem></varlistentry>
+</variablelist>
+</para>
+
+</sect3>
+
+</sect2>
+
+<sect2 id="ads-test-server">
+<title>サーバ設定のテスト</title>
+
+<para>
+<indexterm><primary>参加成功</primary></indexterm>
+<indexterm><primary>コンピュータアカウント</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+参加に成功したら、Active DirectoryにSambaサーバのNetBIOS名の付いた
+新規のコンピュータアカウントが表示される(ユーザとコンピュータ配下の
+<quote>コンピュータ</quote>フォルダ中)。
+</para>
+
+<para>
+<indexterm><primary>Windows 2000</primary></indexterm>
+<indexterm><primary>net</primary><secondary>use</secondary></indexterm>
+<indexterm><primary>DES-CBC-MD5</primary></indexterm>
+Windows 2000 クライアントでは、<userinput>net use * \\server\share</userinput>
+を試してみること。パスワードを知らないでもKerberos にログインできるはずである。
+もしも失敗したら、<userinput>klist tickets</userinput>を実行すること。
+サーバー用のチケットを取得できたか?それには暗号タイプ DES-CBC-MD5 があるか?
+</para>
+
+<note><para>
+<indexterm><primary>DES-CBC-MD5</primary></indexterm>
+<indexterm><primary>ARCFOUR-HMAC-MD5</primary></indexterm>
+<indexterm><primary>エンコード</primary></indexterm>
+SambaはDES-CBC-MD5暗号及びARCFOUR-HMAC-MD5符号を使用できる。
+</para></note>
+
+</sect2>
+
+<sect2 id="ads-test-smbclient">
+<title>&smbclient;によるテスト</title>
+
+<para>
+<indexterm><primary>smbclient</primary></indexterm>
+<indexterm><primary>Kerberos</primary></indexterm>
+<indexterm><primary>Kerberos認証</primary></indexterm>
+Sambaサーバ上で&smbclient;とKerberosを使用してWindows2000サーバ又はSambaサーバ
+にログインすることを試みる。&smbclient;は通常通り使用するが、Kerberos認証を選択
+するように、<option>-k</option>オプションを指定する。
+</para>
+
+</sect2>
+
+<sect2>
+<title>注意</title>
+
+<para>
+<indexterm><primary>管理者パスワード</primary></indexterm>
+<indexterm><primary>パスワードの変更</primary></indexterm>
+<indexterm><primary>暗号化タイプ</primary></indexterm>
+ドメインコントローラインストール後は、正しい暗号化タイプを作成するために、少なくとも
+一度は管理者パスワードを変更しなれけばならない。
+</para>
+
+<para>
+<indexterm><primary>_kerberos._udp</primary></indexterm>
+<indexterm><primary>_ldap._tcp</primary></indexterm>
+<indexterm><primary>既定値のDNS設定</primary></indexterm>
+Windows200xは既定値のDNS設定では<parameter>_kerberos._udp</parameter>や
+<parameter>_ldap._tcp</parameter>を作成しないようである。おそらく今後
+サービスパックで修正されるだろう。
+</para>
+
+</sect2>
+</sect1>
+
+<sect1>
+<title>Sambaドメインメンバ間でのユーザIDマッピング共有</title>
+
+<para>
+<indexterm><primary>UNIXユーザとグループのマップ</primary></indexterm>
+<indexterm><primary>UID</primary></indexterm>
+<indexterm><primary>GID</primary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+SambaはUNIXユーザ及びグループ(それぞれUIDとGIDで識別される)をWindowsユーザ及び
+グループ(SIDで識別される)にマッピングする。これらのマッピングは Sambaの
+<parameter>idmap</parameter>サブシステムが行う。
+</para>
+
+<para>
+<indexterm><primary>マッピング</primary></indexterm>
+<indexterm><primary>CIFS</primary></indexterm>
+<indexterm><primary>NFS</primary></indexterm>
+これらのマッピングをSambaドメインメンバー間で共有することは、
+<emphasis>名前からIDへの</emphasis>マッピングが全マシンで同一になるので便利である。
+特に、CIFSとNFSの両方でファイルを共有する場合に有用である。
+</para>
+
+<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>ldap idmap suffix</primary></indexterm>
+<emphasis>LDAP</emphasis> <parameter>ldap idmap suffix</parameter>を使う場合、以下のように設定する:
+</para>
+
+<smbconfblock>
+<smbconfoption name="ldap idmap suffix">ou=Idmap</smbconfoption>
+</smbconfblock>
+
+<para>
+詳細情報については &smb.conf; マニュアルページの<smbconfoption name="ldap idmap suffix"></smbconfoption>
+パラメータのエントリを参照のこと。
+</para>
+
+<para>
+<indexterm><primary>smbpasswd</primary></indexterm>
+<indexterm><primary>LDAP管理用パスワード</primary></indexterm>
+<indexterm><primary>secrets.tdb</primary></indexterm>
+<smbconfoption name="ldap admin dn"/>も設定することと、<filename>secrets.tdb</filename>
+中にLDAP管理用パスワードを設定するのを忘れないこと。これには下記を使用する:
+<screen>
+&rootprompt; smbpasswd -w ldap-admin-password
+</screen>
+<literal>ldap-admin-password</literal>の部分は、システムで使うLDAPサーバ管理用パスワードで
+置き換えること。
+</para>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+ドメインメンバのマシンアカウントの追加/削除/再追加の手順の中には、不注意により
+陥りやすい多くの落とし穴や間違いを招きかねない多くの<quote>事細かな</quote>こと
+がある。興味深いことにSambaメーリングリストの購読者の中には、マシンアカウントの
+追加を繰り返し失敗し、最終的にMicrosoft Windows をマシンに<quote>再インストール</quote>
+しなければならないという結論を出す人がよくいる。しかし、実際はこのような種類の問題で
+再インストールが必要になることはめったにない。正しい解決法は単純である場合が多く、
+Microsoft Windowsのネットワーク機能を理解していれば容易に解決できる。
+</para>
+
+<sect2>
+<title>マシンをドメインに追加し直すことができない</title>
+
+<para>
+<indexterm><primary>マシン信頼アカウント</primary></indexterm>
+<indexterm><primary>すでに存在する(already exists)</primary></indexterm>
+<quote>
+Windowsワークステーションを再インストールした。元々のドメインマシンアカウントが削除され
+その直後に再度追加された。同じマシン名を使用するとワークステーションはドメインに参加
+できない。マシンの追加に失敗する際に、マシンはネットワーク上に存在していないにもかか
+わらず、マシンが既に存在するというメッセージが表示される。&smbmdash;なぜこのように失敗するのか?
+</quote>
+</para>
+
+<para>
+<indexterm><primary>NetBIOS名前キャッシュ</primary></indexterm>
+<indexterm><primary>nbtstat</primary></indexterm>
+前の名前がまだNetBIOS 名キャッシュに残っているためである。マシンアカウントが削除されると、
+同じ名前のマシンをドメインメンバとして再度追加できるようになるには、まず、その名前が
+期限切れにならなければならない。最もよい方法は、古いアカウントを削除し、新しい名前で
+マシンを追加することである。そのほかに、Windows上のクライアントから以下の<command>nbtstat</command>
+コマンドを使って、名前キャッシュにある現在のデータをフラッシュし、再ロードする。
+<screen>
+&dosprompt; nbtstat -R
+</screen>
+</para>
+
+</sect2>
+
+<sect2>
+<title>マシンのドメインへの追加に失敗する</title>
+
+<para>
+<indexterm><primary>PDC</primary></indexterm>
+<indexterm><primary>失敗</primary></indexterm>
+<quote>
+Windows200xもしくはXP ProfessionalマシンをSamba PDCドメインに追加しようとすると失敗する。
+エラーメッセージは
+<errorname>今回はネットワークの問題によりマシンを追加できませんでした。後ほどやり直して下さい。</errorname>
+である(訳注:実際に表示されるメッセージとは違います)。なぜか?</quote>
+</para>
+
+<para>
+<indexterm><primary>ログのチェック</primary></indexterm>
+&smb.conf;ファイル中に<smbconfoption name="add machine script"/>があることを確認する。
+もしも存在していないならば、OSプラットフォームに適したスクリプトを追加する。もしも、
+スクリプトがすでに定義されているならば、その動作をデバッグする必要がある。
+&smb.conf;ファイル中の<smbconfoption name="log level"></smbconfoption>の値を10まで増やし、
+ドメインへの参加を試行してみる。そのログをチェックし、どの動作が失敗しているか突き止める。
+</para>
+
+<para>
+可能性のある原因:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+<indexterm><primary>script</primary></indexterm>
+<indexterm><primary>パスの指定</primary></indexterm>
+	スクリプトが実際には存在していないか、指定したパスにない。
+	</para>
+
+	<para>
+<indexterm><primary>UNIXシステムアカウント</primary></indexterm>
+<indexterm><primary>Samba SAM アカウント</primary></indexterm>
+	<emphasis>是正処置:</emphasis>修正する。スクリプトを手動で実行すると、UNIX システム
+	アカウントとSamba SAM アカウントの両方が追加されることを確認する。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>UNIX システムアカウント</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+	マシンをUNIXシステムアカウントファイル<filename>/etc/passwd</filename>に追加できない。
+	</para>
+
+	<para>
+<indexterm><primary>正しいUNIXシステムアカウント名</primary></indexterm>
+<indexterm><primary>大文字</primary></indexterm>
+	<emphasis>是正処置:</emphasis>マシン名が有効なUNIXシステムアカウント名であるか確認する。
+	もしもUNIXユーティリティ<command>useradd</command>が呼び出されるならば、このツールを
+	使用して追加したいマシン名を追加できることを確認する。一部のシステム上の
+	<command>Useradd</command>は大文字やスペースを名前に使用することを許可しない。
+	</para></listitem>
+</itemizedlist>
+
+<para>
+<indexterm><primary>バックエンドデータベース</primary></indexterm>
+<indexterm><primary>UNIXシステムアカウント</primary></indexterm>
+<indexterm><primary>Sambaバックエンドデータベース</primary></indexterm>
+<smbconfoption name="add machine script"/>はSamba バックエンドデータベースでは、
+マシンアカウントを作成しない。Sambaバックエンドデータベースアカウントがマッピング
+される先のUNIXシステムアカウントを作成するためにのみあるものである。
+</para>
+
+</sect2>
+
+<sect2>
+	<title>Windows 2003 PDC に参加できない</title>
+
+	<para>
+<indexterm><primary>SMB署名</primary></indexterm>
+<indexterm><primary>SMB</primary></indexterm>
+<indexterm><primary>Windows 2003</primary></indexterm>
+<indexterm><primary>SMB/CIFS</primary></indexterm>
+	Windows 2003はSMB署名を必要とする。クライアント側のSMB署名はSamba-3.0で
+	実現されている。Windows 2003サーバと通信する際には
+	<smbconfoption name="client use spnego">yes</smbconfoption>に設定する。
+	この機能は、クライアントは単純にそれ自身とサーバと両方がサポートする
+	プロトコルをネゴシエートするので、Windows 2003が持つより高度なセキュリティ
+	機能をサポートしない他のWindowsクライアントとインタフェースを取れない。
+	これは、SMB/CIFSプロトコル中で構築されているよく知られたフォールバック
+	機能である。
+	</para>
+
+</sect2>
+
+</sect1>
+</chapter>

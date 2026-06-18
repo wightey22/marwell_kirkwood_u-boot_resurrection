@@ -1,0 +1,14 @@
+<samba:parameter name="usershare owner only"
+	         context="G"
+		 basic="1" advanced="1"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	このパラメータは、ユーザ定義共有として公開されるパスが、 ユーザ定義共有を作成しようとしているユーザの所有であることを必須とするかどうかを制御する。
+	必須とした場合 (既定値) 、smbd は公開しようとしているディレクトリが、ユーザ定義共有の設定ファイルの所有者と同一であることを確認し、もし異なっていた倍は作成を拒否する。
+	必須としなかった場合、こうした確認は行なわれず、誰が所有しているかに関わらず、ディレクトリの公開が可能となる。
+	</para>
+</description>
+<value type="default">True</value>
+</samba:parameter>

@@ -1,0 +1,34 @@
+<samba:parameter name="root directory"
+	context="G"
+	type="string"
+                 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>root</synonym>
+<synonym>root dir</synonym>
+<description>
+    <para>サーバの起動時に、このディレクトリへ 
+    <command moreinfo="none">chroot()</command>
+    (ルートディレクトリの変更)が行なわれる。
+    これは、安全のため絶対に必要というものではない。
+    この設定がなくても、サービスの提供するディレクトリ配下にないファイルへのアクセスは許可されない。
+    また、ファイルシステムへの他の部分へのシンボリックリンクや、
+    ファイル名に「..」をつけて他のディレクトリにアクセスするような行為をチェックして、
+    アクセスを拒否することもできる
+    (<smbconfoption name="wide links"/> パラメータの設定に依存する)。</para>
+
+    <para><parameter moreinfo="none">root directory</parameter> として「/」以外を指定した場合は、
+    代償もあるが、非常に強固なセキュリティが実現される。
+    <parameter moreinfo="none">root directory</parameter> 
+    オプションで指定されたディレクトリのサブディレクトリ以外にあるファイルへは、
+    サーバの動作に必要なファイルも<emphasis>含め</emphasis>、
+    一切アクセスできない。サーバを動作させるには、
+    <parameter moreinfo="none">root directory</parameter> 
+    内に必要なシステムファイルをコピーしておく必要がある。
+    例えば <filename moreinfo="none">/etc/passwd</filename> (またはその一部)や、
+    印刷に必要となる設定ファイルやバイナリなどを（場合によっては）コピーする必要がある。
+    コピーしなければならないファイルは、オペレーティングシステムに依存する。
+    </para>
+</description>
+<value type="default">/</value>
+<value type="example">/homes/smb</value>
+</samba:parameter>

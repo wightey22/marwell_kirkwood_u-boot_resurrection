@@ -1,0 +1,953 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="groupmapping">
+<chapterinfo>
+	&author.jht;
+	<author>
+		<firstname>Jean François</firstname><surname>Micouleau</surname>
+	</author>
+	&author.jerry;
+</chapterinfo>
+<title>グループのマッピング: Microsoft Windows と UNIX</title>
+
+
+	<para>
+<indexterm significance="preferred"><primary>groups</primary><secondary>mapping</secondary></indexterm>
+<indexterm><primary>SID</primary></indexterm>
+<indexterm><primary>associations</primary></indexterm>
+<indexterm><primary>UNIXグループ</primary></indexterm>
+<indexterm><primary>groupmap</primary></indexterm>
+<indexterm><primary>net</primary></indexterm>
+	Samba-3からWindowsのグループSIDとUNIXのグループを関連づける新しいグループ
+	マッピング機能が利用できる。&net;ツールに含まれる。<command>groupmap</command>
+	サブコマンドを、 関連づけの管理に使用する。
+	</para>
+
+	<para>
+<indexterm><primary>グループマッピング</primary></indexterm>
+<indexterm><primary>ドメイングループ</primary></indexterm>
+	NTのグループとUNIXのシステムグループをマッピングするこの新しい機能では、
+	管理者が、どのNTドメイングループをMicrosoft Windowsクライアントに公開するか
+	を決定することができる。既定値(<constant>-1</constant>)以外の値を持つ
+	UNIXのグループにマッピングするNT のグループのみが、ドメインユーザ及び
+	グループにアクセスするツールのグループ選択リストに含まれる。
+	</para>
+
+	<warning>
+	<para>
+	<indexterm><primary>domain admin group</primary></indexterm>
+<indexterm><primary>Windows group</primary></indexterm>
+	Samba-3では<parameter>domain admin group</parameter>パラメータが削除されたので、
+	&smb.conf;中にもはや指定してはならない。Samba-2.2.x中では、このパラメータは
+	このパラメータは、一覧表示されたユーザに、 ワークステーション上でローカル管理
+	権限を与える<constant>Domain Admins</constant>Windowsグループのメンバーシップを
+	付与するのに使用されていた(既定値の設定では)。
+	</para>
+	</warning>
+
+<sect1>
+<title>機能と利便性</title>
+
+	<para>
+	Sambaでは、管理者がMicrosoft Windows NT4/200x グループアカウントを作成し、それらを
+	任意にUNIX/Linuxのグループアカウントと関連づけることができる。
+	</para>
+
+	<para>
+	<indexterm><primary>UID</primary></indexterm>
+	<indexterm><primary>GID</primary></indexterm>
+	<indexterm><primary>idmap uid</primary></indexterm>
+<indexterm><primary>MMC</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>ID range</primary></indexterm>
+<indexterm><primary>グループアカウント</primary></indexterm>
+	グループアカウントは、Microsoft Windows NT4またはMicrosoft Windows 200x/XP Professional
+	のMMCツールを使用して管理することができる。これらのツールを使って自動的にUNIX/Linux
+	のシステムアカウントを作成するには、適切なスクリプトを&smb.conf;で提供する必要が
+	ある。それらのスクリプトが無い場合、<command>winbindd</command>が動作している
+	限りは、これらのツールを使って作成されたSambaグループアカウントは&smb.conf;
+	ファイル中の<smbconfoption name="idmap uid"/>/<smbconfoption name="idmap gid"/>
+	パラメータで指定されているID範囲内でUNIX UID/GIDを割り当てられる。
+	</para>
+
+	<figure id="idmap-sid2gid">
+		<title>IDMAP: グループSIDからGIDへの解決</title>
+		<imagefile scale="50">idmap-sid2gid</imagefile>
+	</figure>
+
+	<figure id="idmap-gid2sid">
+		<title>IDMAP: GIDから対応するSIDへの解決</title>
+	<imagefile scale="50">idmap-gid2sid</imagefile>
+	</figure>
+
+	<para>
+	<indexterm><primary>IDMAP</primary></indexterm>
+<indexterm><primary>SID-to-GID</primary></indexterm>
+<indexterm><primary>net</primary><secondary>groupmap</secondary></indexterm>
+<indexterm><primary>group mappings</primary></indexterm>
+	どちらのケースでもwinbinddが動作していない場合は、ローカルで解決可能なグループ
+	のみが認識される。<link linkend="idmap-sid2gid">IDMAP: グループSIDからGIDへの解決</link>
+	と<link linkend="idmap-gid2sid">IDMAP: GIDから対応するSIDへの解決</link>を
+	参照のこと。<link linkend="idmap-store-gid2sid">IDMAPのグループマッピングの保存</link>
+	で示すように、<command>net groupmap</command>が、NTのSIDに対応するUNIXグループの
+	作成に使用される。
+	</para>
+
+	<figure id="idmap-store-gid2sid">
+		<title>IDMAPのグループマッピングの保存</title>
+		<imagefile scale="50">idmap-store-gid2sid</imagefile>
+	</figure>
+
+	<para>
+	<indexterm><primary>groupadd</primary></indexterm>
+	<indexterm><primary>groupdel</primary></indexterm>
+<indexterm><primary>shadowユーティリティ</primary></indexterm>
+<indexterm><primary>groupmod</primary></indexterm>
+	&smb.conf;のグループインタフェーススクリプトが、直接UNIX/Linuxシステムツール
+	(shadowユーティリティ,<command>groupadd</command>,<command>groupdel</command>と
+	<command>groupmod</command>)を呼び出した場合、UNIX/Linuxグループ名は、これらの
+	ツールが課す制約を受けることを、管理者は知っていなければならない。もし、
+	ツールが、大文字や空白文字を認めない場合、Microsoft Windows NT4/200x風の
+	<literal>Engineering Managers</literal>というグループの作成は、同名のUNIX/Linux
+	グループの作成が試みられることになるが、それはもちろん失敗する。
+	</para>
+
+	<para>
+	<indexterm><primary>GID</primary></indexterm>
+	<indexterm><primary>SID</primary></indexterm>
+	このOSツールの制約に対しては幾つかの回避策がある。一つはOSの制約に合うUNIX/Linux
+	システムグループ名を作成し、Sambaインターフェースの呼び出しには、UNIX/Linuxの
+	グループID(GID)を返すようなスクリプトを使う方法である。これは、動的な回避策である。
+	</para>
+
+	<para>
+<indexterm><primary>net</primary><secondary>groupmap</secondary></indexterm>
+	もう一つの回避策は、手動でUNIX/Linuxグループを作成し、次に手動でSamba サーバに
+	Microsoft Windows NT4/200xグループを作成し、そして<command>net groupmap</command>
+	ツールを使ってこの2つを互いに関連付けることである。
+	</para>
+
+</sect1>
+
+<sect1>
+<title>議論</title>
+
+	<para>
+<indexterm><primary>Windows NT4/200x</primary></indexterm>
+<indexterm><primary>グループ権限</primary></indexterm>
+	コンピュータに<application>Microsoft Windows NT4/200x</application>をインストール
+	するとき、インストールプログラムは既定値のユーザとグループを作成し、特に、
+	<constant>Administrators</constant>グループの場合は、必須のシステムタスクを実行
+	するのに必要な権限をグループに付与する。例えば、ローカルマシンの日付や時間を変更
+	したり、ローカルマシン上の実行中のプロセスを止める(又は閉じる)ような権限である。
+	</para>
+	
+	<para>
+	<indexterm><primary>Administrator</primary></indexterm>
+	<constant>Administrator</constant>ユーザは<constant>Administrators</constant>
+	グループのメンバで、そのため、<constant>Administrators</constant>グループの
+	権限を引き継ぐ。もし、<constant>joe</constant>というユーザが
+	<constant>Administrators</constant>グループのメンバとして作成された場合、
+	<constant>joe</constant>は<constant>Administrator</constant>というユーザと
+	全く同じ権限を持つ。
+	</para>
+
+	<para>
+<indexterm><primary>ドメインメンバ</primary></indexterm>
+<indexterm><primary>Domain Admins</primary></indexterm>
+<indexterm><primary>権限の継承</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+	Microsoft Windows NT4/200x/XPマシンがドメインメンバになる場合、
+	PDCの<quote>Domain Admins</quote>グループは、ワークステーションのローカル
+	<constant>Administrators</constant>グループに追加される。
+	<constant>Domain Admins</constant>グループのいずれのメンバもワークステーション
+	にログオンすると、ローカルの<constant>Administrators</constant>グループの
+	権限を継承する。
+	</para>
+
+	<para>
+<indexterm><primary>Domain Admins</primary></indexterm>
+<indexterm><primary>PDC</primary></indexterm>
+	以下のステップは、Samba PDCユーザを<constant>Domain Admins</constant>グループの
+	メンバにする方法を説明する。
+	</para>
+
+	<orderedlist>
+		<listitem><para>
+		<constant>domadm</constant>と呼ばれるUNIXグループを作成(通常<filename>/etc/group</filename>の中に)。
+		</para></listitem>
+
+		<listitem><para>
+<indexterm><primary>/etc/group</primary></indexterm>
+		このグループに<quote>Administrators</quote>にならなければならないユーザを
+		追加。たとえば、<constant>joe, john</constant>と<constant>mary</constant>
+		administratorsにしたいならば、<filename>/etc/group</filename>のエントリは
+		下記のようになる:
+		</para>
+
+		<para><programlisting>
+		domadm:x:502:joe,john,mary
+		</programlisting>
+		</para></listitem>
+
+		<listitem><para>
+		以下のコマンドを実行して、<quote>Domain Admins</quote>グループをdomadm
+		グループにマップする:
+		</para>
+
+		<para>
+<screen>
+&rootprompt;<userinput>net groupmap add ntgroup="Domain Admins" unixgroup=domadm rid=512 type=d</userinput>
+</screen>
+		</para>
+		
+		<para>
+		<indexterm><primary>Domain Admins group</primary></indexterm>
+		<quote>Domain Admins</quote>の両側の引用符は、グループ名に空白があるために
+		必要である。また、イコール記号(=)の前後に空白を入れないこと。
+		</para></listitem>
+	</orderedlist>
+
+	<para>
+	これで<constant>joe, john</constant>と<constant>mary</constant>はdomain administratorsになった。
+	</para>
+
+	<para>
+	<indexterm><primary>groups</primary><secondary>domain</secondary></indexterm>
+	任意のUNIXグループを任意のWindows NT4/200xグループにマッピングしたり、UNIX
+	グループをWindowsドメイングループにすることが可能である。例えば、あるUNIXグループ
+	(例: acct)をドメインメンバマシンのローカルファイルやプリンターのACLに含めたい場合、
+	以下のコマンドをSamba PDC上で実行して、そのグループをドメイングループにする:
+	</para>
+
+	<para>
+<screen>
+&rootprompt;<userinput>net groupmap add rid=1000 ntgroup="Accounting" unixgroup=acct type=d</userinput>
+</screen>
+	<literal>ntgroup</literal>の値は、コマンドのデリミタとして解釈されてしまうことを
+	防ぐために、空白が入っている場合には引用符で囲まなければならない。
+	</para>
+
+	<para>
+<indexterm><primary>RID</primary></indexterm>
+<indexterm><primary>assigned RID</primary></indexterm>
+	RIDパラメーターは通常1000から始まる符号なしの32ビット整数である。しかし、このRIDは
+	ユーザーに割り当てられるRIDと重複してはならない。これを検証する方法は、使用して
+	いるpassdbバックエンドによって異なる。このツールの今後のバージョンでは自動検証が
+	可能になるかもしれまないが、現行では、使用者が自分でやらなければならない。
+	</para>
+
+	<sect2>
+	<title>警告:ユーザ固有のグループ問題</title>
+
+	<para>
+<indexterm><primary>group accounts</primary></indexterm>
+<indexterm><primary>Red Hat Linux</primary></indexterm>
+<indexterm><primary>private groups</primary></indexterm>
+	Windowsは同じ名前のユーザとグループアカウントを許可しない。これは、プライベート
+	グループを使っているすべてのサイトに重大な影響がある。プライベートグループ
+	アカウントは、ユーザがおのおの固有のグループアカウントを持つという管理上の
+	設定である。Red Hat Linuxやいくつかの自由なLinuxディストリビューションでは、
+	既定値でプライベートグループを作成する。
+	</para>
+
+	<para>
+<indexterm><primary>UNIX/Linux group</primary></indexterm>
+<indexterm><primary>Windows group</primary></indexterm>
+	UNIX/LinuxグループアカウントがWindowsグループアカウントにマップされた場合、
+	すべての競合は、任意のユーザアカウント名にWindowsドメイングループ名が
+	オーバラップしないことを保証することで防げる。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ネストされたグループ: WindowsドメイングループをWindowsローカルグループに追加</title>
+
+	<indexterm><primary>groups</primary><secondary>nested</secondary></indexterm>
+
+	<para>
+<indexterm><primary>nested groups</primary></indexterm>
+	<constant>nested groups</constant>として知られているこの機能は、Samba-3.0.3
+	で初めて追加された。
+	</para>
+
+	<para>
+<indexterm><primary>nested groups</primary></indexterm>
+	Windows NT 3.10リリース以降のすべてのMicrosoft Windows製品は、ネストされた
+	グループをサポートしている。セキュリティ管理をとても簡単にするので、多くの
+	Windowsネットワーク管理者はこの機能に依存している。
+	</para>
+
+	<para>
+<indexterm><primary>nested group</primary></indexterm>
+<indexterm><primary>グループメンバシップ</primary></indexterm>
+<indexterm><primary>ドメインセキュリティ</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>ローカルグループ</primary></indexterm>
+<indexterm><primary>ドメイングローバルグループ</primary></indexterm>
+<indexterm><primary>ドメイングローバルユーザ</primary></indexterm>
+	ネストされたグループアーキテクチャは、日々のユーザとグループメンバ管理をドメイン
+	セキュリティデータベース上で実行されるべきという理由でデザインされた。グループ
+	セキュリティの応用は、ローカルグループのみを使うドメインメンバサーバ上で実装
+	されるべきである。ドメインメンバサーバ上で、すべてのファイルシステムセキュリティ
+	制御は、ドメイングローバルグループとドメイングローバルユーザを含むローカル
+	グループの使用を制限する。
+	</para>
+
+	<para>
+<indexterm><primary>individual domain user</primary></indexterm>
+<indexterm><primary>domain group settings</primary></indexterm>
+<indexterm><primary>不明なアカウント</primary></indexterm>
+	この取り決めの利便性は何か、という疑問があるかもしれない。Windowsネットワーク
+	アーキテクチャの深い闇を知っている人にとって、答えは明確である。20万ものファイル
+	があり、各ファイルは個別のドメインユーザとドメイングループに設定されているサーバ
+	について考えてみよう。ファイルサーバを持つ会社が別の会社を買い、その結果、サーバ
+	を別の場所に移動し、別のドメインのメンバにするとする。誰がすべてのファイルと
+	ディスクを所有すると思うか?
+	答えは「不明なアカウント」である。
+	</para>
+
+	<para>
+<indexterm><primary>ディスクアクセス制御</primary></indexterm>
+<indexterm><primary>ローカルグループ</primary></indexterm>
+<indexterm><primary>ACL</primary></indexterm>
+<indexterm><primary>不明なアカウント</primary></indexterm>
+	ファイル所有権の混乱を解決することは、すべてのファイルとディレクトリアクセス
+	制御をコントロールするためにローカルグループを用いて簡単に避けられることが
+	できる面白くない管理業務である。この場合、ローカルグループのメンバのみが
+	失われる。記憶サブシステム中のファイルとディレクトリは引き続きローカル
+	グループによって所有される。同じことはそれらに対するすべてのACLについても
+	存在する。サーバがメンバとなった新しいドメイン中のドメイングローバルグループ
+	のための適当なエントリをもつローカルグループ内の
+	<constant>不明なアカウント</constant>メンバシップエントリを削除するのは
+	管理的により簡単である。
+	</para>
+
+	<para>
+<indexterm><primary>ネストされたグループ</primary></indexterm>
+<indexterm><primary>administrative privileges</primary></indexterm>
+<indexterm><primary>ドメインメンバのワークステーション</primary></indexterm>
+<indexterm><primary>ドメインメンバサーバ</primary></indexterm>
+<indexterm><primary>メンバマシン</primary></indexterm>
+<indexterm><primary>完全な権限</primary></indexterm>
+<indexterm><primary>Domain Admins</primary></indexterm>
+<indexterm><primary>local administrative privileges</primary></indexterm>
+	ネストされたグループを使用する、もう一つの突出した例は、ドメインメンバワーク
+	ステーションとサーバーで管理特権の実装を伴う。管理特権は各ドメインメンバマシンの
+	ビルトイン<constant>Administrators</constant>ローカルグループのすべてのメンバに
+	与えられる。すべてのdomain administratorsがメンバサーバまたはワークステーション
+	に対してとドメインの参加に対して完全な権限を持つようにするには、
+	<constant>Domain Admins</constant>グループをローカルのAdministratorsグループに
+	追加する。そのため、Domain Adminsグループのメンバとしてドメインにログオンする
+	誰もが、各ドメインメンバ上のローカル管理特権をも持つ。
+	</para>
+
+	<para>
+<indexterm><primary>ネストされたグループ</primary></indexterm>
+<indexterm><primary>auxiliary members</primary></indexterm>
+<indexterm><primary>/etc/group</primary></indexterm>
+<indexterm><primary>winbind</primary></indexterm>
+	UNIX/Linuxはネストされたグループという概念を持たないので、Sambaは長い間それを
+	サポートしてこなかった。問題は、<filename>/etc/group</filename>中の追加グループ
+	のメンバとしてUNIXグループを入力しなければならないことである。これは、今実装
+	されているUNIXファイルシステムセキュリティモデルのデザインの要求でないために
+	動作しない。Samba-2.2以降、winbindは、メンバであるSambaサーバのドメイン
+	コントローラからのユーザとグループ情報をオンデマンドで
+	<filename>/etc/group</filename>に提供出来る。
+	</para>
+
+	<para>
+<indexterm><primary>/etc/group</primary></indexterm>
+<indexterm><primary>libnss_winbind</primary></indexterm>
+<indexterm><primary>local groups</primary></indexterm>
+<indexterm><primary>Domain Users</primary></indexterm>
+<indexterm><primary>alias group</primary></indexterm>
+	実際、Sambaは動的な<command>libnss_winbind</command>メカニズム経由で
+	<filename>/etc/group</filename>データを補完する。Samba-3.0.3から、この機能は
+	Windowsが行うのと同じ方式でローカルグループを提供するために使われる。これは、
+	アクセス時にその場でローカルグループに展開されることによって動作する。たとえば、
+	ドメインの<constant>Domain Users</constant>グループがローカルグループ
+	<constant>demo</constant>のメンバになるというようなことである。Sambaが
+	ローカル(alias)グループ<constant>demo</constant>のメンバであることを解決する
+	必要がある時はいつも、winbindはDomain Usersグループのdemoメンバーについて
+	ドメインコントローラに問い合わせる。定義によって、UNIX/Linuxグループ
+	<constant>demo</constant>のメンバであるように見せかけることが出来る、ユーザ
+	オブジェクトのみを含むことが出来る。
+	</para>
+
+	<para>
+<indexterm><primary>ネストされたグループ</primary></indexterm>
+<indexterm><primary>winbindd</primary></indexterm>
+<indexterm><primary>NSS</primary></indexterm>
+<indexterm><primary>winbind</primary></indexterm>
+<indexterm><primary>ローカルグループ</primary></indexterm>
+<indexterm><primary>ドメインユーザマネージャ</primary></indexterm>
+<indexterm><primary>net</primary><secondary>rpc</secondary><tertiary>group</tertiary></indexterm>
+	ネストされたグループを有効にするために、<command>winbindd</command>はNSS winbind
+	と一緒に使わなければならない。ローカルグループの作成と管理はWindowsのドメイン
+	ユーザマネージャかそれのSambaでの相当品、<command>net rpc group</command>
+	ユーティリティ経由が最適である。ローカルグループ<constant>demo</constant>
+	の作成は以下のように行う:
+	<screen>
+	&rootprompt; net rpc group add demo -L -Uroot%not24get
+	</screen>
+<indexterm><primary>addmem</primary></indexterm>
+<indexterm><primary>delmem</primary></indexterm>
+	ここで、-Lスイッチはローカルグループ作成を意味する。適切なユーザかルート権限で
+	正しいホストにアクセスするために、-Sと-Uスイッチの追加が必要かもしれない。
+	グループメンバの追加と削除は<command>net rpc group</command>コマンドの
+	<constant>addmem</constant>と<constant>delmem</constant>サブコマンド経由で
+	行える。たとえば、ローカルグループ<constant>demo</constant>に
+	<quote>DOM\Domain Users</quote>を追加するのは以下のように行う:
+	<screen>
+	net rpc group addmem demo "DOM\Domain Users"
+	</screen>
+<indexterm><primary>getent group demo</primary></indexterm>
+<indexterm><primary>trusted domain</primary></indexterm>
+<indexterm><primary>foreign domain</primary></indexterm>
+<indexterm><primary>local access permissions</primary></indexterm>
+	これら2つのステップを完了し、<command>getent group demo</command>を実行すると、
+	グループ<constant>demo</constant>のメンバとしてグローバルな
+	<constant>Domain Users</constant>グループのメンバとしてdemoを表示する。
+	これはまた、任意のローカルまたはドメインユーザでも動作する。ドメインDOMが
+	他のドメインを信頼している場合、信頼されたドメインに、
+	<constant>demo</constant>のメンバとしてグローバルユーザとグループを追加すること
+	も可能である。<constant>demo</constant>グループに追加されたグループのメンバで
+	ある他のドメインからのユーザはローカルドメインユーザが持つのと同じアクセス許可を
+	持つことになる。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>管理に関する重要な情報</title>
+
+	<para>
+	管理者権限は以下の二つの用途に対して必要である:
+	</para>
+
+	<orderedlist>
+		<listitem><para>Samba-3のドメインコントローラ、ドメインメンバサーバ及びクライアントのため。</para></listitem>
+		<listitem><para>Windowsのドメインメンバワークステーション管理のため。</para></listitem>
+	</orderedlist>
+
+	<para>
+<indexterm><primary>rights and privileges</primary></indexterm>
+<indexterm><primary>ドメインメンバクライアント</primary></indexterm>
+<indexterm><primary>グループアカウント</primary></indexterm>
+	Samba 3.0.10までのバージョンは、Windowsドメインメンバークライアントマシンから
+	システム管理作業のために必要である権利と特権を割り当てる機能は提供しない。その
+	ため、ユーザの追加、削除とユーザとグループ情報の変更と、ワークステーションの
+	ドメインメンバシップ管理のような管理作業はroot以外のどのようなアカウントでも
+	扱える。
+	</para>
+
+	<para>
+<indexterm><primary>privilege management</primary></indexterm>
+<indexterm><primary>delegated</primary></indexterm>
+<indexterm><primary>Administrator</primary></indexterm>
+	Samba-3.0.11から、管理作業を非root(すなわち、Microsoft Windows Administratorと
+	同等以外のアカウント)に委譲できる新しい特権管理インタフェースが含まれるように
+	なった(<link linkend="rights">ユーザの権限と権利</link>を参照)。
+	</para>
+
+	<para>
+<indexterm><primary>mapped</primary></indexterm>
+<indexterm><primary>Domain Admins</primary></indexterm>
+	Windowsドメインメンバワークステーション上の管理作業は<constant>Domain Admins</constant>
+	グループのメンバの誰かによって行える。このグループは任意の適切なUNIXグループに
+	マップできる。
+	</para>
+
+	<sect3>
+	<title>3.0.11より前のバージョンのみに適用</title>
+
+	<para>
+<indexterm><primary>privilege</primary></indexterm>
+	ユーザの追加削除のようなUNIX/Linux上の管理作業は<constant>root</constant>と
+	同等の権限が必要である。Samba のドメインに対するWindowsクライアントの追加は、
+	Windows クライアントに対するユーザアカウントの追加が含まれる。
+	</para>
+
+	<para>
+<indexterm><primary>システムセキュリティ</primary></indexterm>
+<indexterm><primary>privileges</primary></indexterm>
+	多くのUNIX管理者がSamba Teamに対して<constant>root</constant>の権限を持たなくても
+	Windowsクライアントの追加、ユーザの追加、変更、削除ができるようにしてほしいという
+	要望を寄せ続けている。このような要望はUNIXシステムの基本的なセキュリティの観念と
+	接触するものある。
+	</para>
+
+	<para>
+<indexterm><primary>privileges</primary></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>ドメインサーバマネージャ</primary></indexterm>
+<indexterm><primary>ドメインユーザマネージャ</primary></indexterm>
+<indexterm><primary>共有レベルACLの管理</primary></indexterm>
+<indexterm><primary>共有レベルのACL</primary></indexterm>
+	<constant>root</constant>レベルの権限を与えずにUNIX/Linuxシステムに対してアクセス
+	する安全な方法はない。<constant>root</constant>権限は、ドメインに
+	<constant>root</constant>ユーザでログインするか、ある特定のユーザを、
+	<filename>/etc/passwd</filename>データベースの中にUID=0とすることで可能となる。
+	それらの ユーザは、NT4 のドメインユーザマネージャやドメインサーバマネージャ
+	などのツールを使用してユーザやグループに加えドメインメンバサーバやクライアント
+	アカウントの管理ができる。また、このレベルの権限が、共有レベルのACL管理には
+	必要である。
+	</para>
+
+	</sect3>
+
+	</sect2>
+
+	<sect2>
+	<title>既定値のユーザ、グループと相対識別子</title>
+
+	<para>
+	<indexterm><primary>相対識別子</primary><see>RID</see></indexterm>
+	<indexterm><primary>RID</primary></indexterm>
+<indexterm><primary>Windows NT4/200x/XP</primary></indexterm>
+<indexterm><primary>よく知られているRID</primary></indexterm>
+<indexterm><primary>ドメイングループ</primary></indexterm>
+<indexterm><primary>tdbsam</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>NTグループ</primary></indexterm>
+	インストール直後、Windows NT4/200x/XPは特定のユーザ、グループ及び別名のエントリ
+	が事前に設定される。それらはよく知られている相対識別子(RID)を持つ。これらは
+	運用の継続的な整合性のために維持しなければならない。Sambaは必須のドメイン
+	グループを持たなければならず、それらのグループは適切なRID値を必要とするSamba-3
+	が<constant>tdbsam</constant>を使用するよう設定されていると、必須のドメイン
+	グループは自動的に作成される。その既定値のNTグループを作成(準備)するのはLDAP
+	管理者の責任である。
+	</para>
+
+	<para>
+<indexterm><primary>既定値のユーザ</primary></indexterm>
+<indexterm><primary>既定値のグループ</primary></indexterm>
+<indexterm><primary>既定値の別名</primary></indexterm>
+<indexterm><primary>RID</primary></indexterm>
+	必須のドメイングループには良く知られているRIDを割り当てなければならない。既定値の
+	ユーザ、グループ、別名とRIDは
+	<link linkend="WKURIDS">よく知られているユーザのRID既定値</link>を参照のこと。
+	</para>
+
+	<note><para>
+<indexterm><primary>passdb backend</primary></indexterm>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>ldapsam</primary></indexterm>
+<indexterm><primary>ドメイングループ</primary></indexterm>
+<indexterm><primary>RID</primary></indexterm>
+	必須のドメイングループ作成と、それに既定値のRIDを割り当てるのは管理者の責任である。
+	</para></note>
+
+	<para>
+<indexterm><primary>ドメイングループ</primary></indexterm>
+<indexterm><primary>RID</primary></indexterm>
+	他にも必要なドメイングループを作成することは問題ありませんが、必須のドメイン
+	グループ(良く知られているもの)が作成済みで、既定値のRIDが割り当てられている
+	ことを確認すること。作成する他のグループには任意のRIDを割り当てることができる。
+	</para>
+
+	<para>
+	各ドメイングループをUNIXシステムグループにマッピングすること。それが、これらの
+	グループをNTドメイングループとして使用できる唯一の方法である。
+	</para>
+
+	<para>
+	<table frame="all" id="WKURIDS">
+	<title>よく知られているユーザのRID既定値</title>
+		<tgroup cols="4" align="left">
+			<colspec align="left"/>
+			<colspec align="left"/>
+			<colspec align="left"/>
+			<colspec align="center"/>
+			<thead>
+				<row>
+					<entry>よく知られているエントリ</entry>
+					<entry>RID</entry>
+					<entry>タイプ</entry>
+					<entry>必須</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>Domain Administrator</entry>
+					<entry>500</entry>
+					<entry>User</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain Guest</entry>
+					<entry>501</entry>
+					<entry>User</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain KRBTGT</entry>
+					<entry>502</entry>
+					<entry>User</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain Admins</entry>
+					<entry>512</entry>
+					<entry>Group</entry>
+					<entry>Yes</entry>
+				</row>
+				<row>
+					<entry>Domain Users</entry>
+					<entry>513</entry>
+					<entry>Group</entry>
+					<entry>Yes</entry>
+				</row>
+				<row>
+					<entry>Domain Guests</entry>
+					<entry>514</entry>
+					<entry>Group</entry>
+					<entry>Yes</entry>
+				</row>
+				<row>
+					<entry>Domain Computers</entry>
+					<entry>515</entry>
+					<entry>Group</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain Controllers</entry>
+					<entry>516</entry>
+					<entry>Group</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain Certificate Admins</entry>
+					<entry>517</entry>
+					<entry>Group</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain Schema Admins</entry>
+					<entry>518</entry>
+					<entry>Group</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain Enterprise Admins</entry>
+					<entry>519</entry>
+					<entry>Group</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Domain Policy Admins</entry>
+					<entry>520</entry>
+					<entry>Group</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin Admins</entry>
+					<entry>544</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin users</entry>
+					<entry>545</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin Guests</entry>
+					<entry>546</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin Power Users</entry>
+					<entry>547</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin Account Operators</entry>
+					<entry>548</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin System Operators</entry>
+					<entry>549</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin Print Operators</entry>
+					<entry>550</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin Backup Operators</entry>
+					<entry>551</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin Replicator</entry>
+					<entry>552</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+				<row>
+					<entry>Builtin RAS Servers</entry>
+					<entry>553</entry>
+					<entry>Alias</entry>
+					<entry>No</entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</table>
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>設定例</title>
+
+		<para>
+<indexterm><primary>net</primary><secondary>groupmap</secondary><tertiary>list</tertiary></indexterm>
+		<command>net groupmap list</command>を実行することでマッピングデータ
+		ベース中の種々のグループを表示出来る。以下が例である:
+		</para>
+
+		<para>
+<indexterm><primary>net</primary><secondary>groupmap</secondary></indexterm>
+<screen>
+&rootprompt; <userinput>net groupmap list</userinput>
+Domain Admins (S-1-5-21-2547222302-1596225915-2414751004-512) -> domadmin
+Domain Users (S-1-5-21-2547222302-1596225915-2414751004-513) -> domuser
+Domain Guests (S-1-5-21-2547222302-1596225915-2414751004-514) -> domguest
+</screen>
+		</para>
+
+		<para>
+		<command>net groupmap</command>の完全な詳細は、net(8)のマニュアルを参照のこと。
+		</para>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>設定スクリプト</title>
+
+	<para>
+	誰もがツールを必要とする。自分のツールを作ることが好きな人もいれば、既成のツール
+	(汎用に誰かが作成したもの)を好む人もいる。
+	</para>
+
+	<sect2>
+	<title>&smb.conf;にグループを追加するスクリプト例</title>
+
+		<para>
+		<indexterm><primary>smbgrpadd.sh</primary></indexterm>
+		<indexterm><primary>groupadd limitations</primary></indexterm>
+		<indexterm><primary>smbgrpadd.sh</primary></indexterm>
+<indexterm><primary>/etc/group</primary></indexterm>
+<indexterm><primary>groupadd</primary></indexterm>
+		Sambaのグループインタフェースで使用するグループ名を作成するスクリプトは
+		<link linkend="smbgrpadd.sh">smbgrpadd.sh</link>で提供されている。
+		このスクリプトは一時的なエントリを<filename>/etc/group</filename>
+		ファイルに追加し、指定された名前に改名する。これは、いくつかの
+		バージョンの<command>groupadd</command>ツールに存在する、OS管理ツールの
+		制限を避ける方法の例である。
+<example id="smbgrpadd.sh">
+<title>smbgrpadd.sh</title>
+<programlisting>
+#!/bin/bash
+
+# 通常のgroupaddツールを使ってのグループ追加。
+groupadd smbtmpgrp00
+
+thegid=`cat /etc/group | grep ^smbtmpgrp00 | cut -d ":" -f3`
+
+# 次にMicrosoft Windowsネットワーク用に使いたい名前に変更。
+cp /etc/group /etc/group.bak
+cat /etc/group.bak | sed "s/^smbtmpgrp00/$1/g" > /etc/group
+rm /etc/group.bak
+
+# 通常のようにGIDを返す。
+echo $thegid
+exit 0
+</programlisting>
+</example>
+</para>
+
+		<para>
+		<link linkend="smbgrpadd">グループ追加スクリプトのための&smb.conf;エントリの設定</link>
+		中に示している上記のスクリプトのための&smb.conf;エントリは、どのように動くかを
+		デモする。
+
+<example id="smbgrpadd">
+<title>グループ追加スクリプトのための&smb.conf;エントリの設定</title>
+<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfoption name="add group script">/path_to_tool/smbgrpadd.sh &quot;%g&quot;</smbconfoption>
+</smbconfblock>
+</example>
+		</para>
+
+	</sect2>
+	
+	<sect2>
+	<title>グループマッピング設定のためのスクリプト</title>
+
+	<para>
+<indexterm><primary>initGroups.sh</primary></indexterm>
+	上記の例では、<literal>ntadmin</literal>と呼ばれるUNIX/Linuxグループを作成した。
+	このスクリプトで、<literal>Orks</literal>, <literal>Elves</literal>と
+	<literal>Gnomes</literal>という追加のグループも作成することにする。
+	後でマッピングデータベースを再作成する必要がある場合に備え、このシェルスクリプト
+	を保存することを推奨する。便宜上、<filename>initGroups.sh</filename>という
+	ファイル名で保存する。このスクリプトは
+	<link linkend="set-group-map">intGroups.sh</link>で提供されている。
+<indexterm><primary>initGroups.sh</primary></indexterm>
+<example id="set-group-map">
+<title>Script to Set Group Mapping</title>
+<programlisting>
+#!/bin/bash
+
+net groupmap add ntgroup="Domain Admins" unixgroup=ntadmin rid=512 type=d
+net groupmap add ntgroup="Domain Users" unixgroup=users rid=513 type=d
+net groupmap add ntgroup="Domain Guests" unixgroup=nobody rid=514 type=d
+
+groupadd Orks
+groupadd Elves
+groupadd Gnomes
+
+net groupmap add ntgroup="Orks"   unixgroup=Orks   type=d
+net groupmap add ntgroup="Elves"  unixgroup=Elves  type=d
+net groupmap add ntgroup="Gnomes" unixgroup=Gnomes type=d
+</programlisting>
+</example>
+	</para>
+
+	<para>
+	もちろん、必要に合わせて管理者がこれを編集することを想定している。
+	<command>net groupmap</command>ツールの使用方法の詳細についてはマニュアル
+	ページを参照のこと。
+	</para>
+
+	<note><para>
+	Sambaのバージョン3.0.23未満では、
+	<literal>Domain Admins, Domain Users</literal>と<literal>Domain Guests</literal>
+	Windowsグループに対する既定値のグループマッピングを自動的に生成する。しかし、
+	UNIX GIDへのマップは行わない。これは管理者の混乱と障害を引き起こす。Samba-3.0.23
+	以降はこの異常は修正された。そのため、Windowsグループは、手動かつ明示的にSamba
+	管理者によって有効なUNIX GIDへのマップの作成とマッピングを行わなければならない。
+	</para></note>
+
+	</sect2>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+この時点で、油断していると管理者はいろいろな細かいことにびっくりされられることになる。
+現実問題として、自動の制御スクリプトの全ステップを本番環境に移す前には、注意深く手動で
+テストしなければならない。
+</para>
+
+	<sect2>
+	<title>グループの追加が失敗する</title>
+
+		<para>
+<indexterm><primary>groupadd</primary></indexterm>
+		これはSambaインタフェーススクリプトが&smb.conf;ファイル中の
+		<smbconfoption name="add group script"/>として直接
+		<command>groupadd</command>呼んだ時によくある問題である。
+		</para>
+
+		<para>
+<indexterm><primary>大文字</primary></indexterm>
+<indexterm><primary>空白文字</primary></indexterm>
+		もっともよくある失敗の原因は、名前に大文字かつまたはスペースを含む
+		Microsoft Windows グループアカウントを追加しようとしたということである。
+		</para>
+
+		<para>
+<indexterm><primary>groupadd</primary></indexterm>
+		これには 3 つの回避策がある。一つ目は、UNIX/Linuxの<command>groupadd</command>
+		システムツールの制約に沿うグループ名のみを使用することである。二つ目は、
+		この章で先に言及したスクリプトを使用することである。三つ目は、
+		Microsoft Windowsグループ名に代わるUNIX/Linuxグループアカウントを手動で作成し、
+		上で説明した手順でそのグループをMicrosoft Windows グループにマッピングする
+		という方法である。
+		</para>
+
+	</sect2>
+
+	<sect2>
+	<title>ワークステーションのPower UsersグループへのDomain Usersの追加</title>
+
+		<para><quote>
+		domain usersをPower Usersグループに追加するにはどうすればいいですか?
+		</quote></para>
+
+		<para>
+<indexterm><primary>Domain Usersグループ</primary></indexterm>
+		Power Usersグループは各Windows 200x/XP Professionalワークステーションの
+		ローカルグループである。Domain Usersグループは自動でPower Usersグループに
+		追加することはできない。ローカルマシンに<emphasis>administrator</emphasis>
+		としてローカルワークステーションにログオンすることで、各ワークステーション
+		でこの作業を行わなければならず、その後以下の手続きを行う:
+		</para>
+
+		<procedure>
+			<step><para>
+			Click <guimenu>スタート -> コントロールパネル -> ユーザとパスワードをクリック。</guimenu>
+			</para></step>
+
+			<step><para>
+			<guimenuitem>詳細</guimenuitem>タブをクリック。
+			</para></step>
+
+			<step><para>
+			<guibutton>詳細</guibutton>ボタンをクリック。
+			</para></step>
+
+			<step><para>
+			<constant>グループ</constant>をクリック。
+			</para></step>
+
+			<step><para>
+			<constant>Power Users</constant>をダブルクリック。この作業後、ローカル
+			マシンの<constant>Power Users</constant>グループにユーザとグループを
+			追加するパネルが起動する。
+			</para></step>
+
+			<step><para>
+			<guibutton>追加</guibutton>ボタンをクリック。
+			</para></step>
+
+			<step><para>
+			<constant>Domain Users</constant>グループに追加するドメインを選択。
+			</para></step>
+
+			<step><para>
+			<constant>Domain Users</constant>グループをダブルクリック。
+			</para></step>
+
+			<step><para>
+			<guibutton>OK</guibutton>ボタンをクリック。この作業中にログオン
+			ボックスが表示されたならば、 接続するために
+			<constant>DOMAIN\UserName</constant>を入力することを忘れないこと。
+			すなわち、ドメイン<constant>MIDEARTH</constant>とユーザ
+			<constant>root</constant>を<constant>MIDEARTH\root</constant>として入力する。
+			</para></step>
+		</procedure>
+	</sect2>
+
+</sect1>
+
+</chapter>

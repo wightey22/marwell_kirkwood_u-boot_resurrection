@@ -1,0 +1,1138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="pam">
+<chapterinfo>
+	&author.jht;
+	<author>
+		<firstname>Stephen</firstname><surname>Langasek</surname>
+		<affiliation>
+			<address><email>vorlon@netexpress.net</email></address>
+		</affiliation>
+	</author>
+    <pubdate>May 31, 2003</pubdate>
+</chapterinfo>
+ 
+<title>PAM ベースの分散型認証</title>
+
+<para>
+<indexterm><primary>PAM が利用可能</primary></indexterm>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<indexterm><primary>Winbindベースの認証</primary></indexterm>
+この章は、何らかの PAM が利用できる UNIX/Linux システムに対して Winbind
+ベースの認証を導入する際の助けになるだろう。Winbind を使うと、いずれかの
+Windows NT ドメイン、Windows 200x の Active Directory ベースのドメイン、
+そして Samba ベースのドメイン環境において、ユーザレベルのアプリケーション
+アクセス認証を利用できるようになる。また、あなたの Samba 環境の設定に
+対する適切な PAM ベースのローカルホストアクセス制御にも役立つ。
+</para>
+
+<para>
+<indexterm><primary>PAM の管理</primary></indexterm>
+<indexterm><primary>pam_smbpass.so</primary></indexterm>
+PAM 経由の Winbind の設定方法を知ることに加え、さらに一般的な PAM 管理
+の可能性と、特に <filename>pam_smbpass.so</filename> のようなツールを
+導入して便利に使う方法も学ぶことができるだろう。
+</para>
+
+<note><para>
+Winbind を使うのは、PAM 構成を単独で行うよりも敷居が高い。Winbind に関する
+より詳細な情報については
+<link linkend="winbind">Winbind: ドメインアカウントを使う</link>
+を参照されたい。
+</para></note>
+
+<sect1>
+<title>その機能と利点</title>
+
+<para>
+<indexterm><primary>Oracle(Sun) Solaris</primary></indexterm>
+<indexterm><primary>xxxxBSD</primary></indexterm>
+<indexterm><primary>Linux</primary></indexterm>
+<indexterm><primary>着脱可能な認証モジュール</primary><see>PAM</see></indexterm>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>login</primary></indexterm>
+<indexterm><primary>passwd</primary></indexterm>
+<indexterm><primary>chown</primary></indexterm>
+現在、多くの UNIX システム（例：Oracle(Sun)Solaris）や xxxxBSDファミリーおよび
+Linux では、着脱可能な認証モジュール(PAM)機能を使って全ての認証、承認処理、
+リソースの制御サービスを提供している。PAM の導入以前は、システムパスワード
+データベース(<filename>/etc/passwd</filename>)以外のものを使おうとするなら、
+セキュリティサービスを提供するすべてのプログラムそれぞれに対して代替手段
+を準備する必要がある。つまり、<command>login</command>, 
+<command>passwd</command>, <command>chown</command> といったものの代替手段
+を別途用意しなければならないということである。
+</para>
+
+<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>/etc/pam.conf</primary></indexterm>
+<indexterm><primary>Solaris</primary></indexterm>
+<indexterm><primary>/etc/pam.d</primary></indexterm>
+PAM を使うと、これらのセキュリティプログラムを、これらが依存する認証／
+承認インフラから切り離すことができる。PAM を構成するには、
+<filename>/etc/pam.conf</filename> という１つのファイルを適切に変更する
+(Solaris)か、または<filename>/etc/pam.d</filename>配下にある個別の制御
+ファイルを編集する。
+</para>
+
+<para>
+<indexterm><primary>PAMを有効にする</primary></indexterm>
+<indexterm><primary>動的なロードが可能なライブラリーモジュール</primary></indexterm>
+PAM が有効になっている UNIX/Linux システムでは、動的なロードができる適切な
+ライブラリモジュールが利用できるようになっていれば、システムでさまざまな
+認証バックエンドを使うように構成するのは簡単である。それらのバックエンドは
+システムでローカルに閉じていてもよいし、リモートサーバ上で集約されていてもよい。
+</para>
+
+<para>
+PAM サポートモジュールで使えるもの：
+</para>
+
+<variablelist>
+	<varlistentry><term><filename>/etc/passwd</filename></term><listitem>
+		<para>
+<indexterm><primary>/etc/passwd</primary></indexterm>
+<indexterm><primary>PAM modules</primary></indexterm>
+<indexterm><primary>pam_unix.so</primary></indexterm>
+<indexterm><primary>pam_unix2.so</primary></indexterm>
+<indexterm><primary>pam_pwdb.so</primary></indexterm>
+<indexterm><primary>pam_userdb.so</primary></indexterm>
+これらの PAM モジュールは標準の UNIX ユーザデータベースを利用する。
+最も有名なものは、<filename>pam_unix.so</filename>, 
+<filename>pam_unix2.so</filename>, <filename>pam_pwdb.so</filename>,
+<filename>pam_userdb.so</filename>と呼ばれるものである。
+</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term>Kerberos</term><listitem>
+		<para>
+<indexterm><primary>pam_krb5.so</primary></indexterm>
+<indexterm><primary>Kerberos</primary></indexterm>
+<indexterm><primary>Heimdal</primary></indexterm>
+<indexterm><primary>MIT Kerberos</primary></indexterm>
+<indexterm><primary>ADS</primary></indexterm>
+<filename>pam_krb5.so</filename> モジュールを使うと、ケルベロス準拠の
+あらゆるサーバを使える。このツールは MIT Kerberos, Heimdal Kerberos, 
+そしておそらく（もし有効であれば）Microsoft Active Directory にアクセス
+するのにも使える。
+</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term>LDAP</term><listitem>
+		<para>
+<indexterm><primary>LDAP</primary></indexterm>
+<indexterm><primary>pam_ldap.so</primary></indexterm>
+<indexterm><primary>OpenLDAP</primary></indexterm>
+<indexterm><primary>Sun ONE iDentity server</primary></indexterm>
+<indexterm><primary>Novell eDirectory server</primary></indexterm>
+<indexterm><primary>Microsoft Active Directory</primary></indexterm>
+<filename>pam_ldap.so</filename> モジュールを使うと、LDAP v2 もしくは v3
+準拠のあらゆるバックエンドサーバを使える。よく使われる LDAP バックエンド
+サーバには OpenLDAP v2.0 and v2.1, Sun ONE iDentity server, 
+Novell eDirectory server, Microsoft Active Directory がある。
+</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term>NetWare Bindery</term><listitem>
+		<para>
+<indexterm><primary>NetWare Bindery</primary></indexterm>
+<indexterm><primary>pam_ncp_auth.so</primary></indexterm>
+<indexterm><primary>bindery-enabled</primary></indexterm>
+<indexterm><primary>NetWare Core Protocol-based server</primary></indexterm>
+<filename>pam_ncp_auth.so</filename> モジュールを使うと、バインダリ(Bindery)が
+有効な NetWare コアプロトコルベースのサーバによる認証を利用できるようになる。
+</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term>SMB Password</term><listitem>
+		<para>
+<indexterm><primary>SMB Password</primary></indexterm>
+<indexterm><primary>pam_smbpass.so</primary></indexterm>
+<indexterm><primary>passdb backend</primary></indexterm>
+<filename>pam_smbpass.so</filename> と呼ばれるモジュールを使うと、Samba の
+&smb.conf; ファイルで設定された passdb バックエンドのユーザ認証を利用
+できるようになる。
+</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term>SMB Server</term><listitem>
+		<para>
+<indexterm><primary>SMB Server</primary></indexterm>
+<indexterm><primary>pam_smb_auth.so</primary></indexterm>
+<filename>pam_smb_auth.so</filename> モジュールは、オリジナルの MS Windows
+ネットワーク認証のためのツールである。Winbind モジュールがリリース
+されている現在、このモジュールはすでに多少古臭くなってしまっている。
+</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term>Winbind</term><listitem>
+		<para>
+<indexterm><primary>Winbind</primary></indexterm>
+<indexterm><primary>pam_winbind.so</primary></indexterm>
+<indexterm><primary>domain controller</primary></indexterm>
+<indexterm><primary>authentication</primary></indexterm>
+<filename>pam_winbind.so</filename> モジュールは、Samba は MS Windows の
+ドメインコントローラーからの認証情報を取得できるようにするものである。
+これにより、PAM が有効なアプリケーションに対して認証されたユーザへの
+アクセス権を与えるのが簡単になる。
+</para>
+	</listitem></varlistentry>
+
+	<varlistentry><term>RADIUS</term><listitem>
+		<para>
+<indexterm><primary>Remote Access Dial-In User Service</primary><see>RADIUS</see></indexterm>
+PAM RADIUS (Remote Access Dial-In User Service) と呼ばれる認証モジュールがある。
+ほとんどのケースでは、管理者がこのツールのソースコードを持ってきて自分自身で
+インストールを行う必要がある。RADIUS プロトコルは多くのルータやターミナル
+サーバで使われているプロトコルである。
+</para>
+	</listitem></varlistentry>
+</variablelist>
+
+<para>
+<indexterm><primary>pam_smbpasswd.so</primary></indexterm>
+<indexterm><primary>pam_winbind.so</primary></indexterm>
+上記のうち、<filename>pam_smbpasswd.so</filename> と <filename>pam_winbind.so</filename>
+モジュールは、Samba 自身が提供するものである。
+</para>
+
+<para>
+<indexterm><primary>広域ネットワークの帯域</primary></indexterm>
+<indexterm><primary>効率のよい認証</primary></indexterm>
+<indexterm><primary>PAMが利用可能</primary></indexterm>
+<indexterm><primary>集中管理</primary></indexterm>
+いったんこれらのモジュールを設定してしまえば、広範囲にまたがるネットワーク
+帯域や PAM を利用した効率的な認証サービスを提供するような分散 Samba ドメイン
+コントローラの利用においても、高い柔軟性を得ることができる。つまり、単一の
+ユーザアカウントデータベースを使って、中央集中的な管理や保守の行き届いた
+分散認証を実現できるのである。
+</para>
+
+</sect1>
+
+<sect1>
+<title>技術的な議論</title>
+
+<para>
+<indexterm><primary>PAM</primary></indexterm>
+<indexterm><primary>権限を付与するアプリケーション</primary></indexterm>
+<indexterm><primary>/etc/pam.conf</primary></indexterm>
+<indexterm><primary>/etc/pam.d/</primary></indexterm>
+システム管理者が自分のシステム上のアプリケーションにアクセス権を付与する際、
+PAM はかなり柔軟に設定できるように設計されている。PAM によって制御される
+システムセキュリティのためのローカル設定には、単一ファイル 
+<filename>/etc/pam.conf</filename> と <filename>/etc/pam.d/</filename>
+ディレクトリーの２つがある。
+</para>
+
+<sect2>
+<title>PAM 設定のための文法</title>
+
+<para>
+<indexterm><primary>PAM 特有のトークン</primary></indexterm>
+<indexterm><primary>大文字小文字の区別</primary></indexterm>
+この章では、これらのファイルで記述するエントリに関する正しい文法、および
+一般的なオプションについて解説する。設定ファイルにおける PAM 特有の
+トークンでは、大文字小文字の区別を行わない。ただし、モジュールのパス
+については大文字小文字を区別する。なぜなら、これらはファイルの名前を
+示すものであり、大文字小文字を区別するような一般的なファイルシステム
+の性質に影響を受けるからである。与えられたモジュールに渡すための
+引数が大文字小文字を区別するかどうかは、それぞれのモジュールで規定
+されている。
+</para>
+
+<para>
+後述の設定行に加え、システム管理者の便宜のために２つの特殊文字がある：
+<quote>#</quote> から行末まではコメントとみなされる。またモジュールを
+指定する行については <quote>\</quote> で改行をエスケープすることで、
+次の行にまたがることができる。
+</para>
+
+<para>
+<indexterm><primary>PAM 認証モジュール</primary></indexterm>
+<indexterm><primary>/lib/security</primary></indexterm>
+PAM の認証モジュール（ダイナミックリンクされたライブラリファイル）が
+既定値の位置にある場合は、そのパスを明示する必要はない。Linux の場合、
+既定値の位置は <filename>/lib/security</filename> となる。モジュールが
+既定値位置以外にある場合は
+<programlisting>
+auth  required  /other_path/pam_strange_module.so
+</programlisting>
+のようにパスを明示しなければならない。
+</para>
+
+<sect3>
+<title><filename>/etc/pam.d</filename> にあるエントリーの構造</title>
+
+<para>
+このセクションの残りの部分は、Linux-PAM プロジェクトのドキュメントから
+の引用である。PAM に関する詳細は
+<ulink url="http://ftp.kernel.org/pub/linux/libs/pam/">the Official Linux-PAM home page</ulink>
+を参照のこと。
+</para>
+
+<para>
+<indexterm><primary>/etc/pam.conf</primary></indexterm>
+<filename>/etc/pam.conf</filename> ファイル中の一般的な設定行は、
+以下の書式で記述する：
+<programlisting>
+サービス名  モジュールタイプ  制御フラグ  モジュールパス  引数
+</programlisting>
+</para>
+
+<para>
+これら各トークンの意味について解説する。Linux-PAM を構成するための2番目
+のやり方（最近はむしろこちらの方が多いようだが）は、
+<filename>/etc/pam.d/</filename> ディレクトリーの中身を介するという方法
+である。それぞれのトークンの意味するところを解説した後、この方法について
+述べることにする。
+</para>
+
+<variablelist>
+	<varlistentry><term>サービス名</term><listitem>
+		<para>
+<indexterm><primary>ftpd</primary></indexterm>
+<indexterm><primary>rlogind</primary></indexterm>
+<indexterm><primary>su</primary></indexterm>
+このエントリに関連付けられるサービスの名前。<command>ftpd</command>, 
+<command>rlogind</command>, <command>su</command> のように、サービス名は
+アプリケーションにつけられた伝統的な名前であることが多い。
+</para>
+
+		<para>
+既定値の認証メカニズムを定義するために予約されている、特別な名前もある。
+これは <parameter>OTHER</parameter> と呼ばれるが、大文字小文字は固定されて
+いない。名前付きサービスに特化したモジュールがある場合、
+<parameter>OTHER</parameter>エントリーは無視される事に注意。
+		</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term>モジュールタイプ</term><listitem>
+                <para>
+（現時点では）以下の通り4つのタイプのモジュールがある。
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+<indexterm><primary>auth</primary></indexterm>
+<indexterm><primary>/etc/groups</primary></indexterm>
+<parameter>auth:</parameter> このモジュールタイプは、ユーザを認証
+するにあたって２つの側面がある。まず、アプリケーションに対して
+パスワード問い合わせの指示を行うか、または別の手段を使って、操作
+しているユーザが誰なのかを特定する。次に、このモジュールはその
+資格認定から承認という性質を通して(<filename>/etc/groups</filename> 
+ファイルとは独立した形で)グループの会員資格やその他の特権に関する
+許可を与えることができる。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>account</primary></indexterm>
+<indexterm><primary>認証をベースとしないアカウント管理</primary></indexterm>
+<parameter>account:</parameter> このモジュールは、認証をベースとしない
+アカウント管理を行う。よくある利用法としては、利用時間帯、現時点で利用
+可能なシステムリソース（最大ユーザ数）、またはユーザがログインした場所
+などをベースとした、サービスへのアクセスの制限や許可が挙げられる。
+たとえば <quote>root</quote> ログインの許可は、コンソールからのみに制限
+されているかもしれない。
+			</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>session</primary></indexterm>
+<parameter>session:</parameter> このモジュールは、主に対象のユーザが
+サービスを割り当てられる前後に行われるべきことに関連付けられる。
+たとえばそのユーザに関する何らかのデータ交換をする際のオープン/クローズ
+情報のログを取ったり、ディレクトリをマウントすることなどが挙げられる。
+</para></listitem>
+
+			<listitem><para>
+<indexterm><primary>password</primary></indexterm>
+<parameter>password:</parameter> この最後のモジュールタイプは、そのユーザに
+関連する認証トークンを更新するために必要なものである。典型的には、
+<quote>チャレンジ/レスポンス</quote> 認証を行う
+<parameter>(auth)</parameter> モジュールタイプがある。
+</para></listitem>
+		</itemizedlist>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term>制御フラグ</term><listitem>
+		<para>制御フラグは、関連するモジュールの成功／失敗に対して PAM
+ライブラリがどう対応するのかを指示するのに使われる。PAM モジュール群は
+スタック化(同じタイプのモジュール群を次々に重ねること)できるので、
+制御フラグがそれぞれのモジュールの相対的な重要度を決定する。
+アプリケーションは <filename>/etc/pam.conf</filename> ファイルにある
+モジュールについて、個々の成功や失敗に影響されない。その代わり、
+Linux-PAM ライブラリからの成功や失敗の応答のサマリを受け取る。
+これらのモジュールは、<filename>/etc/pam.conf</filename> に記述
+されている順に実行される。つまり前の方にあるエントリは後ろの方の
+ものより先に実行される。Linux-PAM v0.60 の場合、制御フラグは２つの
+文法のうちのいずれかで定義できる。
+</para>
+
+		<para>
+<indexterm><primary>required</primary></indexterm>
+<indexterm><primary>requisite</primary></indexterm>
+<indexterm><primary>sufficient</primary></indexterm>
+<indexterm><primary>optional</primary></indexterm>
+制御フラグについてのシンプルな(かつ従来の)文法では、特定のモジュール
+の成功や失敗について、それらを通知するための重大度を単一のキーワードで
+指定する。キーワードには <parameter>required</parameter>, 
+<parameter>requisite</parameter>, <parameter>sufficient</parameter>, 
+<parameter>optional</parameter> の4種類ある。
+	</para>
+
+		<para>
+		Linux-PAM ライブラリでは以下の方式でこれらのキーワードを
+		解釈する。
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+<parameter>required:</parameter>このモジュールタイプ機能が成功するためには
+このモジュールが成功することが必須である。ただしこのモジュールが失敗
+した場合でも、(同じモジュールタイプを持つ)残りのすべてのモジュールの
+実行が完了するまでは、失敗したことはユーザには通知されない。
+			</para></listitem>
+
+			<listitem><para>
+<parameter>requisite:</parameter> required と似ているが、このモジュール
+が失敗を返したとき制御が直接アプリケーションに戻されるところが異なる。
+その戻り値は、失敗したモジュールのうち最初に required もしくは requisite 
+指定されていたものに関連付けられる。安全でない媒体を通してユーザが
+パスワードを入力するような可能性がある場合、このフラグはその状況を排除
+するために使える。そのような可能性が残っていると、システム上の有効な
+アカウントの情報を攻撃者に知らせてしまうようなことにつながりかねない。
+このような可能性があると、共用ホスト環境で慎重に扱うべきパスワードを
+公開してしまうようなゆゆしき環境において、一方的に不利になるだろう。
+			</para></listitem>
+
+			<listitem><para>
+<parameter>sufficient:</parameter> このモジュールが成功すると、Linux-PAM 
+ライブラリがこのモジュールタイプについてその目的を達成したものとするのに
+<parameter>sufficient</parameter>(十分である)とみなされる。
+これまでに要求されたモジュールのうち失敗したものがない場合、このタイプに
+関して<quote>スタックされた</quote>モジュールは、これ以上起動されない
+(この場合、この後に続くモジュールは起動されない)。
+ただし、このモジュールが失敗しても、このモジュールタイプレベルで成功した
+アプリケーションについては致命的エラーとはみなされない。
+			</para></listitem>
+
+            <listitem><para>
+<parameter>optional:</parameter> この制御フラグは、その名前が示して
+いるように、そのモジュールの成功/失敗が、そのユーザアプリケーション
+がサービスを提供できるかどうかを決めるものではないことを示す。一般に、
+そのモジュールスタック全体が成功か失敗かを決定する際、Linux-PAM 
+はこのようなモジュールを考慮しない。しかしながら、それ以前もしくは
+それ以降のどのモジュールも明確に成功か失敗かを示さない場合、この
+モジュールがアプリケーションへの応答の性質を決めることがある。
+後者のひとつの例として、他のモジュールが PAM_IGNORE のようなものを
+返した場合が挙げられる。
+			</para></listitem>
+		</itemizedlist>
+
+		<para>
+ユーザを認証する方法について、その文法が複雑に(新しく)なれば
+なるほど、管理者はより詳しく記述し、より細かく制御できるように
+なるものである。この制御フラグの書式は、以下のように
+<parameter>値=アクション</parameter> トークンの並びが
+大括弧で区切られたものである:
+		</para>
+
+<para><programlisting>
+[値1=アクション1 値2=アクション2 ...]
+</programlisting></para>
+
+		<para>
+ここで、<parameter>値1</parameter> は以下の戻り値のいずれかである:
+<screen>
+<parameter>success; open_err; symbol_err; service_err; system_err; buf_err;</parameter>
+<parameter>perm_denied; auth_err; cred_insufficient; authinfo_unavail;</parameter>
+<parameter>user_unknown; maxtries; new_authtok_reqd; acct_expired; session_err;</parameter>
+<parameter>cred_unavail; cred_expired; cred_err; no_module_data; conv_err;</parameter>
+<parameter>authtok_err; authtok_recover_err; authtok_lock_busy;</parameter>
+<parameter>authtok_disable_aging; try_again; ignore; abort; authtok_expired;</parameter>
+<parameter>module_unknown; bad_item;</parameter> と <parameter>default</parameter>.
+</screen>
+</para>
+
+		<para>
+最後の<parameter>default</parameter>は、明示的に定義されない戻り値に対する
+動作を規定するのに使える。
+		</para>
+
+		<para>
+<parameter>アクション1</parameter> には正の整数かまたは以下のトークン
+のいずれかを指定する:
+<parameter>ignore</parameter>; <parameter>ok</parameter>; <parameter>done</parameter>;
+<parameter>bad</parameter>; <parameter>die</parameter>; <parameter>reset</parameter>.
+正の整数 J がアクションとして指定された場合、現在のモジュールタイプについて
+続く J 個のモジュールをスキップする。この方法により、管理者は異なった実行
+パスを持つ多くのスタックされたモジュールを、適度に洗練された方法で組み合わせる
+ことができる。個々のモジュールの反応によって、どのパスにあるものが適用されるかが
+決定される。
+		</para>
+
+		<itemizedlist>
+			<listitem><para>
+<parameter>ignore:</parameter> モジュールスタックに対して使われると、その
+モジュールの戻り値は、アプリケーションが受け取るリターンコードには影響しない。
+			</para></listitem>
+
+			<listitem><para>
+<parameter>bad:</parameter> このアクションが指定されると、戻り値はモジュールの
+失敗を表しているとみなされる。このモジュールがスタックの中で最初に失敗すると、
+その戻り値はスタック全体の値として使われる。
+			</para></listitem>
+
+            <listitem><para>
+<parameter>die:</parameter> bad と同じだが、さらにモジュールスタックが終了
+して即時に PAM がアプリケーションに結果を返す。
+			</para></listitem>
+
+           <listitem><para>
+<parameter>ok:</parameter> この戻り値をモジュールスタック全体の戻り値
+として直接返すべきだと管理者が考えていることを PAM に教える。つまり、
+このスタックの直前の状態が戻り値 PAM_SUCCESS を返すことになっていた
+場合は、モジュールの戻り値がこの値を上書きする。もしスタックの直前の
+状態が特定のモジュールの失敗を表す何らかの値を保持している場合は、
+この <parameter>ok</parameter>値はその値を上書きしない。
+			</para></listitem>
+
+            <listitem><para>
+<parameter>done:</parameter> <parameter>ok</parameter> と同じだが、
+モジュールスタックを終了させて PAM の制御を即時にアプリケーションに
+戻すという副作用があるところが異なる。
+                        </para></listitem>
+
+           <listitem><para>
+<parameter>reset:</parameter> モジュールスタックの状態を保持するメモリ
+をクリアし、次のスタックモジュールから実行を再開する。
+			</para></listitem>
+		</itemizedlist>
+
+		<para>
+<parameter>required</parameter>; <parameter>requisite</parameter>;
+<parameter>sufficient</parameter>; <parameter>optional</parameter>
+はそれぞれ [...] という構文をもつという意味では同等の、以下の表現を
+備えている：
+		</para>
+
+		<para>
+		<itemizedlist>
+			<listitem><para>
+<parameter>required</parameter> は
+<parameter>[success=ok new_authtok_reqd=ok ignore=ignore default=bad]</parameter>
+と同等。
+			</para></listitem>
+
+			<listitem><para>
+<parameter>requisite</parameter> は
+<parameter>[success=ok new_authtok_reqd=ok ignore=ignore default=die]</parameter>
+と同等。
+			</para></listitem>
+
+			<listitem><para>
+<parameter>sufficient</parameter> は
+<parameter>[success=done  new_authtok_reqd=done  default=ignore]</parameter>
+と同等。
+			</para></listitem>
+
+			<listitem><para>
+<parameter>optional</parameter> は
+<parameter>[success=ok new_authtok_reqd=ok default=ignore]</parameter>
+と同等である。
+			</para></listitem>
+		</itemizedlist>
+		</para>
+
+		<para>
+この新しい書式が持つパワーの感触をつかむために、これで何ができる
+のかを体験してみるとよいだろう。Linux-PAM-0.63 ではクライアント・
+プラグイン・エージェントの概念が導入された。これにより、PAM では
+クライアント・サーバ・アプリケーションに対して、トランスポート・
+プロトコルの継承を利用したマシン間の認証を可能にしている。
+<parameter>[ ... value=action ... ]</parameter> という制御用構文
+により、アプリケーションがそれに準拠するクライアントに対して
+バイナリ・プロンプトのサポートを構成できるようになっている。ただし
+レガシーアプリケーションの場合は柔軟に代替認証モードにフェイル
+オーバーできる。
+		</para>
+		</listitem>
+	</varlistentry>
+
+	<varlistentry><term>module-path</term><listitem>
+		<para>
+動的ローダブルオブジェクトファイルのパス名 - 差し替え可能な
+モジュールそのもの。モジュールパスの最初の文字が
+<quote>/</quote> の場合、それは絶対パスであるとみなされる。
+そうでない場合、与えられたモジュールパスは既定値のモジュール
+パスである <filename>/lib/security</filename> の後ろに付加される
+(ただし前述の注意事項を参照のこと)。
+		</para>
+
+		<para>
+引数は、起動時にモジュールに渡されるトークンのリストであり、典型的な
+Linux のシェルコマンドへの引数と同様である。一般的に、有効な引数は
+オプションであり、与えられたモジュール固有のものであることが多い。
+無効な引数はモジュールによって無視される。しかしながら、無効な引数に
+出会った場合、そのモジュールは syslog(3) に対してエラーメッセージを
+出力しなければならない。共通的なオプションについては次の節を
+参照して欲しい。
+		</para>
+
+		<para>
+引数の中に空白を含める場合は引数全体を大括弧 [] で括るようにする。
+次に例を示す:
+		</para>
+
+<para><programlisting>
+squid auth required pam_mysql.so user=passwd_query passwd=mada \
+db=eminence [query=select user_name from internet_service where \
+user_name=<quote>%u</quote> and password=PASSWORD(<quote>%p</quote>) and service=<quote>web_proxy</quote>]
+</programlisting></para>
+
+		<para>
+この書式を使う場合は文字列の中に <quote>[</quote> 文字を含んでもよい。
+また文字列の中に <quote>]</quote> 文字を含める場合は、引数の解析が
+正しく行えるように <quote>\[</quote> を使うべきである。すなわち以下の
+ようになる。
+		</para>
+
+<para><programlisting>
+[..[..\]..]    -->   ..[..]..
+</programlisting></para>
+
+		<para>
+設定ファイルの中でひとつでも書式が正しくない行があれば、(エラーが
+起こって)認証処理は失敗すると思った方がよい。対応するエラーは
+syslog(3) への呼び出しを通してシステムのログファイルに書き込まれる。
+		</para>
+		</listitem>
+	</varlistentry>
+</variablelist>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>システム設定の例</title>
+
+<para>
+以下は設定ファイル <filename>/etc/pam.d/login</filename>の例である。
+この例ではすべてのオプションがコメント状態をはずされて(=有効になって)おり、
+おそらくこのままでは使い物にならないだろう。というのは、ログインプロセス
+が成功するまでに多くの条件が積み重なっているからである。
+<filename>pam_pwdb.so</filename> の呼び出しを除き、原則的にはすべての
+条件をコメントアウトして無効にすることができる。
+</para>
+
+<sect3>
+<title>PAM: オリジナルのログイン設定</title>
+
+<para>
+	<programlisting>
+#%PAM-1.0
+# The PAM configuration file for the <quote>login</quote> service
+#
+auth         required    pam_securetty.so
+auth         required    pam_nologin.so
+# auth       required    pam_dialup.so
+# auth       optional    pam_mail.so
+auth         required    pam_pwdb.so shadow md5
+# account    requisite   pam_time.so
+account      required    pam_pwdb.so
+session      required    pam_pwdb.so
+# session    optional    pam_lastlog.so
+# password   required    pam_cracklib.so retry=3
+password     required    pam_pwdb.so shadow md5
+</programlisting>
+</para>
+
+</sect3>
+
+<sect3>
+<title>PAM: <filename>pam_smbpass</filename> を使ったログイン</title>
+
+<para>
+PAM では交換式モジュールが利用できる。サンプルシステムでは
+以下のものが利用可能:
+</para>
+
+<para><prompt>$</prompt><userinput>/bin/ls /lib/security</userinput>
+<programlisting>
+pam_access.so    pam_ftp.so          pam_limits.so     
+pam_ncp_auth.so  pam_rhosts_auth.so  pam_stress.so     
+pam_cracklib.so  pam_group.so        pam_listfile.so   
+pam_nologin.so   pam_rootok.so       pam_tally.so      
+pam_deny.so      pam_issue.so        pam_mail.so       
+pam_permit.so    pam_securetty.so    pam_time.so       
+pam_dialup.so    pam_lastlog.so      pam_mkhomedir.so  
+pam_pwdb.so      pam_shells.so       pam_unix.so       
+pam_env.so       pam_ldap.so         pam_motd.so       
+pam_radius.so    pam_smbpass.so      pam_unix_acct.so  
+pam_wheel.so     pam_unix_auth.so    pam_unix_passwd.so
+pam_userdb.so    pam_warn.so         pam_unix_session.so
+</programlisting></para>
+
+<para>
+以下のログインプログラムの例では、システムパスワードデータベース
+(<filename>/etc/passwd</filename>,
+<filename>/etc/shadow</filename>, <filename>/etc/group</filename>) 
+を使う <filename>pam_pwdb.so</filename> を
+<filename>pam_smbpass.so</filename> で置き換えている。
+後者では Microsoft MD4 暗号化パスワードハッシュを含む Samba 
+のデータベースを使う。このデータベースは使用している UNIX/Linux 
+システムの実装により
+<filename>/usr/local/samba/private/smbpasswd</filename>, 
+<filename>/etc/samba/smbpasswd</filename>,
+<filename>/etc/samba.d/smbpasswd</filename>
+のいずれかに格納される。<filename>pam_smbpass.so</filename> 
+モジュールは Samba 2.2.1 以降で提供される。このモジュールを
+コンパイルしたい場合は、Samba の <command>configure</command> 
+スクリプト実行時に <option>--with-pam_smbpass</option> 
+オプションを指定する。<filename>pam_smbpass</filename> 
+モジュールに関する詳細については Samba ソースの配布物の
+<filename>source/pam_smbpass</filename> ディレクトリにある
+ドキュメントを参照して欲しい。
+</para>
+
+<para>
+	<programlisting>
+#%PAM-1.0
+# The PAM configuration file for the <quote>login</quote> service
+#
+auth        required    pam_smbpass.so nodelay
+account     required    pam_smbpass.so nodelay
+session     required    pam_smbpass.so nodelay
+password    required    pam_smbpass.so nodelay
+</programlisting></para>
+
+<para>
+以下に、ある Linux システムにおける PAM の設定ファイルを示す。
+既定値の設定では <filename>pam_pwdb.so</filename> を使う。
+</para>
+
+<para>
+	<programlisting>
+#%PAM-1.0
+# The PAM configuration file for the <quote>samba</quote> service
+#
+auth       required     pam_pwdb.so nullok nodelay shadow audit
+account    required     pam_pwdb.so audit nodelay
+session    required     pam_pwdb.so nodelay
+password   required     pam_pwdb.so shadow md5
+</programlisting></para>
+
+<para>
+以下の例では、基本的な Samba 認証であっても
+<command>smbpasswd</command> データベースを使うようになっている。
+このような設定を行った場合、<command>passwd</command> プログラムに
+対しても影響を及ぼす。つまり、<command>smbpasswd</command> の
+パスワードを <command>passwd</command> コマンドで変更できるようになる:
+</para>
+
+<para>
+		<programlisting>
+#%PAM-1.0
+# The PAM configuration file for the <quote>samba</quote> service
+#
+auth       required     pam_smbpass.so nodelay
+account    required     pam_pwdb.so audit nodelay
+session    required     pam_pwdb.so nodelay
+password   required     pam_smbpass.so nodelay smbconf=/etc/samba.d/smb.conf
+</programlisting>
+</para>
+
+<note><para>
+PAM では階層的な(スタックされた)認証の仕組みを提供している。
+たとえば、ある PAM モジュールが受け取った情報を、PAM スタックの
+次のモジュールに渡すことができる。PAM に関する特定の機能の詳細については、
+お使いのシステムに特化したドキュメントを参照して欲しい。
+さらにいくつかの Lunux の実装では、すべての認証を中心となる単一のファイルで
+設定できる <filename>pam_stack.so</filename> と呼ばれるモジュールが
+提供されている。
+<filename>pam_stack.so</filename> 方式は管理者の手間を軽減
+してくれるので、熱心なファンもいる。
+もっとも、環境によってもいろんな問題があるわけであり、前述のどの方式を
+取るにしてもそれぞれのトレードオフがある。より有益な情報を探すために、
+PAM のドキュメントをあたってみるのもよいだろう。
+</para></note>
+
+</sect3>
+
+</sect2>
+
+<sect2>
+<title>&smb.conf; の PAM 設定</title>
+
+<para>
+<smbconfoption name="obey pam restrictions"/> と呼ばれる &smb.conf; 
+のオプションがある。このオプションに関する SWAT のヘルプを以下に示す：
+</para>
+
+<blockquote>
+<para>
+Samba が PAM サポート (<option>--with-pam</option>) 付きでコンパイル
+されている場合、Samba が PAM の account および session 管理
+ディレクティブに従うかどうかをこのパラメータで 制御できる。
+PAM を使うが認証は平文のみで、かつどの account/session 管理も
+無視するというのが既定値の動作である。
+<smbconfoption name="encrypt passwords">yes</smbconfoption>
+の場合、Samba は常に認証については PAM を無視する。その理由は、
+SMB パスワード暗号を使う場合に必要なチャレンジ／レスポンス方式の
+認証メカニズムを PAM モジュールが サポートしていないからである。
+</para>
+
+<para>既定値:<smbconfoption name="obey pam restrictions">no</smbconfoption></para>
+</blockquote>
+
+</sect2>
+
+<sect2>
+<title><filename>winbindd.so</filename>を使った遠隔 CIFS 認証</title>
+
+<para>
+どんな OS であっても、その OS 自身がアクセス可能なユーザ証明情報が
+(どこからか)提供されていることを前提としている。UNIX ではユーザ
+識別子(UID)だけでなくグループ識別子(GID)も必要となる。これらはいずれも
+単純な整数値であり、<filename>/etc/passwd</filename> といったパスワード
+バックエンドより取得する。
+</para>
+
+<para>
+Windows NT サーバでは、ユーザとグループは相対ID(RID)に割り当て
+られている。これらはユーザやグループが作られる際、ドメイン毎に
+一意となる。Windows NT のユーザやグループを UNIX のユーザやグループ
+に変換するためには、RID と UNIX のユーザ/グループの ID を
+マッピングする必要がある。これが winbind が行う仕事のひとつである。
+</para>
+
+<para>
+winbind のユーザとグループはサーバから解決要求が出され、ユーザと
+グループの ID が指定された範囲内で割り当てられる。クライアントが
+ユーザとグループを列挙するコマンドを実行すると、すぐに既存の全
+ユーザとグループがマッピングされ、割り当て処理が先着順に行われる。
+割り当てられた UNIX ID は Samba の lock ディレクトリ配下のデータベース
+ファイルに保持されて記憶される。
+</para>
+
+<para>
+これにより、目先が利く管理者なら、<filename>pam_smbpass.so</filename> や
+<command>winbindd</command> と、<parameter>ldap</parameter> のような
+分散型の <smbconfoption name="passdb backend"></smbconfoption> との
+組み合わせにより、(Linux のような)PAM を意識したプログラムや
+アプリケーションからも使うことのできる、中央集権型で管理された分散型の
+ユーザ/パスワードデータベースが使えるようになるということが理解
+できるだろう。このお膳立てにより、広範囲のネットワーク認証のトラフィック
+が削減できるという限りにおいては、マイクロソフトのActive Directory Service
+(ADS)に比較して、特に強力な優位性を持てる。
+</para>
+
+<warning><para>
+UNIX の ID データベースに対応する RID はユーザとグループのマッピング
+が格納されているファイルにのみ存在し、<command>winbindd</command> 
+によって格納される。このファイルが削除されていたり壊れていたりする場合、
+<command>winbindd</command> はどのユーザやグループが Windows NT
+のユーザやグループの RID と対応するのかを決定できなくなる。
+</para></warning>
+
+</sect2>
+
+<sect2>
+<title><filename>pam_smbpass.so</filename> を使ったパスワードの同期</title>
+
+<para>
+<filename>pam_smbpass</filename> は PAM モジュールのひとつであり、
+システム上で <filename>smbpasswd</filename> (Sambaのパスワード)
+データベースと UNIX のパスワードファイルとの同期を取るために
+使われる。PAM は Solaris, HPUX, Linux などの UNIX オペレーティングシステム
+上でサポートされている API であり、認証メカニズムに対する標準的な
+インターフェースを提供する。
+</para>
+
+<para>
+このモジュールはローカルにある <filename>smbpasswd</filename> ユーザ
+データベースを使って認証する。リモートの SMB サーバで認証したり、
+システム上の SUID root されたバイナリの存在を調べたいという向きには、
+<filename>pam_winbind</filename> の方を使うことをお勧めする。
+</para>
+
+<para>
+このモジュールで認識されるオプションについては、
+<link linkend="smbpassoptions">次のテーブル</link>を参照して欲しい。
+<table frame="all" id="smbpassoptions">
+	<title><parameter>pam_smbpass</parameter>で認識されるオプション
+	</title>
+	<tgroup cols="2" align="left">
+		<colspec align="left"/>
+		<colspec align="justify" colwidth="1*"/>
+	<tbody>
+		<row><entry>debug</entry><entry>
+より多くのデバッグ情報を出力する</entry></row>
+		<row><entry>audit</entry><entry>
+debugと似ているが、認識できないユーザ名も表示する</entry></row>
+		<row><entry>use_first_pass</entry><entry>
+ユーザにパスワード入力を求めない。
+パスワードは PAM_ 項目から持ってくる</entry></row>
+		<row><entry>try_first_pass</entry><entry>
+直前の PAM モジュールからパスワードの取得を試みる。
+取得できなければユーザからの入力を求める。</entry></row>
+		<row><entry>use_authtok</entry>
+			<entry>
+try_first_pass に似ているが、
+(パスワードモジュールだけをスタックさせるための)
+新しい PAM_AUTHTOK が事前にセットされていなければ『失敗する』
+</entry></row>
+		<row><entry>not_set_pass</entry><entry>
+このモジュールで使われたパスワードを他のモジュールに流用させない
+</entry></row>
+		<row><entry>nodelay</entry><entry>
+認証の失敗までに最大1秒の遅延を挟まない</entry></row>
+		<row><entry>nullok</entry><entry>
+パスワードなしを認める</entry></row>
+		<row><entry>nonull</entry><entry>
+パスワードなしを認めない。これは Samba の設定に優先する。
+</entry></row>
+		<row><entry>migrate</entry><entry>
+<quote>auth</quote> コンテキストでのみ意味を持つ。
+成功した認証で使われたパスワードを使って smbpasswd ファイルを更新する。
+</entry></row>
+		<row><entry>smbconf=<replaceable>ファイル名</replaceable></entry>
+		<entry>&smb.conf; ファイルへの別のパスを指定する</entry></row>
+	</tbody>
+</tgroup>
+</table>
+</para>
+
+<para>
+Linux の <filename>/etc/pam.d/</filename> 形式のファイル構造で
+<filename>pam_smbpass.so</filename> を使うときの例を以下に示す。
+このツールを別のプラットフォームに実装したいと思っている方は、
+適当に読み替えてみてほしい。
+</para>
+
+<sect3>
+<title>パスワードの同期設定</title>
+
+<para>
+以下の PAM 設定例では、<filename>/etc/passwd (/etc/shadow)</filename> 
+が変更されたときに、pam_smbpass を利用して
+<filename>private/smbpasswd</filename>が連動して変更されるようにしている。
+これはパスワードの有効期限が切れたときに(<command>ssh</command>のような)
+アプリケーションがパスワードを変更するような場合に便利である。
+</para>
+
+<para>
+	<programlisting>
+#%PAM-1.0
+# password-sync
+#
+auth       requisite    pam_nologin.so
+auth       required     pam_unix.so
+account    required     pam_unix.so
+password   requisite    pam_cracklib.so retry=3
+password   requisite    pam_unix.so shadow md5 use_authtok try_first_pass
+password   required     pam_smbpass.so nullok use_authtok try_first_pass
+session    required     pam_unix.so
+</programlisting></para>
+</sect3>
+
+<sect3>
+<title>パスワード移行のための設定</title>
+
+<para>
+以下は <filename>pam_smbpass</filename> を使って平文から
+Samba 用の暗号化パスワードに移行するための PAM 設定である。
+他のメソッドと違い、この方法なら一度も Samba の共有に接続
+したことがなくても使える:パスワードを移行すれば、ユーザが
+<command>ftp</command> で接続したり、<command>ssh</command>
+でログインしてメールを取り出したりする場合などにも使える。
+</para>
+
+<para>
+	<programlisting>
+#%PAM-1.0
+# password-migration
+#
+auth       requisite   pam_nologin.so
+# pam_smbpass is called IF pam_unix succeeds.
+auth       requisite   pam_unix.so
+auth       optional    pam_smbpass.so migrate
+account    required    pam_unix.so
+password   requisite   pam_cracklib.so retry=3
+password   requisite   pam_unix.so shadow md5 use_authtok try_first_pass
+password   optional    pam_smbpass.so nullok use_authtok try_first_pass
+session    required    pam_unix.so
+</programlisting></para>
+</sect3>
+
+<sect3>
+<title>従来のパスワード設定</title>
+
+<para>
+以下の例は、従来の <filename>smbpasswd</filename> 利用時のための
+PAM 設定である。<filename>private/smbpasswd</filename> 全体が
+投入され、SMB パスワードが存在しなかったり UNIX のパスワードと
+合致しない場合はエラーと見なされる。
+</para>
+
+<para>
+<programlisting>
+#%PAM-1.0
+# password-mature
+#
+auth       requisite    pam_nologin.so
+auth       required     pam_unix.so
+account    required     pam_unix.so
+password   requisite    pam_cracklib.so retry=3
+password   requisite    pam_unix.so shadow md5 use_authtok try_first_pass
+password   required     pam_smbpass.so use_authtok use_first_pass
+session    required     pam_unix.so
+</programlisting></para>
+</sect3>
+
+<sect3>
+<title>Kerberosパスワード統合設定</title>
+
+<para>
+以下の PAM 設定例は、<parameter>pam_krb5</parameter> といっしょに
+使われる <parameter>pam_smbpass</parameter> を示している。
+これは Samba PDC 上で、かつそれがkerberos realmのメンバで
+ある場合に有用である。
+</para>
+
+<para>
+		<programlisting>
+#%PAM-1.0
+# kdc-pdc
+#
+auth       requisite   pam_nologin.so
+auth       requisite   pam_krb5.so
+auth       optional    pam_smbpass.so migrate
+account    required    pam_krb5.so
+password   requisite   pam_cracklib.so retry=3
+password   optional    pam_smbpass.so nullok use_authtok try_first_pass
+password   required    pam_krb5.so use_authtok try_first_pass
+session    required    pam_krb5.so
+</programlisting></para>
+
+</sect3>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+<title>よくあるエラー</title>
+
+<para>
+PAM は割と扱いづらく、設定エラーを引き起こしやすい。以下に
+Samba のメーリングリストで見かけたいくつかのケースを紹介する。
+</para>
+
+	<sect2>
+	<title>pam_winbind の問題</title>
+
+	<para>
+あるユーザから<emphasis>PAM の設定で以下の問題が起こった</emphasis>
+との報告があった:
+	</para>
+
+<para>
+<programlisting>
+auth required /lib/security/pam_securetty.so
+auth sufficient /lib/security/pam_winbind.so
+auth sufficient /lib/security/pam_unix.so use_first_pass nullok
+auth required /lib/security/pam_stack.so service=system-auth
+auth required /lib/security/pam_nologin.so
+account required /lib/security/pam_stack.so service=system-auth
+account required /lib/security/pam_winbind.so
+password required /lib/security/pam_stack.so service=system-auth
+</programlisting>
+</para>
+
+	<para>
+	<emphasis>
+[ctrl][alt][F1]で新しくコンソールを開くと、私の ID 
+<quote>pitie</quote> ではログインできない。ユーザ 
+<quote>scienceu\pitie</quote> でやってみたが、それでもだめだった。
+</emphasis>
+	</para>
+
+	<para>
+この問題は
+<parameter>pam_stack.so service=system-auth</parameter>がある
+時に発生する。このファイルに入っている多くの設定には、
+すでに実行中ものが二重に入っていることがよくある。
+<parameter>auth</parameter> と <parameter>account</parameter>
+から <parameter>pam_stack</parameter> の行をコメントアウト
+したらどうなるかやってみてくれ。それで動くなら、
+<filename>/etc/pam.d/system-auth</filename> ファイルを見て、
+その中で本当に必要な行だけを <filename>/etc/pam.d/login</filename>
+ファイルにコピーすればいい。別のやり方として、もしすべての
+サービスで winbind を動かしてもいいなら、
+<filename>/etc/pam.d/system-auth</filename> に winbind 固有の
+設定を追加してもいい。
+	</para>
+
+	</sect2>
+
+	<sect2>
+	<title>Winbind がユーザとグループを解決してくれない</title>
+
+	<para>
+	<quote>
+僕の &smb.conf; は正しく設定されている。
+<smbconfoption name="idmap uid">12000</smbconfoption> と
+<smbconfoption name="idmap gid">3000-3500</smbconfoption>
+を指定しているし <command>winbind</command> も動いている。
+以下のコマンドはちゃんと動いている。
+	</quote>
+	</para>
+
+<para><screen>
+&rootprompt;<userinput>wbinfo -u</userinput>
+MIDEARTH\maryo
+MIDEARTH\jackb
+MIDEARTH\ameds
+...
+MIDEARTH\root
+
+&rootprompt;<userinput>wbinfo -g</userinput>
+MIDEARTH\Domain Users
+MIDEARTH\Domain Admins
+MIDEARTH\Domain Guests
+...
+MIDEARTH\Accounts
+
+&rootprompt;<userinput>getent passwd</userinput>
+root:x:0:0:root:/root:/bin/bash
+bin:x:1:1:bin:/bin:/bin/bash
+...
+maryo:x:15000:15003:Mary Orville:/home/MIDEARTH/maryo:/bin/false
+</screen></para>
+
+	<para>
+	<quote>
+しかし、このコマンドが失敗する:
+	</quote>
+<screen>
+&rootprompt;<userinput>chown maryo a_file</userinput>
+chown: 'maryo': invalid user
+</screen>
+	<quote>一体どうなってんの？何か間違ってる？</quote>
+	</para>
+
+	<para>
+名前キャッシュデーモンである <command>nscd</command> が動いてる
+んじゃないかな？そいつを終わらせて、起動しないようにしてくれ。
+それでうまくいくと思うよ。
+	</para>
+
+	</sect2>
+</sect1>
+
+</chapter>

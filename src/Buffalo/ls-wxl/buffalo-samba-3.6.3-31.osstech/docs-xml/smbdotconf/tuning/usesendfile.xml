@@ -1,0 +1,12 @@
+<samba:parameter name="use sendfile"
+                 context="S"
+		 type="boolean"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータが <constant>yes</constant> であり、
+    かつ Samba の動作する OS で <constant>sendfile() </constant> システムコールがサポートされている場合、いくつかの SMB read コール (主に ReadAndX と ReadRaw) において排他的 oplock が行なわれているファイルに対して効率的な sendfile システムコールが使用される。これにより、システムの CPU の効率的な使用が行なわれ、 Samba の動作も高速化するだろう。
+    Samba は NT LM 0.12 未満のプロトコルを用いるクライアントや Windows 9x ( Linux から sendfile を用いると、これらのクライアントの処理が失敗する) に対しては、自動的にこのオプションを無効にする。
+    </para>
+</description>
+<value type="default">false</value>
+</samba:parameter>

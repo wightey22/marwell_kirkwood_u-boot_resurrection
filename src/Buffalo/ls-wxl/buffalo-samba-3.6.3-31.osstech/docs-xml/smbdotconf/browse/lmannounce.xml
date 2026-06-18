@@ -1,0 +1,25 @@
+<samba:parameter name="lm announce"
+                 context="G"
+				 type="boolean-auto"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータにより、 <citerefentry><refentrytitle>nmbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> が、 OS/2
+    クライアントのブラウズリスト上に Samba サーバを格納するために必要な
+    lanman announce のブロードキャストを送出するかどうかが制御される。
+    このパラメータは3つの値、<constant>yes</constant>、
+    <constant>no</constant>、<constant>auto</constant>をとる。
+    デフォルトは <constant>auto</constant> である。
+    <constant>no</constant> の場合、Sambaは決してこのブロードキャストを送出しない。
+    <constant>yes</constant> の場合、Sambaは lanman announce のブロードキャストを
+    <smbconfoption name="lm interval"/> によって設定された間隔で定期的に送出する。
+    <constant>auto</constant> の場合、
+    Sambaはデフォルトでは lanman announce を送出しないが、受信を待機する。
+    そして、このブロードキャストを受信すると、
+    <smbconfoption name="lm interval"/> によって設定された間隔で定期的なブロードキャストの送出を開始する。</para>
+</description>
+<related>lm interval</related>
+<value type="default">auto</value>
+<value type="example">yes</value>
+</samba:parameter>

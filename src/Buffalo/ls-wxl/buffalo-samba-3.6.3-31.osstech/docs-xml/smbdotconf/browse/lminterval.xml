@@ -1,0 +1,16 @@
+<samba:parameter name="lm interval"
+                 context="G"
+                 advanced="1" developer="1"
+				 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>Samba が OS/2 クライアントが必要とする lanman announce のブロードキャストを送出するように設定されている場合
+    (<smbconfoption name="lm announce"/> パラメータを参照のこと)、
+    このパラメータにより送出間隔が秒単位で指定される。
+    これが 0 の場合、 <smbconfoption name="lm announce"/>
+    パラメータの設定に関わらず、 lanman announce は送出されない。</para>
+</description>
+<related>lm announce</related>
+<value type="default">60</value>
+<value type="example">120</value>
+</samba:parameter>

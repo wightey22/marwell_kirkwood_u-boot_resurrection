@@ -1,0 +1,41 @@
+<samba:parameter name="remote browse sync"
+	         context="G"
+		 advanced="1" developer="1"
+		 type="list"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このオプションにより、 <citerefentry><refentrytitle>nmbd</refentrytitle>
+        <manvolnum>8</manvolnum></citerefentry> が、
+	別セグメントにある Samba サーバのマスタブラウザと定期的にブラウズリストの同期要求を行なうように構成される。
+	このオプションにより、
+	ルーティングされたネットワーク上に存在する複数ワークグループからなるブラウズリストを構築することが可能になる。
+	これは Samba 固有の方式で動作するため、	Samba 以外のサーバでは機能しない。</para>
+
+	<para>これは、Samba サーバおよび同じセグメント上のクライアントマシンを、
+	通常のブラウズリストの交換ができない別のワークグループ上に表示させたい場合に有用である。
+	別のワークグループは、IP パケットを送信できるところであればどこにあってもよい。
+	</para>
+
+	<para>以下に例を示す:
+<programlisting>
+<parameter>remote browse sync = 192.168.2.255 192.168.4.255</parameter>
+</programlisting>
+	上記の設定は、<command moreinfo="none">nmbd</command>が指定されたサブネットのマスタブラウザに対して、
+	ローカルサーバとのブラウズリストの同期を要求する設定である。</para>
+
+	<para>
+	設定するIPアドレスとしては、
+	通常リモートネットワークのブロードキャストが用いられるが、
+	ネットワークが安定していればマスタブラウザのIPアドレスを指定することもできる。
+	IPアドレスが設定された場合、Sambaはそのマシンが起動していて、
+	要求を待っているかについても、そのセグメントのマスタブラウザであるかどうかについても確認しない。
+	</para>
+
+	<para>
+	<smbconfoption name="remote browse sync"/> は、
+	WINS サーバが存在しない場合も、
+	ネットワーク毎に異なる WINS サーバを指定している場合にも用いることができる。
+	</para>
+</description>
+<value type="default"></value>
+</samba:parameter>

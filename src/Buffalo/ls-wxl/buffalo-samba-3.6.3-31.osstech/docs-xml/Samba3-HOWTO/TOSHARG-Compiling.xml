@@ -1,0 +1,593 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="compiling">
+<chapterinfo>
+	&author.jelmer;
+	&author.jht;
+	&author.tridge;
+	
+	<pubdate> 22 May 2001 </pubdate>
+	<pubdate> 18 March 2003 </pubdate>
+	<pubdate> June 2005 </pubdate>
+</chapterinfo>
+
+<title>Sambaのコンパイル方法</title>
+
+<para>
+<ulink url="http://samba.org/">Samba Web site</ulink>からSambaソースファイルを
+入手できる。開発バージョンのSambaは、Subversionか<command>rsync</command>を使って
+入手できる(訳注:現在はgit)。
+</para>
+
+<sect1>
+<title>Subversion経由でのSambaソースコードへのアクセス</title>
+
+
+<sect2>
+<title>概要</title>
+
+<para>
+<indexterm><primary>Subversion</primary></indexterm>
+(訳注:この節は現在古くなっている)
+Sambaは公開された環境で開発されている。開発者はSubversionを使って、新しい
+ソースコードを<quote>checkin</quote>(<quote>commit</quote>としても知られる)
+する。Sambaの種々のSubversionブランチはこの章で説明される手順で匿名
+Subversion経由でアクセスできる。
+</para>
+
+<para>
+この章は、<ulink noescape="1" url="http://samba.org/samba/subversion.html">Samba</ulink>
+Webサイトにある手順を変更したものである。
+</para>
+
+</sect2>
+
+<sect2>
+<title>samba.orgへのSubversionアクセス</title>
+
+<para>
+samba.orgのマシンはSamba,rsync,distcc, ccacheとjitterbugを含むいくつかのパッケージの
+ソースコードへアクセスできるSubversionリポジトリに自由にアクセスできるサーバを動かして
+いる。このホスト上のSubversionサーバにアクセスするには2つの方法がある。
+</para>
+
+<sect3>
+<title>ViewCVS経由のアクセス</title>
+
+
+<para>
+<indexterm><primary>SVN</primary><secondary>web</secondary></indexterm>
+お好みのWWWブラウザ経由でソースコードにアクセスできる。これにより、リポジトリの
+個別のファイルの内容、リビジョン履歴、特定のファイルに対するコミットログに
+アクセスできる。リポジトリ上の任意の2つのバージョン間での差分表示を得ることもできる。
+</para>
+
+<para>
+<ulink noescape="1" url="http://viewcvs.samba.org/">http://viewcvs.samba.org/</ulink>
+を使うこと。
+</para>
+</sect3>
+
+<sect3>
+<title>Subversion経由でのアクセス</title>
+
+<para>
+<indexterm><primary>Subversion</primary></indexterm>
+通常のSubversionクライアント経由でソースコードにアクセスすることもできる。そうすると、
+リポジトリに対してより多くの制御ができ、完全なソースコードツリーをチェックアウトでき、
+通常のSubversionコマンド経由で最新版に追従できる。もしもあなたが開発者であれば、
+これは好ましいアクセス方法であり、通常のブラウザは好ましくない。
+</para>
+
+<para>SubversionでSambaのソースをダウンロードできるように、するためには、Subversion
+クライアントが必要である。使用しているディストリビューションに入っているかもしれないし、
+そうでなければ、
+<ulink noescape="1" url="http://subversion.tigris.org/">http://subversion.tigris.org/</ulink>
+からソースをダウンロードできる。
+</para>
+
+<para>
+匿名Subversion経由でアクセスするためには、以下のステップを使う。
+</para>
+
+<procedure>
+	<title>Subversionを使うSambaの検索</title>
+
+	<step>
+	<para>
+	最新のSubversionのコピーをインストールする。必要なものすべては、
+	Subversionクライアントバイナリのコピーである。
+	</para>
+	</step>
+
+	<step>
+	<para>
+	以下のコマンドを動かす
+	<screen>
+	<userinput>svn co svn://svnanon.samba.org/samba/trunk samba</userinput>.
+	</screen>
+	</para>
+	
+	<para>
+	これは、最新のSambaソースコード(通常次のメジャーリリースになるブランチ)を含む、
+	<filename>samba</filename>と呼ばれるディレクトリを作成する。これは現在
+	3.1開発ツリーに連動している。
+	</para>
+	
+	<para>
+	trunk以外のSubversionブランチは、チェックアウトするときに、branches/BRANCH_NAME
+	というURLによって得られる。ブランチ名の一覧は、Samba Webサイトの
+	<quote>Development</quote>のページから得られる。最新の3.0リリースコードを得たい
+	という共通の要求がある。これは以下のコマンドを使うことによってできる:
+	<screen>
+	<userinput>svn co svn://svnanon.samba.org/samba/branches/SAMBA_3_0 samba_3</userinput>.
+	</screen>
+	</para>
+	</step>
+
+	<step>
+	<para>
+	最新のコードの変更にマージしたい場合は、Sambaディレクトリ内で以下のコマンドを使う:
+	<screen>
+	<userinput>svn update</userinput>
+	</screen>
+	</para>
+	</step>
+</procedure>
+	
+</sect3>
+</sect2>
+
+</sect1>
+
+<sect1>
+	<title>rsyncとftp経由によるSambaソースへのアクセス</title>
+
+
+	<para>
+	<indexterm><primary>rsync</primary></indexterm>
+	<indexterm><primary>ftp</primary></indexterm>
+	<parameter>pserver.samba.org</parameter>も、
+	<ulink noescape="1" url="ftp://pserver.samba.org/pub/unpacked">pserver</ulink>
+	というSambaのサイトの所から、Subversionツリーのほとんどの部分のパックされてない
+	コピーをエクスポートでき、また、
+	<ulink noescape="1" url="rsync://pserver.samba.org/ftp/unpacked/">rsync</ulink>
+	という、Sambaの匿名rsyncサーバ経由でも同じようにできる。ftpよりはrsyncの方が、
+	rsyncはデータを圧縮転送できるのでお勧めであり、また、抜けているデータのみを
+	転送出来るという、部分更新が出来て、オーバヘッドが少ないという点でもお勧めで
+	ある。rsyncについてのより詳細な情報は、
+	<ulink noescape="1" url="http://rsync.samba.org/">the rsync home page</ulink>
+	を参照のこと。
+	</para>
+
+	<para>
+	アンパックされたツリーの欠点は、Subversionのように、ローカルな変更の自動マージを
+	サポートしないと言うことである。<command>rsync</command>によるアクセスは、
+	初期導入に最も便利である。
+	</para>
+</sect1>
+
+<sect1>
+<title>SambaのPGP署名の検証</title>
+
+<para>
+<indexterm><primary>GPG</primary></indexterm>
+<indexterm><primary>PGP</primary></indexterm>
+インストールする前に、任意のソースファイルのPGP署名を検証することを強く推奨する。
+ミラーサイトからダウンロードしていないとしても、PGP署名の検証は、標準的な習慣と
+すべきである。多くの人は現在PGPの代替としてGNU GPGツールを使っている。GPGは
+PGPの代わりとして使える。
+</para>
+
+
+<para>
+そんなわけで、以下のようにしてファイルをダウンロードする:
+</para>
+
+<para><screen>
+&prompt;<userinput>wget http://us1.samba.org/samba/ftp/samba-3.0.20.tar.asc</userinput>
+&prompt;<userinput>wget http://us1.samba.org/samba/ftp/samba-pubkey.asc</userinput>
+</screen></para>
+
+
+<para>
+<indexterm><primary>PGP</primary></indexterm>
+最初のファイルはSambaソースファイルのPGP署名である。もう1つはSambaの公開PGPキーそれ自身
+である。以下のようにしてPGPキーをインポートする:
+<screen>
+&prompt;<userinput>gpg --import samba-pubkey.asc</userinput>
+</screen>
+そして、Sambaソースコードの正当性を以下のようにして検査する:
+<screen>
+&prompt;<userinput>gzip -d samba-3.0.20.tar.gz</userinput>
+&prompt;<userinput>gpg --verify samba-3.0.20.tar.asc</userinput>
+</screen>
+</para>
+
+<para>
+もしも、<quote>Good signature from Samba Distribution Verification Key...,</quote>
+というようなメッセージが表示されたならば、すべて問題はない。信頼性の関係についての
+警告は無視して良い。以下のような表示が出たら問題である:
+<screen>
+gpg: BAD signature from <quote>Samba Distribution Verification Key</quote>
+</screen>
+</para>
+
+</sect1>
+
+<sect1>
+	<title>バイナリの構築</title>
+	
+	<para>
+	<indexterm><primary>autogen.sh</primary></indexterm>
+<indexterm><primary>configure</primary></indexterm>
+	tar形式のソースコードを展開後、次のステップは、使用しているOSプラットフォームに
+	Sambaが適合するように、設定(configuration)を行う。もしもソースディレクトリが
+	<command>configure</command>スクリプトを含んでいないのであれば、以降を行う
+	ために、構築作業が必要である。configureスクリプトの構築はautoconfの正しい
+	バージョンが必要である。ど必要とされるバージョンのautoconfがある場合、
+	以下を実行して生成されるスクリプトでconfigureスクリプトを生成できる。
+<screen>
+&rootprompt; cd samba-3.0.20/source
+&rootprompt; ./autogen.sh
+</screen>
+	</para>
+	
+
+	<para>
+	<indexterm><primary>configure</primary></indexterm>
+	バイナリを構築するためには、ソースディレクトリ中で、
+	<userinput>./configure</userinput>プログラムを動かす。これは、使用している
+	OS用にSambaを自動的に設定する。もしも特別な要求があるならば、最初に
+	以下のように起動しても良いだろう:
+<screen>
+&rootprompt;<userinput>./configure --help</userinput>
+</screen>
+</para>
+	
+	<para>
+	これは、どのような特別なオプションが有効に出来るかの一覧を表示する。その後、
+	必要な任意の引数を付けて、<userinput>./configure</userinput>を実行する:
+<screen>
+&rootprompt;<userinput>./configure <replaceable>[... arguments ...]</replaceable></userinput>
+</screen>
+	</para>
+	
+	<para>
+	<indexterm><primary>make</primary></indexterm>
+	以下を実行して、バイナリを生成する:
+<screen>
+&rootprompt; <userinput>make</userinput>
+</screen>
+	一度コンパイルが成功すると、以下のようなコマンドを実行することで、
+	バイナリとマニュアルページをインストールできる:
+<screen>
+&rootprompt; <userinput>make install</userinput>
+</screen>
+	</para>
+	
+	<para>
+	ある人は、バイナリファイルとマニュアルページを分離してインストールすることを
+	好んでいる。もしもそうしたいのであれば、以下を実行することで、バイナリファイルを
+	インストールできる:
+<screen>
+&rootprompt; <userinput>make installbin</userinput>
+</screen>
+	マニュアルページは以下のコマンドでインストールできる:
+<screen>
+&rootprompt; <userinput>make installman</userinput>
+</screen>
+	</para>
+
+	<para>
+	もしも、以前のバージョンからアップグレードするのであれば、古いバージョンの
+	バイナリは<quote>.old</quote>という拡張子を付けて改名される。
+	以下を実行することで、前のバージョンに戻ることが出来る:
+<screen>
+&rootprompt; <userinput>make revert</userinput>
+</screen>
+	上記を見て分かるとおり、Sambaの構築とインストールは災難を引き起こす事はない!
+	</para>
+	
+
+	<sect2>
+	<title>Active Directoryサポートを伴うSambaのコンパイル</title>
+	
+	<para>
+	ADSをサポートするようにSambaをコンパイルするためには、以下のものをシステムに
+	インストールする必要がある:
+	</para>
+
+	<itemizedlist>
+	
+	    <listitem><para>
+		MIT あるいは Heimdal Kerberos開発ライブラリ
+		(ソース、あるいはパッケージからのどちらかからインストール)
+		</para></listitem>
+	
+	    <listitem><para>
+		OpenLDAP開発ライブラリ。
+		</para></listitem>
+	    
+	</itemizedlist>
+
+	<para>
+	もしも、使用しているKerberosライブラリが標準でない位置にあるならば、
+	以下のconfigure オプションを追加するのを忘れないこと。
+	<option>--with-krb5=<replaceable>DIR</replaceable></option>.
+	</para>
+
+	<para>
+	configrue を実行後、生成された<filename>include/config.h</filename>が、
+	以下のような行を含んでいるかを確認する:
+<programlisting>
+#define HAVE_KRB5 1
+#define HAVE_LDAP 1
+</programlisting>
+	</para>
+
+	<para>
+	もしもそうでない場合、configureはインストールされているKRB5ライブラリか
+	LDAPライブラリを見つけるのに失敗している。なぜそうなったかを
+	<filename>config.log</filename>をみて確認して修正する。
+	</para>
+
+	<sect3>
+	<title>Debian用の、必要とされるパッケージのインストール</title>
+
+	<para>Debianでは、以下のパッケージのインストールが必要である:</para>
+	<para>
+		<itemizedlist>
+			<listitem><para>libkrb5-dev</para></listitem>
+			<listitem><para>krb5-user</para></listitem>
+		</itemizedlist>
+	</para>
+	</sect3>
+
+	<sect3>
+	  <title>Red Hat Linux用の、必要とされるパッケージのインストール</title>
+
+	<para>Red Hat Linuxでは、少なくとも:</para>
+	<para>
+		<itemizedlist>
+			<listitem><para>krb5-workstation (for kinit)</para></listitem>
+			<listitem><para>krb5-libs (for linking with)</para></listitem>
+			<listitem><para>krb5-devel (because you are compiling from source)</para></listitem>
+		</itemizedlist>
+	</para>
+
+	<para>を標準開発環境に追加する必要があることを意味する。</para>
+
+	<para>もしも、使用しているシステム上にこれらのファイルがインストールされて
+	いないならば、どこにそれらがあるかをインストールCDでチェックすべきであり、
+	使用しているツールにあわせてインストールする。もしもどのツールが使っている
+	かが分からない場合は、Red Hat Linuxのドキュメントを参照すること。</para>
+
+	</sect3>
+
+	<sect3>
+	<title>SuSE Linuxパッケージでの要求</title>
+
+	<para>
+	SuSE Linuxはバイナリパッケージを構築する事が出来るのに必要とされるだろうHeimdal
+	パッケージをインストールする。使用しているシステム上に、開発ライブラリが
+	インストールされているかを調べるべきである。
+	</para>
+
+	<para>
+	SuSE Linux のSamba RPMはKerberosをサポートする。SuSE Linux固有の設定に関連する
+	情報は、使用しているSuSE Linuxシステムのドキュメントを参照して欲しい。さらに、
+	SuSEは使用可能な機能を最大限提供するように、Sambaパッケージのメンテナンスをとても
+	頻繁に行っている。使用可能な、SuSEが提供しているパッケージの使用について考慮
+	すべきである。
+	</para>
+
+	</sect3>
+	
+	</sect2>
+			  
+</sect1>
+
+<sect1 id="startingSamba">
+	<title>&smbd; &nmbd;と&winbindd;の起動</title>
+
+
+	<para>
+	<indexterm><primary>inetd</primary></indexterm>
+	&smbd;, &winbindd; と &nmbd;の起動を、デーモンか<application>inetd</application>
+	からの起動のどちらかにするかを選ぶ必要がある。両方同時に行ってはいけない!
+	<application>inetd</application>によって必要時に起動するように、
+	<filename> inetd.conf</filename>にそれらを記述するか、コマンドラインか、
+	<filename>/etc/rc.local</filename>に記述することで、デーモンとして起動できる。
+	コマンドラインオプションの詳細についてはマニュアルを参照のこと。どのユーザで
+	Sambaを起動する必要があることについての部分を注意深く読むこと。ほとんどの場合、
+	rootで起動する必要がある。
+	</para>
+
+	<para>
+	推奨される、デーモンによる方法を使って&smbd; と &nmbd;を開始することの利点は、
+	最初の接続要求時に、若干より迅速に反応すると言うことである。
+	</para>
+
+	<sect2>
+	<title>inetd.confからの起動</title>
+
+	<indexterm><primary>inetd</primary></indexterm>
+	
+	<note>
+	<para>以下は、もしもNIS、NIS+あるいはLDAPが分散されたサービスマップを
+	使っている場合は異なる。</para>
+	</note>
+	
+	<para><filename>/etc/services</filename>を見る。ポート139/tcpに何が定義されて
+	いるだろうか?もしも何も定義されていないならば、以下のように行を追加する:</para>
+
+	<para><programlisting>netbios-ssn     139/tcp</programlisting></para>
+
+	<para>137/udpに対して、以下のようなエントリを同様に追加する:</para>
+
+	<para><programlisting>netbios-ns	137/udp</programlisting></para>
+
+	<para>
+	次に、<filename>/etc/inetd.conf</filename>を編集し、以下のように2行追加する:
+<programlisting>
+netbios-ssn stream tcp nowait root /usr/local/samba/sbin/smbd smbd 
+netbios-ns dgram udp wait root /usr/local/samba/sbin/nmbd nmbd 
+</programlisting>
+	</para>
+
+<indexterm><primary>/etc/inetd.conf</primary></indexterm>
+	<para>
+	<filename>/etc/inetd.conf</filename>の正しい文法はUNIX毎に異なる。ガイドの
+	inetd.conf中の他の項目を参照すること。
+	</para>
+
+	<para>
+	<indexterm><primary>xinetd</primary></indexterm>
+	いくつかのディストリビューションはinetdの代わりにxinetdを使っている。
+	設定情報についてはxinetdのマニュアルを参照すること。
+	</para>
+
+	<note><para>いくつかのUNIXではすでに<filename>/etc/services</filename>中に
+	netbios_ns(下線に注意)のようなエントリが存在している。整合性を取るために、
+	<filename>/etc/services</filename>か<filename>/etc/inetd.conf</filename>を
+	編集する必要がある。
+	</para></note>
+
+	<note><para>
+	<indexterm><primary>ifconfig</primary></indexterm>
+	多くのシステムでは、使用しているネットワークインタフェースのIPアドレスと
+	ネットマスクを指定するために、 &smb.conf;中で
+	<smbconfoption name="interfaces"/>オプションを使う必要があるかもしれない。
+	使用しているネットワークでの、ブロードキャストが何であるかを知らないのであれば、
+	rootで<application>ifconfig</application>を起動する。&nmbd;は実行時にそれを
+	決めようとするが、ある種のUNIXでは失敗する。
+	</para></note>
+
+	<warning><para>
+	多くのUNIXは、<filename>inetd.conf</filename>中で、コマンドライン上におおよそ
+	5つのパラメータのみを受け付ける。これは、オプションと引数間でスペースが使えない
+	という事を意味するので、そうしたくなければ、スクリプトを使い、
+	<command>inetd</command>経由でスクリプトを起動する。
+	</para></warning>
+
+	<para>
+	おそらく以下のようにHUPを送ることで、<application>inetd</application>を
+	再起動する:
+<indexterm><primary>killall</primary></indexterm>
+<screen>
+&rootprompt;<userinput>killall -HUP inetd</userinput>
+</screen>
+	</para>
+		
+	</sect2>
+	
+	<sect2>
+	<title>もう一つの方法: &smbd;をデーモンとして起動する</title>
+		
+	<para>
+	<indexterm><primary>daemon</primary></indexterm>
+<indexterm><primary>startsmb</primary></indexterm>
+	サービスをデーモンとして起動するには、<filename>startsmb</filename>という、
+	下記のようなスクリプトを作成すべきである。
+	</para>
+
+<para><programlisting>
+#!/bin/sh
+/usr/local/samba/sbin/smbd -D
+/usr/local/samba/sbin/winbindd -D
+/usr/local/samba/sbin/nmbd -D
+</programlisting></para>
+
+	<para>
+	<command>chmod +x startsmb</command>でこれを実行可能にする。
+	</para>
+
+	<para>
+	手動か、<filename>/etc/rc.local</filename>から<command>startsmb</command>を
+	実行することが出来る。
+	</para>
+
+	<para>
+	これを停止するには、プロセス&nmbd; と &smbd;にkillシグナルを送る。
+	</para>
+
+	<note><para>
+	もしも、SVR4形式のinitシステムを使っているならば、そのシステムにSambaを
+	適合するように、<filename>examples/svr4-startup</filename>スクリプトを
+	みてやってもよいだろう。
+	</para></note>
+
+	<sect3>
+	<title>Red Hat LinuxでのSambaの起動</title>
+
+	<para>
+	Red Hat Linuxは標準的なインストール状態ではすべてのSambaコンポーネントが
+	常時含まれるわけではない。そのためRed Hat Linuxのバージョンによっては、
+	インストールCDROMメディアにあったとしても、winbindユーティリティをインストール
+	しない。システム上に<command>winbindd</command>があるかをチェックすること:
+<screen>
+&rootprompt; ls /usr/sbin/winbindd
+/usr/sbin/winbindd
+</screen>
+	これは、適切なRPMパッケージがインストールされていることを意味する。以下の応答は、
+	インストールされていない場合である:
+<screen>
+/bin/ls: /usr/sbin/winbind: No such file or directory
+</screen>
+	この場合、<command>winbindd</command>を使うつもりであるならば、インストールが
+	必要である。samba-winbind RPMをCDROMインストールメディアから捜し、以下の
+	Red Hatガイドラインに従ってインストールする。
+	</para>
+
+	<para>
+	Sambaの起動の手順の概要を以下で説明する。Sambaを起動する前に、Sambaの
+	&smb.conf;をきちんと設定しておくこと。設定後、以下のようにしてSambaを
+	起動する:
+<screen>
+&rootprompt; service smb start
+&rootprompt; service winbind start
+</screen>
+	このステップで &nmbd;, &smbd; と &winbindd;を起動する。
+	</para>
+
+	<para>
+	システムが再起動したときに、自動的にこれらのサービスが再起動するようにするには、
+	以下を実行する:
+<screen>
+&rootprompt; chkconfig smb on
+&rootprompt; chkconfig winbind on
+</screen>
+	Sambaは毎再帰同時に自動的に起動するようになる。
+	</para>
+
+	</sect3>
+
+	<sect3>
+	<title>Novell SUSE LinuxにおけるSambaの起動</title>
+
+	<para>
+	Novell SuSE Linux 製品は自動的にすべての基本的なSambaコンポーネントを既定値の
+	インストール作業でインストールする。&smb.conf;ファイルを設定後、以下を行う
+	事でSambaを起動する:
+<screen>
+&rootprompt; rcnmb start
+&rootprompt; rcsmb start
+&rootprompt; rcwinbind start
+</screen>
+	以下のコマンドを実行後、Sambaはシステム再起動後に自動的に起動する:
+<screen>
+&rootprompt; chkconfig nmb on
+&rootprompt; chkconfig smb on
+&rootprompt; chkconfig winbind on
+</screen>
+	これで、Sambaサーバはシステム再起動後に自動的に起動する。
+	</para>
+
+	</sect3>
+
+	</sect2>
+
+</sect1>
+
+</chapter>

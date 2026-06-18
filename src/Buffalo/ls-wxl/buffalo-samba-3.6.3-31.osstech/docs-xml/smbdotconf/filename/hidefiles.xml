@@ -1,0 +1,46 @@
+<samba:parameter name="hide files"
+		 type="string"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>これは、見せたくないがアクセスは許可したいファイルやディレクトリのリストを指定する。
+    DOSの「隠し」属性が該当するファイルやディレクトリに付加される。
+    </para>
+
+    <para>リストの各エントリは、
+    スペースをエントリ中に含められるようにするため、「/」で区切る必要がある。
+    「*」と「?」は、DOSのワイルドカードと同様にして、
+    複数のファイルやディレクトリを指定するために利用することができる。</para>
+
+    <para>各エントリはUNIXのパス形式で指定すること。DOSのパス形式で指定したり、
+    UNIXでディレクトリを意味する「/」を含んだりはできない。</para>
+
+    <para>この設定には、
+    case sensitive オプションの設定が影響することに注意。</para>
+		
+    <para>このパラメータを設定すると、
+    全てのファイルやディレクトリに対して該当するかどうかの確認を行う必要が発生するため、
+    Samba のパフォーマンスに影響がでる。</para>
+
+    <para>
+    以下の設定例は、<ulink url="http://www.thursby.com">Thursby</ulink>
+    から入手可能な Macintosh 上の SMB クライアント (DAVE)
+    が内部的な用途に作成するファイルの指定に加え、
+    ドットで始まるファイルを隠しファイルとして指定したものである。
+    </para>
+
+    <para>
+    このパラメータの設定例を以下に示す。
+<programlisting>
+hide files = /.*/DesktopFolderDB/TrashFor%m/resource.frk/
+</programlisting>
+    </para>
+</description>
+
+<related>hide dot files</related>
+<related>veto files</related>
+<related>case sensitive</related>
+
+<value type="default"><comment>どのファイルも隠されない</comment></value>
+
+</samba:parameter>

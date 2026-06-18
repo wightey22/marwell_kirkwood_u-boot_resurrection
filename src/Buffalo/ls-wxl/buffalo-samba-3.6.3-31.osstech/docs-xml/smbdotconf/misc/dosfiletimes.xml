@@ -1,0 +1,18 @@
+<samba:parameter name="dos filetimes"
+		 context="S"
+		 type="boolean"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>DOS や Windows では、ファイルに書き込み権のあるユーザが、
+	  ファイルのタイムスタンプを変更することが可能である。POSIXの仕様では、
+	  ファイルの所有者かrootのみがタイムスタンプを変更できる。Sambaの既定値は、DOSの
+	  仕様をエミュレートし、<command moreinfo="none">smbd</command>の実効ユーザが、
+	  ファイルの所有者でなくても、タイムスタンプの変更を可能にする。
+	  Microsoft Office 2000 以降で行なわれた変更に対応するため、Samba 3.0.14 以降では
+	  既定値が「no」から「yes」に変更された。このパラメータが「yes」になっていない
+	  場合、ファイルが複数のユーザ間で共用されていると、Microsoft Excel はファイルが
+	  他のユーザによって変更されたという警告のダイアログボックスを表示してしまう。
+	</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

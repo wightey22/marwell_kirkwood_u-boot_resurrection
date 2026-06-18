@@ -1,0 +1,28 @@
+<samba:parameter name="preexec"
+		 context="S"
+		 type="string"
+		 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+ <synonym>exec</synonym>
+<description>
+	<para>このオプションは、サービスへ接続した際に必ず実行されるコマンドを指定する。
+	このパラメータでは通常のSambaの変数も利用できる。</para>
+
+	<para> 面白い例としては、接続する度に、
+	ユーザに歓迎(welcome)メッセージを送るような用途が考えられる。
+	その日の一言 (message of the day) も面白いかも知れない。以下に例を示す:</para>
+
+	<para>
+	<command moreinfo="none">preexec = csh -c 'echo \&quot;Welcome to %S!\&quot; |
+	/usr/local/samba/bin/smbclient -M %m -I %I' &amp; </command>
+	</para>
+
+	<para>無論、しばらく経つとこれはイライラのもとになるだけだろう :-)。</para>
+
+	<para>
+	<smbconfoption name="preexec close"/> や <smbconfoption name="postexec"/> も参照のこと。
+	</para>
+</description>
+<value type="default"></value>
+<value type="example">echo \&quot;%u connected to %S from %m (%I)\&quot; &gt;&gt; /tmp/log</value>
+</samba:parameter>

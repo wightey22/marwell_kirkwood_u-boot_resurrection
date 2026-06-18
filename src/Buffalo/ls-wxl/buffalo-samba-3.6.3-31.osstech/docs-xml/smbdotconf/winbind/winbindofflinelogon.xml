@@ -1,0 +1,20 @@
+<samba:parameter name="winbind offline logon"
+                 context="G"
+				 type="boolean"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+
+	<para>
+	  このパラメータは、Winbind 機構で <parameter moreinfo="none">pam_winbind</parameter>
+	  モジュールにキャッシュされた資格情報を用いたログインを可能に
+	  するかどうかを指定する。 有効にした場合、winbindd は、ログインに
+	  成功したユーザの資格情報を、暗号化してローカルのキャッシュに
+	  格納する。 
+	</para>
+
+</description>
+
+<value type="default">false</value>
+<value type="example">true</value>
+</samba:parameter>

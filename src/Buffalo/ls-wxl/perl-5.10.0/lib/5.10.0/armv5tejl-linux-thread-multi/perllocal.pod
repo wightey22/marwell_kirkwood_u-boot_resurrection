@@ -1,0 +1,132 @@
+=head2 Thu Jul 29 18:14:31 2010: C<Module> L<UUID::Tiny|UUID::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/local/squeezebox/perl-5.10.0/lib/site_perl/5.10.0>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.03>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Jul 29 18:50:23 2010: C<Module> L<UUID::Tiny|UUID::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/local/squeezebox/perl-5.10.0/lib/site_perl/5.10.0>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.03>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Jul 29 19:14:57 2010: C<Module> L<Log::Log4perl|Log::Log4perl>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/local/squeezebox/perl-5.10.0/lib/site_perl/5.10.0>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.29>
+
+=item *
+
+C<EXE_FILES: eg/l4p-tmpl>
+
+=back
+
+=head2 Thu Jul 29 19:40:59 2010: C<Module> L<Path::Class|Path::Class>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/local/squeezebox/perl-5.10.0/lib/site_perl/5.10.0>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.19>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Jul 29 19:41:25 2010: C<Module> L<Exporter::Lite|Exporter::Lite>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/local/squeezebox/perl-5.10.0/lib/site_perl/5.10.0>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 0.02>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+
+=head2 Thu Jul 29 19:45:43 2010: C<Module> L<UUID::Tiny|UUID::Tiny>
+
+=over 4
+
+=item *
+
+C<installed into: /usr/local/squeezebox/perl-5.10.0/lib/site_perl/5.10.0>
+
+=item *
+
+C<LINKTYPE: dynamic>
+
+=item *
+
+C<VERSION: 1.03>
+
+=item *
+
+C<EXE_FILES: >
+
+=back
+

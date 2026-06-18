@@ -1,0 +1,26 @@
+<samba:parameter name="delete veto files"
+				 type="boolean"
+                 context="S"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションは、アクセスが禁止(veto)されたディレクトリ
+    (<smbconfoption name="veto files"/>
+    オプションを参照のこと)を含むディレクトリを削除しようとする際に影響する。
+    このオプションが <constant>no</constant> (デフォルト) の場合、
+    アクセスが禁止されたディレクトリ内にアクセスを禁止されていないファイルやディレクトリが含まれていても、
+    ディレクトリ内の削除は失敗する。これは通常期待されている動作であろう。</para>
+
+    <para> このオプションを <constant>yes</constant> に設定すると、
+    Samba はアクセスが禁止されたディレクトリ内でも
+    再帰的にすべてのファイルやディレクトリを削除しようとする。
+    NetAtalk のようなファイルサーバを併用する際は、
+    通常 DOS/Windows ユーザからの参照するのを禁止しているディレクトリ内にメタファイル
+    (たとえば <filename moreinfo="none">.AppleDouble</filename>など)を作成するため、このオプションが有用である。</para>
+
+	<para> <smbconfoption name="delete veto files">yes</smbconfoption> を指定することで、
+    これらのディレクトリは、親ディレクトリが削除された際に、自動的に削除される
+    (ただし、ユーザはディレクトリを削除するパーミッションを持っている必要がある)。</para>
+</description>
+<related>veto files</related>
+<value type="default">no</value>
+</samba:parameter>

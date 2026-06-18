@@ -1,0 +1,15 @@
+<samba:parameter name="max connections"
+                 context="S"
+		 type="integer"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションにより、サービスへの同時コネクション数が制限される。
+    <parameter moreinfo="none">max connections</parameter> が 0 より大きい場合、すでにオープンされているサービスに対するコネクション数がこの数に達していると、それ以上の接続が拒否される。値が 0 の場合は、コネクション数は無制限であることを意味する。</para>
+    <para>レコードロックファイルが、この機能の実装に利用されている。ロッ
+    クファイルは、 
+    <smbconfoption name="lock directory"/>
+    オプションで指定されたディレクトリに保存される。</para>
+</description>
+<value type="default">0</value>
+<value type="example">10</value>
+</samba:parameter>

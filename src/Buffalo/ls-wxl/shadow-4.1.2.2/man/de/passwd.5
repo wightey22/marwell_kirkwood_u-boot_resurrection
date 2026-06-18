@@ -1,0 +1,105 @@
+.\"     Title: passwd
+.\"    Author: 
+.\" Generator: DocBook XSL Stylesheets v1.73.2 <http://docbook.sf.net/>
+.\"      Date: 23.11.2008
+.\"    Manual: Dateiformate und -konvertierung
+.\"    Source: Dateiformate und -konvertierung
+.\"
+.TH "PASSWD" "5" "23.11.2008" "Dateiformate und -konvertierun" "Dateiformate und \-konvertieru"
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.SH "NAME"
+passwd \- die Passwortdatei
+.SH "BESCHREIBUNG"
+.PP
+\fI/etc/passwd\fR
+enthält einen Eintrag pro Benutzerkonto, wobei jeder Eintrag sieben Felder besitzt, die durch Doppelpunkt (\(Bq:\(lq) getrennt sind\&. Diese Felder sind:
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Login\-Name
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'optional verschlüsseltes Passwort
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'numerische Benutzer\-ID
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'numerische Gruppen\-ID
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Benutzername oder Kommentarfeld
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'Home\-Verzeichnis des Benutzers
+.RE
+.sp
+.RS 4
+\h'-04'\(bu\h'+03'optional Befehlsinterpreter des Benutzers
+.RE
+.PP
+Das Feld für das verschlüsselte Passwort kann leer sein\&. In diesem Fall wird kein Passwort benötigt, um sich beim System anzumelden\&. Allerdings werden einige Anwendung, die
+\fI/etc/passwd\fR
+auswerten,
+\fIkeinen\fR
+Zugriff erlauben, wenn das
+\fIPasswort\fR\-Feld leer ist\&. Wenn das
+\fIPasswort\fR\-Feld ein kleines
+\(Bqx\(lq
+enthält, ist das Passwort in der Datei
+\fBshadow\fR(5)
+gespeichert\&. Es
+\fImuss\fR
+sich dann ein passender Eintrag in
+\fI/etc/shadow\fR
+befinden, oder das Benutzerkonto ist ungültig\&. Wenn das
+\fIPasswort\fR\-Feld eine andere Zeichenkette enthält, wird diese als ein verschlüsseltes Passwort behandelt\&. Genaueres dazu befindet sich unter
+\fBcrypt\fR(3)\&.
+.PP
+Das Kommentarfeld wird von verschiedenen Systemprogrammen wie z\&.B\&.
+\fBfinger\fR(1)
+ausgewertet\&.
+.PP
+Das Feld für das Home\-Verzeichnis gibt den Namen für das anfängliche Arbeitsverzeichnis an\&. Das Programm
+\fBlogin\fR
+benutzt diese Information, um den Wert der Umgebungsvariable
+\fB$HOME\fR
+zu setzen\&.
+.PP
+Das Feld für den Befehlsinterpreter enthält den Namen des Befehlssprachen\-Interpreters des Benutzers oder den Namen des Programms, das zuerst ausgeführt werden soll\&. Das Programm
+\fBlogin\fR
+benutzt diese Information, um den Wert der Umgebungsvariable
+\fB$SHELL\fR
+zu setzen\&. Falls dieses Feld leer ist, wird ihm standardmäßig der Wert
+\fI/bin/sh\fR
+zugewiesen\&.
+.SH "DATEIEN"
+.PP
+\fI/etc/passwd\fR
+.RS 4
+Informationen zu den Benutzerkonten\&.
+.RE
+.PP
+\fI/etc/shadow\fR
+.RS 4
+optionale Datei für verschlüsseltes Passwort
+.RE
+.SH "SIEHE AUCH"
+.PP
+\fBgetent\fR(1),
+\fBlogin\fR(1),
+\fBpasswd\fR(1),
+\fBsu\fR(1),
+\fBcrypt\fR(3),
+\fBgetpwnam\fR(3),
+\fBshadow\fR(5),
+\fBpwconv\fR(8),
+\fBpwunconv\fR(8),
+\fBsulogin\fR(8)\&.

@@ -1,0 +1,18 @@
+<samba:parameter name="smb passwd file"
+	type="string"
+                 context="G"
+                 advanced="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para> このオプションにより、暗号化された smbpasswd ファイルへのパスが設定される。
+    デフォルトの smbpasswd ファイルへのパスは、 Samba のコンパイル時に設定される。</para>
+
+    <para>
+    以下に設定例を示す:
+<programlisting>
+smb passwd file = /etc/samba/smbpasswd
+</programlisting>
+    </para>
+</description>
+<value type="default">${prefix}/private/smbpasswd</value>
+</samba:parameter>

@@ -1,0 +1,24 @@
+<samba:parameter name="hosts deny"
+                 context="S"
+				 type="list"
+                 basic="1" advanced="1" print="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<synonym>deny hosts</synonym>
+<description>
+    <para><parameter moreinfo="none">hosts allow</parameter> の反対の意味を持ち、
+    このパラメータで指定されたホストは、サービス内で明示的にアクセスが許可されない限り、
+    サービスへのアクセスを<emphasis>拒否される</emphasis>。
+    両者の設定が矛盾した場合は、<parameter moreinfo="none">allow</parameter> 
+    側の設定が優先される。</para>
+
+    <para>
+    デフォルトでアクセスを拒否したい場合は、
+    ALL (もしくはネットマスク <literal>0.0.0.0/0</literal>) の指定を行ない、
+    <smbconfoption name="hosts allow">hosts allow</smbconfoption> パラメータにより、
+    アクセスを許可したいホストを明示的に指定すること。
+    </para>
+</description>
+
+<value type="default"><comment>なし (アクセスを拒否されるホストはない)</comment></value>
+<value type="example">150.203.4. badhost.mynet.edu.au</value>
+</samba:parameter>

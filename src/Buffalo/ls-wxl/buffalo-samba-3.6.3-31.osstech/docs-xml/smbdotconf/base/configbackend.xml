@@ -1,0 +1,24 @@
+<samba:parameter name="config backend"
+                 context="G"
+				 type="enum"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+設定内容を格納するためのバックエンドを切り替える。設定可能な値は
+<emphasis>file</emphasis>（デフォルト）および<emphasis>registry</emphasis>
+である。<emphasis>smb.conf</emphasis> を読み込んでいる途中で
+<smbconfoption name="config backend">registry</smbconfoption>
+を検出すると、それまでに読み込まれた設定内容は破棄され、その代りに
+グローバルオプションがレジストリから読み込まれる。つまり、これは
+レジストリのみの設定にするための仕組みである。共有の定義は即時には
+読み込まれないが、その代りに <parameter>registry shares</parameter>
+を <emphasis>yes</emphasis> にセットしてくれる。
+	</para>
+	<para>
+注意：このオプションは、レジストリ設定自身の中でセットすることもできる。
+	</para>
+</description>
+<value type="default">file</value>
+<value type="example">registry</value>
+</samba:parameter>

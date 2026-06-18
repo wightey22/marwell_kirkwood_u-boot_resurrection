@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE book PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+
+<preface id="TOSHpreface">
+<title>前書き</title>
+
+<para>
+編集者は、この本を買ってくれたことに対して感謝する(訳注:最初に本として出版されていたため)。公式のSamba-3 HOWTOと
+リファレンスガイドは情報、フィードバック、TIPS、ヒントと幸福なソリューション
+の長年の蓄積の結果である。
+</para>
+
+<para>
+この本は、内容が常に更新されている、生きている文書であることに注意。よりSambaユー
+ザにとって貴重な、この本の次の版を作るのを手助けするために、TIPS、テクニック、
+役に立つヒント、Windowsネットワーク領域に関する特別な洞察を寄贈する事を勧める。
+</para>
+
+<para>
+以前に行われたものよりも、より広範囲な、よりうまくSambaを使えるためとネットワー
+クユーザにより多くの満足度を与えるかもしれない情報を協力して文書化した。
+</para>
+
+<para>
+この本は、設定の例を提供し、それは、Microsoft Windowsネットワークの要点を文書化
+し、Samba-3の重要な設定に対する徹底的な洞察を提供し、それらのすべてを役に立つフ
+レームワーク中に置くのを支援する。
+</para>
+
+<para>
+この文書の、一番新しい電子的な版は、
+<ulink noescape="1" url="http://www.samba.org/">http://www.samba.org/</ulink>
+上の<quote>ドキュメント</quote> ページで参照できる。
+</para>
+
+<para>
+更新、パッチと修正は最も希望されるものである。以下の誰かに情報をメールで送ってほしい:
+</para>
+
+<para>
+<simplelist>
+<member><ulink noescape="1" url="mailto:jelmer@samba.org">Jelmer Vernooij (jelmer@samba.org)</ulink></member>
+<member><ulink noescape="1" url="mailto:jht@samba.org">John H. Terpstra (jht@samba.org)</ulink></member>
+<member><ulink noescape="1" url="mailto:jerry@samba.org">Gerald (Jerry) Carter (jerry@samba.org)</ulink></member>
+</simplelist>
+</para>
+
+<para>
+
+オリジナルと間違いがなくなったものが公開されることを助言することを願う。
+著作権者からの同意のないものを公開しないでほしい。
+</para>
+
+  <!-- the conventions used in this book -->
+  <xi:include href="conventions.xml" xmlns:xi="http://www.w3.org/2003/XInclude" />
+
+
+</preface>

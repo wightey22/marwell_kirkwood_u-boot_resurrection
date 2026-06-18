@@ -1,0 +1,25 @@
+<samba:parameter name="winbind expand groups"
+                 context="G"
+		 type="integer"
+                 advanced="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>
+	  このオプションは Windows ドメイングループのネストされた
+	  グループメンバーを展開する際に winbindd が探索を繰り返す
+	  最大の階層を制御する。
+	  これは ローカルグループのネスト化を Windows NT4 形式で実装している
+	  <smbconfoption name="winbind nested groups"/> オプションとは
+	  異なる。
+	  &quot;winbind expand groups&quot; パラメーターはドメイングループの
+	  メンバーシップを明確に適用する。</para>
+
+	 <para>このパラメーターに高い値を設定することは、最上位の winbindd 
+	   デーモンがグループの展開を処理しなければならず、その間、
+	   NSSや認証要求に対する応答が不可能となるために、システムの
+	   性能低下をもたらすことに注意しなさい。</para>
+  
+</description>
+
+<value type="default">1</value>
+</samba:parameter>

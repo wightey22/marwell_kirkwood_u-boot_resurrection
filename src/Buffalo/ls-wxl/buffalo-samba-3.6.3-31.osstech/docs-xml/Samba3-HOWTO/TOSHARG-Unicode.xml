@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE chapter PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<chapter id="unicode">
+<chapterinfo>
+	&author.jelmer;
+	&author.jht;
+	<author>
+		<firstname>たかはし</firstname><surname>もとのぶ</surname>
+		<affiliation>
+		<address><email>monyo@home.monyo.com</email></address>
+		</affiliation>
+		<contrib>日本語サポート</contrib>
+	</author>
+	<pubdate>25 March 2003</pubdate>
+</chapterinfo>
+
+<title>ユニコード/文字セット</title>
+
+<sect1>
+<title>機能と利便性</title>
+
+<para>
+<indexterm><primary>どこでもコンピューティング</primary></indexterm>
+どんな技術もいつかは成熟する。ここ10年間に焦点を当てたときに、成熟度が大きく
+前進した領域のひとつが、どこでもだれでもコンピュータを利用できるようにする
+ための技術である。もっとも、常にそうだったわけではない。実際、ソフトウェアを
+開発する際には、作成した国でのみ使うことを想定して開発されるのが当たり前だった
+のはさほど昔のことではない。
+</para>
+
+<para>
+すべてのコンピュータユーザに自国の言語サポートを提供するために使われたすべての労力、
+<ulink url="http://www.openi18n.org/">Openi18n organization</ulink>の労力は、
+特記に値する。
+Of all the effort that has been brought to bear on providing native
+language support for all computer users, the efforts of the
+<ulink url="http://www.openi18n.org/">Openi18n organization</ulink>
+is deserving of special mention.
+</para>
+
+<para>
+<indexterm><primary>コードページ</primary></indexterm>
+Samba-2.xは、<emphasis>codepages</emphasis>と呼ばれる単一のロケール機構をサポート
+していた。Samba-3では真に国際的な、ファイルと印刷共有プラットフォームとして
+予定されていた。
+</para>
+
+</sect1>
+
+<sect1>
+<title>文字セットとユニコードとは何か</title>
+
+<para>
+<indexterm><primary>文字セット</primary></indexterm>
+コンピュータは数字で通信する。テキストにおいては、各数字は対応する文字に変換される。
+特定の数に割り当てられた意味は、使用する<emphasis>文字セット(charset)</emphasis>に
+依存する。
+</para>
+
+<para>
+<indexterm><primary>文字セット</primary></indexterm>
+<indexterm><primary>ASCII</primary></indexterm>
+文字セットは数字から文字への変換のために使われる表として見る事ができる。
+すべてのコンピュータが同じ文字セット(ドイツのウムラウト、日本の文字セットなど)を
+使うわけではない。American Standard Code for Information Interchange (ASCII)
+エンコーディングシステムは、現在まで、コンピュータによって使われる基本の文字
+エンコーディング体系となっていた。これは、256文字を含む文字セットを使用する。
+このモードのエンコーディングを使うと、各文字は正確に1バイトとなる。
+</para>
+
+<para>
+<indexterm><primary>マルチバイト文字</primary></indexterm>
+<indexterm><primary>拡張文字セット</primary></indexterm>
+ASCIIエンコーディングが取るよりも、少なくとも2倍の、より多くの記憶容量を必要とする、
+拡張文字をサポートする文字セットもある。そのような文字セットは、考えられるすべての
+文字よりも多い<command>256 * 256 = 65536</command>文字を含むことが出来る。これらは、
+1つの文字を格納するために、1バイトより多く使うという理由で、マルチバイト文字セットと
+呼ばれる。
+</para>
+
+<para>
+<indexterm><primary>ユニコード</primary></indexterm>
+ある標準化されたマルチバイト文字セットエンコーディング機構は、
+<ulink url="http://www.unicode.org/">ユニコード</ulink>である。
+マルチバイト文字セットを使う大きな利点は、それを使うだけで済むと言うことである。
+通信時に、2つのコンピュータが尾内文字セットを使うようにする必要はない。
+</para>
+
+<para>
+<indexterm><primary>単一バイト文字</primary></indexterm>
+<indexterm><primary>SMB/CIFS</primary></indexterm>
+<indexterm><primary>negotiating the charset</primary></indexterm>
+古いWindowsクライアントはMicrosoftによる<parameter>コードページ</parameter>という
+単一バイト文字セットを使っている。しかし、SMB/CIFSプロトコル中で使われるために
+調停される文字セットではサポートされていない。そのため、より古いクライアントと通信
+する時、同じ文字セットを使うようにしなければならない。より新しいクライアント
+(Windows NT、200x、XP)では、ユニコードを使って通信する。
+</para>
+</sect1>
+
+<sect1>
+<title>Sambaと文字セット</title>
+
+<para>
+<indexterm><primary>ユニコード</primary></indexterm>
+<indexterm><primary>文字セット</primary></indexterm>
+Samba-3では、Sambaはユニコードで通信できる。内部的には、Sambaは3つの文字セットを
+認識する。
+</para>
+
+<variablelist>
+	<varlistentry>
+		<term><smbconfoption name="unix charset"/></term>
+		<listitem><para>
+<indexterm><primary>UTF-8</primary></indexterm>
+<indexterm><primary>CP850</primary></indexterm>
+		これは使用しているOSによって内部的に使われる文字セットである。
+		既定値は<constant>UTF-8</constant>で、ほとんどのシステムに適しており、
+		すべての言語中のすべての文字をカバーする。以前のSambaリリースにおける
+		既定値は、クライアントのエンコーディングでファイル名を保存するための
+		ものであった。&smbmdash;たとえば、CP850は西ヨーロッパ各国用である。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term><smbconfoption name="display charset"/></term>
+		<listitem><para>これは、画面上でメッセージを表示するためにSambaが使う
+		文字セットである。これは一般的に<parameter>unix charset</parameter>と
+		同じにすべきである。
+		</para></listitem>
+	</varlistentry>
+
+	<varlistentry>
+		<term><smbconfoption name="dos charset"/></term>
+		<listitem><para>これは、DOSとWindows 9x/Meクライアントと通信する時に
+		Sambaが使う文字セットである。より新しいクライアントすべてとはユニコードで
+		通信する。既定値は、インストールした、使用するシステム上の文字セットに
+		依存する。使用するすシステム上での既定値が何かと言うことは、
+		<command>testparm -v | grep &quot;dos charset&quot;</command>を実行して
+		調べられる。
+		</para></listitem>
+	</varlistentry>
+</variablelist>
+
+</sect1>
+
+<sect1>
+<title>古い名前からの変換</title>
+
+<para>
+<indexterm><primary>文字セットの変換</primary></indexterm>
+以前のSambaバージョンは、何らの文字セット変換を行わないので、ファイル名中の文字セットは、
+通常UNIX文字セットでは正しくならない。DOS/Windowsクライアントによって使われるローカル
+文字セット専用である。
+</para>
+
+<para>Bjoern Jackeは、<ulink url="http://j3e.de/linux/convmv/">convmv</ulink>という、
+1つのコマンドですべてのディレクトリ構造を異なった文字セットに変換できるユーティリティを
+作成した。
+</para>
+
+</sect1>
+
+<sect1>
+<title>日本語の文字セット</title>
+
+<para>
+日本語の文字セットを設定するのはかなり難しい。それは以下のような理由による:
+</para>
+
+<itemizedlist>
+	<listitem><para>
+<indexterm><primary>JIS X 0208</primary></indexterm>
+		Windows文字セットはオリジナルの日本工業標準(JIS X 0208)から拡張された
+		ものであり、標準化されていない。これは、正確に標準にそった実装は、
+		Windows文字セット全部をサポート出来ないと言うことである。
+	</para></listitem>
+
+	<listitem><para>
+<indexterm><primary>Shift_JIS</primary></indexterm>
+<indexterm><primary>EUC-JP</primary></indexterm>
+<indexterm><primary>CAP</primary></indexterm>
+<indexterm><primary>HEX</primary></indexterm>
+<indexterm><primary>日本語</primary></indexterm>
+		主に歴史的な理由により、日本においては複数のエンコーディング方法があり、
+		おのおのは、互いに完全に互換ではない。主要なエンコーディング方法は2つ
+		ある。1つはWindowsといくつかのUNIXで使われるシフトJIS系列である。
+		もう1つはEUC-JP系列であり、ほとんどのUNIXとLinuxで使われている。さらに、
+		Sambaは以前に、CAPとHEXという、CAP/NetAtalkと日本語ファイル名を使えない
+		UNIXとの互換性を確保するための、固有なエンコーディング方法を提供して
+		いた。EUC-JP系列のいくつかの実装は、完全なWindows文字セットをサポート
+		できない。
+	</para></listitem>
+
+	<listitem><para>ユニコードと旧来の日本語文字セットとの間での変換テーブルは
+		いくつかある。ある1つはWindowsと互換であり、そのほかはユニコード
+		コンソーシアムのものをベースにしたものであり、ほかには複数のものを
+		まぜた実装がある。ユニコードコンソーシアムは、公式にはユニコードと
+		他の旧来の文字セットとの間での変換テーブルを定義していないので、
+		それは標準にはなり得ない。
+	</para></listitem>
+
+	<listitem><para>iconv()内で有効な文字セットと変換テーブルは、利用できるiconv
+		ライブラリに依存する。その次に、日本語のロケール名は異なったシステム上
+		では異なっているかもしれない。これは、文字セットパラメータの値は、
+		使用しているiconv()の実装に依存するというということである。
+		</para>
+
+		<para>
+<indexterm><primary>UCS-2</primary></indexterm>
+<indexterm><primary>Shift_JIS</primary></indexterm>
+<indexterm><primary>ASCII</primary></indexterm>
+<indexterm><primary>英語</primary></indexterm>
+		2バイトの固定的なUCS-2エンコーディングがWindows内部で使われているが、
+		シフトJIS系列のエンコーディングは、英語環境でASCIIエンコーディングが
+		使われているように日本語環境で通常使われている。
+	</para></listitem>
+</itemizedlist>
+
+<sect2><title>基本的なパラメータの設定</title>
+
+	<para>
+<indexterm><primary>CP932</primary></indexterm>
+	<smbconfoption name="dos charset"/>と<smbconfoption name="display charset"/>は
+	ロケールと互換のある文字セットとWindows上で使われているエンコーディング方法に
+	設定すべきである。これは通常CP932であるが、時々違う名前を使う。
+	</para>
+
+	<para>
+<indexterm><primary>Shift_JIS</primary></indexterm>
+<indexterm><primary>UTF-8</primary></indexterm>
+<indexterm><primary>EUC-JP</primary></indexterm>
+	<smbconfoption name="unix charset"/>はシフトJIS系列、EUC-JP系列、あるいは
+	UTF-8系列に設定できる。UTF-8は常時利用可能であるが、他のロケールとそれ自身の
+	名前の有効性は使用するシステム依存である。
+	</para>
+
+	<para>
+	さらに追加すると、Samba 2.2系列において、<quote>coding system = CAP</quote>
+	と設定したのと同じ事を行うvfs capモジュールを使うことによって、
+	シフトJIS系列を<smbconfoption name="unix charset"/>パラメータの値として
+	使うことを考慮することが出来る。
+	</para>
+
+	<para>
+	<smbconfoption name="unix charset"/>をどこに設定するかは難しい質問である。
+	以下は特定の値を使う場合の詳細、利点、欠点の一覧である。
+	</para>
+
+	<variablelist>
+		<varlistentry><term>シフトJIS系列</term>
+			<listitem><para>
+			シフトJIS系列は日本語のWindows上で標準として使われている
+			<constant>Shift_JIS</constant>と同等なロケールを意味する。
+			<constant>Shift_JIS</constant>の場合は、たとえば、もしも
+			日本語のファイル名に0x8ba4 と 0x974c(4バイトの日本語文字列で、
+			<quote>share</quote>(訳注:<quote>共有</quote>)と
+			<quote>.txt</quote>が含まれていてSamba上にWindowsから書き込み
+			された場合、UNIX上のファイル名は
+			0x8ba4, 0x974c, <quote>.txt</quote>(8バイトのバイナリ文字列)
+			となり、これはWindowsのものと同じである。
+			</para>
+
+			<para>シフトJIS系列が、いくつかの商用ベースのUNIX、たとえば
+			hp-uxとAIXで、日本語のロケールで使われている(しかし、
+			EUC-JPロケール系列を使うことも可能である)。それらのプラット
+			フォーム上でシフトJISを使うと、Windowsから作成された
+			日本語のファイル名はUNIX上でも参照できる。</para>
+
+			<para>
+			もしも、使用しているUNIXがすでにシフトJISで動いていて、Windowsから
+			書かれる日本語ファイル名を使う事が必要なユーザには、シフトJIS系列
+			は最適の選択である。しかし、不正なファイル名が表示されるか、
+			非ASCIIファイル名を扱えないコマンドがファイル名を処理するときに
+			アボートするかもしれない。そして、ファイル名中に、注意して
+			扱わなければならない<quote>\ (0x5c)</quote>があるときは特に
+			である。UNIX上でWindowsから書かれたファイル名をさわらないのが
+			最も安全である。
+			</para>
+
+			<para>
+			ほとんどの日本語化されたフリーソフトウェアは実際EUC-JPのみで
+			動作する。日本語化されたフリーソフトウエアがシフトJISで動くかを
+			検証するのはよい習慣である。
+			</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>EUC-JP系列</term>
+			<listitem><para>
+<indexterm><primary>EUC-JP</primary></indexterm>
+<indexterm><primary>日本でのUNIX</primary></indexterm>
+			EUC-JP系列は、日本でのUNIX(EUCには日本語以外の言語、たとえば
+			EUC-KRの仕様も含む)で広く使われているEUC-JPという業界標準と同等の
+			ロケールを意味する。EUC-JP系列の場合、例えば、もしも、日本語の
+			ファイル名に0x8ba4と0x974cと<quote>.txt</quote>を含むものが、
+			Samba上でWindowsから書かれた場合、UNIX上のファイル名は、
+			0xb6a6, 0xcdad,<quote>.txt</quote>となる(8バイトのバイナリ文字列)。
+			</para>
+
+			<para>
+<indexterm><primary>EUC-JP</primary></indexterm>
+<indexterm><primary>UNIX</primary></indexterm>
+<indexterm><primary>Linux</primary></indexterm>
+<indexterm><primary>FreeBSD</primary></indexterm>
+<indexterm><primary>Solaris</primary></indexterm>
+<indexterm><primary>IRIX</primary></indexterm>
+<indexterm><primary>Tru64 UNIX</primary></indexterm>
+<indexterm><primary>日本語のロケール</primary></indexterm>
+<indexterm><primary>Shift_JIS</primary></indexterm>
+<indexterm><primary>UTF-8</primary></indexterm>
+			EUC-JPは通常オープンソースのUNIX、Linuxと振りと商用ベースのUNIX、
+			Solaris、IRIXとTru64 UNIXで日本語ロケールとして使われている
+			(しかし、SolarisではシフトJISとUTF-8を使うことも出来、Tru64 UNIX
+			ではシフトJISも使うことが出来る)。EUC-JP系列を使うためには、
+			Windowsから作成された日本語ファイル名の大半は、UNIX上でも参照
+			できる。また、ほとんどの日本語化されたフリーソフトウェアも
+			ほとんどがEUC-JPのみで動作する。
+			</para>
+
+			<para>
+			UNIX上で日本語のファイル名を使うときにはEUC-JP系列を選択する
+			事を推奨する。
+			</para>
+
+			<para>
+			<quote>\ (0x5c)</quote>のように注意深く扱わなければならない文字が
+			無いにもかかわらず、不正なファイル名が表示されることもあり、
+			非ASCIIファイル名を扱えないいくつかのコマンドはファイル名の
+			処理中にアボートするかもしれない。
+			</para>
+
+			<para>
+<indexterm><primary>eucJP-ms locale</primary></indexterm>
+			さらに、もしも、異なる、インストールされたlibiconvを使ってSambaを
+			構築した場合、eucJP-msロケールがlibiconv中に含まれ、OSに
+			含まれているEUC-JP系列とは非互換かもしれない。この場合、
+			ファイル名に非互換の文字を使うことを防止する必要があるかもしれない。
+			</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>UTF-8</term>
+			<listitem><para>
+			UTF-8は、ユニコードコンソーシアムによって定義された国際標準である
+			UTF-8と同じロケールであることを意味する。UTF-8中では、
+			<parameter>文字</parameter>は1から3バイトで記述される。日本語
+			では、ほとんどの文字は3バイトとなる。WindowsのシフトJISでは、
+			日本語を表現する文字が、1か2バイトなので、UTF-8の文字列長は、
+			オリジナルのシフトJISの文字列の1.5倍である。UTF-8の場合、
+			たとえばSamba上に、Windowsから書かれるファイル名が、
+			0x8ba4と0x974cと<quote>.txt</quote>の場合、UNIX上のファイル名は、
+			0xe585, 0xb1e6, 0x9c89, <quote>.txt</quote>(10バイトのバイナリ
+			文字列)となる。
+			</para>
+
+			<para>
+			iconv()が有効でないシステムか、iconv()のロケールがWindowsと
+			非互換のものの場合、UTF-8は唯一の有効なロケールである。
+			</para>
+
+			<para> 
+			日本においてはUTF-8を既定値のロケールとしているシステムはない。
+			</para>
+
+			<para>
+			何らかの不正なファイル名が表示されるかもしれず、非ASCII
+			ファイル名を扱えないコマンドがあるかもしれない。特に、
+			ファイル名に注意深く扱わなければならない
+			<quote>\ (0x5c)</quote>をファイル名に持つ場合は、UNIX上で、
+			Windowsから書かれたファイル名に触れない方が無難である。
+			</para>
+
+			<para>
+<indexterm><primary>Windows</primary></indexterm>
+<indexterm><primary>Java</primary></indexterm>
+<indexterm><primary>Unicode UTF-8</primary></indexterm>
+			さらに追加すると、Sambaに直接関係してはいないが、
+			一般的にUNIX上で使われているiconv()機能と、WindowsやJavaの
+			ような他のプラットフォーム上で使われている機能との間では、
+			微妙な違いがあり、そのためシフトJISとユニコードのUTF-8との
+			間での変換は注意深くかつ、プロセスで関連する制限の認識を
+			して行わなければならないという点で関連性がある。
+			</para>
+
+			<para>
+<indexterm><primary>Mac OS X </primary></indexterm>
+			Mac OS Xはそのファイル名のエンコード方式としてUTF-8を使用しているが、
+			それはSambaが扱えない拡張されたUTF-8仕様を使っているので、Mac OS X
+			では、UTF-8ロケールは無効である。
+			</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>Shift_JIS系列 + vfs_cap (CAPエンコーディング)</term>
+			<listitem><para>
+<indexterm><primary>CAP</primary></indexterm>
+<indexterm><primary>NetAtalk</primary></indexterm>
+<indexterm><primary>Macintosh</primary></indexterm>
+			CAPエンコーディングは、Macintosh用のファイルサーバソフトウェア
+			であるCAPとNetAtalkで使われる仕様である。CAPエンコーディングの
+			場合、たとえば、もしもSamba上に、Windowsから書かれる日本語の
+			ファイル名に、0x8ba4と0x974cと<quote>.txt</quote>が含まれている
+			場合、UNIX上のファイル名は<quote>:8b:a4:97L.txt</quote>
+			(14バイトのASCII文字列)となる。
+			</para>
+
+			<para>
+			CAPエンコーディングでは、ASCII文字として表現できないもの
+			(0x80以上)は、<quote>:xx</quote>形式でエンコードされる。
+			ファイル名中に<quote>\(0x5c)</quote>を含むものは注意深く扱う
+			必要があるが、非ASCIIファイル名を扱えないシステム中でも、
+			ファイル名が不正になることはない。
+			</para>
+
+			<para>
+			CAPエンコーディングのとても大きな利点は、CAPあるいはNetAtalkでの
+			エンコーディングと互換があるということである。これらは、それぞれ
+			Columbia Appletalk ProtocolとNetAtalkオープンソースソフトウェア
+			プロジェクトである。これらのソフトウェアアプリケーションが、
+			CAPエンコーディングでUNIX上にファイル名を書き込むので、もしも、
+			SambaとNetAtalkの両方でディレクトリが共有される場合、非ASCII
+			ファイル名を使わないようにCAPを使って、ファイル名が不正になる
+			ことを防ぐ必要がある。
+			</para>
+
+			<para>
+			しかし、最近、NetAtalkはファイル名をEUC-JP(すなわち、日本の
+			オリジナルなVine Linux)でファイル名を書き込むように、いくつかの
+			システムではパッチが当てられた。この場合、CAPエンコーディングの
+			代わりに、EUC-JP系列を選ばなければならない。
+			</para>
+
+			<para>
+			vfs_cap それ自身は、非ASCII文字を扱えないシステムか、NetAtalkと
+			ファイルを共有するシステムのための、非シフトJIS系列のロケールの
+			ために有効である。
+			</para>
+
+			<para>
+			Samba-3でCAPエンコーディングを使うためには、unix charset
+			パラメータと、
+			<link linkend="vfscap-intl">the VFS CAP smb.conf file</link>
+			のようなVFSを使うべきである。
+			To use CAP encoding on Samba-3, you should use the unix charset parameter and VFS 
+			as in <link linkend="vfscap-intl">VFS CAPを使うsmb.confファイル</link>。
+			</para>
+
+<example id="vfscap-intl">
+<title>VFS CAP</title>
+	<smbconfblock>
+<smbconfsection name="[global]"/>
+<smbconfcomment>the locale name "CP932" may be different</smbconfcomment>
+<smbconfoption name="dos charset">CP932</smbconfoption>
+<smbconfoption name="unix charset">CP932</smbconfoption>
+
+<smbconfsection name="[cap-share]"/>
+<smbconfoption name="vfs option">cap</smbconfoption>
+</smbconfblock>
+</example>
+
+			<para>
+<indexterm><primary>CP932</primary></indexterm>
+<indexterm><primary>libiconv</primary></indexterm>
+<indexterm><primary>unix charset</primary></indexterm>
+<indexterm><primary>cap-share</primary></indexterm>
+			もしも、GNU libiconvをunix charsetに使うならば、CP932を設定
+			である。この設定を使う場合、<quote>cap-share</quote>共有中の
+			ファイル名はCAPエンコーディングで書かれる。
+			</para>
+			</listitem>
+		</varlistentry>
+	</variablelist>
+
+</sect2>
+
+<sect2><title>個別の実装</title>
+
+<para>
+個別の実装に関する追加情報は以下の通り:
+</para>
+
+	<variablelist>
+		<varlistentry><term>GNU libiconv</term>
+			<listitem><para>
+			日本語を正しく取り扱うために、libiconv-1.8に
+			<ulink url="http://www2d.biglobe.ne.jp/~msyk/software/libiconv-patch.html">libiconv-1.8-cp932-patch.diff.gz</ulink>
+			というパッチを適用すべきである。
+			</para>
+			
+			<para>
+			パッチを当てたlibiconv-1.8を使うことで、以下の設定が有効になる:
+			</para>
+
+<programlisting>
+dos charset = CP932
+unix charset = CP932 / eucJP-ms / UTF-8
+		|       |
+		|       +-- EUC-JP系列
+		+-- Shift_JIS系列
+display charset = CP932
+</programlisting>
+
+			<para>
+			他の日本語ロケール(たとえば、Shift_JISとEUC-JP)は、Windowsとの
+			互換性が欠如しているため、使うべきではない。
+			</para>
+			</listitem>
+		</varlistentry>
+
+		<varlistentry><term>GNU glibc</term>
+			<listitem><para>
+			日本語を正しく取り扱うために、glibc-2.2.5/2.3.1/2.3.2に
+			<ulink url="http://www2d.biglobe.ne.jp/~msyk/software/glibc/">patch</ulink>
+			のパッチを適用すべきであり、そうでない場合は、パッチがマージ
+			された、glibc-2.3.3以降を使うべきである。
+			</para>
+
+			<para>
+			上記のglibcを使うことで、以下の設定が有効になる:
+			<smbconfblock>
+			<smbconfoption name="dos charset">CP932</smbconfoption>
+			<smbconfoption name="unix charset">CP932 / eucJP-ms / UTF-8</smbconfoption>
+			<smbconfoption name="display charset">CP932</smbconfoption>
+			</smbconfblock>
+			</para>
+
+			<para>
+			他の日本語ロケール(たとえば、Shift_JISとEUC-JP)は、Windowsとの
+                        互換性が欠如しているため、使うべきではない。
+			</para>
+			</listitem>
+		</varlistentry>
+	</variablelist>
+
+</sect2>
+
+<sect2>
+	<title>Samba-2.2系列からの移行</title>
+
+<para> 
+Samba 2.2系列以前では、<quote>coding system</quote>パラメータが使われていた。Samba 2.xの
+既定値のcodepageは code page 850であった。Samba-3系列では、これは
+<smbconfoption name="unix charset"/>に置き換えられた。
+<link linkend="japancharsets">Samba-2.2とSamba-3中の日本語文字セット</link>
+には、Samba-2.2系列からSamba-3系列へ移行するときのマッピングテーブルを示している。
+</para>
+
+	<table frame="all" id="japancharsets">
+		<title>Samba-2.2とSamba-3中の日本語文字セット</title>
+
+		<tgroup cols="2" align="center">
+			<colspec align="center"/>
+			<colspec align="center"/>
+			<thead>
+				<row><entry>Samba-2.2 Coding System</entry><entry>Samba-3 unix charset</entry></row>
+			</thead>
+			<tbody>
+				<row><entry>SJIS</entry><entry>Shift_JIS系列</entry></row>
+				<row><entry>EUC</entry><entry>EUC-JP系列</entry></row>
+				<row><entry>EUC3<footnote><para>Samba日本語版のみに存在</para></footnote></entry><entry>EUC-JP系列</entry></row>
+				<row><entry>CAP</entry><entry>Shift_JIS系列 + VFS</entry></row>
+				<row><entry>HEX</entry><entry>現状では存在しない</entry></row>
+				<row><entry>UTF8</entry><entry>UTF-8</entry></row>
+				<row><entry>UTF8-Mac<footnote><para>Samba日本語版のみに存在</para></footnote></entry><entry>現状では存在しない</entry></row>
+				<row><entry>その他</entry><entry>なし</entry></row>
+			</tbody>
+		</tgroup>
+	</table>
+
+</sect2>
+
+</sect1>
+
+<sect1>
+	<title>よくあるエラー</title>
+
+	<sect2>
+		<title>CP850.so が見つからない</title>
+
+		<para><quote>Sambaが<filename>CP850.so</filename>ファイルがないというエラーを出す。</quote></para>
+
+		<para>
+		CP850は<smbconfoption name="dos charset"/>の既定値である。
+		<smbconfoption name="dos charset"/>は使用しているDOSクライアントにょって
+		使われるコードページに変換するのに使われる。もしも、DOSクライアントが
+		ないのであれば、このメッセージを無視しても安全である。</para>
+
+		<para>
+		CP850は使用しているローカルなiconvの実装によってサポートされている。
+		必要とするすべてのパッケージがインストールされているかを確認すること。
+		もしもソースからSambaをコンパイルした場合、configureにおいてiconvを
+		見つけたかを確認すること。これは、<command>configure</command>が
+		実行された的に生成される<filename>config.log</filename>ファイルを
+		チェックすることで行える。</para> 
+	</sect2>
+</sect1>
+
+</chapter>

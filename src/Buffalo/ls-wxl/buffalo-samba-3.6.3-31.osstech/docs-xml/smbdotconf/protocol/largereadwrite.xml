@@ -1,0 +1,17 @@
+<samba:parameter name="large readwrite"
+                 context="G"
+				 type="boolean"
+                 developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このパラメータは、Windows 2000で導入された、
+    さまざまなSMBリクエストにおける新しい64Kのストリーム読みとりおよび書き込みを
+    <citerefentry><refentrytitle>smbd</refentrytitle>
+    <manvolnum>8</manvolnum></citerefentry> がサポートするかどうかを制御する。
+    Windows 2000クライアントのリダイレクタにはバグがあるため、
+    このパラメータを利用するには、SambaがIRIX、Solaris、Linux 2.4カーネルのような64ビットのOSで動作している必要がある。
+    Windows 2000クライアントにおいては、10% のパフォーマンス向上が見込まれる。
+    既定値は on であるが、他の Samba コードほどにはテストが充分には行われていない。</para>
+</description>
+<value type="default">yes</value>
+</samba:parameter>

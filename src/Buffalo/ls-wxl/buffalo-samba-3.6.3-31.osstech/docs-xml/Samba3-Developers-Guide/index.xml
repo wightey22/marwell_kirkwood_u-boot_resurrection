@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc" [
+<!ATTLIST book 
+	xmlns:xi CDATA #FIXED "http://www.w3.org/2003/XInclude">
+]>
+
+<book id="Samba-Developers-Guide"
+	xmlns:xi="http://www.w3.org/2003/XInclude">
+
+<title>SAMBA開発者ガイド</title>
+
+<bookinfo>
+<authorgroup>
+	<editor>&person.jelmer;</editor>
+</authorgroup>
+	
+<abstract>
+<para>
+<emphasis>Last Update</emphasis> : Fri Oct 10 00:59:58 CEST 2003
+</para>
+
+<para>
+この資料は、Sambaを開発する人か、そういうことに興味がある人にとって便利かもしれない
+資料を集めたものである。これは、単に、sambaのいろいろな部分の内部構造や、SMBプロトコルに
+ついて記述された文書の集合でしかない。これは常時発展途上である。この文書の最も最新な
+ものは、<ulink url="http://devel.samba.org/">http://devel.samba.org/</ulink>にある。
+</para>
+
+<para>
+この文書はGPL(GNU General Public License)のバージョン2でライセンスされている。
+ライセンス文書はSambaソースディストリビューション内に含まれている。オンラインでは
+<ulink url="http://www.fsf.org/licenses/gpl.txt">http://www.fsf.org/licenses/gpl.txt</ulink>
+で参照できる。
+</para>
+
+<para><warning>
+    この文書は未完でメンテナンスされていない。単に開発に関連する注意事項を集めた
+    ものである。
+</warning></para>
+
+</abstract>
+
+</bookinfo>
+
+<xi:include href="../Samba3-Developers-Guide-attributions.xml">
+	<xi:fallback/>
+</xi:include>
+
+<?latex \cleardoublepage ?>
+
+<!-- Contents -->
+<toc/>
+
+<?latex \pagenumbering{arabic} ?>
+<!-- Chapters -->
+<part>
+	<title>プロトコル</title>
+
+	<xi:include href="unix-smb.xml"/>
+	<xi:include href="cifsntdomain.xml"/>
+
+</part>
+
+<part>
+	<title>Sambaの基本</title>
+
+	<xi:include href="architecture.xml"/>
+	<xi:include href="debug.xml"/>
+	<xi:include href="internals.xml"/>
+	<xi:include href="CodingSuggestions.xml"/>
+	<xi:include href="contributing.xml"/>
+	<xi:include href="modules.xml"/>
+</part>
+
+<part>
+	<title>Sambaサブシステム</title>
+	
+	<xi:include href="rpc_plugin.xml"/>
+	<xi:include href="vfs.xml"/>
+	<xi:include href="parsing.xml"/>
+	<xi:include href="wins.xml"/>
+	<xi:include href="encryption.xml"/>
+
+</part>
+
+<part>
+	<title>デバッグ方法とトレース</title>
+
+	<xi:include href="Tracing.xml"/>
+	<xi:include href="printing.xml"/>
+</part>
+
+<part><title>付録</title>
+	<xi:include href="packagers.xml"/>
+</part>
+
+</book>

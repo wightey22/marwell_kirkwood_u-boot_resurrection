@@ -1,0 +1,47 @@
+<?xml version='1.0'?>
+<!DOCTYPE preface PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant
+V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<preface>
+<title>序文</title>
+
+<para>
+ここ数年にわたって Samba プロジェクトは重要な変化を受けている。
+機械語に夢を見ている人々のみによって使われていた小さなプロジェクトから
+、多くのビジネスの IT インフラにおける欠かせない部分にまで成長している。
+Sambaの人気が伸びると共に、対応する発展が利用方法においてあった。
+設定オプションの数とそれらの相互作用にも同様の発展があった。
+</para>
+
+<para>
+この増加する複雑さに対処するために、豊富な文書がSambaについて書かれて
+いる。多数のHOWTO、診断のコツ、 マニュアル、Sambaが依存する技術の重要
+な部分に関する解説を含でいる。
+とても多くの文書が書かれていることは喜ばしいが、莫大な量の異なったタイ
+プの文書をナビゲートすることは難しいことだと判明した。
+そのことが複雑さに対処しようとするシステム管理者へこれらの文書の価値
+を下げている。
+</para>
+
+<para>
+この本は、システム管理者が求める情報を迅速により取り出しやすいカタチ
+で豊富な情報を一緒にまとめている。
+提供された技術情報の幅広さは、もっとも過酷な管理者にも役立つものを
+見つけられるようにしている。
+</para>
+
+<para>
+現在Samba文書が本として役立つようにそれを提示できるまで展開されてきた
+ことをうれしく思う。
+この結果に向かって多大なる貢献をした多くの人々の努力に感謝している。
+Enjoy!
+</para>
+
+<para>
+<simplelist>
+<member>Andrew Tridgell</member>
+<member><emphasis>President, Samba Team</emphasis></member>
+<member><emphasis>July 2003</emphasis></member>
+</simplelist>
+</para>
+
+</preface>

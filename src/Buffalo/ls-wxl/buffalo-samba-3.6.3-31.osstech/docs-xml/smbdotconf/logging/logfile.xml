@@ -1,0 +1,14 @@
+<samba:parameter name="log file"
+                 context="G"
+				 type="string"
+                 developer="1" advanced="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+    <para>このオプションにより、
+    Sambaのログファイル(デバッグファイル)の名称を変更することが可能である。</para>
+
+	<para>このオプションには、標準の変数置換が適用されるため、
+	個々のユーザやマシン毎にログを分割することが可能である。</para>
+</description>
+<value type="example">/usr/local/samba/var/log.%m</value>
+</samba:parameter>

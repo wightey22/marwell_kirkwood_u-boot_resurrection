@@ -1,0 +1,1805 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE refentry PUBLIC "-//Samba-Team//DTD DocBook V4.2-Based Variant V1.0//EN" "http://www.samba.org/samba/DTD/samba-doc">
+<refentry id="net.8">
+
+<refmeta>
+	<refentrytitle>net</refentrytitle>
+	<manvolnum>8</manvolnum>
+	<refmiscinfo class="source">Samba</refmiscinfo>
+	<refmiscinfo class="manual">システム管理ツール</refmiscinfo>
+	<refmiscinfo class="version">3.4</refmiscinfo>
+</refmeta>
+
+
+<refnamediv>
+	<refname>net</refname>
+	<refpurpose>Samba およびリモート CIFS サーバの管理ツール
+	</refpurpose>
+</refnamediv>
+
+<refsynopsisdiv>
+	<cmdsynopsis>
+		<command>net</command>
+		<arg choice="req">&lt;ads|rap|rpc&gt;</arg>
+		<arg choice="opt">-h</arg>
+		<arg choice="opt">-w workgroup</arg>
+		<arg choice="opt">-W myworkgroup</arg>
+		<arg choice="opt">-U user</arg>
+		<arg choice="opt">-I ip-address</arg>
+		<arg choice="opt">-p port</arg>
+		<arg choice="opt">-n myname</arg>
+		<arg choice="opt">-s conffile</arg>
+		<arg choice="opt">-S server</arg>
+		<arg choice="opt">-l</arg>
+		<arg choice="opt">-P</arg>
+		<arg choice="opt">-d debuglevel</arg>
+		<arg choice="opt">-V</arg>
+		<arg choice="opt">--request-timeout seconds</arg>
+	</cmdsynopsis>
+</refsynopsisdiv>
+
+<refsect1>
+	<title>説明</title>
+
+	<para>このツールは、<citerefentry><refentrytitle>samba</refentrytitle>
+	<manvolnum>7</manvolnum></citerefentry>システムの一部である。</para>
+
+	<para>Samba の net ユーティリティは Windows や DOS に存在する
+	NET コマンドと同様の位置づけのものである。
+	先頭の引数は、コマンドを実行する際に使用するプロトコルを指定するために用いられる。
+	ADS は Active Directory によって、RAP は従来の (Windows 9x / Windows
+	NT 3.x) クライアントによって、 RPC は Windows NT 4.0 および Windows
+	2000 によって使用されている。
+	この引数が省略された場合、 net コマンドはプロトコルを自動判別しようとする。
+	すべてのコマンドがすべてのプロトコル上で使用できるわけではない。</para>
+
+</refsect1>
+
+<refsect1>
+	<title>オプション</title>
+
+	<variablelist>
+		&stdarg.help;
+		
+		<varlistentry>
+		<term>-w target-workgroup</term>
+		<listitem><para>
+		操作対象とするワークグループやドメインを指定する。
+		このオプションか、サーバの IP アドレスもしくは名前のいずれかは指定する必要がある。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-W workgroup</term>
+		<listitem><para>
+		クライアントのワークグループやドメインを指定する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-U user</term>
+		<listitem><para>
+		アクセスを行なうユーザ名を指定する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-I ip-address</term>
+		<listitem><para>
+		操作対象のサーバの IP アドレスを指定する。
+		このオプションか、
+		操作対象のワークグループもしくは対象のサーバ名のいずれかを指定する必要がある。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-p port</term>
+		<listitem><para>
+		操作対象のサーバに接続する際に用いるポート番号 (通常 139 か 445) を指定する。
+		既定値ではまず 445 を試行し、ついで 139 を試行する。
+		</para></listitem>
+		</varlistentry>
+
+		&stdarg.netbios.name;
+		&stdarg.configfile;
+
+		<varlistentry>
+		<term>-S server</term>
+		<listitem><para>
+		操作対象のサーバ名を指定する。
+		このオプションか、操作対象のワークグループもしくは IP アドレスのいずれかを指定する必要がある。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-l</term>
+		<listitem><para>
+		情報を表示する際に、各項目の詳細情報を表示する。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+		<term>-P</term>
+		<listitem><para>
+		ローカルサーバのコンピュータアカウントを用いて別のサーバに対する問い合わせを行なう。
+		</para></listitem>
+		</varlistentry>
+
+		<varlistentry>
+                <term>--request-timeout 30</term>
+                <listitem><para>
+		クライアントの要求を30秒後にタイムアウトさせる。既定値は10秒。
+                </para></listitem>
+                </varlistentry>
+		&stdarg.server.debug;
+	</variablelist>
+</refsect1>
+
+<refsect1>
+<title>コマンド</title>
+
+<refsect2>
+<title>CHANGESECRETPW</title>
+
+<para>
+このコマンドにより、Samba のコンピュータアカウントのパスワードを外部アプリケーションが Active Directory に格納済のものに（手動で）設定することが可能となる。
+何が行なわれるかを理解しない限り、このコマンドを用いないこと。
+このコマンドを用いるには、強制フラグ (-f) を併せて設定する必要がある。
+コマンドプロンプトのインタフェースは存在しない。
+情報は全て、コマンドラインなどを経由して標準入力経由で引き渡され、コンピュータアカウントのパスワードとして格納される。
+警告無しに以前のコンピュータアカウントのパスワードが上書きされてしまうため、このコマンドは注意して用いること。
+</para>
+
+</refsect2>
+
+<refsect2>
+	<title>TIME</title>
+
+	<para><command>NET TIME</command> コマンドにより、リモートサーバの時刻を表示させたり、ローカルサーバの時刻をリモートサーバの時刻に同期させたりすることが可能となる。
+	</para>
+
+<refsect3>
+<title>TIME</title>
+
+<para>オプションを指定しなかった場合、 <command>NET TIME</command> コマンドはリモートのサーバの時刻を表示する。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>TIME SYSTEM</title>
+
+<para> リモートマシンの時刻を <command>/bin/date</command> が認識できる形式で表示する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>TIME SET</title>
+<para>ローカルサーバの日付と時刻を <command>/bin/date</command> コマンドを用いてリモートサーバの日付と時刻に設定させる。 </para>
+
+</refsect3>
+
+<refsect3>
+<title>TIME ZONE</title>
+
+<para> リモートマシンの時間帯を GMT からの差分で時間単位で表示する。</para>
+
+</refsect3>
+</refsect2>
+
+<refsect2>
+<title>[RPC|ADS] JOIN [TYPE] [-U username[%password]] [createupn=UPN] [createcomputer=OU][options]</title>
+
+<para>
+ドメインに参加する。サーバ上にコンピュータアカウントがすでに存在しており、
+[TYPE] が MEMBER の場合、マシンの参加は自動的に行なわれる
+(コンピュータアカウントがサーバマネージャで作成済の場合)。
+それ以外の場合は、パスワードの入力が求められ、新しいコンピュータアカウントが作成される。
+</para>
+
+<para>
+[TYPE] は、ドメインに参加するコンピュータのタイプを指定するもので、
+PDC, BDC, MEMBER のいずれかの値をとる。
+</para>
+
+<para>
+[UPN] (ADSのみ)ドメインに参加する時のプリンシパル名属性を設定する。既定値の形式は
+host/netbiosname@REALMである。
+</para>
+
+<para>
+[OU] (ADSのみ)指定したOU中にあらかじめコンピュータアカウントを作成する。
+OU文字列はRDNなしで、'/'をデリミタとして、初めから最後まで読まれる。
+シェルとLDAPの両方で'\'がエスケープとして使われるため、その文字その物を
+渡すためには、二重に書くか、4重に書く必要があり、デリミタとしては扱われない。
+</para>
+</refsect2>
+
+<refsect2>
+<title>[RPC] OLDJOIN [options]</title>
+
+<para>ドメインに参加する。従来の方式によるドメイン参加を行なう場合は、
+OLDJOIN オプションを使用すること。
+参加を行なうには、事前にサーバマネージャでコンピュータアカウントを作成しておくことが必要である。</para>
+</refsect2>
+
+<refsect2>
+<title>[RPC|ADS] USER</title>
+
+<refsect3>
+<title>[RPC|ADS] USER</title>
+
+<para>ユーザの一覧を出力する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RPC|ADS] USER DELETE <replaceable>target</replaceable></title>
+
+<para>指定したユーザを削除する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RPC|ADS] USER INFO <replaceable>target</replaceable></title>
+
+<para>指定したユーザの所属するグループ一覧を出力する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RPC|ADS] USER RENAME <replaceable>oldname</replaceable> <replaceable>newname</replaceable></title>
+
+<para>指定したユーザの名前を変更する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RPC|ADS] USER ADD <replaceable>name</replaceable> [password] [-F user flags] [-C comment]</title>
+
+<para>指定したユーザを追加する。</para>
+</refsect3>
+</refsect2>
+
+<refsect2>
+<title>[RPC|ADS] GROUP</title>
+
+<refsect3>
+<title>[RPC|ADS] GROUP [misc options] [targets]</title>
+<para>グループの一覧を表示する。</para>
+</refsect3>
+
+<refsect3>
+<title>[RPC|ADS] GROUP DELETE <replaceable>name</replaceable> [その他のオプション]</title>
+
+<para>指定したグループを削除する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RPC|ADS] GROUP ADD <replaceable>name</replaceable> [-C comment]</title>
+
+<para>指定したグループを作成する。</para>
+
+</refsect3>
+</refsect2>
+
+<refsect2>
+<title>[RAP|RPC] SHARE</title>
+
+<refsect3>
+<title>[RAP|RPC] SHARE [その他のオプション] [targets]</title>
+
+<para>指定したサーバが公開しているすべてのリソース(ネットワーク共有)の一覧を出力する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RAP|RPC] SHARE ADD <replaceable>name=serverpath</replaceable> [-C comment] [-M maxusers] [targets]</title>
+
+<para>サーバに共有を追加する (公開を有効にする)。Maxusers 
+は共有に同時に接続できるユーザの数を指定する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>SHARE DELETE <replaceable>sharenam</replaceable></title>
+
+<para>指定した共有を削除する。</para>
+</refsect3>
+</refsect2>
+
+<refsect2>
+<title>[RPC|RAP] FILE</title>
+
+<refsect3>
+<title>[RPC|RAP] FILE</title>
+
+<para>リモートサーバ上でオープンされているファイルの一覧を出力する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RPC|RAP] FILE CLOSE <replaceable>fileid</replaceable></title>
+
+<para>リモートサーバ上にある <replaceable>fileid</replaceable> 
+で指定したファイルをクローズする。</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RPC|RAP] FILE INFO <replaceable>fileid</replaceable></title>
+
+<para>
+指定した <replaceable>fileid</replaceable> のファイルの情報を出力する。
+現在表示されるのは、以下の情報である: file-id, username, lock, path, permission
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>[RAP|RPC] FILE USER <replaceable>user</replaceable></title>
+
+<para>
+<replaceable>user</replaceable>で指定した、オープンしているファイルを表示する。
+<command>net rap file user</command>はSambaサーバに対して動作しない事に注意。
+</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>SESSION</title>
+
+<refsect3>
+<title>RAP SESSION</title>
+
+<para>オプションなしの場合、 SESSION は指定したサーバ上のすべてのアクティブな
+SMB/CIFS セッションの一覧を表示する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>RAP SESSION DELETE|CLOSE <replaceable>CLIENT_NAME</replaceable></title>
+
+<para>指定したセッションをクローズする。</para>
+
+</refsect3>
+
+<refsect3>
+<title>RAP SESSION INFO <replaceable>CLIENT_NAME</replaceable></title>
+
+<para>指定したセッションにおいてオープンされているファイルの一覧を表示する (訳注: 実際はオープンされている共有の一覧その他の情報を表示する)。</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>RAP SERVER <replaceable>DOMAIN</replaceable></title>
+
+<para>ドメインもしくはワークグループ内のサーバの一覧を出力する。
+デフォルトの対象はローカルドメインである。</para>
+
+</refsect2>
+
+<refsect2>
+<title>RAP DOMAIN</title>
+
+<para>現在ネットワークで表示されているドメインおよびワークグループの一覧を出力する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>RAP PRINTQ</title>
+
+<refsect3>
+<title>RAP PRINTQ INFO <replaceable>QUEUE_NAME</replaceable></title>
+
+<para>サーバ上の指定された印刷キューおよび印刷ジョブの一覧を出力する。
+<replaceable>QUEUE_NAME</replaceable> が省略された場合、キューの一覧が出力される。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>RAP PRINTQ DELETE <replaceable>JOBID</replaceable></title>
+
+<para>指定された ID の印刷ジョブを削除する。</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>RAP VALIDATE <replaceable>user</replaceable> [<replaceable>password</replaceable>]</title>
+
+<para>
+指定したユーザがリモートサーバにログオン可能かどうかを確認する。
+コマンドラインでパスワードが指定されなかった場合は、入力を求められる。
+</para>
+
+&not.implemented;
+
+</refsect2>
+
+<refsect2>
+<title>RAP GROUPMEMBER</title>
+
+<refsect3>
+<title>RAP GROUPMEMBER LIST <replaceable>GROUP</replaceable></title>
+
+<para>指定したグループのメンバ一覧を出力する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>RAP GROUPMEMBER DELETE <replaceable>GROUP</replaceable> <replaceable>USER</replaceable></title>
+
+<para>グループからメンバを削除する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>RAP GROUPMEMBER ADD <replaceable>GROUP</replaceable> <replaceable>USER</replaceable></title>
+
+<para>グループにメンバを追加する。</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>RAP ADMIN <replaceable>command</replaceable></title>
+
+<para>指定した <replaceable>command</replaceable> をリモートサーバ上で実行する。
+OS/2 サーバに対してのみ機能する。
+</para>
+
+&not.implemented;
+
+</refsect2>
+
+<refsect2>
+<title>RAP SERVICE</title>
+
+<refsect3>
+<title>RAP SERVICE START <replaceable>NAME</replaceable> [arguments...]</title>
+
+<para>リモートサーバ上の指定したサービスを起動する。現在実装されていない。</para>
+
+&not.implemented;
+
+</refsect3>
+
+<refsect3>
+<title>RAP SERVICE STOP</title>
+
+<para>リモートサーバ上の指定したサービスを停止する。</para>
+
+&not.implemented;
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>RAP PASSWORD <replaceable>USER</replaceable> <replaceable>OLDPASS</replaceable> <replaceable>NEWPASS</replaceable></title>
+
+<para>
+<replaceable>USER</replaceable> のパスワードを <replaceable>OLDPASS</replaceable> から <replaceable>NEWPASS</replaceable> に変更する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>LOOKUP</title>
+
+<refsect3>
+<title>LOOKUP HOST <replaceable>HOSTNAME</replaceable> [<replaceable>TYPE</replaceable>]</title>
+
+<para>
+指定したホスト名およびタイプ(NetBIOS サフィックス)の IP アドレスを検索する。
+タイプの既定値は 0x20 (workstation (訳注: server の誤り)) である。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>LOOKUP LDAP [<replaceable>DOMAIN</replaceable></title>
+
+<para>指定した <replaceable>DOMAIN</replaceable> の LDAP サーバの IP アドレスを検索する。既定値はローカルドメインが対象となる。</para>
+
+</refsect3>
+
+<refsect3>
+<title>LOOKUP KDC [<replaceable>REALM</replaceable>]</title>
+
+<para>指定した <replaceable>REALM</replaceable> の KDC の IP アドレスを検索する。
+既定値はローカルなレルム(realm)が対象となる。</para>
+
+</refsect3>
+
+<refsect3>
+<title>LOOKUP DC [<replaceable>DOMAIN</replaceable>]</title>
+
+<para>指定した <replaceable>DOMAIN</replaceable> のドメインコントローラの IP アドレスを検索する。
+既定値はローカルドメインが対象となる。</para>
+
+</refsect3>
+
+<refsect3>
+<title>LOOKUP MASTER <replaceable>DOMAIN</replaceable></title>
+
+<para>指定した <replaceable>DOMAIN</replaceable> もしくはワークグループのマスタブラウザの IP アドレスを検索する。
+既定値はローカルドメインが対象となる。</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>CACHE</title>
+
+<para>Samba は「gencache」という汎用のキャッシュインタフェースを用いている。
+これは 'NET CACHE' コマンドにより制御可能である。</para>
+
+<para>タイムアウトに関するパラメータはすべて、以下のサフィックスをサポートしている:
+
+<simplelist>
+<member>s - 秒</member>
+<member>m - 分</member>
+<member>h - 時</member>
+<member>d - 日</member>
+<member>w - 週</member>
+</simplelist>
+
+</para>
+
+<refsect3>
+<title>CACHE ADD <replaceable>key</replaceable> <replaceable>data</replaceable> <replaceable>time-out</replaceable></title>
+
+<para>指定した key と data の組合せを time-out の期限でキャッシュに追加する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>CACHE DEL <replaceable>key</replaceable></title>
+
+<para>key をキャッシュから削除する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>CACHE SET <replaceable>key</replaceable> <replaceable>data</replaceable> <replaceable>time-out</replaceable></title>
+
+<para>既存のキャッシュエントリの data を更新する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>CACHE SEARCH <replaceable>PATTERN</replaceable></title>
+
+<para>キャッシュデータの中から指定されたパターンを検索する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>CACHE LIST</title>
+
+<para>
+現在キャッシュに格納されているアイテムの一覧を表示する。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>CACHE FLUSH</title>
+
+<para>現在キャッシュに格納されているアイテムをすべて消去する。</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>GETLOCALSID [DOMAIN]</title>
+
+<para>指定されたドメインの SID を表示する。
+パラメータが省略された場合、ローカルサーバが所属するドメインの SID を表示する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>SETLOCALSID S-1-5-21-x-y-z</title>
+
+<para>ローカルサーバが所属するドメインの SID を指定した SID に設定する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>GETDOMAINSID</title>
+
+<para>現在のローカルサーバのSIDと現在のドメインのSIDを表示する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>SETDOMAINSID</title>
+
+<para>現在のドメインのSIDを設定する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>GROUPMAP</title>
+
+<para>Windows のグループ ID と UNIX のグループ ID との対応づけを行なう。
+共通のオプションを以下に示す:</para>
+
+<itemizedlist>
+<listitem><para>unixgroup - UNIX のグループ名</para></listitem>
+<listitem><para>ntgroup - Windows NT のグループ名 (SID が解決可能である必要がある。)</para></listitem>
+<listitem><para>rid - 符号なし 32 ビット整数</para></listitem>
+<listitem><para>sid - 「S-1-...」形式の完全な SID</para></listitem>
+<listitem><para>type - グループのタイプ。「domain」、「local」もしくは「builtin」のいずれか。
+</para></listitem>
+<listitem><para>comment - 任意の文字列によるグループの説明</para></listitem>
+</itemizedlist>
+
+<refsect3>
+<title>GROUPMAP ADD</title>
+
+<para>新しいグループマップのエントリを追加する:
+<programlisting>
+net groupmap add {rid=int|sid=string} unixgroup=string \
+      [type={domain|local}] [ntgroup=string] [comment=string]
+</programlisting>
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>GROUPMAP DELETE</title>
+
+<para>グループマップのエントリを削除する。
+複数のエントリがマッチした場合、最初にマッチしたエントリが削除される。</para>
+
+<para>net groupmap delete {ntgroup=string|sid=SID}</para>
+
+</refsect3>
+
+<refsect3>
+<title>GROUPMAP MODIFY</title>
+
+<para>既存のグループマップのエントリを変更する。</para>
+
+<para>
+<programlisting>
+net groupmap modify {ntgroup=string|sid=SID} [unixgroup=string] \
+       [comment=string] [type={domain|local}]
+</programlisting>
+</para>
+</refsect3>
+
+<refsect3>
+<title>GROUPMAP LIST</title>
+
+<para>存在しているグループマップのエントリの一覧を表示する。</para>
+
+<para>net groupmap list [verbose] [ntgroup=string] [sid=SID]</para>
+
+</refsect3>
+</refsect2>
+
+
+
+<refsect2>
+<title>MAXRID</title>
+
+<para>ローカルサーバ上で (有効な「passdb backend」パラメータにより) 現在使用可能な RID の最大値を出力する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>RPC INFO</title>
+
+<para>リモートサーバが所属するドメインの、ドメイン名、ドメインの SID 、ユーザおよびグループ数といった情報を出力する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>[RPC|ADS] TESTJOIN</title>
+
+<para>ドメインへの参加が現在可能であるかどうかを確認する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>[RPC|ADS] CHANGETRUSTPW</title>
+
+<para>ドメイン間信頼のパスワードを強制的に変更する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>RPC TRUSTDOM</title>
+
+<refsect3>
+<title>RPC TRUSTDOM ADD <replaceable>DOMAIN</replaceable></title>
+
+<para>
+<replaceable>DOMAIN</replaceable> のドメイン間信頼アカウントをリモートサーバに追加する。
+これは実際、アカウントフラグ <constant>'I'</constant> (ドメイン間信頼アカウント)を伴う、
+<replaceable>DOMAIN$</replaceable> と言う名のSambaアカウントである。
+もしも、localhostに対してコマンドが使われるならば、
+<command>smbpasswd -a -i DOMAIN</command>と同じ影響を及ぼす。
+両コマンドとも適切なUNIXアカウントを必要とする事に注意。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>RPC TRUSTDOM DEL <replaceable>DOMAIM</replaceable></title>
+
+<para>
+<replaceable>DOMAIN</replaceable> のドメイン間信頼アカウントをリモートサーバから削除する。
+これは、<command>smbpasswd -x DOMAIN$</command>と同じである。</para>
+
+</refsect3>
+
+<refsect3>
+<title>RPC TRUSTDOM ESTABLISH <replaceable>DOMAIN</replaceable></title>
+
+<para>
+信頼するドメインとの間の信頼関係を締結する。
+ドメイン間信頼アカウントが、リモートの PDC 上にすでに作成されていることが必須である。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>RPC TRUSTDOM REVOKE <replaceable>DOMAIN</replaceable></title>
+<para>信頼されたドメインとの間の信頼関係を破棄する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>RPC TRUSTDOM LIST</title>
+
+<para>現在のドメイン間の信頼関係を一覧表示する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>RPC RIGHTS</title>
+
+<para>
+このサブコマンドは(権限として参照もされる)、 Samba のユーザー権利の割当の
+表示、管理に用いられる。現在のところ、以下の 3 つのオプションが利用できる: 
+<parameter>list</parameter>、 <parameter>grant</parameter>、
+<parameter>revoke</parameter>。
+Samba のユーザー権利の実装と利用方法に関する詳細については、 Samba-HOWTO-Collection を参照のこと。</para>
+
+</refsect3>
+
+
+</refsect2>
+
+<refsect2>
+<title>RPC ABORTSHUTDOWN</title>
+
+<para>リモートサーバのシャットダウンを中止する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>SHUTDOWN [-t timeout] [-r] [-f] [-C message]</title>
+
+<para>リモートサーバをシャットダウンする。</para>
+
+<variablelist>
+<varlistentry>
+<term>-r</term>
+<listitem><para>
+シャットダウン後に再起動する。
+</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-f</term>
+<listitem><para>
+全てのアプリケーションを強制的に終了させる。
+</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-t timeout</term>
+<listitem><para>
+システムをシャットダウンさせる前のタイムアウト時間を指定する。システムに対話的ログオンしているユーザは、この期間にシャットダウンをキャンセルすることができる。
+</para></listitem>
+</varlistentry>
+
+<varlistentry>
+<term>-C message</term>
+<listitem><para>シャットダウンの通知を行なう際に、指定したメッセージを画面上に表示する。</para></listitem>
+</varlistentry>
+</variablelist>
+
+</refsect2>
+
+<refsect2>
+<title>RPC SAMDUMP</title>
+
+<para>リモートサーバの SAM データベースを表示する。
+これは PDC もしくはドメインに参加したSamba BDC 上で実行する必要がある。</para>
+</refsect2>
+
+<refsect2>
+<title>RPC VAMPIRE</title>
+
+<para>リモートサーバからユーザ、エイリアス、グループをローカルサーバ上にエクスポートする。 ドメインに参加したBDC 上で、PDCに対してのみ実行することが可能である。
+</para>
+
+<refsect2>
+<title>RPC VAMPIRE KEYTAB</title>
+
+<para>リモートのSAMデータベースをローカルのKerberos keytabファイルにダンプする。
+</para>
+</refsect2>
+
+<refsect2>
+<title>RPC VAMPIRE LDIF</title>
+
+<para>リモートのSAMデータベースをローカルのLDIFファイルか標準出力にダンプする。
+</para>
+</refsect2>
+
+</refsect2>
+
+<refsect2>
+<title>RPC GETSID</title>
+
+<para>ドメインの SID を取得して、ローカルの <filename>secrets.tdb</filename> に格納する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>ADS LEAVE</title>
+
+<para>リモートホストを所属しているドメインから外す。</para>
+
+</refsect2>
+
+<refsect2>
+<title>ADS STATUS</title>
+
+<para>Active Directory 環境において、ローカルマシンのコンピュータアカウントの状態を表示する。
+表示内容は、デバッグ情報のようなものであり、開発者向けのものである。
+一般のユーザは <command>NET ADS TESTJOIN</command> を使うべきである。</para>
+
+</refsect2>
+
+<refsect2>
+<title>ADS PRINTER</title>
+
+<refsect3>
+<title>ADS PRINTER INFO [<replaceable>PRINTER</replaceable>] [<replaceable>SERVER</replaceable>]</title>
+
+<para>
+<replaceable>SERVER</replaceable> 上にある <replaceable>PRINTER</replaceable> を検索する。
+プリンタ名の既定値は「*」であり、サーバ名の既定値はローカルホスト名である。</para>
+
+</refsect3>
+
+<refsect3>
+<title>ADS PRINTER PUBLISH <replaceable>PRINTER</replaceable></title>
+
+<para>指定したプリンタを Active Directory に対して公開する。</para>
+
+</refsect3>
+
+<refsect3>
+<title>ADS PRINTER REMOVE <replaceable>PRINTER</replaceable></title>
+
+<para>指定したプリンタを Active Directory のディレクトリから削除する。</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>ADS SEARCH <replaceable>EXPRESSION</replaceable> <replaceable>ATTRIBUTES...</replaceable></title>
+
+<para>Active Directory のサーバに対して低レベルな LDAP 検索を行ない、その結果を表示する。
+EXPRESSION は標準の LDAP 検索表記で行ない、 ATTRIBUTES は結果中に表示する LDAP 属性型の一覧である。</para>
+
+<para>設定例: <userinput>net ads search '(objectCategory=group)' sAMAccountName</userinput>
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>ADS DN <replaceable>DN</replaceable> <replaceable>(attributes)</replaceable></title>
+
+<para>Active Directory のサーバに対して低レベルな LDAP 検索を行ない、その結果を表示する。
+DN は標準の LDAP DN であり、 attributes は結果中に表示する LDAP属性型の一覧である。</para>
+
+<para>設定例: <userinput>net ads dn 'CN=administrator,CN=Users,DC=my,DC=domain' SAMAccountName</userinput></para>
+
+</refsect2>
+
+<refsect2>
+<title>ADS WORKGROUP</title>
+
+<para>指定された Kerberos レルムのワークグループ名を表示する。</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM CREATEBUILTINGROUP &lt;NAME&gt;</title>
+
+<para>
+BUILTINグループを(再)作成する。
+このコマンドでは通常使われるBUILTINグループのみ作成出来る。以下は、現在設定されるグループ名である: Administrators,
+Users, Guests, Power Users, Account Operators, Server Operators, Print
+Operators, Backup Operators, Replicator, RAS Servers, Pre-Windows 2000
+compatible Access.
+
+このコマンドはidmapの割り当てが適切に構成されているWinbinddが動いている事を要求する。グループのgidはwinbinddのレンジの範囲外に割り当てられる。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM CREATELOCALGROUP &lt;NAME&gt;</title>
+
+<para>
+ローカルグループを作成する(別名である)。
+
+このコマンドはidmapの割り当てが適切に構成されているWinbinddが動いている事を要求する。グループのgidはwinbinddのレンジの範囲外に割り当てられる。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM DELETELOCALGROUP &lt;NAME&gt;</title>
+
+<para>
+存在するローカルグループを削除する(別名である)。
+
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM MAPUNIXGROUP &lt;NAME&gt;</title>
+
+<para>
+同じ名前を持つドメイングループと、存在するUnixグループをマップし、Domainグループにする。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM UNMAPUNIXGROUP &lt;NAME&gt;</title>
+
+<para>
+存在するグループマップエントリを削除する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM ADDMEM &lt;GROUP&gt; &lt;MEMBER&gt;</title>
+
+<para>
+ローカルグループへメンバを追加する。グループは名前でのみ指定でき、メンバは名前かSIDで指定出来る。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM DELMEM  &lt;GROUP&gt; &lt;MEMBER&gt;</title>
+
+<para>
+ローカルグループからメンバを削除する。グループとメンバは名前でのみ指定できる。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM LISTMEM &lt;GROUP&gt;</title>
+
+<para>
+ローカルグループメンバを表示する。グループは名前で指定しなければならない。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM LIST &lt;users|groups|localgroups|builtin|workstations&gt; [verbose]</title>
+
+<para>
+名前による一まとまりのアカウントを表示する。もしもverboseが指定されていたら、
+ridとdescriptionも各々のアカウントに対して提供される。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM RIGHTS LIST</title>
+
+<para>
+すべての有効な権限を表示する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM RIGHTS GRANT &lt;NAME&gt; &lt;PRIVILEGE&gt;</title>
+
+<para>
+ユーザに対し、1つまたはそれ以上の権限を許可する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM RIGHTS REVOKE &lt;NAME&gt; &lt;PRIVILEGE&gt;</title>
+
+<para>
+ユーザに対し、1つまたはそれ以上の権限を取り去る。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SHOW &lt;NAME&gt;</title>
+
+<para>
+対応するアカウントの、完全な DOMAIN\\NAME のSIDとタイプを表示する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET HOMEDIR &lt;NAME&gt; &lt;DIRECTORY&gt;</title>
+
+<para>
+アカウントに対するホームディレクトリを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET PROFILEPATH &lt;NAME&gt; &lt;PATH&gt;</title>
+
+<para>
+アカウントに対するプロファイルパスを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET COMMENT &lt;NAME&gt; &lt;COMMENT&gt;</title>
+
+<para>
+ユーザまたはグループアカウントに対するコメントを設定する。
+</para>
+
+</refsect2>
+<refsect2>
+<title>SAM SET FULLNAME &lt;NAME&gt; &lt;FULL NAME&gt;</title>
+
+<para>
+ユーザアカウントに対するフルネームを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET LOGONSCRIPT &lt;NAME&gt; &lt;SCRIPT&gt;</title>
+
+<para>
+ユーザアカウントに対するログオンスクリプトを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET HOMEDRIVE &lt;NAME&gt; &lt;DRIVE&gt;</title>
+
+<para>
+ユーザアカウントに対するホームドライブを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET WORKSTATIONS &lt;NAME&gt; &lt;WORKSTATIONS&gt;</title>
+
+<para>
+ログイン可能なユーザアカウントをワークステーションに対して設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET DISABLE &lt;NAME&gt;</title>
+
+<para>
+ユーザアカウントに対して"無効"フラグを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET PWNOTREQ &lt;NAME&gt;</title>
+
+<para>
+ユーザアカウントに対して"パスワード不要"フラグを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET AUTOLOCK &lt;NAME&gt;</title>
+
+<para>
+ユーザアカウントに対して"autolock"フラグを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET PWNOEXP &lt;NAME&gt;</title>
+
+<para>
+ユーザアカウントに対して"無期限のパスワード"フラグを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM SET PWDMUSTCHANGENOW &lt;NAME&gt; [yes|no]</title>
+
+<para>
+ユーザアカウントに対して"パスワードの変更が必要"フラグを設定する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM POLICY LIST</title>
+
+<para>
+有効なアカウントポリシーを表示する。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM POLICY SHOW &lt;account policy&gt;</title>
+
+<para>
+アカウントポリシーの値を表示する。.
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM POLICY SET &lt;account policy&gt; &lt;value&gt;</title>
+
+<para>
+アカウントポリシーに値を設定する。
+有効な値は、 "forever", "never", "off", か数字である。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>SAM PROVISION</title>
+
+<para>
+もしも、ldapsam:editposixが設定されて、winbinddが動作中の時有効である。
+ldapのDIT上の、基本的なアカウント(Administrator)とグループ(Domain Users, Domain Admins, Domain Guests)とともに、ldap DITを 適切にpopulateする。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>IDMAP DUMP &lt;local tdb file name&gt;</title>
+
+<para>
+指定したローカルのtdbファイル中にあるマッピングをダンプする。このコマンドは、
+idmap_tdbバックエンドによって生成されたマップのダンプにのみ有用である。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>IDMAP RESTORE [input file]</title>
+
+<para>
+指定したファイルか標準入力からマッピングをリストアする。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>IDMAP SECRET &lt;DOMAIN&gt;|ALLOC &lt;secret&gt;</title>
+
+<para>
+指定したドメインのために、secretを格納し、おおむね、idmap_ldapをバックエンドとして使うドメインのために使われる。このケースの場合、secretはldapサーバに対してバインドするユーザDNのパスワードとして使われる。
+</para>
+
+</refsect2>
+
+<refsect2>
+<title>USERSHARE</title>
+
+<para>
+Samba 3.0.23 より、root 以外のユーザが「net usershare」コマンドを用いてユーザ定義共有を公開する機能が追加された。
+</para>
+
+<para>
+これを行なうには、まず smb.conf の [global] セクションに以下を追加する必要がある:
+
+usershare path = /usr/local/samba/lib/usershares
+
+ついで /usr/local/samba/lib/usershares ディレクトリを作成し、所有者を root に、所有グループをユーザ定義共有の作成を許可したい UNIX グループ、例えば「serverops」とする。
+
+/usr/local/samba/lib/usershares のパーミッションは 01770 に設定する。
+
+(所有者と所有グループには完全なアクセス権があり、その他にはアクセス権が全くない。さらにスティッキービットにより、ディレクトリ中のファイルについて、名前の変更や削除が行なえるのはファイルの所有者のみとなる)
+
+最後に、smb.conf の [global] セクションに以下のような行を追加することで、作成可能なユーザ定義共有の最大数を smbd に設定する:
+
+usershare max shares = 100
+
+これにより、最大 100 のユーザ定義共有を設定可能となる。
+これにより、「serverops」という UNIX グループのメンバは必要に応じて以下のコマンドを実行することで、ユーザ定義共有を作成することが可能となる。
+</para>
+
+<para>ユーザ定義共有に関するコマンドを以下に示す:
+
+<simplelist>
+<member>net usershare add sharename path [comment [acl] [guest_ok=[y|n]]] - ユーザ定義の共有の追加または変更</member>
+<member>net usershare delete sharename - ユーザ定義の共有の削除</member>
+<member>net usershare info [-l|--long] [wildcard sharename] - ユーザ定義の共有の情報の出力</member>
+<member>net usershare list [-l|--long] [wildcard sharename] - ユーザ定義の共有の一覧出力</member>
+</simplelist>
+
+</para>
+
+<refsect3>
+<title>USERSHARE ADD <replaceable>sharename</replaceable> <replaceable>path</replaceable> <replaceable>[comment]</replaceable> <replaceable>[acl]</replaceable> <replaceable>[guest_ok=[y|n]]</replaceable></title>
+
+<para>
+sharename というユーザ定義共有の新規作成もしくは修正(上書き)を行なう。
+</para>
+
+<para>
+「path」には、公開するディレクトリのシステム上での絶対パス名を指定する。
+公開可能なディレクトリには幾つかの制約がある。
+グローバルな smb.conf のパラメータである「usershare owner only」、「usershare prefix allow list」、「usershare prefix deny list」を参照のこと。
+</para>
+
+<para>
+オプションの「comment」パラメータは、クライアントから共有を参照した際に表示されるコメント文字列を指定する。
+</para>
+
+<para>
+オプションの「acl」フィールドは、共有単位でどのユーザに読み取りや書き込みのアクセス許可を与えるかを指定する。
+ゲストアクセスは、 smb.conf の「usershare allow guests」パラメータを有効にしない限り行なえない。
+ユーザ定義共有の ACL の指定は「user:permission」という形式で行なわれる。user はシステムで有効なユーザ名であり、permission は「F」、「R」、「D」のいずれかである。
+「F」は「フルコントロール」、すなわち読み取りと書き込み権を示す。「D」は「拒否」を示し、ユーザの共有へのアクセスを許可しない。「R」は「読み取り専用」、すなわちこの共有への読み取りアクセスのみの許可を示す (ファイルへの書き込みやファイルやディレクトリの新規作成は行なえない)。
+</para>
+
+<para>
+「acl」オプションが指定されなかった場合のデフォルトは「Everyone:R」である。これは、認証された全てのユーザが読み取り専用のアクセス権を有することを意味する。
+</para>
+
+<para>
+オプションの「guest_ok」パラメータは、smb.conf 中の同名のパラメータと同じ意味を持ち、該当のユーザ定義共有に対するゲストアクセスを許可する。
+このパラメータは、 smb.conf 中でグローバルパラメータの「usershare allow guests」が有効になっている時のみ設定できる。
+</para>
+既存のユーザ定義共有を修正するコマンドは個別に用意されておらず、
+「net usershare add [sharename]」コマンドを用いて、sharename 共有を新規のオプションを指定して上書き変更することになる。
+Samba の smbd デーモンは、接続のあったタイミングでユーザ定義共有の変更を検知するのため、変更は即座に反映される。ユーザ定義共有の追加、削除、変更により、smbd の再起動を行なう必要はない。
+</refsect3>
+
+<refsect3>
+<title>USERSHARE DELETE <replaceable>sharename</replaceable></title>
+
+<para>
+指定されたユーザ定義共有を削除する。
+Samba smbd デーモンは即座にこの変更を検知するが、削除された共有にその時点で接続中のユーザが切断されることはない。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>USERSHARE INFO <replaceable>[-l|--long]</replaceable> <replaceable>[wildcard sharename]</replaceable></title>
+
+<para>
+指定されたパターンに合致するユーザによって所有されている、もしくは全てのユーザ定義共有の情報が表示される。
+</para>
+
+<para>
+net usershare info は、実行したユーザが作成したユーザ定義共有の詳細情報を表示するが、ワイルドカード情報 (「*」は1文字以上の文字にマッチし、「?」は1文字のみにマッチする) が指定されている場合は、それにマッチした共有のみを表示する。
+「-l」もしくは「--long」オプションが指定されていた場合、他のユーザが作成したユーザ定義共有の情報も表示する。
+</para>
+
+<para>
+各共有についての情報は以下のような形式で設定される:
+
+[foobar]
+path=/home/jeremy
+comment=testme
+usershare_acl=Everyone:F
+guest_ok=n
+
+これは、「net usershare add」コマンドで現状設定可能なユーザ定義共有の設定一覧である。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>USERSHARE LIST <replaceable>[-l|--long]</replaceable> <replaceable>wildcard sharename</replaceable></title>
+
+<para>
+実行したユーザが所有し、指定されたワイルドカードにマッチする、もしくは全てのユーザのユーザ定義共有の一覧を表示する。
+</para>
+
+<para>
+net usershare list は、実行したユーザが作成したユーザ定義共有の一覧を表示するが、ワイルドカード情報 (「*」は1文字以上の文字にマッチし、「?」は1文字のみにマッチする) が指定されている場合は、それにマッチした共有のみを表示する。
+
+「-l」もしくは「--long」オプションが指定されていた場合、他のユーザが作成したユーザ定義共有の情報も表示する。
+</para>
+
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>CONF</title>
+
+<para>バージョン 3.2.0から、Sambaサーバはレジストリにデータを格納することにより設定する事が出来るようになった。この設定データは新しい"net conf"コマンドで編集できる。
+</para>
+
+<para>
+この設定データの配布は
+<emphasis>smb.conf</emphasis>ファイルから2つのレベルで有効にできる。
+レジストリからの共有定義は[global]セクション中で<parameter>registry shares</parameter>を<quote>yes</quote>にすることで有効にでき、
+グローバルオプションは、複合設定の場合、[global]セクション中で<smbconfoption name="include">registry</smbconfoption>を設定することで、
+レジストリのみの設定の場合は、[global]セクション中で、<smbconfoption name="config backend">registry</smbconfoption>を設定することで有効になる。
+詳細は<citerefentry><refentrytitle>smb.conf</refentrytitle>
+<manvolnum>5</manvolnum></citerefentry>マニュアルページを参照のこと。 </para>
+
+<para>conf コマンドは以下のとおり:
+<simplelist>
+<member>net conf list - smb.conf風の形式で完全な設定をダンプ</member>
+<member>net conf import - smb.conf形式で設定をインポート</member>
+<member>net conf listshares - レジストリ共有のリスト</member>
+<member>net conf drop - レジストリから全部の設定を削除</member>
+<member>net conf showshare - レジストリ共有の定義を表示</member>
+<member>net conf addshare - 新しいレジストリ共有を作成</member>
+<member>net conf delshare - レジストリ共有を削除</member>
+<member>net conf setparm - パラメータを格納</member>
+<member>net conf getparm - パラメータの値を検索</member>
+<member>net conf delparm - パラメータを削除</member>
+<member>net conf getincludes - 共有定義のインクルードを表示</member>
+<member>net conf setincludes - 共有のためのインクルードを設定</member>
+<member>net conf delincludes - 共有定義からインクルードを削除</member>
+</simplelist>
+</para>
+
+<refsect3>
+<title>CONF LIST</title>
+
+<para>
+smb.conf風の形式でレジストリ中にある設定データを標準出力に出力する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF IMPORT <replaceable>[--test|-T]</replaceable> <replaceable>filename</replaceable> <replaceable>[section]</replaceable></title>
+
+<para>
+このコマンドは、smb.conf形式で、ファイルから設定情報をインポートする。もしも、
+レジストリ中に存在するセクションが入力ファイル中に存在するならば、その内容は
+置き換えられる。入力ファイル中に対となるものがない、レジストリ中のセクションは
+何ら影響はない。もしも、それらを削除したいならば、"net conf drop" か
+ "net conf delshare"を使うこと。
+任意ではあるが、その、指定したセクションに対するimportコマンドの影響を避けるためにあるセクションを指定してもよい。テストモードはパラメータ"-T"をコマンド行に
+指定することで有効に出来る。テストモードでは、レジストリに対する変更は行われず、
+設定の結果が代わりに標準出力に出力される。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF LISTSHARES</title>
+
+<para>
+レジストリ中で定義された共有名の一覧を表示する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF DROP</title>
+
+<para>
+レジストリから完全に設定データを削除する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF SHOWSHARE <replaceable>sharename</replaceable></title>
+
+<para>
+指定したセクションまたは共有の定義を表示する。レジストリから、global設定オプションを検索するために、"global"を共有名として指定するのは有効である。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF ADDSHARE <replaceable>sharename</replaceable> <replaceable>path</replaceable> [<replaceable>writeable={y|N}</replaceable> [<replaceable>guest_ok={y|N}</replaceable> [<replaceable>comment</replaceable>]]] </title>
+
+<para>レジストリ中に新しい共有定義を作成する。
+共有名とパス両方が必要である。共有名は"global"としては<emphasis>いけない</emphasis> 。
+そのほか、とても一般的なオプション、"writeable", "guest ok" と "comment"
+も指定出来る。同じ結果は、一連の"net conf setparm"コマンドによって得てもよい。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF DELSHARE <replaceable>sharename</replaceable></title>
+
+<para>
+レジストリから共有定義を削除する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF SETPARM <replaceable>section</replaceable> <replaceable>parameter</replaceable> <replaceable>value</replaceable></title>
+
+<para>
+パラメータをレジストリに格納する。セクションはglobalか共有名である。
+セクションは、模試も存在しないならば、作成される。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF GETPARM <replaceable>section</replaceable> <replaceable>parameter</replaceable></title>
+
+<para>
+レジストリ中のパラメータを表示する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF DELPARM <replaceable>section</replaceable> <replaceable>parameter</replaceable></title>
+
+<para>
+レジストリ中のパラメータを削除する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF GETINCLUDES <replaceable>section</replaceable></title>
+
+<para>
+(globalまたは共有の)提供されたセクションの、includeのリストを得る。
+</para>
+
+<para>
+データベースとincludeディレクティブの種類により、includeは特別の扱いが必要である。パラメータ名が値の名前として、パラメータがレジストリに格納されるので、
+共有ごとにパラメータのインスタンスは1つだけである。
+また、テキストファイル中の指定したような順番は認められない。すべての真の
+パラメータに対して、これは完全に問題がないが、includeディレクティブは
+smb.confテキストファイル中では、むしろメタパラメータであるので、他のパラメータ
+との間での場所の指定はとても重要である。これは単純なsmbconfデータモデルによって
+は実現できないので、共有後とに1つの順番のリストがあり、このリストはすべての
+共有パラメータの後に評価される。
+</para>
+
+<para>
+さらに、現在、レジストリ構成からファイルのみインクルード出来る。将来は、
+他のレジストリキーから設定データをインクルード出来る予定である。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF SETINCLUDES <replaceable>section</replaceable> [<replaceable>filename</replaceable>]+</title>
+
+<para>
+(globalか共有の)提供されたセクションのためのinculudeリストを、1つまたはそれ以上の与えられたファイル名で設定する。
+ファイル名は %Iのような通常のsmb.confマクロを含んでいてもよい。
+</para>
+</refsect3>
+
+<refsect3>
+<title>CONF DELINCLUDES <replaceable>section</replaceable></title>
+
+<para>
+(globalか共有の)提供されたセクションからincludeリストを削除する。
+</para>
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+
+<refsect2>
+<title>EVENTLOG</title>
+
+<para>Samba 3.4.3 から、net コマンドはネイティブな WIN32 イベントログファイル
+(通常 *.evt) の読み取り、ダンプ、インポート、エクスポートが可能となった。
+evt ファイルはネイティブな Windows のイベントビューワツールによって使われる。
+</para>
+
+<para>
+evtファイルのインポートとエクスポートは、<emphasis>smb.conf</emphasis>
+ファイル中で<parameter>eventlog list</parameter>が定義されている時のみ
+行える。詳細は <citerefentry><refentrytitle>smb.conf</refentrytitle>
+<manvolnum>5</manvolnum></citerefentry> マニュアルページを参照のこと。
+</para>
+
+<para>eventlog のサブコマンドは以下の通り:
+<simplelist>
+<member>net eventlog dump - イベントログファイル *.evt の内容を画面上にダンプする。</member>
+<member>net eventlog import - イベントログファイル *.evt を、イベントログを保持する Samba 内部の tdb ファイルにインポートする。</member>
+<member>net eventlog export - Samba内部の tdb 形式によるイベントログをイベントログファイル *.evt にエクスポートする。</member>
+</simplelist>
+</para>
+
+<refsect3>
+<title>EVENTLOG DUMP <replaceable>filename</replaceable></title>
+
+<para>
+標準出力にイベントログファイル *.evt を出力する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>EVENTLOG IMPORT <replaceable>filename</replaceable> <replaceable>eventlog</replaceable></title>
+
+<para>
+<replaceable>filename</replaceable>によって定義されたイベントログファイル *.evt 
+を、<replaceable>eventlog</replaceable>で定義した Samba 内部の tdb 形式によるイベン
+トログファイルにインポートする。
+<replaceable>eventlog</replaceable> には smb.conf 中で定義されている
+<parameter>eventlog list</parameter> が一部必要となる。詳細は、
+<citerefentry><refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+マニュアルページを参照のこと。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>EVENTLOG EXPORT <replaceable>filename</replaceable> <replaceable>eventlog</replaceable></title>
+
+<para>
+<replaceable>eventlog</replaceable>で定義されている、Samba内部のtdb形式によるイベントログを
+<replaceable>filename</replaceable>で定義されているイベントログファイル *.evt にエクスポートする。
+<replaceable>eventlog</replaceable>はsmb.conf中で定義されている
+<parameter>eventlog list</parameter>の一部を必要とする。詳細は、
+<citerefentry><refentrytitle>smb.conf</refentrytitle><manvolnum>5</manvolnum></citerefentry>
+マニュアルページを参照のこと。
+</para>
+
+</refsect3>
+
+</refsect2>
+
+<title>DOM</title>
+
+<para>バージョン 3.2.0 から、Sambaではクライアントもしくはサーバサイドから、リモートでマシンをドメインに参加・削除させるAPIがサポートされた。Windowsでは、リモートでマシンをメンバに参加させる機能はWindows 2000からサポートされていた。
+</para>
+<para>Sambaでリモートでマシンをドメインに追加するには、操作するアカウントが「Domain Admins」グループのメンバか、「Administrators group」グループのメンバか、もしくは「SeMachineAccountPrivilege 権限が付与されている」のいずれかでなければならない。
+</para>
+
+<para>クライアント側でリモートでマシンをドメインに参加させるnet domコマンドは以下の通り：
+<simplelist>
+<member>net dom join - リモートでマシンをドメインに参加させる</member>
+<member>net dom unjoin -リモートでマシンをドメインから削除する</member>
+<member>net dom renamecomputer - ドメインに参加しているリモートコンピュータの名前を変更する。</member>
+</simplelist>
+</para>
+
+<refsect3>
+<title>DOM JOIN	<replaceable>domain=DOMAIN</replaceable> <replaceable>ou=OU</replaceable> <replaceable>account=ACCOUNT</replaceable> <replaceable>password=PASSWORD</replaceable> <replaceable>reboot</replaceable></title>
+
+<para>
+リモートでマシンをドメインに参加させる。このコマンドがサポートするパラメータは以下のとおり：
+</para>
+
+<itemizedlist>
+
+<listitem><para><replaceable>DOMAIN</replaceable>には、NetBIOS名(ショートドメイン名とも言う)又はActiveDirectoryのDNSドメイン名を指定する。Windows の場合、使用するドメインコントローラを選択できる。その場合「\」で区切ってドメインコントローラの名前を指定する（例：MYDOM\MYDC）。<replaceable>DOMAIN</replaceable>に空白は指定できない。
+</para></listitem>
+
+<listitem><para><replaceable>OU</replaceable>には、既定値ではないLDAPコンテナにマシンアカウントを作成する場合、RFC 1779のLDAP DN(例:<emphasis>ou=mymachines,cn=Users,dc=example,dc=com</emphasis>)で指定する。この、任意のパラメータは、リモートマシンをActiveDirectoryドメインに参加する場合のみサポートされる。</para></listitem>
+
+<listitem><para><replaceable>ACCOUNT</replaceable>には、参加させるマシンのドメインアカウントを指定する。このドメインアカウントには、マシンを追加できる適切な権限が付与されている必要がある。
+</para></listitem>
+
+<listitem><para><replaceable>PASSWORD</replaceable>には、<replaceable>ACCOUNT</replaceable>で指定されたドメインアカウントのパスワードを指定する。</para></listitem>
+
+<listitem><para><replaceable>REBOOT</replaceable>は任意のオプションで、マシンが正しくドメインに参加できたときに再起動させたいときに指定する。</para></listitem>
+
+</itemizedlist>
+
+<para>
+ドメインに参加させたいマシンに接続して認証を行う場合、-S コンピュータ や-U ユーザ のように net で標準的に使用されるパラメータを別途指定する必要があることに注意。
+</para>
+<para>
+	例:
+	net dom join -S xp -U XP\\administrator%secret domain=MYDOM account=MYDOM\\administrator password=topsecret reboot.
+</para>
+<para>
+この例では、XPというマシンにローカル管理者としてパスワード「secret」で接続し、ドメイン「MYDOM」にドメイン管理者としてパスワード「topsecret」でドメインに参加させている。ドメインに参加した後にマシンは再起動する。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>DOM UNJOIN <replaceable>account=ACCOUNT</replaceable> <replaceable>password=PASSWORD</replaceable> <replaceable>reboot</replaceable></title>
+
+<para>
+ドメインからマシンを削除する。このコマンドでは次のパラメータを指定する。
+</para>
+
+<itemizedlist>
+
+<listitem><para><replaceable>ACCOUNT</replaceable>には、削除するマシンのドメインアカウント名を指定する。このドメインアカウントには、マシンを削除できる権限が付与されている必要がある。
+ </para></listitem>
+
+<listitem><para><replaceable>PASSWORD</replaceable>には、<replaceable>ACCOUNT</replaceable>で指定したドメインアカウントのパスワードを指定する。
+</para></listitem>
+
+<listitem><para><replaceable>REBOOT</replaceable>は任意のオプションで、マシンがドメインから削除されたときに再起動させたいときに指定する。</para></listitem>
+
+</itemizedlist>
+
+<para>
+ドメインから削除したいマシンに接続して認証を行う場合、-S コンピュータ や-U ユーザ のようにnetで標準的に使用されるパラメータを別途指定する必要があることに注意。
+</para>
+<para>
+	例:
+	net dom unjoin -S xp -U XP\\administrator%secret account=MYDOM\\administrator password=topsecret reboot.
+</para>
+<para>
+この例では、XPというマシンにローカル管理者としてパスワード「secret」で接続し、ドメイン「MYDOM」にドメイン管理者としてパスワード「topsecret」でドメインから削除している。ドメインから削除された後にマシンは再起動する。
+</para>
+
+</refsect3>
+
+<refsect3>
+<title>DOM RENAMECOMPUTER <replaceable>newname=NEWNAME</replaceable> <replaceable>account=ACCOUNT</replaceable> <replaceable>password=PASSWORD</replaceable> <replaceable>reboot</replaceable></title>
+
+<para>
+ドメインに参加しているコンピュータの名前を変更する。このコマンドは以下のサブパ
+ラメータをサポートする:
+</para>
+
+<itemizedlist>
+
+<listitem><para><replaceable>NEWNAME</replaceable> ドメイン中の新しいマシンの名前を定義する。</para></listitem>
+
+<listitem><para><replaceable>ACCOUNT</replaceable> ドメイン中でマシンの名前を変
+更する時に使うドメインアカウントを定義する。このドメインアカウントはマシン名を
+変更するために必要な権限を持つ必要がある。</para></listitem>
+
+<listitem><para><replaceable>PASSWORD</replaceable> <replaceable>ACCOUNT</replaceable>で定義されるドメインアカウントのパスワードを定義する。</para></listitem>
+
+<listitem><para><replaceable>REBOOT</replaceable> はオプションのパラメータで、ドメイン中で名前の変更が成功した後にマシンをリブートするように設定する。</para></listitem>
+
+</itemizedlist>
+
+<para>
+ドメイン中で名前を変更したいリモートマシンに、標準のnetパラメータを使って接続と
+認証を行う必要があることに注意。それらの追加のパラメータには -S コンピュータ名
+と-U ユーザ名を含む。
+</para>
+<para>
+	例:
+	net dom renamecomputer -S xp -U XP\\administrator%secret newname=XPNEW account=MYDOM\\administrator password=topsecret reboot.
+</para>
+<para>
+この例では、XPという名前のコンピュータに、パスワードがsecretのローカルの
+Administratorとして接続し、ドメインに参加しているコンピュータの名前を、
+MYDOMというドメインの管理者のアカウントとパスワード topsecretを使って、
+XPNEWに変更している。変更が成功したら、コンピュータをリブートする。
+</para>
+
+</refsect3>
+
+</refsect2>
+
+
+<refsect2>
+<title>G_LOCK</title>
+
+<para>グローバルロックの管理</para>
+
+<refsect3>
+<title>G_LOCK DO <replaceable>lockname</replaceable> <replaceable>timeout</replaceable> <replaceable>command</replaceable></title>
+
+<para>
+グローバルロック配下でシェルを実行する。これはいくつかのシェルコマンドが実行される
+順番を定義するのに便利かもしれない。ロック情報は<filename>g_lock.tdb</filename>
+というファイルに格納される。CTDBが動作しているセットアップ時には、ロック情報は
+すべてのクラスタノードで有効である。
+</para>
+
+<itemizedlist>
+<listitem><para><replaceable>LOCKNAME</replaceable>はグローバルロックの名前を定義する。</para></listitem>
+<listitem><para><replaceable>TIMEOUT</replaceable>はタイムアウトを定義する。</para></listitem>
+<listitem><para><replaceable>COMMAND</replaceable>は実行するシェルコマンドを定義する。</para></listitem>
+</itemizedlist>
+</refsect3>
+
+<refsect3>
+<title>G_LOCK LOCKS</title>
+
+<para>
+現在存在するすべてのロック名を表示する。
+</para>
+</refsect3>
+
+<refsect3>
+<title>G_LOCK DUMP <replaceable>lockname</replaceable></title>
+
+<para>
+特定のグローバルロックのロックテーブルをダンプする。
+</para>
+</refsect3>
+
+</refsect2>
+
+<refsect2>
+<title>HELP [COMMAND]</title>
+
+<para>指定されたコマンドの使用方法の情報を提供する。</para>
+
+</refsect2>
+
+</refsect1>
+
+<refsect1>
+	<title>バージョン</title>
+
+	<para>このマニュアルページは Samba 3 用のものである。</para>
+</refsect1>
+
+<refsect1>
+	<title>著者</title>
+	
+	<para>オリジナルの Samba ソフトウェアと関連するユーティリティは、
+	Andrew Tridgell によって作られた。Samba は現在 Linux カーネルが
+	開発されているような方法でのオープンソースプロジェクトである
+	Samba Team によって開発された。</para>
+
+	<para>net マニュアルページは Jelmer Vernoij によって執筆された。</para>
+</refsect1>
+<refsect1>
+	<title>日本語訳</title>
+	<para>このマニュアルページは Samba 3.5.3 対応のものである。</para>
+
+        <para>このドキュメントの Samba 3.0.0 対応の翻訳は
+	<itemizedlist>
+		<listitem><para>たかはし もとのぶ (monyo@samba.gr.jp)</para></listitem>
+		<listitem><para>山田 史朗 (shiro@miraclelinux.com)</para></listitem>
+	</itemizedlist>	
+       によって行なわれた。</para>
+
+	<para>Samba 3.0.23 - Samba 3.0.24 対応の翻訳は、たかはしもとのぶ (monyo@samba.gr.jp) によって行なわれた。</para>
+	<para>Samba 3.2.4 - 3.5.3 対応の翻訳は、太田俊哉 (ribbon@samba.gr.jp) によって行なわれた。</para>
+</refsect1>
+
+</refentry>

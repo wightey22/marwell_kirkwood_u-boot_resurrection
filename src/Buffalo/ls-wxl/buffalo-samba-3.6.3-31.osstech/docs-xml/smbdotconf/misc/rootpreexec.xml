@@ -1,0 +1,16 @@
+<samba:parameter name="root preexec"
+		 context="S"
+		 type="string"
+		 advanced="1" wizard="1" developer="1"
+		 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+	<para>このパラメータは、
+	コマンドが root で実行されることを除き、
+	<parameter moreinfo="none">preexec </parameter> パラメータと同一である。
+	このコマンドは、コネクションの開始時に(CD-ROMなどの)ファイルシステムをマウントするのに便利である。
+	</para>
+</description>
+<related>preexec</related>
+<related>preexec close</related>
+<value type="default"></value>
+</samba:parameter>

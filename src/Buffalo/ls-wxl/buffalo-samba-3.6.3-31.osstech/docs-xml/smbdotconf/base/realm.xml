@@ -1,0 +1,14 @@
+<samba:parameter name="realm"
+                 context="G"
+		 type="string"
+                 basic="1" advanced="1" wizard="1" developer="1"
+                 xmlns:samba="http://www.samba.org/samba/DTD/samba-doc">
+<description>
+        <para>このオプションは、使用する Kerberos レルムを指定する。
+        レルムは Windows NT 4.0 における<command moreinfo="none">ドメイン</command>に相当する Active Directory の概念である。
+        レルムには、通常 Kerberos サーバの DNS 名が設定される。
+	</para>
+</description>
+<value type="default"></value>
+<value type="example">mysambabox.mycompany.com</value>
+</samba:parameter>
